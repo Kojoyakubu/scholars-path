@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = '/api/payments/';
+const API_URL = 'https://scholars-path-backend.onrender.com/api/payments/';
 
 export const initializePayment = createAsyncThunk('payment/initialize', async (paymentData, thunkAPI) => {
   try {

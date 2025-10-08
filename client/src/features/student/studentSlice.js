@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = '/api/student/';
+const API_URL = 'https://scholars-path-backend.onrender.com/api/student/';
 
 const createApiThunk = (name, url, method = 'get') => {
   return createAsyncThunk(`student/${name}`, async (data, thunkAPI) => {

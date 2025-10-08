@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = '/api/curriculum/';
+const API_URL = 'https://scholars-path-backend.onrender.com/api/curriculum/';
 
 // --- Helper for API calls ---
 const createApiThunk = (name, url, method = 'get') => {

@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = '/api/teacher/';
-const STUDENT_API_URL = '/api/student/';
+const API_URL = 'https://scholars-path-backend.onrender.com/api/teacher/';
+const STUDENT_API_URL = 'https://scholars-path-backend.onrender.com/api/student/';
 
 export const generateLessonNote = createAsyncThunk('teacher/generateNote', async (noteData, thunkAPI) => {
   try {
