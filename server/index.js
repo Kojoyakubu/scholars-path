@@ -2,6 +2,7 @@ const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const cors = require('cors');
 
 // Route files
 const userRoutes = require('./routes/userRoutes');
