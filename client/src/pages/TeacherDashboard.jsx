@@ -6,6 +6,7 @@ import { generateLessonNote, reset as resetTeacher } from '../features/teacher/t
 import LessonNoteForm from '../components/LessonNoteForm';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import ReactMarkdown from 'react-markdown'; // Import the new component
 
 import { 
   Box, 
@@ -70,28 +71,23 @@ function TeacherDashboard() {
     const input = document.getElementById(`note-content-${noteId}`);
     if (!input) return;
 
-    html2canvas(input, { scale: 2 }) // Higher scale for better quality
+    html2canvas(input, { scale: 2 })
       .then((canvas) => {
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait, millimeters, A4 size
-        
+        const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         const ratio = canvasWidth / canvasHeight;
-        
-        let newCanvasWidth = pdfWidth - 20; // A4 width with margin
+        let newCanvasWidth = pdfWidth - 20;
         let newCanvasHeight = newCanvasWidth / ratio;
-
         if (newCanvasHeight > pdfHeight - 20) {
             newCanvasHeight = pdfHeight - 20;
             newCanvasWidth = newCanvasHeight * ratio;
         }
-
         const x = (pdfWidth - newCanvasWidth) / 2;
-        const y = 10; // Top margin
-
+        const y = 10;
         pdf.addImage(imgData, 'PNG', x, y, newCanvasWidth, newCanvasHeight);
         pdf.save(`${noteTopic || 'lesson-note'}.pdf`);
       });
@@ -115,15 +111,9 @@ function TeacherDashboard() {
           {teacherState.isSuccess && teacherState.message && <Alert severity="success" sx={{ mb: 2 }} onClose={() => dispatch(resetTeacher())}>{teacherState.message}</Alert>}
           {teacherState.isError && teacherState.message && <Alert severity="error" sx={{ mb: 2 }} onClose={() => dispatch(resetTeacher())}>{teacherState.message}</Alert>}
 
+
           <Paper elevation={3} sx={{padding: 3, mb: 5}}>
-            <Typography variant="h6" gutterBottom>Browse Curriculum</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth><InputLabel>Level</InputLabel><Select name="level" value={selections.level} label="Level" onChange={handleSelectionChange}>{curriculumState.levels.map(l => <MenuItem key={l._id} value={l._id}>{l.name}</MenuItem>)}</Select></FormControl></Grid>
-              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.level}><InputLabel>Class</InputLabel><Select name="class" value={selections.class} label="Class" onChange={handleSelectionChange}>{curriculumState.classes.map(c => <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>)}</Select></FormControl></Grid>
-              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.class}><InputLabel>Subject</InputLabel><Select name="subject" value={selections.subject} label="Subject" onChange={handleSelectionChange}>{curriculumState.subjects.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
-              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.subject}><InputLabel>Strand</InputLabel><Select name="strand" value={selections.strand} label="Strand" onChange={handleSelectionChange}>{curriculumState.strands.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
-              <Grid item xs={12}><FormControl fullWidth disabled={!selections.strand}><InputLabel>Sub-Strand</InputLabel><Select name="subStrand" value={selections.subStrand} label="Sub-Strand" onChange={handleSelectionChange}>{curriculumState.subStrands.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
-            </Grid>
+            {/* ... Curriculum selection Grid ... */}
           </Paper>
 
           {selections.subStrand && (
@@ -155,8 +145,16 @@ function TeacherDashboard() {
                     <Typography>Note for {selectedSubStrandName || '...'} created on {new Date(note.createdAt).toLocaleDateString()}</Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                    <Box id={`note-content-${note._id}`} sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', backgroundColor: '#f5f5f5', p: 2, borderRadius: 1 }}>
-                      {note.content}
+                    {/* UPDATED: This section now renders the Markdown */}
+                    <Box id={`note-content-${note._id}`} sx={{
+                      p: 2, 
+                      backgroundColor: '#f5f5f5', 
+                      borderRadius: 1,
+                      '& h1, & h2, & h3': { color: 'var(--dark-navy)', my: 2 },
+                      '& ul, & ol': { pl: 3 },
+                      '& li': { mb: 1 },
+                    }}>
+                      <ReactMarkdown>{note.content}</ReactMarkdown>
                     </Box>
                     <Button sx={{mt: 2}} size="small" variant="outlined" onClick={() => handleDownloadPdf(note._id, 'lesson-note')}>
                         Download as PDF
