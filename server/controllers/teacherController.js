@@ -7,15 +7,24 @@ const Resource = require('../models/resourceModel');
 const NoteView = require('../models/noteViewModel');
 const QuizAttempt = require('../models/quizAttemptModel');
 const SubStrand = require('../models/subStrandModel');
-const aiService = require('../services/aiService'); // Import the new AI service
+const aiService = require('../services/aiService');
 const mongoose = require('mongoose');
+
+// @desc    Get all lesson notes for the logged-in teacher
+const getMyLessonNotes = async (req, res) => {
+  try {
+    const notes = await LessonNote.find({ teacher: req.user._id }).sort({ createdAt: -1 });
+    res.json(notes);
+  } catch (error) {
+    console.error("Get Lesson Notes Error:", error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
 
 // @desc    Generate a lesson note with AI
 const generateLessonNote = async (req, res) => {
   const { subStrandId, objectives, aids, duration } = req.body;
-
   try {
-    // 1. Get context from the database for a better prompt
     const subStrand = await SubStrand.findById(subStrandId).populate({
       path: 'strand',
       populate: {
@@ -31,7 +40,6 @@ const generateLessonNote = async (req, res) => {
       return res.status(404).json({ message: 'Curriculum sub-strand not found.' });
     }
 
-    // 2. Construct a detailed prompt for the AI
     const prompt = `
       Act as an expert curriculum developer in Ghana. Generate a detailed lesson note based on the NaCCA curriculum format.
 
@@ -88,10 +96,8 @@ const generateLessonNote = async (req, res) => {
       - Generate a brief concluding statement for the teacher.
     `;
 
-    // 3. Call the AI service to generate content
     const aiGeneratedContent = await aiService.generateContent(prompt);
 
-    // 4. Save the AI-generated note to the database
     const lessonNote = await LessonNote.create({
       teacher: req.user._id,
       subStrand: subStrandId,
@@ -112,7 +118,6 @@ const generateLessonNote = async (req, res) => {
 // @desc    Generate a learner note with AI
 const generateLearnerNote = async (req, res) => {
   const { subStrandId, topic } = req.body;
-  // This is still a placeholder, can be updated to use aiService later
   const simulatedAIResponse = `## AI Generated Learner Note on ${topic}\nThis is a sample note for students.`;
 
   const learnerNote = await LearnerNote.create({
@@ -180,7 +185,6 @@ const createQuiz = async (req, res) => {
 // @desc    Generate a single question with AI
 const generateAiQuestion = async (req, res) => {
   const { topic, questionType } = req.body;
-  // This is still a placeholder, can be updated to use aiService later
   let simulatedAiJsonResponse;
   if (questionType === 'MCQ') {
     simulatedAiJsonResponse = {
@@ -214,7 +218,6 @@ const uploadResource = async (req, res) => {
 // @desc    Generate a batch of AI questions for a quiz section
 const generateAiQuizSection = async (req, res) => {
     const { topics, questionType, count } = req.body;
-    // This is still a placeholder, can be updated to use aiService later
     let simulatedAiJsonResponse = [];
     for (let i = 0; i < count; i++) {
         simulatedAiJsonResponse.push({
@@ -268,6 +271,7 @@ const getTeacherAnalytics = async (req, res) => {
 };
 
 module.exports = {
+  getMyLessonNotes,
   generateLessonNote,
   generateLearnerNote,
   createQuiz,

@@ -24,6 +24,7 @@ const createTeacherThunk = (name, serviceCall) => {
   });
 };
 
+export const getMyLessonNotes = createTeacherThunk('getMyLessonNotes', teacherService.getMyLessonNotes);
 export const generateLessonNote = createTeacherThunk('generateLessonNote', teacherService.generateLessonNote);
 export const generateLearnerNote = createTeacherThunk('generateLearnerNote', teacherService.generateLearnerNote);
 export const createQuiz = createTeacherThunk('createQuiz', teacherService.createQuiz);
@@ -32,7 +33,6 @@ export const uploadResource = createTeacherThunk('uploadResource', teacherServic
 export const getResources = createTeacherThunk('getResources', teacherService.getResources);
 export const generateAiQuizSection = createTeacherThunk('generateAiQuizSection', teacherService.generateAiQuizSection);
 export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
-
 
 const teacherSlice = createSlice({
   name: 'teacher',
@@ -47,9 +47,12 @@ const teacherSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(getMyLessonNotes.fulfilled, (state, action) => {
+        state.lessonNotes = action.payload;
+      })
       .addCase(generateLessonNote.fulfilled, (state, action) => {
         state.isSuccess = true; 
-        state.lessonNotes.push(action.payload); 
+        state.lessonNotes.unshift(action.payload); // Add new note to the top of the list
         state.message = 'Lesson Note Generated!';
       })
       .addCase(createQuiz.fulfilled, (state, action) => {

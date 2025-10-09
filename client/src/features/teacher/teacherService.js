@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL + '/api/teacher/';
-// The endpoint for getting resources is on the student route
+const API_URL = '/api/teacher/';
 const STUDENT_API_URL = '/api/student/';
 
 const getConfig = (token, isMultipart = false) => ({
@@ -10,6 +9,12 @@ const getConfig = (token, isMultipart = false) => ({
     Authorization: `Bearer ${token}`,
   },
 });
+
+// Get all lesson notes for the logged-in teacher
+const getMyLessonNotes = async (token) => {
+    const response = await axios.get(API_URL + 'lessonnotes', getConfig(token));
+    return response.data;
+};
 
 // Generate a lesson note
 const generateLessonNote = async (noteData, token) => {
@@ -59,8 +64,8 @@ const getTeacherAnalytics = async (token) => {
     return response.data;
 };
 
-
 const teacherService = {
+    getMyLessonNotes,
     generateLessonNote,
     generateLearnerNote,
     createQuiz,
