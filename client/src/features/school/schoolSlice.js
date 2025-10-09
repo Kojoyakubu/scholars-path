@@ -1,26 +1,34 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import schoolService from './schoolService';
 
-const API_URL = 'https://scholars-path-backend.onrender.com/api/school/';
+const initialState = {
+  dashboardData: null,
+  isLoading: false,
+  isError: false,
+  message: '',
+};
 
-export const getSchoolDashboard = createAsyncThunk('school/getDashboard', async (schoolId, thunkAPI) => { // Now accepts schoolId
+export const getSchoolDashboard = createAsyncThunk('school/getDashboard', async (schoolId, thunkAPI) => {
   try {
     const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.get(API_URL + `dashboard/${schoolId}`, config); // Use schoolId in URL
-    return response.data;
-  } catch (error) { /* ... */ }
+    return await schoolService.getSchoolDashboard(schoolId, token);
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
 });
 
 const schoolSlice = createSlice({
   name: 'school',
-  initialState: {
-    dashboardData: null,
-    isLoading: false,
-    isError: false,
-    message: '',
+  initialState,
+  reducers: {
+      reset: (state) => {
+          state.dashboardData = null;
+          state.isLoading = false;
+          state.isError = false;
+          state.message = '';
+      }
   },
-  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(getSchoolDashboard.pending, (state) => {
@@ -38,4 +46,5 @@ const schoolSlice = createSlice({
   },
 });
 
+export const { reset } = schoolSlice.actions;
 export default schoolSlice.reducer;

@@ -3,8 +3,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Subscription = require('../models/subscriptionModel');
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const getSubscriptionStatus = async (userId) => {
+  const subscription = await Subscription.findOne({ user: userId });
+  return !!(subscription && subscription.status === 'active' && subscription.expiresAt > new Date());
+};
+
+const generateToken = (user, isSubscribed) => {
+  return jwt.sign({ 
+    id: user._id, 
+    role: user.role, // For auth middleware
+    isSubscribed,    // For subscription middleware
+  }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -12,6 +21,10 @@ const generateToken = (id) => {
 const registerUser = async (req, res) => {
   const { fullName, email, password, registerAsTeacher } = req.body;
   try {
+    if (!fullName || !email || !password) {
+        return res.status(400).json({ message: 'Please enter all fields' });
+    }
+
     if (await User.findOne({ email })) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -22,6 +35,7 @@ const registerUser = async (req, res) => {
       role: registerAsTeacher ? 'teacher' : 'student',
       status: 'pending',
     });
+
     if (user) {
       res.status(201).json({ message: 'Registration successful! Your account is now pending admin approval.' });
     } else {
@@ -40,32 +54,32 @@ const loginUser = async (req, res) => {
     if (user.status !== 'approved') {
       return res.status(401).json({ message: `Your account is ${user.status}. Admin approval required.` });
     }
-    const subscription = await Subscription.findOne({ user: user._id });
-    const isSubscribed = subscription && subscription.status === 'active' && subscription.expiresAt > new Date();
+    const isSubscribed = await getSubscriptionStatus(user._id);
     res.json({
-      _id: user.id, fullName: user.fullName, email: user.email,
-      role: user.role, school: user.school, isSubscribed,
-      token: generateToken(user._id),
+      _id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      school: user.school,
+      isSubscribed,
+      token: generateToken(user, isSubscribed),
     });
   } else {
     res.status(401).json({ message: 'Invalid email or password' });
   }
 };
 
-// --- CORRECTED FUNCTION ---
 const getUserProfile = async (req, res) => {
-  const user = await User.findById(req.user.id); // Get fresh user data
-
+  const user = await User.findById(req.user.id);
   if (user) {
-    const subscription = await Subscription.findOne({ user: user._id });
-    const isSubscribed = subscription && subscription.status === 'active' && subscription.expiresAt > new Date();
+    const isSubscribed = await getSubscriptionStatus(user._id);
     res.json({
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       role: user.role,
       school: user.school,
-      isSubscribed, // Send the fresh subscription status
+      isSubscribed,
     });
   } else {
     res.status(404).json({ message: 'User not found' });

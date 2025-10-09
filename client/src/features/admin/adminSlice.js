@@ -1,115 +1,42 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import adminService from './adminService';
 
-const API_URL = 'https://scholars-path-backend.onrender.com/api/admin/';
+const initialState = {
+  users: [],
+  pages: 1, // For pagination
+  page: 1,  // For pagination
+  stats: {},
+  schools: [],
+  isLoading: false,
+  isError: false,
+  message: '',
+};
 
-export const getUsers = createAsyncThunk('admin/getUsers', async (_, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.get(API_URL + 'users', config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
+// Generic thunk creator for admin actions
+const createAdminThunk = (name, serviceCall) => {
+  return createAsyncThunk(`admin/${name}`, async (arg, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.user.token;
+      return await serviceCall(arg, token);
+    } catch (error) {
+      const message = (error.response?.data?.message) || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  });
+};
 
-export const approveTeacher = createAsyncThunk('admin/approveTeacher', async (userId, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.put(API_URL + `users/${userId}/approve`, {}, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
+export const getUsers = createAdminThunk('getUsers', adminService.getUsers);
+export const approveUser = createAdminThunk('approveUser', adminService.approveUser);
+export const deleteUser = createAdminThunk('deleteUser', adminService.deleteUser);
+export const getStats = createAdminThunk('getStats', adminService.getStats);
+export const getSchools = createAdminThunk('getSchools', adminService.getSchools);
+export const createSchool = createAdminThunk('createSchool', adminService.createSchool);
+export const deleteSchool = createAdminThunk('deleteSchool', adminService.deleteSchool);
+export const assignUserToSchool = createAdminThunk('assignUserToSchool', adminService.assignUserToSchool);
 
-export const deleteUser = createAsyncThunk('admin/deleteUser', async (userId, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.delete(API_URL + `users/${userId}`, config);
-    return userId;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const getStats = createAsyncThunk('admin/getStats', async (_, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.get(API_URL + 'stats', config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const getSchools = createAsyncThunk('admin/getSchools', async (_, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.get(API_URL + 'schools', config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const assignUserToSchool = createAsyncThunk('admin/assignUser', async (data, thunkAPI) => {
-  try {
-    const { userId, schoolId } = data;
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.put(API_URL + `users/${userId}/assign-school`, { schoolId }, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const createSchool = createAsyncThunk('admin/createSchool', async (schoolData, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.post(API_URL + 'schools', schoolData, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const deleteSchool = createAsyncThunk('admin/deleteSchool', async (schoolId, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.delete(API_URL + `schools/${schoolId}`, config);
-    return schoolId;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-const adminSlice = createSlice({
+export const adminSlice = createSlice({
   name: 'admin',
-  initialState: {
-    users: [],
-    stats: {},
-    schools: [],
-    isLoading: false,
-    isError: false,
-    message: '',
-  },
+  initialState,
   reducers: {
     reset: (state) => {
       state.isLoading = false;
@@ -119,41 +46,66 @@ const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // getUsers with pagination
       .addCase(getUsers.pending, (state) => { state.isLoading = true; })
-      .addCase(getUsers.fulfilled, (state, action) => { state.isLoading = false; state.users = action.payload; })
-      .addCase(getUsers.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
-      .addCase(approveTeacher.pending, (state) => { state.isLoading = true; })
-      .addCase(approveTeacher.fulfilled, (state, action) => {
+      .addCase(getUsers.fulfilled, (state, action) => {
         state.isLoading = false;
+        state.users = action.payload.users;
+        state.page = action.payload.page;
+        state.pages = action.payload.pages;
+      })
+      .addCase(getUsers.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      // approveUser (renamed from approveTeacher for clarity)
+      .addCase(approveUser.fulfilled, (state, action) => {
         const index = state.users.findIndex(user => user._id === action.payload._id);
         if (index !== -1) { state.users[index] = action.payload; }
       })
-      .addCase(approveTeacher.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
-      .addCase(deleteUser.pending, (state) => { state.isLoading = true; })
+      // deleteUser
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.users = state.users.filter((user) => user._id !== action.payload);
       })
-      .addCase(deleteUser.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
-      .addCase(getStats.pending, (state) => { state.isLoading = true; })
-      .addCase(getStats.fulfilled, (state, action) => { state.isLoading = false; state.stats = action.payload; })
-      .addCase(getStats.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
-      .addCase(getSchools.pending, (state) => { state.isLoading = true; })
-      .addCase(getSchools.fulfilled, (state, action) => { state.isLoading = false; state.schools = action.payload; })
-      .addCase(getSchools.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
-      .addCase(assignUserToSchool.pending, (state) => { state.isLoading = true; })
+      // getStats
+      .addCase(getStats.fulfilled, (state, action) => {
+        state.stats = action.payload;
+      })
+      // getSchools
+      .addCase(getSchools.fulfilled, (state, action) => {
+        state.schools = action.payload;
+      })
+      // createSchool
+      .addCase(createSchool.fulfilled, (state, action) => {
+        state.schools.push(action.payload.school);
+      })
+      // deleteSchool
+      .addCase(deleteSchool.fulfilled, (state, action) => {
+        state.schools = state.schools.filter((school) => school._id !== action.payload);
+      })
+      // assignUserToSchool
       .addCase(assignUserToSchool.fulfilled, (state, action) => {
-        state.isLoading = false;
         const index = state.users.findIndex(user => user._id === action.payload._id);
         if (index !== -1) { state.users[index] = action.payload; }
       })
-      .addCase(assignUserToSchool.rejected, (state, action) => { state.isLoading = false; state.isError = true; state.message = action.payload; })
-      .addCase(createSchool.fulfilled, (state, action) => {
-        state.schools.push(action.payload);
-      })
-      .addCase(deleteSchool.fulfilled, (state, action) => {
-        state.schools = state.schools.filter((school) => school._id !== action.payload);
-      });
+      // Generic pending/rejected for other actions to reduce boilerplate
+      .addMatcher(
+        (action) => action.type.startsWith('admin/') && action.type.endsWith('/pending'),
+        (state) => { state.isLoading = true; }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('admin/') && action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.isError = true;
+          state.message = action.payload;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('admin/') && action.type.endsWith('/fulfilled'),
+        (state) => { state.isLoading = false; }
+      );
   },
 });
 

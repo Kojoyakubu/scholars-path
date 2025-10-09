@@ -1,18 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import paymentService from './paymentService';
 
-const API_URL = 'https://scholars-path-backend.onrender.com/api/payments/';
+const initialState = {
+  authorization_url: null, // To hold the redirect URL
+  isLoading: false,
+  isError: false,
+  message: '',
+};
 
 export const initializePayment = createAsyncThunk('payment/initialize', async (paymentData, thunkAPI) => {
   try {
     const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.post(API_URL + 'initialize', paymentData, config);
-    // If successful, redirect the user to the Paystack checkout page
-    if (response.data.status) {
-      window.location.href = response.data.data.authorization_url;
-    }
-    return response.data;
+    // The service now returns the data, not a redirect
+    return await paymentService.initializePayment(paymentData, token);
   } catch (error) {
     const message = (error.response?.data?.message) || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
@@ -21,19 +21,26 @@ export const initializePayment = createAsyncThunk('payment/initialize', async (p
 
 const paymentSlice = createSlice({
   name: 'payment',
-  initialState: {
-    isLoading: false,
-    isError: false,
-    message: '',
+  initialState,
+  reducers: {
+    resetPayment: (state) => {
+        state.authorization_url = null;
+        state.isLoading = false;
+        state.isError = false;
+        state.message = '';
+    }
   },
-  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(initializePayment.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(initializePayment.fulfilled, (state) => {
+      .addCase(initializePayment.fulfilled, (state, action) => {
         state.isLoading = false;
+        // Store the URL in the state; the UI component will handle the redirect
+        if (action.payload.status) {
+            state.authorization_url = action.payload.data.authorization_url;
+        }
       })
       .addCase(initializePayment.rejected, (state, action) => {
         state.isLoading = false;
@@ -43,4 +50,5 @@ const paymentSlice = createSlice({
   },
 });
 
+export const { resetPayment } = paymentSlice.actions;
 export default paymentSlice.reducer;

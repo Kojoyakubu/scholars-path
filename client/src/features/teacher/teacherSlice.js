@@ -1,117 +1,42 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import teacherService from './teacherService';
 
-const API_URL = 'https://scholars-path-backend.onrender.com/api/teacher/';
-const STUDENT_API_URL = 'https://scholars-path-backend.onrender.com/api/student/';
+const initialState = {
+  lessonNotes: [],
+  quizzes: [],
+  resources: [],
+  analytics: {},
+  isLoading: false,
+  isError: false,
+  isSuccess: false,
+  message: '',
+};
 
-export const generateLessonNote = createAsyncThunk('teacher/generateNote', async (noteData, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.post(API_URL + 'generate-note', noteData, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
+const createTeacherThunk = (name, serviceCall) => {
+  return createAsyncThunk(`teacher/${name}`, async (arg, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.user.token;
+      return await serviceCall(arg, token);
+    } catch (error) {
+      const message = (error.response?.data?.message) || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  });
+};
 
-export const generateLearnerNote = createAsyncThunk('teacher/generateLearnerNote', async (noteData, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.post(API_URL + 'generate-learner-note', noteData, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
+export const generateLessonNote = createTeacherThunk('generateLessonNote', teacherService.generateLessonNote);
+export const generateLearnerNote = createTeacherThunk('generateLearnerNote', teacherService.generateLearnerNote);
+export const createQuiz = createTeacherThunk('createQuiz', teacherService.createQuiz);
+export const generateAiQuestion = createTeacherThunk('generateAiQuestion', teacherService.generateAiQuestion);
+export const uploadResource = createTeacherThunk('uploadResource', teacherService.uploadResource);
+export const getResources = createTeacherThunk('getResources', teacherService.getResources);
+export const generateAiQuizSection = createTeacherThunk('generateAiQuizSection', teacherService.generateAiQuizSection);
+export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
 
-export const createQuiz = createAsyncThunk('teacher/createQuiz', async (quizData, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.post(API_URL + 'create-quiz', quizData, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const generateAiQuestion = createAsyncThunk('teacher/generateAiQuestion', async (questionData, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.post(API_URL + 'generate-ai-question', questionData, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const uploadResource = createAsyncThunk('teacher/uploadResource', async (resourceData, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` } };
-    const response = await axios.post(API_URL + 'upload-resource', resourceData, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const getResources = createAsyncThunk('teacher/getResources', async (subStrandId, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.get(STUDENT_API_URL + `resources/${subStrandId}`, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const generateAiQuizSection = createAsyncThunk('teacher/generateAiQuizSection', async (wizardData, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.post(API_URL + 'generate-ai-quiz-section', wizardData, config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const getTeacherAnalytics = createAsyncThunk('teacher/getAnalytics', async (_, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const response = await axios.get(API_URL + 'analytics', config);
-    return response.data;
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
 
 const teacherSlice = createSlice({
   name: 'teacher',
-  initialState: {
-    lessonNotes: [],
-    quizzes: [],
-    resources: [],
-    analytics: {},
-    isLoading: false,
-    isError: false,
-    isSuccess: false,
-    message: '',
-  },
+  initialState,
   reducers: {
     reset: (state) => {
       state.isLoading = false;
@@ -122,58 +47,47 @@ const teacherSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(generateLessonNote.pending, (state) => { state.isLoading = true; })
       .addCase(generateLessonNote.fulfilled, (state, action) => {
-        state.isLoading = false; state.isSuccess = true; state.lessonNotes.push(action.payload); state.message = 'Lesson Note Generated!';
+        state.isSuccess = true; 
+        state.lessonNotes.push(action.payload); 
+        state.message = 'Lesson Note Generated!';
       })
-      .addCase(generateLessonNote.rejected, (state, action) => {
-        state.isLoading = false; state.isError = true; state.message = action.payload;
-      })
-      .addCase(generateLearnerNote.pending, (state) => { state.isLoading = true; })
-      .addCase(generateLearnerNote.fulfilled, (state, action) => {
-        state.isLoading = false; state.isSuccess = true; state.message = 'Learner Note Generated!';
-      })
-      .addCase(generateLearnerNote.rejected, (state, action) => {
-        state.isLoading = false; state.isError = true; state.message = action.payload;
-      })
-      .addCase(createQuiz.pending, (state) => { state.isLoading = true; state.isSuccess = false; })
       .addCase(createQuiz.fulfilled, (state, action) => {
-        state.isLoading = false; state.isSuccess = true; state.quizzes.push(action.payload.quiz); state.message = action.payload.message;
+        state.isSuccess = true; 
+        state.quizzes.push(action.payload.quiz); 
+        state.message = action.payload.message;
       })
-      .addCase(createQuiz.rejected, (state, action) => {
-        state.isLoading = false; state.isError = true; state.message = action.payload;
-      })
-      .addCase(generateAiQuestion.pending, (state) => { state.isLoading = true; })
-      .addCase(generateAiQuestion.fulfilled, (state) => { state.isLoading = false; })
-      .addCase(generateAiQuestion.rejected, (state, action) => {
-        state.isLoading = false; state.isError = true; state.message = action.payload;
-      })
-      .addCase(uploadResource.pending, (state) => { state.isLoading = true; })
       .addCase(uploadResource.fulfilled, (state, action) => {
-        state.isLoading = false; state.isSuccess = true; state.resources.push(action.payload); state.message = 'Resource Uploaded!';
+        state.isSuccess = true; 
+        state.resources.push(action.payload); 
+        state.message = 'Resource Uploaded!';
       })
-      .addCase(uploadResource.rejected, (state, action) => {
-        state.isLoading = false; state.isError = true; state.message = action.payload;
-      })
-      .addCase(getResources.pending, (state) => { state.isLoading = true; })
       .addCase(getResources.fulfilled, (state, action) => {
-        state.isLoading = false; state.resources = action.payload;
+        state.resources = action.payload;
       })
-      .addCase(getResources.rejected, (state, action) => {
-        state.isLoading = false; state.isError = true; state.message = action.payload;
-      })
-      .addCase(generateAiQuizSection.pending, (state) => { state.isLoading = true; })
-      .addCase(generateAiQuizSection.fulfilled, (state) => { state.isLoading = false; })
-      .addCase(generateAiQuizSection.rejected, (state, action) => {
-        state.isLoading = false; state.isError = true; state.message = action.payload;
-      })
-      .addCase(getTeacherAnalytics.pending, (state) => { state.isLoading = true; })
       .addCase(getTeacherAnalytics.fulfilled, (state, action) => {
-        state.isLoading = false; state.analytics = action.payload;
+        state.analytics = action.payload;
       })
-      .addCase(getTeacherAnalytics.rejected, (state, action) => {
-        state.isLoading = false; state.isError = true; state.message = action.payload;
-      });
+       .addMatcher(
+        (action) => action.type.startsWith('teacher/') && action.type.endsWith('/pending'),
+        (state) => { 
+          state.isLoading = true;
+          state.isSuccess = false;
+          state.isError = false;
+         }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('teacher/') && action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.isError = true;
+          state.message = action.payload;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('teacher/') && action.type.endsWith('/fulfilled'),
+        (state) => { state.isLoading = false; }
+      );
   },
 });
 

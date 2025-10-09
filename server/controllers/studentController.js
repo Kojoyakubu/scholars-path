@@ -43,36 +43,55 @@ const getResources = async (req, res) => {
 const getQuizDetails = async (req, res) => {
   try {
     const quiz = await Quiz.findOne({ _id: req.params.id, school: req.user.school });
-    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
-    const questions = await Question.find({ quiz: quiz._id });
-    const fullQuestionsData = [];
-    for (const question of questions) {
-      const options = await Option.find({ question: question._id }).select('-isCorrect');
-      fullQuestionsData.push({
-        _id: question._id, text: question.text, questionType: question.questionType,
-        section: question.section, options: options,
-      });
+
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
     }
-    res.json({ quiz, questions: fullQuestionsData });
-  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
+
+    const questions = await Question.find({ quiz: quiz._id })
+      .populate({
+        path: 'options',
+        model: 'Option',
+        select: '-isCorrect' // Don't send the answer to the student beforehand
+      });
+      
+    res.json({ quiz, questions });
+  } catch (error) {
+    console.error('Get Quiz Details Error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
 };
 
 const submitQuiz = async (req, res) => {
   const { answers } = req.body;
-  if (!answers || answers.length === 0) return res.status(400).json({ message: 'No answers submitted' });
+  if (!answers || !Array.isArray(answers) || answers.length === 0) {
+    return res.status(400).json({ message: 'No answers submitted' });
+  }
   try {
-    let score = 0;
     const questionIds = answers.map(a => a.questionId);
-    const correctOptions = await Option.find({ question: { $in: questionIds }, isCorrect: true });
-    answers.forEach(studentAnswer => {
-      if (correctOptions.some(co => co.question.toString() === studentAnswer.questionId && co._id.toString() === studentAnswer.selectedOptionId)) {
-        score++;
-      }
+    const selectedOptionIds = answers.map(a => a.selectedOptionId);
+
+    const score = await Option.countDocuments({
+      _id: { $in: selectedOptionIds },
+      question: { $in: questionIds },
+      isCorrect: true
     });
-    const attempt = await QuizAttempt.create({ quiz: req.params.id, student: req.user._id, school: req.user.school, score, totalQuestions: questionIds.length, answers });
+
+    const attempt = await QuizAttempt.create({
+      quiz: req.params.id,
+      student: req.user._id,
+      school: req.user.school,
+      score,
+      totalQuestions: questionIds.length,
+      answers,
+    });
+    
     await checkAndAwardQuizBadges(req.user._id, attempt);
     res.status(200).json({ message: 'Quiz submitted successfully', score: attempt.score, totalQuestions: attempt.totalQuestions });
-  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
+  } catch (error) {
+    console.error('Submit Quiz Error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
 };
 
 const getMyBadges = async (req, res) => {
@@ -86,9 +105,16 @@ const logNoteView = async (req, res) => {
   try {
     const note = await LearnerNote.findById(req.params.id);
     if (!note) return res.status(404).json({ message: 'Note not found' });
+
     const existingView = await NoteView.findOne({ note: note._id, student: req.user._id }).sort({ createdAt: -1 });
-    if (!existingView || (new Date() - existingView.createdAt > 60000)) {
-        await NoteView.create({ note: note._id, student: req.user._id, teacher: note.author });
+    
+    if (!existingView || (new Date() - existingView.createdAt > 60000)) { // 1 minute cooldown
+        await NoteView.create({ 
+          note: note._id, 
+          student: req.user._id, 
+          teacher: note.author,
+          school: note.school, // Add school for analytics
+        });
     }
     res.status(200).json({ message: 'View logged' });
   } catch (error) { res.status(500).json({ message: 'Server Error' }); }

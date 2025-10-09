@@ -3,18 +3,17 @@ const QuizAttempt = require('../models/quizAttemptModel');
 
 const getSchoolDashboard = async (req, res) => {
   try {
-    const { schoolId } = req.params; // Get ID from the URL
+    const { schoolId } = req.params;
 
-    // SECURITY CHECK:
-    // Allow if the user is a top-level admin, OR
-    // if the user is a school_admin for THIS specific school.
-    if (req.user.role !== 'admin' && req.user.school.toString() !== schoolId) {
+    if (req.user.role !== 'admin' && (!req.user.school || req.user.school.toString() !== schoolId)) {
       return res.status(403).json({ message: 'Not authorized to view this school dashboard.' });
     }
 
-    const teachers = await User.find({ school: schoolId, role: 'teacher' });
-    const students = await User.find({ school: schoolId, role: 'student' });
-    const quizAttempts = await QuizAttempt.find({ school: schoolId });
+    const [teachers, students, quizAttempts] = await Promise.all([
+        User.find({ school: schoolId, role: 'teacher' }).select('-password'),
+        User.find({ school: schoolId, role: 'student' }).select('-password'),
+        QuizAttempt.find({ school: schoolId }),
+    ]);
 
     res.json({
       teachers,

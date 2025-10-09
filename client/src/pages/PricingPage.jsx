@@ -1,51 +1,38 @@
+import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { initializePayment } from '../features/payment/paymentSlice';
+import { initializePayment, resetPayment } from '../features/payment/paymentSlice';
+import { plans } from '../constants/pricingPlans'; // Import plans
 import { motion } from 'framer-motion';
 import { Box, Typography, Container, Button, Grid, Card, CardContent, CardActions } from '@mui/material';
-
-const plans = [
-  // ADD THIS NEW PLAN
-  { 
-    name: 'Individual Learner', 
-    plan: 'learner_monthly', 
-    amount: 5000, // 50 GHC in pesewas
-    price: 'GH₵50', 
-    per: '/month', 
-    description: 'Full access to all general learning content and quizzes created by our team.' 
-  },
-  { 
-    name: 'Teacher Pro', 
-    plan: 'teacher_monthly', 
-    amount: 5000, // Assuming 50 GHC for teachers too
-    price: 'GH₵50', 
-    per: '/month', 
-    description: 'Access to all teacher tools, including AI generators.' 
-  },
-  { 
-    name: 'School Premium', 
-    plan: 'school_monthly', 
-    amount: 25000, 
-    price: 'GH₵250', 
-    per: '/month', 
-    description: 'Full access for one school and all its teachers.' 
-  },
-];
 
 function PricingPage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { isLoading } = useSelector((state) => state.payment);
+  const { isLoading, authorization_url } = useSelector((state) => state.payment);
 
   const handleSubscribe = (plan) => {
-    if (!user) return alert('Please log in to subscribe.');
+    if (!user) {
+      // Consider using a proper notification/modal instead of alert
+      alert('Please log in to subscribe.');
+      return;
+    }
     
     const paymentData = {
       email: user.email,
-      amount: plan.amount, // Amount in pesewas
+      amount: plan.amount,
       plan: plan.plan,
     };
     dispatch(initializePayment(paymentData));
   };
+
+  useEffect(() => {
+    // This effect listens for the authorization_url from the Redux state
+    if (authorization_url) {
+      window.location.href = authorization_url;
+      // Reset the payment state after redirecting
+      dispatch(resetPayment());
+    }
+  }, [authorization_url, dispatch]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -58,9 +45,9 @@ function PricingPage() {
           {plans.map((plan) => (
             <Grid item key={plan.name} xs={12} sm={6} md={4}>
               <Card elevation={3}>
-                <CardContent>
+                <CardContent sx={{ minHeight: 150 }}>
                   <Typography variant="h5" component="div">{plan.name}</Typography>
-                  <Typography variant="h4" sx={{ my: 2 }}>GH₵{plan.amount / 100}</Typography>
+                  <Typography variant="h4" sx={{ my: 2 }}>GH₵{plan.amount / 100} <span style={{fontSize: '1rem'}}>/month</span></Typography>
                   <Typography color="text.secondary">{plan.description}</Typography>
                 </CardContent>
                 <CardActions>

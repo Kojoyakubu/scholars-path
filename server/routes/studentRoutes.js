@@ -9,17 +9,17 @@ const {
   getMyBadges,
   logNoteView,
 } = require('../controllers/studentController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 const { checkSubscription } = require('../middleware/subscriptionMiddleware');
 
-router.use(protect, checkSubscription);
+router.use(protect, authorize('student', 'admin'), checkSubscription);
 
-router.get('/notes/:subStrandId', protect, getLearnerNotes);
-router.get('/quizzes/:subStrandId', protect, getQuizzes);
-router.get('/resources/:subStrandId', protect, getResources);
-router.get('/quiz/:id', protect, getQuizDetails);
-router.post('/quiz/:id/submit', protect, submitQuiz);
-router.get('/my-badges', protect, getMyBadges);
-router.post('/notes/:id/view', protect, logNoteView);
+router.get('/notes/:subStrandId', getLearnerNotes);
+router.get('/quizzes/:subStrandId', getQuizzes);
+router.get('/resources/:subStrandId', getResources);
+router.get('/quiz/:id', getQuizDetails);
+router.post('/quiz/:id/submit', submitQuiz);
+router.get('/my-badges', getMyBadges);
+router.post('/notes/:id/view', logNoteView);
 
 module.exports = router;

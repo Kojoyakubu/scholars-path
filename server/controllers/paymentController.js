@@ -1,11 +1,8 @@
 const axios = require('axios');
 const Subscription = require('../models/subscriptionModel');
 
-// @desc    Initialize a payment transaction
-// @route   POST /api/payments/initialize
 const initializePayment = async (req, res) => {
-  const { email, amount, plan } = req.body; // Amount should be in the smallest currency unit (e.g., pesewas)
-
+  const { email, amount, plan } = req.body;
   try {
     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
       email,
@@ -22,12 +19,11 @@ const initializePayment = async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
+    console.error('Paystack Initialization Error:', error.response ? error.response.data : error.message);
     res.status(500).json({ message: 'Payment initialization failed' });
   }
 };
 
-// @desc    Verify a payment transaction
-// @route   GET /api/payments/verify/:reference
 const verifyPayment = async (req, res) => {
   const { reference } = req.params;
 
@@ -43,9 +39,10 @@ const verifyPayment = async (req, res) => {
     if (status === true && data.status === 'success') {
       const { userId, plan } = data.metadata;
       
-      // Payment is successful, create or update the user's subscription
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 30); // Example: 30-day subscription
+      // Example: make this dynamic based on plan
+      const subscriptionDays = plan === 'yearly' ? 365 : 30;
+      expiresAt.setDate(expiresAt.getDate() + subscriptionDays);
 
       await Subscription.findOneAndUpdate(
         { user: userId },
@@ -56,15 +53,15 @@ const verifyPayment = async (req, res) => {
           paystackReference: reference,
           expiresAt: expiresAt,
         },
-        { upsert: true, new: true } // Create if it doesn't exist, update if it does
+        { upsert: true, new: true }
       );
 
-      // Redirect user to a success page on the frontend
-      res.redirect('http://localhost:5173/payment-success');
+      res.redirect(`${process.env.FRONTEND_URL}/payment-success`);
     } else {
-      res.redirect('http://localhost:5173/payment-failed');
+      res.redirect(`${process.env.FRONTEND_URL}/payment-failed`);
     }
   } catch (error) {
+    console.error('Paystack Verification Error:', error.response ? error.response.data : error.message);
     res.status(500).json({ message: 'Payment verification failed' });
   }
 };

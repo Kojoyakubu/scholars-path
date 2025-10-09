@@ -1,13 +1,19 @@
 const User = require('../models/userModel');
 const QuizAttempt = require('../models/quizAttemptModel');
 const School = require('../models/schoolModel');
+const mongoose = require('mongoose');
 
-// @desc    Get all users
-// @route   GET /api/admin/users
-// @access  Private/Admin
 const getUsers = async (req, res) => {
-  const users = await User.find({});
-  res.json(users);
+  const pageSize = 10;
+  const page = Number(req.query.pageNumber) || 1;
+
+  const count = await User.countDocuments({});
+  const users = await User.find({})
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .select('-password');
+
+  res.json({ users, page, pages: Math.ceil(count / pageSize) });
 };
 
 const approveUser = async (req, res) => {
@@ -15,7 +21,7 @@ const approveUser = async (req, res) => {
     const user = await User.findById(req.params.id);
 
     if (user) {
-      user.status = 'approved'; // We only change the status now
+      user.status = 'approved';
       const updatedUser = await user.save();
       res.json(updatedUser);
     } else {
@@ -26,9 +32,6 @@ const approveUser = async (req, res) => {
   }
 };
 
-// @desc    Delete a user
-// @route   DELETE /api/admin/users/:id
-// @access  Private/Admin
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -46,15 +49,13 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// @desc    Get usage statistics
-// @route   GET /api/admin/stats
-// @access  Private/Admin
 const getUsageStats = async (req, res) => {
   try {
-    const studentCount = await User.countDocuments({ role: 'student' });
-    const teacherCount = await User.countDocuments({ role: 'teacher' });
-    const quizAttemptsCount = await QuizAttempt.countDocuments({});
-
+    const [studentCount, teacherCount, quizAttemptsCount] = await Promise.all([
+      User.countDocuments({ role: 'student' }),
+      User.countDocuments({ role: 'teacher' }),
+      QuizAttempt.countDocuments({}),
+    ]);
     res.json({
       students: studentCount,
       teachers: teacherCount,
@@ -65,39 +66,38 @@ const getUsageStats = async (req, res) => {
   }
 };
 
-// @desc    Create a new school
-// @route   POST /api/admin/schools
-// @access  Private/Admin
 const createSchool = async (req, res) => {
-  const { name, schoolAdminEmail } = req.body; // We now expect an email for the admin
-
+  const { name, schoolAdminEmail } = req.body;
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    // Check if school already exists
-    if (await School.findOne({ name })) {
-      return res.status(400).json({ message: 'A school with this name already exists' });
+    const schoolExists = await School.findOne({ name }).session(session);
+    if (schoolExists) {
+      throw new Error('A school with this name already exists');
     }
 
-    // Find the user who will become the school admin
-    const schoolAdminUser = await User.findOne({ email: schoolAdminEmail });
+    const schoolAdminUser = await User.findOne({ email: schoolAdminEmail }).session(session);
     if (!schoolAdminUser) {
-      return res.status(404).json({ message: `User with email ${schoolAdminEmail} not found.` });
+      throw new Error(`User with email ${schoolAdminEmail} not found.`);
     }
 
-    // Create the school
-    const school = await School.create({
+    const [school] = await School.create([{
       name,
-      admin: schoolAdminUser._id, // Link the school to its new admin
-    });
+      admin: schoolAdminUser._id,
+    }], { session });
 
-    // Update the user's role and assign them to the new school
     schoolAdminUser.role = 'school_admin';
     schoolAdminUser.school = school._id;
-    await schoolAdminUser.save();
+    await schoolAdminUser.save({ session });
 
+    await session.commitTransaction();
     res.status(201).json({ school, message: `${schoolAdminUser.fullName} is now the admin for ${name}.` });
 
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    await session.abortTransaction();
+    res.status(400).json({ message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -130,8 +130,6 @@ const deleteSchool = async (req, res) => {
   try {
     const school = await School.findById(req.params.id);
     if (school) {
-      // Future enhancement: You might want to decide what happens to users/content
-      // linked to this school before deleting. For now, we'll just remove the school.
       await school.deleteOne();
       res.json({ message: 'School removed' });
     } else {

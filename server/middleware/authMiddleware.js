@@ -11,8 +11,10 @@ const protect = async (req, res, next) => {
       req.user = await User.findById(decoded.id).select('-password');
       next();
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Not authorized, token expired' });
+      }
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }
 
@@ -21,26 +23,14 @@ const protect = async (req, res, next) => {
   }
 };
 
-const admin = (req, res, next) => {
-  // This middleware runs *after* 'protect', so req.user will exist.
-  if (req.user && req.user.role === 'admin') {
-    next(); // User is an admin, proceed to the next function (the controller).
-  } else {
-    res.status(401).json({ message: 'Not authorized as an admin' });
-  }
-};
-
-const teacher = (req, res, next) => {
-  // Admins can always create content (for the 'individual learner' model)
-  if (req.user && req.user.role === 'admin') {
-    return next();
-  }
-  // Teachers can only create content IF they are assigned to a school
-  if (req.user && req.user.role === 'teacher' && req.user.school) {
+// New scalable role authorization middleware
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: `User role '${req.user.role}' is not authorized to access this route` });
+    }
     next();
-  } else {
-    res.status(401).json({ message: 'Not authorized: Teacher must be assigned to a school to create content.' });
-  }
+  };
 };
 
-module.exports = { protect, admin, teacher };
+module.exports = { protect, authorize };

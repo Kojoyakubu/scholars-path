@@ -4,7 +4,37 @@ const Subject = require('../models/subjectModel');
 const Strand = require('../models/strandModel');
 const SubStrand = require('../models/subStrandModel');
 
-// Helper function for creating items
+// --- NEW FUNCTIONS FOR ON-DEMAND FETCHING ---
+const getClassesByLevel = async (req, res) => {
+  try {
+    const classes = await Class.find({ level: req.params.levelId });
+    res.json(classes);
+  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
+};
+
+const getSubjectsByClass = async (req, res) => {
+  try {
+    const subjects = await Subject.find({ class: req.params.classId });
+    res.json(subjects);
+  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
+};
+
+const getStrandsBySubject = async (req, res) => {
+  try {
+    const strands = await Strand.find({ subject: req.params.subjectId });
+    res.json(strands);
+  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
+};
+
+const getSubStrandsByStrand = async (req, res) => {
+  try {
+    const subStrands = await SubStrand.find({ strand: req.params.strandId });
+    res.json(subStrands);
+  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
+};
+
+
+// --- EXISTING HELPER FUNCTIONS ---
 const createItem = (Model) => async (req, res) => {
   try {
     const item = await Model.create(req.body);
@@ -12,7 +42,6 @@ const createItem = (Model) => async (req, res) => {
   } catch (error) { res.status(400).json({ message: error.message }); }
 };
 
-// Helper function for getting items with population
 const getItems = (Model, populateOptions) => async (req, res) => {
   try {
     let query = Model.find({});
@@ -24,7 +53,6 @@ const getItems = (Model, populateOptions) => async (req, res) => {
   } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
-// Helper function for update/delete
 const createCrudHandlers = (Model, modelName) => {
   const updateItem = async (req, res) => {
     try {
@@ -56,6 +84,13 @@ const strandHandlers = createCrudHandlers(Strand, 'Strand');
 const subStrandHandlers = createCrudHandlers(SubStrand, 'SubStrand');
 
 module.exports = { 
+  // New exports
+  getClassesByLevel,
+  getSubjectsByClass,
+  getStrandsBySubject,
+  getSubStrandsByStrand,
+
+  // Existing exports
   createLevel: createItem(Level),
   getLevels: getItems(Level),
   updateLevel: levelHandlers.updateItem,

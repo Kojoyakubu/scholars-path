@@ -1,3 +1,4 @@
+// server/models/quizAttemptModel.js
 const mongoose = require('mongoose');
 
 const quizAttemptSchema = new mongoose.Schema({
@@ -5,11 +6,13 @@ const quizAttemptSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'Quiz',
+    index: true, // ADDED: Index
   },
   student: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User',
+    index: true, // ADDED: Index
   },
   score: {
     type: Number,
@@ -22,7 +25,7 @@ const quizAttemptSchema = new mongoose.Schema({
   school: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',
-    default: null,
+    index: true, // ADDED: Index
   },
   answers: [
     {
@@ -30,7 +33,6 @@ const quizAttemptSchema = new mongoose.Schema({
       selectedOptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Option' },
     }
   ]
-  
 }, { timestamps: true });
 
 module.exports = mongoose.model('QuizAttempt', quizAttemptSchema);
