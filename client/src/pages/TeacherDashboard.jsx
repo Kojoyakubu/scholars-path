@@ -5,7 +5,7 @@ import { fetchItems, fetchChildren, reset as resetCurriculum } from '../features
 import { generateLessonNote, reset as resetTeacher } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas'; // Still needed for the new method to work
+import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 
 import { 
@@ -24,16 +24,25 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
   const { levels, classes, subjects, strands, subStrands } = useSelector((state) => state.curriculum);
   const { isSuccess, isError, isLoading, message, lessonNotes } = useSelector((state) => state.teacher);
   
   const [selections, setSelections] = useState({ level: '', class: '', subject: '', strand: '', subStrand: '' });
   const [isNoteModalOpen, setNoteModalOpen] = useState(false);
+  const [isPdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfData, setPdfData] = useState({ teacherName: '', schoolName: '' });
+  const [noteToDownload, setNoteToDownload] = useState(null);
 
   useEffect(() => {
     dispatch(fetchItems('levels'));
@@ -66,27 +75,41 @@ function TeacherDashboard() {
     dispatch(generateLessonNote(noteData));
   };
   
-  // --- UPDATED PDF FUNCTION ---
-  const handleDownloadPdf = (noteId, noteTopic) => {
-    const input = document.getElementById(`note-content-${noteId}`);
+  const openPdfModal = (note) => {
+    setNoteToDownload(note);
+    setPdfData({
+        teacherName: user?.fullName || '',
+        schoolName: ''
+    });
+    setPdfModalOpen(true);
+  };
+
+  const handlePdfDataChange = (e) => {
+    setPdfData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+  
+  const handleConfirmDownload = () => {
+    const input = document.getElementById(`note-content-${noteToDownload._id}`);
     if (!input) return;
 
-    const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4'
-    });
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+    pdf.setFontSize(16);
+    pdf.text(pdfData.schoolName, 15, 15);
+    pdf.setFontSize(12);
+    pdf.text(`Teacher: ${pdfData.teacherName}`, 15, 22);
     
     pdf.html(input, {
         callback: function(doc) {
-            doc.save(`${noteTopic || 'lesson-note'}.pdf`);
+            doc.save(`lesson-note.pdf`);
         },
-        x: 15, // Left margin
-        y: 15, // Top margin
-        width: 180, // Content width (A4 is 210mm wide)
-        windowWidth: input.scrollWidth, // Use the element's full width for rendering
-        autoPaging: 'text', // Automatically add new pages for long content
+        margin: [15, 15, 15, 15],
+        autoPaging: 'text',
+        width: 180,
+        windowWidth: 675
     });
+
+    setPdfModalOpen(false);
   };
 
   const selectedSubStrandName = subStrands.find(s => s._id === selections.subStrand)?.name || '';
@@ -142,7 +165,7 @@ function TeacherDashboard() {
                     <Box id={`note-content-${note._id}`} sx={{ p: 2, '& h1, & h2, & h3': { color: 'var(--dark-navy)', my: 2, fontSize: '1.2em' }, '& ul, & ol': { pl: 3 }, '& li': { mb: 1 }}}>
                       <ReactMarkdown>{note.content}</ReactMarkdown>
                     </Box>
-                    <Button sx={{mt: 2}} size="small" variant="outlined" onClick={() => handleDownloadPdf(note._id, 'lesson-note')}>Download as PDF</Button>
+                    <Button sx={{mt: 2}} size="small" variant="outlined" onClick={() => openPdfModal(note)}>Download as PDF</Button>
                   </AccordionDetails>
                 </Accordion>
               ))}
@@ -152,6 +175,37 @@ function TeacherDashboard() {
       </motion.div>
 
       <LessonNoteForm open={isNoteModalOpen} onClose={() => setNoteModalOpen(false)} onSubmit={handleNoteSubmit} subStrandName={selectedSubStrandName} />
+
+      <Dialog open={isPdfModalOpen} onClose={() => setPdfModalOpen(false)}>
+        <DialogTitle>PDF Header Details</DialogTitle>
+        <DialogContent>
+            <TextField
+                autoFocus
+                margin="dense"
+                name="schoolName"
+                label="School Name"
+                type="text"
+                fullWidth
+                variant="standard"
+                value={pdfData.schoolName}
+                onChange={handlePdfDataChange}
+            />
+            <TextField
+                margin="dense"
+                name="teacherName"
+                label="Teacher's Name"
+                type="text"
+                fullWidth
+                variant="standard"
+                value={pdfData.teacherName}
+                onChange={handlePdfDataChange}
+            />
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={() => setPdfModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleConfirmDownload} variant="contained">Confirm & Download</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
