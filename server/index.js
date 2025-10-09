@@ -20,6 +20,10 @@ connectDB();
 
 const app = express();
 
+app.use(cors({
+  origin: 'https://scholars-path-frontend.onrender.com' // Allow requests from your live frontend
+}));
+
 // Middleware to parse JSON bodies
 app.use(express.json());
 
