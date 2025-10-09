@@ -5,7 +5,7 @@ import { fetchItems, fetchChildren, reset as resetCurriculum } from '../features
 import { generateLessonNote, reset as resetTeacher } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas'; // Still needed for the new method to work
 import ReactMarkdown from 'react-markdown';
 
 import { 
@@ -29,7 +29,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
   const { levels, classes, subjects, strands, subStrands } = useSelector((state) => state.curriculum);
   const { isSuccess, isError, isLoading, message, lessonNotes } = useSelector((state) => state.teacher);
   
@@ -67,21 +66,26 @@ function TeacherDashboard() {
     dispatch(generateLessonNote(noteData));
   };
   
+  // --- UPDATED PDF FUNCTION ---
   const handleDownloadPdf = (noteId, noteTopic) => {
     const input = document.getElementById(`note-content-${noteId}`);
     if (!input) return;
-    html2canvas(input, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
-      const imgX = (pdfWidth - canvasWidth * ratio) / 2;
-      const imgY = 15;
-      pdf.addImage(imgData, 'PNG', imgX, imgY, canvasWidth * ratio, canvasHeight * ratio);
-      pdf.save(`${noteTopic || 'lesson-note'}.pdf`);
+
+    const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+    });
+    
+    pdf.html(input, {
+        callback: function(doc) {
+            doc.save(`${noteTopic || 'lesson-note'}.pdf`);
+        },
+        x: 15, // Left margin
+        y: 15, // Top margin
+        width: 180, // Content width (A4 is 210mm wide)
+        windowWidth: input.scrollWidth, // Use the element's full width for rendering
+        autoPaging: 'text', // Automatically add new pages for long content
     });
   };
 
@@ -101,7 +105,6 @@ function TeacherDashboard() {
 
           <Paper elevation={3} sx={{padding: 3, mb: 5}}>
             <Typography variant="h6" gutterBottom>Browse Curriculum</Typography>
-            {/* THIS IS THE FULL, CORRECT CODE FOR THE GRID */}
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6} md={3}><FormControl fullWidth><InputLabel>Level</InputLabel><Select name="level" value={selections.level} label="Level" onChange={handleSelectionChange}>{levels.map(l => <MenuItem key={l._id} value={l._id}>{l.name}</MenuItem>)}</Select></FormControl></Grid>
               <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.level}><InputLabel>Class</InputLabel><Select name="class" value={selections.class} label="Class" onChange={handleSelectionChange}>{classes.map(c => <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>)}</Select></FormControl></Grid>
@@ -136,7 +139,7 @@ function TeacherDashboard() {
                     <Typography>Note created on {new Date(note.createdAt).toLocaleDateString()}</Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                    <Box id={`note-content-${note._id}`} sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1, '& h1, & h2, & h3': { color: 'var(--dark-navy)', my: 2 }, '& ul, & ol': { pl: 3 }, '& li': { mb: 1 }}}>
+                    <Box id={`note-content-${note._id}`} sx={{ p: 2, '& h1, & h2, & h3': { color: 'var(--dark-navy)', my: 2, fontSize: '1.2em' }, '& ul, & ol': { pl: 3 }, '& li': { mb: 1 }}}>
                       <ReactMarkdown>{note.content}</ReactMarkdown>
                     </Box>
                     <Button sx={{mt: 2}} size="small" variant="outlined" onClick={() => handleDownloadPdf(note._id, 'lesson-note')}>Download as PDF</Button>
