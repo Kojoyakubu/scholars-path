@@ -4,8 +4,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
-import RoleRoute from './components/RoleRoute'; // Import the new component
-import SubscriptionGate from './components/SubscriptionGate';
+import RoleRoute from './components/RoleRoute';
+import SubscriptionGate from './components/SubscriptionGate'; // We'll leave the import but not use it
 
 // Import Pages
 import Login from './pages/Login';
@@ -39,13 +39,15 @@ function App() {
 
             {/* Private Routes (All logged-in users) */}
             <Route element={<PrivateRoute />}>
-              <Route path="/" element={<SubscriptionGate><Dashboard /></SubscriptionGate>} />
+              {/* REMOVED SubscriptionGate from Dashboard */}
+              <Route path="/" element={<Dashboard />} />
               <Route path="/quiz/:id" element={<TakeQuiz />} />
               <Route path="/my-badges" element={<MyBadges />} />
               
               {/* Teacher Routes */}
               <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin', 'admin']} />}>
-                <Route path="/teacher/dashboard" element={<SubscriptionGate><TeacherDashboard /></SubscriptionGate>} />
+                {/* REMOVED SubscriptionGate from TeacherDashboard */}
+                <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
               </Route>
               
               {/* School Admin Routes */}
@@ -62,8 +64,6 @@ function App() {
               </Route>
             </Route>
             
-            {/* Optional: Add a "Not Found" route */}
-            {/* <Route path="*" element={<NotFoundPage />} /> */}
           </Routes>
         </main>
         <Footer />
