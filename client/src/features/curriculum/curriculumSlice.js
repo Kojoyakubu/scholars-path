@@ -12,19 +12,30 @@ const initialState = {
   message: '',
 };
 
-// Generic thunk for fetching all items of an entity type
 export const fetchItems = createAsyncThunk('curriculum/fetchItems', async (entity, thunkAPI) => {
   try {
     const token = thunkAPI.getState().auth.user.token;
     const data = await curriculumService.getItems(entity, token);
-    return { entity, data }; // Return both entity and data
+    return { entity, data };
   } catch (error) {
     const message = (error.response?.data?.message) || error.message || error.toString();
     return thunkAPI.rejectWithValue({ message, entity });
   }
 });
 
-// Generic thunk for creating a new item
+// ADD THIS THUNK
+export const fetchChildren = createAsyncThunk('curriculum/fetchChildren', async ({ entity, parentEntity, parentId }, thunkAPI) => {
+    try {
+        const token = thunkAPI.getState().auth.user.token;
+        const data = await curriculumService.getChildrenOf({ entity, parentEntity, parentId }, token);
+        return { entity, data };
+    } catch (error) {
+        const message = (error.response?.data?.message) || error.message || error.toString();
+        return thunkAPI.rejectWithValue({ message, entity });
+    }
+});
+
+
 export const createItem = createAsyncThunk('curriculum/createItem', async ({ entity, itemData }, thunkAPI) => {
   try {
     const token = thunkAPI.getState().auth.user.token;
@@ -36,7 +47,6 @@ export const createItem = createAsyncThunk('curriculum/createItem', async ({ ent
   }
 });
 
-// Generic thunk for updating an item
 export const updateItem = createAsyncThunk('curriculum/updateItem', async ({ entity, itemData }, thunkAPI) => {
   try {
     const token = thunkAPI.getState().auth.user.token;
@@ -48,7 +58,6 @@ export const updateItem = createAsyncThunk('curriculum/updateItem', async ({ ent
   }
 });
 
-// Generic thunk for deleting an item
 export const deleteItem = createAsyncThunk('curriculum/deleteItem', async ({ entity, itemId }, thunkAPI) => {
   try {
     const token = thunkAPI.getState().auth.user.token;
@@ -82,17 +91,19 @@ const curriculumSlice = createSlice({
     };
 
     builder
-      // Fetch Items
       .addCase(fetchItems.fulfilled, (state, action) => {
         state.isLoading = false;
         state[action.payload.entity] = action.payload.data;
       })
-      // Create Item
+      // ADD THIS CASE
+      .addCase(fetchChildren.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state[action.payload.entity] = action.payload.data;
+      })
       .addCase(createItem.fulfilled, (state, action) => {
         state.isLoading = false;
         state[action.payload.entity].push(action.payload.data);
       })
-      // Update Item
       .addCase(updateItem.fulfilled, (state, action) => {
         state.isLoading = false;
         const items = state[action.payload.entity];
@@ -101,14 +112,12 @@ const curriculumSlice = createSlice({
           items[index] = action.payload.data;
         }
       })
-      // Delete Item
       .addCase(deleteItem.fulfilled, (state, action) => {
         state.isLoading = false;
         state[action.payload.entity] = state[action.payload.entity].filter(
           item => item._id !== action.payload.itemId
         );
       })
-      // Use a matcher to handle all pending and rejected cases generically
       .addMatcher((action) => action.type.startsWith('curriculum/') && action.type.endsWith('/pending'), handlePending)
       .addMatcher((action) => action.type.startsWith('curriculum/') && action.type.endsWith('/rejected'), handleRejected);
   },
