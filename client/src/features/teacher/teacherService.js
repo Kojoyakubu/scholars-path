@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '/api/teacher/';
+const API_URL = import.meta.env.VITE_API_URL + '/api/teacher/';
 // The endpoint for getting resources is on the student route
 const STUDENT_API_URL = '/api/student/';
 
