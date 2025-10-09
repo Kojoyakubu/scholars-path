@@ -13,7 +13,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const { checkSubscription } = require('../middleware/subscriptionMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-router.use(protect, authorize('teacher', 'school_admin', 'admin'), checkSubscription);
+router.use(protect, authorize('teacher', 'school_admin', 'admin'));//, checkSubscription);
 
 router.post('/generate-note', generateLessonNote);
 router.post('/generate-learner-note', generateLearnerNote);

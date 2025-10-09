@@ -12,7 +12,7 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { checkSubscription } = require('../middleware/subscriptionMiddleware');
 
-router.use(protect, authorize('student', 'admin'), checkSubscription);
+router.use(protect, authorize('student', 'admin'));//, checkSubscription);
 
 router.get('/notes/:subStrandId', getLearnerNotes);
 router.get('/quizzes/:subStrandId', getQuizzes);
