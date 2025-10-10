@@ -1,12 +1,10 @@
-// server/index.js
-
 const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
-const colors = require('colors'); // For colored logs
+const colors = require('colors');
 const connectDB = require('./config/db');
 const cors = require('cors');
-const { notFound, errorHandler } = require('./middleware/errorMiddleware'); // Import new error handlers
+const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 // Route files
 const userRoutes = require('./routes/userRoutes');
@@ -29,8 +27,6 @@ const app = express();
 const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    // or if the origin is in our allowed list
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -45,6 +41,16 @@ app.use(express.json());
 // Make the 'uploads' folder public and accessible
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// --- ADD THIS DEBUGGING ROUTE ---
+app.get('/api/debug-env', (req, res) => {
+  res.json({
+    CORS_ORIGIN_VARIABLE: process.env.CORS_ORIGIN || "NOT SET",
+    ALLOWED_ORIGINS_ARRAY: allowedOrigins,
+    NODE_ENV: process.env.NODE_ENV || "NOT SET",
+  });
+});
+
+
 // --- Mount Routers ---
 app.use('/api/users', userRoutes);
 app.use('/api/curriculum', curriculumRoutes);
@@ -55,7 +61,6 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/school', schoolRoutes);
 
 // --- Centralized Error Handling ---
-// This MUST be placed after all your routes
 app.use(notFound);
 app.use(errorHandler);
 
