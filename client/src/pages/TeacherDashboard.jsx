@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion } from 'framer-motion';
 import { fetchItems, fetchChildren, reset as resetCurriculum } from '../features/curriculum/curriculumSlice';
-import { generateLessonNote, getMyLessonNotes, reset as resetTeacher } from '../features/teacher/teacherSlice';
+import { generateLessonNote, reset as resetTeacher } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -46,7 +46,6 @@ function TeacherDashboard() {
 
   useEffect(() => {
     dispatch(fetchItems('levels'));
-    dispatch(getMyLessonNotes());
     return () => {
       dispatch(resetCurriculum());
       dispatch(resetTeacher());
