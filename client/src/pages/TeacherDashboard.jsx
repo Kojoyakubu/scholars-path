@@ -9,26 +9,10 @@ import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 
 import { 
-  Box, 
-  Typography, 
-  Container, 
-  Grid, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Paper,
-  Button,
-  Alert,
-  CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
+  Box, Typography, Container, Grid, Select, MenuItem, FormControl, 
+  InputLabel, Paper, Button, Alert, CircularProgress, Accordion, 
+  AccordionSummary, AccordionDetails, Dialog, DialogActions, 
+  DialogContent, DialogTitle, TextField
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -46,7 +30,7 @@ function TeacherDashboard() {
 
   useEffect(() => {
     dispatch(fetchItems('levels'));
-    dispatch(getMyLessonNotes()); // Re-enabled
+    dispatch(getMyLessonNotes());
     return () => {
       dispatch(resetCurriculum());
       dispatch(resetTeacher());
@@ -69,19 +53,13 @@ function TeacherDashboard() {
   };
 
   const handleNoteSubmit = (formData) => {
-    const noteData = {
-      ...formData,
-      subStrandId: selections.subStrand,
-    };
+    const noteData = { ...formData, subStrandId: selections.subStrand };
     dispatch(generateLessonNote(noteData));
   };
   
   const openPdfModal = (note) => {
     setNoteToDownload(note);
-    setPdfData({
-        teacherName: user?.fullName || '',
-        schoolName: ''
-    });
+    setPdfData({ teacherName: user?.fullName || '', schoolName: '' });
     setPdfModalOpen(true);
   };
 
@@ -92,24 +70,18 @@ function TeacherDashboard() {
   const handleConfirmDownload = () => {
     const input = document.getElementById(`note-content-${noteToDownload._id}`);
     if (!input) return;
-
     const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
     pdf.setFontSize(16);
     pdf.text(pdfData.schoolName, 15, 15);
     pdf.setFontSize(12);
     pdf.text(`Teacher: ${pdfData.teacherName}`, 15, 22);
-    
     pdf.html(input, {
-        callback: function(doc) {
-            doc.save(`lesson-note.pdf`);
-        },
+        callback: function(doc) { doc.save(`lesson-note.pdf`); },
         margin: [15, 15, 15, 15],
         autoPaging: 'text',
         width: 180,
         windowWidth: 675
     });
-
     setPdfModalOpen(false);
   };
 
@@ -130,11 +102,11 @@ function TeacherDashboard() {
           <Paper elevation={3} sx={{padding: 3, mb: 5}}>
             <Typography variant="h6" gutterBottom>Browse Curriculum</Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth><InputLabel>Level</InputLabel><Select name="level" value={selections.level} label="Level" onChange={handleSelectionChange}>{levels.map(l => <MenuItem key={l._id} value={l._id}>{l.name}</MenuItem>)}</Select></FormControl></Grid>
-              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.level}><InputLabel>Class</InputLabel><Select name="class" value={selections.class} label="Class" onChange={handleSelectionChange}>{classes.map(c => <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>)}</Select></FormControl></Grid>
-              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.class}><InputLabel>Subject</InputLabel><Select name="subject" value={selections.subject} label="Subject" onChange={handleSelectionChange}>{subjects.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
-              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.subject}><InputLabel>Strand</InputLabel><Select name="strand" value={selections.strand} label="Strand" onChange={handleSelectionChange}>{strands.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
-              <Grid item xs={12}><FormControl fullWidth disabled={!selections.strand}><InputLabel>Sub-Strand</InputLabel><Select name="subStrand" value={selections.subStrand} label="Sub-Strand" onChange={handleSelectionChange}>{subStrands.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
+              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth><InputLabel>Level</InputLabel><Select name="level" value={selections.level} label="Level" onChange={handleSelectionChange}>{Array.isArray(levels) && levels.map(l => <MenuItem key={l._id} value={l._id}>{l.name}</MenuItem>)}</Select></FormControl></Grid>
+              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.level}><InputLabel>Class</InputLabel><Select name="class" value={selections.class} label="Class" onChange={handleSelectionChange}>{Array.isArray(classes) && classes.map(c => <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>)}</Select></FormControl></Grid>
+              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.class}><InputLabel>Subject</InputLabel><Select name="subject" value={selections.subject} label="Subject" onChange={handleSelectionChange}>{Array.isArray(subjects) && subjects.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
+              <Grid item xs={12} sm={6} md={3}><FormControl fullWidth disabled={!selections.subject}><InputLabel>Strand</InputLabel><Select name="strand" value={selections.strand} label="Strand" onChange={handleSelectionChange}>{Array.isArray(strands) && strands.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
+              <Grid item xs={12}><FormControl fullWidth disabled={!selections.strand}><InputLabel>Sub-Strand</InputLabel><Select name="subStrand" value={selections.subStrand} label="Sub-Strand" onChange={handleSelectionChange}>{Array.isArray(subStrands) && subStrands.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
             </Grid>
           </Paper>
 
@@ -152,9 +124,10 @@ function TeacherDashboard() {
             </motion.div>
           )}
 
-          {isLoading && <Box display="flex" justifyContent="center" my={5}><CircularProgress /><Typography sx={{ml: 2}}>Generating your lesson note with AI...</Typography></Box>}
+          {isLoading && <Box display="flex" justifyContent="center" my={5}><CircularProgress /><Typography sx={{ml: 2}}>Loading data...</Typography></Box>}
           
-          {lessonNotes.length > 0 && (
+          {/* THE FIX: Added "Array.isArray(lessonNotes)" to prevent the crash */}
+          {Array.isArray(lessonNotes) && lessonNotes.length > 0 && (
             <Box>
               <Typography variant="h5" gutterBottom>My Generated Notes</Typography>
               {lessonNotes.map((note) => (
