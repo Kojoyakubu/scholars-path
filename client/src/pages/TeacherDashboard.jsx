@@ -7,6 +7,7 @@ import LessonNoteForm from '../components/LessonNoteForm';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
+import axios from 'axios'; // Add this import
 
 import { 
   Box, Typography, Container, Grid, Select, MenuItem, FormControl, 
@@ -28,6 +29,39 @@ function TeacherDashboard() {
   const [pdfData, setPdfData] = useState({ teacherName: '', schoolName: '' });
   const [noteToDownload, setNoteToDownload] = useState(null);
 
+  // --- FINAL DEBUGGING TEST ---
+  useEffect(() => {
+    const runTest = async () => {
+      console.log('--- RUNNING DIRECT API TEST ---');
+      try {
+        const userFromStorage = JSON.parse(localStorage.getItem('user'));
+        if (!userFromStorage || !userFromStorage.token) {
+          console.error('TEST FAILED: No user or token found in localStorage.');
+          return;
+        }
+        
+        const token = userFromStorage.token;
+        console.log('TEST: Using token from localStorage.');
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        const response = await axios.get('https://scholars-path-backend.onrender.com/api/teacher/lessonnotes', config);
+        
+        console.log('✅ TEST SUCCEEDED! The server responded with:', response.data);
+
+      } catch (error) {
+        console.error('❌ TEST FAILED! The server responded with an error:', error.response?.data || error.message);
+      }
+    };
+
+    runTest();
+  }, []); // The empty array ensures this runs only once
+
+  // --- Original useEffects ---
   useEffect(() => {
     dispatch(fetchItems('levels'));
     dispatch(getMyLessonNotes());
@@ -126,7 +160,6 @@ function TeacherDashboard() {
 
           {isLoading && <Box display="flex" justifyContent="center" my={5}><CircularProgress /><Typography sx={{ml: 2}}>Loading data...</Typography></Box>}
           
-          {/* THE FIX: Added "Array.isArray(lessonNotes)" to prevent the crash */}
           {Array.isArray(lessonNotes) && lessonNotes.length > 0 && (
             <Box>
               <Typography variant="h5" gutterBottom>My Generated Notes</Typography>
