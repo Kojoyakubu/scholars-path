@@ -1,3 +1,5 @@
+console.log('--- Loading teacherRoutes.js - LATEST VERSION ---');
+
 const express = require('express');
 const router = express.Router();
 const { 
