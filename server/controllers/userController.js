@@ -51,6 +51,9 @@ const loginUser = async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await bcrypt.compare(password, user.password))) {
+
+    console.log('SECRET used for SIGNING (first 5 chars):', process.env.JWT_SECRET.substring(0, 5));
+
     if (user.status !== 'approved') {
       return res.status(401).json({ message: `Your account is ${user.status}. Admin approval required.` });
     }
