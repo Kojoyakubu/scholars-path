@@ -46,8 +46,8 @@ const generateLessonNote = async (req, res) => {
       **Template to Follow:**
       # **LESSON NOTE**
 
-      ### **Header Information**
-      - **School:** [Leave as placeholder]
+      
+      - **School:** 
       - **Teacher’s Name:** ${req.user.fullName}
       - **Subject:** ${subStrand.strand.subject.name}
       - **Class:** ${subStrand.strand.subject.class.name}
