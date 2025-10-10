@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion } from 'framer-motion';
 import { fetchItems, fetchChildren, reset as resetCurriculum } from '../features/curriculum/curriculumSlice';
-import { generateLessonNote, reset as resetTeacher } from '../features/teacher/teacherSlice';
+import { generateLessonNote, getMyLessonNotes, reset as resetTeacher } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -46,6 +46,7 @@ function TeacherDashboard() {
 
   useEffect(() => {
     dispatch(fetchItems('levels'));
+    // dispatch(getMyLessonNotes()); // <-- Temporarily disabled for testing
     return () => {
       dispatch(resetCurriculum());
       dispatch(resetTeacher());
@@ -179,27 +180,8 @@ function TeacherDashboard() {
       <Dialog open={isPdfModalOpen} onClose={() => setPdfModalOpen(false)}>
         <DialogTitle>PDF Header Details</DialogTitle>
         <DialogContent>
-            <TextField
-                autoFocus
-                margin="dense"
-                name="schoolName"
-                label="School Name"
-                type="text"
-                fullWidth
-                variant="standard"
-                value={pdfData.schoolName}
-                onChange={handlePdfDataChange}
-            />
-            <TextField
-                margin="dense"
-                name="teacherName"
-                label="Teacher's Name"
-                type="text"
-                fullWidth
-                variant="standard"
-                value={pdfData.teacherName}
-                onChange={handlePdfDataChange}
-            />
+            <TextField autoFocus margin="dense" name="schoolName" label="School Name" type="text" fullWidth variant="standard" value={pdfData.schoolName} onChange={handlePdfDataChange} />
+            <TextField margin="dense" name="teacherName" label="Teacher's Name" type="text" fullWidth variant="standard" value={pdfData.teacherName} onChange={handlePdfDataChange} />
         </DialogContent>
         <DialogActions>
             <Button onClick={() => setPdfModalOpen(false)}>Cancel</Button>
