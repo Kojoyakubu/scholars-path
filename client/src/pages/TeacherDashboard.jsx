@@ -46,7 +46,7 @@ function TeacherDashboard() {
 
   useEffect(() => {
     dispatch(fetchItems('levels'));
-    // dispatch(getMyLessonNotes()); // <-- Temporarily disabled for testing
+    dispatch(getMyLessonNotes()); // Re-enabled
     return () => {
       dispatch(resetCurriculum());
       dispatch(resetTeacher());

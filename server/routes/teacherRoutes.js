@@ -18,7 +18,9 @@ const upload = require('../middleware/uploadMiddleware');
 
 router.use(protect, authorize('teacher', 'school_admin', 'admin')/*, checkSubscription*/);
 
+// MOVED this route to the top
 router.get('/lessonnotes', getMyLessonNotes);
+
 router.post('/generate-note', generateLessonNote);
 router.post('/generate-learner-note', generateLearnerNote);
 router.post('/create-quiz', createQuiz);
