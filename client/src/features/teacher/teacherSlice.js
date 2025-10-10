@@ -26,13 +26,13 @@ const createTeacherThunk = (name, serviceCall) => {
 
 export const getMyLessonNotes = createTeacherThunk('getMyLessonNotes', teacherService.getMyLessonNotes);
 export const generateLessonNote = createTeacherThunk('generateLessonNote', teacherService.generateLessonNote);
-export const generateLearnerNote = createTeacherThunk('generateLearnerNote', teacherService.generateLearnerNote);
 export const createQuiz = createTeacherThunk('createQuiz', teacherService.createQuiz);
-export const generateAiQuestion = createTeacherThunk('generateAiQuestion', teacherService.generateAiQuestion);
 export const uploadResource = createTeacherThunk('uploadResource', teacherService.uploadResource);
 export const getResources = createTeacherThunk('getResources', teacherService.getResources);
-export const generateAiQuizSection = createTeacherThunk('generateAiQuizSection', teacherService.generateAiQuizSection);
 export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
+// Add the missing AI thunks if you plan to use them
+export const generateAiQuestion = createTeacherThunk('generateAiQuestion', teacherService.generateAiQuestion);
+export const generateAiQuizSection = createTeacherThunk('generateAiQuizSection', teacherService.generateAiQuizSection);
 
 const teacherSlice = createSlice({
   name: 'teacher',
@@ -52,7 +52,7 @@ const teacherSlice = createSlice({
       })
       .addCase(generateLessonNote.fulfilled, (state, action) => {
         state.isSuccess = true; 
-        state.lessonNotes.unshift(action.payload); // Add new note to the top of the list
+        state.lessonNotes.unshift(action.payload);
         state.message = 'Lesson Note Generated!';
       })
       .addCase(createQuiz.fulfilled, (state, action) => {
