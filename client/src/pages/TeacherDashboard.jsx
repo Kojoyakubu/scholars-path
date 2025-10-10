@@ -9,26 +9,10 @@ import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 
 import { 
-  Box, 
-  Typography, 
-  Container, 
-  Grid, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Paper,
-  Button,
-  Alert,
-  CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
+  Box, Typography, Container, Grid, Select, MenuItem, FormControl, 
+  InputLabel, Paper, Button, Alert, CircularProgress, Accordion, 
+  AccordionSummary, AccordionDetails, Dialog, DialogActions, 
+  DialogContent, DialogTitle, TextField
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -69,19 +53,13 @@ function TeacherDashboard() {
   };
 
   const handleNoteSubmit = (formData) => {
-    const noteData = {
-      ...formData,
-      subStrandId: selections.subStrand,
-    };
+    const noteData = { ...formData, subStrandId: selections.subStrand };
     dispatch(generateLessonNote(noteData));
   };
   
   const openPdfModal = (note) => {
     setNoteToDownload(note);
-    setPdfData({
-        teacherName: user?.fullName || '',
-        schoolName: ''
-    });
+    setPdfData({ teacherName: user?.fullName || '', schoolName: '' });
     setPdfModalOpen(true);
   };
 
@@ -92,24 +70,18 @@ function TeacherDashboard() {
   const handleConfirmDownload = () => {
     const input = document.getElementById(`note-content-${noteToDownload._id}`);
     if (!input) return;
-
     const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
     pdf.setFontSize(16);
     pdf.text(pdfData.schoolName, 15, 15);
     pdf.setFontSize(12);
     pdf.text(`Teacher: ${pdfData.teacherName}`, 15, 22);
-    
     pdf.html(input, {
-        callback: function(doc) {
-            doc.save(`lesson-note.pdf`);
-        },
+        callback: function(doc) { doc.save(`lesson-note.pdf`); },
         margin: [15, 15, 15, 15],
         autoPaging: 'text',
         width: 180,
         windowWidth: 675
     });
-
     setPdfModalOpen(false);
   };
 
@@ -180,27 +152,8 @@ function TeacherDashboard() {
       <Dialog open={isPdfModalOpen} onClose={() => setPdfModalOpen(false)}>
         <DialogTitle>PDF Header Details</DialogTitle>
         <DialogContent>
-            <TextField
-                autoFocus
-                margin="dense"
-                name="schoolName"
-                label="School Name"
-                type="text"
-                fullWidth
-                variant="standard"
-                value={pdfData.schoolName}
-                onChange={handlePdfDataChange}
-            />
-            <TextField
-                margin="dense"
-                name="teacherName"
-                label="Teacher's Name"
-                type="text"
-                fullWidth
-                variant="standard"
-                value={pdfData.teacherName}
-                onChange={handlePdfDataChange}
-            />
+            <TextField autoFocus margin="dense" name="schoolName" label="School Name" type="text" fullWidth variant="standard" value={pdfData.schoolName} onChange={handlePdfDataChange} />
+            <TextField margin="dense" name="teacherName" label="Teacher's Name" type="text" fullWidth variant="standard" value={pdfData.teacherName} onChange={handlePdfDataChange} />
         </DialogContent>
         <DialogActions>
             <Button onClick={() => setPdfModalOpen(false)}>Cancel</Button>
