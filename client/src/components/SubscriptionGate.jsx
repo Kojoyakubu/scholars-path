@@ -1,11 +1,11 @@
-import { useSelector } from 'redux';
+import { useSelector } from 'react-redux'; // <-- THE FIX IS HERE
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, Typography, Container, Button, Paper, CircularProgress } from '@mui/material';
 
 const SubscriptionGate = ({ children }) => {
   const { user, isLoading } = useSelector((state) => state.auth);
 
-  // 1. Show a loading spinner while auth status is being determined
+  // Show a loading spinner while the user's authentication status is being determined
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -14,17 +14,17 @@ const SubscriptionGate = ({ children }) => {
     );
   }
 
-  // 2. Always allow admins
+  // Rule 1: Always allow admins
   if (user?.role === 'admin') {
     return children;
   }
 
-  // 3. Allow users with an active subscription
+  // Rule 2: Allow users with an active subscription
   if (user?.isSubscribed) {
     return children;
   }
 
-  // 4. If none of the above, show the paywall
+  // If neither rule is met, show the subscription paywall
   return (
     <Container maxWidth="md">
       <Paper sx={{textAlign: 'center', my: 10, p: 4, mt: '20vh'}}>
