@@ -1,4 +1,4 @@
-// server/middleware/errorMiddleware.js
+// middleware/errorMiddleware.js (Revised)
 
 const notFound = (req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
@@ -19,15 +19,16 @@ const errorHandler = (err, req, res, next) => {
   // Mongoose validation error
   if (err.name === 'ValidationError') {
     statusCode = 400;
-    // Optional: format the message to be more specific
-    // message = Object.values(err.errors).map(val => val.message).join(', ');
+    // Consolidate all validation error messages into a single string
+    message = Object.values(err.errors).map(val => val.message).join(', ');
   }
 
-  // Mongoose duplicate key
+  // Mongoose duplicate key error
   if (err.code === 11000) {
     statusCode = 400;
     const field = Object.keys(err.keyValue)[0];
-    message = `Duplicate field value entered for '${field}'. Please use another value.`;
+    const value = err.keyValue[field];
+    message = `Duplicate field value entered: The ${field} '${value}' already exists.`;
   }
 
   res.status(statusCode).json({

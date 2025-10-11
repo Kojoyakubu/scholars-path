@@ -1,15 +1,15 @@
-import axios from 'axios';
-const API_URL = import.meta.env.VITE_API_URL + '/api/school/';
+// src/features/school/schoolService.js (Revised)
 
-const getConfig = (token) => ({
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+import api from '../../api/axios'; // <-- Import our new centralized instance
 
-// Get dashboard data for a specific school
-const getSchoolDashboard = async (schoolId, token) => {
-  const response = await axios.get(API_URL + `dashboard/${schoolId}`, getConfig(token));
+/**
+ * Get dashboard data for a specific school.
+ * The user's auth token is sent automatically by the axios interceptor.
+ * @param {string} schoolId - The ID of the school to fetch data for.
+ * @returns {Promise<object>} The dashboard data from the API.
+ */
+const getSchoolDashboard = async (schoolId) => {
+  const response = await api.get(`/school/dashboard/${schoolId}`);
   return response.data;
 };
 

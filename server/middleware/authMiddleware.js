@@ -1,36 +1,47 @@
+// middleware/authMiddleware.js (Revised)
+
 const jwt = require('jsonwebtoken');
+const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel.js');
 
-const protect = async (req, res, next) => {
+const protect = asyncHandler(async (req, res, next) => {
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
-
-      console.log('SECRET used for VERIFYING (first 5 chars):', process.env.JWT_SECRET.substring(0, 5));
-
+      // Get token from header
       token = req.headers.authorization.split(' ')[1];
+
+      // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get user from the token
       req.user = await User.findById(decoded.id).select('-password');
+
+      if (!req.user) {
+        res.status(401);
+        throw new Error('Not authorized, user not found');
+      }
+
       next();
     } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        return res.status(401).json({ message: 'Not authorized, token expired' });
-      }
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+      res.status(401);
+      throw new Error('Not authorized, token failed');
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    res.status(401);
+    throw new Error('Not authorized, no token');
   }
-};
+});
 
-// New scalable role authorization middleware
+// Scalable role authorization middleware
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: `User role '${req.user.role}' is not authorized to access this route` });
+      res.status(403); // 403 Forbidden
+      throw new Error(`User role '${req.user.role}' is not authorized to access this route`);
     }
     next();
   };

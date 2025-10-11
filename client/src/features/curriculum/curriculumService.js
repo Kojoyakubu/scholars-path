@@ -1,40 +1,37 @@
-import axios from 'axios';
-const API_URL = import.meta.env.VITE_API_URL + '/api/curriculum/';
+// src/features/curriculum/curriculumService.js (Revised)
 
-const getConfig = (token) => ({
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+import api from '../../api/axios'; // <-- Import our new centralized instance
 
-// Generic function to get all items of a type
-const getItems = async (entity, token) => {
-  const response = await axios.get(API_URL + entity, getConfig(token));
+// Generic function to get all items of a type (e.g., all levels)
+const getItems = async (entity) => {
+  const response = await api.get(`/curriculum/${entity}`);
   return response.data;
 };
 
-// NEW generic function to get children of a parent
-const getChildrenOf = async ({ entity, parentEntity, parentId }, token) => {
-    const response = await axios.get(API_URL + `${parentEntity}/${parentId}/${entity}`, getConfig(token));
+// Generic function to get children of a parent (e.g., classes of a level)
+const getChildrenOf = async ({ entity, parentEntity, parentId }) => {
+    const response = await api.get(`/curriculum/${parentEntity}/${parentId}/${entity}`);
     return response.data;
 }
 
 // Generic function to create an item
-const createItem = async (entity, itemData, token) => {
-  const response = await axios.post(API_URL + entity, itemData, getConfig(token));
+const createItem = async ({ entity, itemData }) => {
+  const response = await api.post(`/curriculum/${entity}`, itemData);
   return response.data;
 };
 
 // Generic function to update an item
-const updateItem = async (entity, itemData, token) => {
-  const response = await axios.put(API_URL + `${entity}/${itemData.id}`, { name: itemData.name }, getConfig(token));
+const updateItem = async ({ entity, itemData }) => {
+  // Destructure id and name from itemData
+  const { id, ...dataToUpdate } = itemData;
+  const response = await api.put(`/curriculum/${entity}/${id}`, dataToUpdate);
   return response.data;
 };
 
 // Generic function to delete an item
-const deleteItem = async (entity, itemId, token) => {
-  await axios.delete(API_URL + `${entity}/${itemId}`, getConfig(token));
-  return itemId;
+const deleteItem = async ({ entity, itemId }) => {
+  await api.delete(`/curriculum/${entity}/${itemId}`);
+  return itemId; // Return the ID for easy removal from state
 };
 
 const curriculumService = {

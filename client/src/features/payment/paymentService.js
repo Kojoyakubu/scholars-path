@@ -1,16 +1,16 @@
-import axios from 'axios';
-const API_URL = import.meta.env.VITE_API_URL + '/api/payments/';
+// src/features/payment/paymentService.js (Revised)
 
-const getConfig = (token) => ({
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+import api from '../../api/axios'; // <-- Import our new centralized instance
 
-// Initialize a payment transaction with Paystack
-const initializePayment = async (paymentData, token) => {
-  const response = await axios.post(API_URL + 'initialize', paymentData, getConfig(token));
-  // The thunk will handle the redirect, the service just returns data
+/**
+ * Initialize a payment transaction with Paystack.
+ * The auth token for the logged-in user is added automatically by the axios interceptor.
+ * @param {object} paymentData - Contains email, amount, and plan.
+ * @returns {Promise<object>} The data from the Paystack API response.
+ */
+const initializePayment = async (paymentData) => {
+  const response = await api.post('/payments/initialize', paymentData);
+  // The service layer just returns the data; the slice will handle state updates.
   return response.data;
 };
 

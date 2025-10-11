@@ -1,10 +1,21 @@
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
+import { Box, CircularProgress } from '@mui/material'; // For loading spinner
 
 const PrivateRoute = () => {
-  const { user } = useSelector((state) => state.auth);
+  // Destructure both user and isLoading from the auth state
+  const { user, isLoading } = useSelector((state) => state.auth);
 
-  // If user is logged in, show the page. Otherwise, redirect to login.
+  // 1. If the auth state is still loading, show a spinner
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // 2. If not loading, check for user and render the appropriate component
   return user ? <Outlet /> : <Navigate to="/login" replace />;
 };
 

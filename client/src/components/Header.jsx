@@ -1,9 +1,9 @@
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout, reset } from '../features/auth/authSlice';
+import { logout } from '../features/auth/authSlice';
 
 // --- MUI Imports ---
-import { Box, Button, Link, Typography } from '@mui/material';
+import { Box, Button, Link, Typography, Container } from '@mui/material';
 
 function Header() {
   const navigate = useNavigate();
@@ -12,8 +12,12 @@ function Header() {
 
   const onLogout = () => {
     dispatch(logout());
-    dispatch(reset());
+    // No need to dispatch reset() here, it's handled in the logout thunk's extraReducer
     navigate('/login');
+  };
+  
+  const navItemStyles = {
+    ml: 2, // Use theme spacing for margin
   };
 
   return (
@@ -26,50 +30,49 @@ function Header() {
         bgcolor: 'background.paper' 
       }}
     >
-      <Box 
-        className='container' 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          py: 1.5,
-        }}
-      >
-        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-          <Link component={RouterLink} to='/' underline="none" color="inherit">
-            Scholar's Path
-          </Link>
-        </Typography>
-        <Box component="ul" sx={{ display: 'flex', listStyle: 'none', m: 0, p: 0, alignItems: 'center' }}>
-          {user ? (
-            <>
-              {/* FIXED: Check for user existence before checking user.role */}
-              {user && user.role === 'student' && (
-                <li style={{ marginRight: '20px' }}>
-                  <Button component={RouterLink} to="/my-badges">My Badges</Button>
-                </li>
-              )}
-              <li>
-                <Button variant="contained" onClick={onLogout}>
+      <Container maxWidth="lg">
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            py: 1.5,
+          }}
+        >
+          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+            <Link component={RouterLink} to='/' underline="none" color="inherit">
+              Scholar's Path
+            </Link>
+          </Typography>
+          <Box component="nav" sx={{ display: 'flex', alignItems: 'center' }}>
+            {user ? (
+              <>
+                {/* Cleaner check with optional chaining */}
+                {user?.role === 'student' && (
+                  <Button component={RouterLink} to="/my-badges" sx={navItemStyles}>
+                    My Badges
+                  </Button>
+                )}
+                <Button variant="contained" onClick={onLogout} sx={navItemStyles}>
                   Logout
                 </Button>
-              </li>
-            </>
-          ) : (
-            <>
-              <li style={{ marginRight: '10px' }}>
-                <Button component={RouterLink} to='/pricing'>Pricing</Button>
-              </li>
-              <li style={{ marginRight: '10px' }}>
-                <Button component={RouterLink} to='/login'>Login</Button>
-              </li>
-              <li>
-                <Button component={RouterLink} to='/register' variant="contained">Register</Button>
-              </li>
-            </>
-          )}
+              </>
+            ) : (
+              <>
+                <Button component={RouterLink} to='/pricing' sx={navItemStyles}>
+                  Pricing
+                </Button>
+                <Button component={RouterLink} to='/login' sx={navItemStyles}>
+                  Login
+                </Button>
+                <Button component={RouterLink} to='/register' variant="contained" sx={navItemStyles}>
+                  Register
+                </Button>
+              </>
+            )}
+          </Box>
         </Box>
-      </Box>
+      </Container>
     </Box>
   );
 }

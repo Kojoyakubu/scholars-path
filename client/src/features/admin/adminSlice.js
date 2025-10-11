@@ -1,6 +1,9 @@
+// src/features/admin/adminSlice.js (Revised)
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import adminService from './adminService';
 
+// --- Initial State ---
 const initialState = {
   users: [],
   pages: 1,
@@ -12,50 +15,25 @@ const initialState = {
   message: '',
 };
 
-// --- Thunks that require an argument (e.g., an ID or page number) ---
-const createAdminThunkWithArg = (name, serviceCall) => {
-  return createAsyncThunk(`admin/${name}`, async (arg, thunkAPI) => {
-    try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await serviceCall(arg, token);
-    } catch (error) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
-      return thunkAPI.rejectWithValue(message);
-    }
-  });
-};
+// --- Async Thunks (Simplified) ---
+// No more token logic needed here!
 
-// --- Thunks that DON'T require an argument ---
-const createAdminThunkWithoutArg = (name, serviceCall) => {
-  return createAsyncThunk(`admin/${name}`, async (_, thunkAPI) => {
-    try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await serviceCall(token);
-    } catch (error) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
-      return thunkAPI.rejectWithValue(message);
-    }
-  });
-};
+export const getUsers = createAsyncThunk('admin/getUsers', adminService.getUsers);
+export const approveUser = createAsyncThunk('admin/approveUser', adminService.approveUser);
+export const deleteUser = createAsyncThunk('admin/deleteUser', adminService.deleteUser);
+export const createSchool = createAsyncThunk('admin/createSchool', adminService.createSchool);
+export const deleteSchool = createAsyncThunk('admin/deleteSchool', adminService.deleteSchool);
+export const assignUserToSchool = createAsyncThunk('admin/assignUserToSchool', adminService.assignUserToSchool);
+export const getStats = createAsyncThunk('admin/getStats', adminService.getStats);
+export const getSchools = createAsyncThunk('admin/getSchools', adminService.getSchools);
 
 
-// Use the correct helper for each thunk
-export const getUsers = createAdminThunkWithArg('getUsers', adminService.getUsers);
-export const approveUser = createAdminThunkWithArg('approveUser', adminService.approveUser);
-export const deleteUser = createAdminThunkWithArg('deleteUser', adminService.deleteUser);
-export const createSchool = createAdminThunkWithArg('createSchool', adminService.createSchool);
-export const deleteSchool = createAdminThunkWithArg('deleteSchool', adminService.deleteSchool);
-export const assignUserToSchool = createAdminThunkWithArg('assignUserToSchool', adminService.assignUserToSchool);
-
-export const getStats = createAdminThunkWithoutArg('getStats', adminService.getStats);
-export const getSchools = createAdminThunkWithoutArg('getSchools', adminService.getSchools);
-
-
+// --- Admin Slice ---
 export const adminSlice = createSlice({
   name: 'admin',
   initialState,
   reducers: {
-    reset: (state) => {
+    resetAdminState: (state) => {
       state.isLoading = false;
       state.isError = false;
       state.message = '';
@@ -63,62 +41,76 @@ export const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getUsers.pending, (state) => { state.isLoading = true; })
+      // getUsers
       .addCase(getUsers.fulfilled, (state, action) => {
         state.isLoading = false;
         state.users = action.payload.users;
         state.page = action.payload.page;
         state.pages = action.payload.pages;
       })
-      .addCase(getUsers.rejected, (state, action) => {
-        state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
-      })
+      
+      // approveUser & assignUserToSchool (they do the same thing: update a user)
       .addCase(approveUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.users.findIndex(user => user._id === action.payload._id);
-        if (index !== -1) { state.users[index] = action.payload; }
+        state.users = state.users.map(user => 
+            user._id === action.payload._id ? action.payload : user
+        );
       })
+      .addCase(assignUserToSchool.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.users = state.users.map(user => 
+            user._id === action.payload._id ? action.payload : user
+        );
+      })
+
+      // deleteUser
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.users = state.users.filter((user) => user._id !== action.payload);
       })
+      
+      // getStats
       .addCase(getStats.fulfilled, (state, action) => {
         state.isLoading = false;
         state.stats = action.payload;
       })
+      
+      // getSchools
       .addCase(getSchools.fulfilled, (state, action) => {
         state.isLoading = false;
         state.schools = action.payload;
       })
+      
+      // createSchool
       .addCase(createSchool.fulfilled, (state, action) => {
         state.isLoading = false;
         state.schools.push(action.payload.school);
       })
+      
+      // deleteSchool
       .addCase(deleteSchool.fulfilled, (state, action) => {
         state.isLoading = false;
         state.schools = state.schools.filter((school) => school._id !== action.payload);
       })
-      .addCase(assignUserToSchool.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const index = state.users.findIndex(user => user._id === action.payload._id);
-        if (index !== -1) { state.users[index] = action.payload; }
-      })
+
+      // Use addMatcher for generic pending/rejected cases to reduce boilerplate
       .addMatcher(
         (action) => action.type.startsWith('admin/') && action.type.endsWith('/pending'),
-        (state) => { state.isLoading = true; }
+        (state) => {
+          state.isLoading = true;
+        }
       )
       .addMatcher(
         (action) => action.type.startsWith('admin/') && action.type.endsWith('/rejected'),
         (state, action) => {
           state.isLoading = false;
           state.isError = true;
-          state.message = action.payload;
+          const message = action.payload || (action.error ? action.error.message : 'An unknown error occurred');
+          state.message = message;
         }
       );
   },
 });
 
-export const { reset } = adminSlice.actions;
+export const { resetAdminState } = adminSlice.actions;
 export default adminSlice.reducer;

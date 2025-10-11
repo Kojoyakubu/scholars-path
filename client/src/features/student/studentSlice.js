@@ -1,3 +1,5 @@
+// src/features/student/studentSlice.js (Revised)
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import studentService from './studentService';
 
@@ -13,12 +15,11 @@ const initialState = {
   message: '',
 };
 
-// Generic thunk creator for most student actions
+// Generic thunk creator - now even simpler as token is handled automatically
 const createStudentThunk = (name, serviceCall) => {
   return createAsyncThunk(`student/${name}`, async (arg, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await serviceCall(arg, token);
+      return await serviceCall(arg);
     } catch (error) {
       const message = (error.response?.data?.message) || error.message || error.toString();
       return thunkAPI.rejectWithValue(message);
@@ -34,19 +35,22 @@ export const submitQuiz = createStudentThunk('submitQuiz', studentService.submit
 export const getMyBadges = createStudentThunk('getMyBadges', studentService.getMyBadges);
 export const logNoteView = createStudentThunk('logNoteView', studentService.logNoteView);
 
+
 const studentSlice = createSlice({
   name: 'student',
   initialState,
   reducers: {
-    reset: (state) => {
-        state.isLoading = false;
-        state.isError = false;
-        state.message = '';
+    resetStudentState: (state) => {
+      // Return a copy of the initial state to reset everything
+      return initialState;
     },
     resetQuiz: (state) => {
       state.currentQuiz = null;
       state.quizResult = null;
-    }
+      state.isLoading = false; // Also reset loading status
+      state.isError = false;
+      state.message = '';
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -56,12 +60,22 @@ const studentSlice = createSlice({
       .addCase(getQuizDetails.fulfilled, (state, action) => { state.currentQuiz = action.payload; })
       .addCase(submitQuiz.fulfilled, (state, action) => { state.quizResult = action.payload; })
       .addCase(getMyBadges.fulfilled, (state, action) => { state.badges = action.payload; })
-      .addCase(logNoteView.fulfilled, (state, action) => {
-        console.log(`Logged view for note: ${action.meta.arg}`);
-      })
+      // logNoteView doesn't need to modify state, so no case is needed
+      
+      // Generic matchers for pending, fulfilled, and rejected states
       .addMatcher(
         (action) => action.type.startsWith('student/') && action.type.endsWith('/pending'),
-        (state) => { state.isLoading = true; }
+        (state) => { 
+          state.isLoading = true; 
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('student/') && action.type.endsWith('/fulfilled'),
+        (state) => { 
+          state.isLoading = false;
+          state.isError = false; // Clear any previous errors on success
+          state.message = '';
+        }
       )
       .addMatcher(
         (action) => action.type.startsWith('student/') && action.type.endsWith('/rejected'),
@@ -70,13 +84,9 @@ const studentSlice = createSlice({
           state.isError = true;
           state.message = action.payload;
         }
-      )
-      .addMatcher(
-        (action) => action.type.startsWith('student/') && action.type.endsWith('/fulfilled'),
-        (state) => { state.isLoading = false; }
       );
   },
 });
 
-export const { reset, resetQuiz } = studentSlice.actions;
+export const { resetStudentState, resetQuiz } = studentSlice.actions;
 export default studentSlice.reducer;

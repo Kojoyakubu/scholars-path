@@ -1,118 +1,106 @@
+const asyncHandler = require('express-async-handler');
 const Level = require('../models/levelModel');
 const Class = require('../models/classModel');
 const Subject = require('../models/subjectModel');
 const Strand = require('../models/strandModel');
 const SubStrand = require('../models/subStrandModel');
 
-// --- NEW FUNCTIONS FOR ON-DEMAND FETCHING ---
-const getClassesByLevel = async (req, res) => {
-  try {
-    const classes = await Class.find({ level: req.params.levelId });
-    res.json(classes);
-  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
-};
+// --- DYNAMIC FETCHING CONTROLLERS ---
 
-const getSubjectsByClass = async (req, res) => {
-  try {
-    const subjects = await Subject.find({ class: req.params.classId });
-    res.json(subjects);
-  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
-};
+const getClassesByLevel = asyncHandler(async (req, res) => {
+  const classes = await Class.find({ level: req.params.levelId });
+  res.json(classes);
+});
 
-const getStrandsBySubject = async (req, res) => {
-  try {
-    const strands = await Strand.find({ subject: req.params.subjectId });
-    res.json(strands);
-  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
-};
+const getSubjectsByClass = asyncHandler(async (req, res) => {
+  const subjects = await Subject.find({ class: req.params.classId });
+  res.json(subjects);
+});
 
-const getSubStrandsByStrand = async (req, res) => {
-  try {
-    const subStrands = await SubStrand.find({ strand: req.params.strandId });
-    res.json(subStrands);
-  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
-};
+const getStrandsBySubject = asyncHandler(async (req, res) => {
+  const strands = await Strand.find({ subject: req.params.subjectId });
+  res.json(strands);
+});
 
+const getSubStrandsByStrand = asyncHandler(async (req, res) => {
+  const subStrands = await SubStrand.find({ strand: req.params.strandId });
+  res.json(subStrands);
+});
 
-// --- EXISTING HELPER FUNCTIONS ---
-const createItem = (Model) => async (req, res) => {
-  try {
-    const item = await Model.create(req.body);
-    res.status(201).json(item);
-  } catch (error) { res.status(400).json({ message: error.message }); }
-};
+// --- GENERIC CRUD CONTROLLERS ---
 
-const getItems = (Model, populateOptions) => async (req, res) => {
-  try {
-    let query = Model.find({});
-    if (populateOptions) {
-      query = query.populate(populateOptions);
-    }
-    const items = await query;
-    res.json(items);
-  } catch (error) { res.status(500).json({ message: 'Server Error' }); }
-};
+const createItem = (Model) => asyncHandler(async (req, res) => {
+  const item = await Model.create(req.body);
+  res.status(201).json(item);
+});
 
-const createCrudHandlers = (Model, modelName) => {
-  const updateItem = async (req, res) => {
-    try {
-      const item = await Model.findById(req.params.id);
-      if (item) {
-        item.name = req.body.name || item.name;
-        const updatedItem = await item.save();
-        res.json(updatedItem);
-      } else { res.status(404).json({ message: `${modelName} not found` }); }
-    } catch (error) { res.status(500).json({ message: 'Server Error' }); }
-  };
+const getItems = (Model, populateOptions) => asyncHandler(async (req, res) => {
+  let query = Model.find({});
+  if (populateOptions) {
+    query = query.populate(populateOptions);
+  }
+  const items = await query;
+  res.json(items);
+});
 
-  const deleteItem = async (req, res) => {
-    try {
-      const item = await Model.findById(req.params.id);
-      if (item) {
-        await item.deleteOne();
-        res.json({ message: `${modelName} removed` });
-      } else { res.status(404).json({ message: `${modelName} not found` }); }
-    } catch (error) { res.status(500).json({ message: 'Server Error' }); }
-  };
-  return { updateItem, deleteItem };
-};
+const updateItem = (Model) => asyncHandler(async (req, res) => {
+  const item = await Model.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  if (item) {
+    res.json(item);
+  } else {
+    res.status(404);
+    throw new Error('Item not found');
+  }
+});
 
-const levelHandlers = createCrudHandlers(Level, 'Level');
-const classHandlers = createCrudHandlers(Class, 'Class');
-const subjectHandlers = createCrudHandlers(Subject, 'Subject');
-const strandHandlers = createCrudHandlers(Strand, 'Strand');
-const subStrandHandlers = createCrudHandlers(SubStrand, 'SubStrand');
+const deleteItem = (Model) => asyncHandler(async (req, res) => {
+  const item = await Model.findById(req.params.id);
+  if (item) {
+    await item.deleteOne(); // Use deleteOne() to trigger 'pre' middleware hooks
+    res.json({ message: 'Item removed' });
+  } else {
+    res.status(404);
+    throw new Error('Item not found');
+  }
+});
 
-module.exports = { 
-  // New exports
+module.exports = {
+  // Dynamic fetching
   getClassesByLevel,
   getSubjectsByClass,
   getStrandsBySubject,
   getSubStrandsByStrand,
 
-  // Existing exports
+  // CRUD for Levels
   createLevel: createItem(Level),
   getLevels: getItems(Level),
-  updateLevel: levelHandlers.updateItem,
-  deleteLevel: levelHandlers.deleteItem,
+  updateLevel: updateItem(Level),
+  deleteLevel: deleteItem(Level),
   
+  // CRUD for Classes
   createClass: createItem(Class),
   getClasses: getItems(Class, { path: 'level', select: 'name' }),
-  updateClass: classHandlers.updateItem,
-  deleteClass: classHandlers.deleteItem,
+  updateClass: updateItem(Class),
+  deleteClass: deleteItem(Class),
 
+  // CRUD for Subjects
   createSubject: createItem(Subject),
   getSubjects: getItems(Subject, { path: 'class', select: 'name', populate: { path: 'level', select: 'name' } }),
-  updateSubject: subjectHandlers.updateItem,
-  deleteSubject: subjectHandlers.deleteItem,
+  updateSubject: updateItem(Subject),
+  deleteSubject: deleteItem(Subject),
 
+  // CRUD for Strands
   createStrand: createItem(Strand),
   getStrands: getItems(Strand, { path: 'subject', select: 'name', populate: { path: 'class', select: 'name' } }),
-  updateStrand: strandHandlers.updateItem,
-  deleteStrand: strandHandlers.deleteItem,
+  updateStrand: updateItem(Strand),
+  deleteStrand: deleteItem(Strand),
 
+  // CRUD for SubStrands
   createSubStrand: createItem(SubStrand),
   getSubStrands: getItems(SubStrand, { path: 'strand', select: 'name', populate: { path: 'subject', select: 'name' } }),
-  updateSubStrand: subStrandHandlers.updateItem,
-  deleteSubStrand: subStrandHandlers.deleteItem,
+  updateSubStrand: updateItem(SubStrand),
+  deleteSubStrand: deleteItem(SubStrand),
 };

@@ -1,35 +1,33 @@
-import axios from 'axios';
-const API_URL = import.meta.env.VITE_API_URL + '/api/users/';
+// src/features/auth/authService.js (Revised)
+
+import api from '../../api/axios'; // <-- Import our new centralized instance
 
 // Register user
 const register = async (userData) => {
-  const response = await axios.post(API_URL + 'register', userData);
-  // On successful registration, API returns a message
+  const response = await api.post('/users/register', userData);
+  // On successful registration, the API returns a message object
   return response.data;
 };
 
 // Login user
 const login = async (userData) => {
-  const response = await axios.post(API_URL + 'login', userData);
+  const response = await api.post('/users/login', userData);
   if (response.data) {
+    // The service layer is responsible for side effects like localStorage
     localStorage.setItem('user', JSON.stringify(response.data));
   }
   return response.data;
 };
 
-// Logout user
+// Logout user - simple side effect, no API call needed
 const logout = () => {
   localStorage.removeItem('user');
 };
 
-// Get user profile
-const getMe = async (token) => {
-    const config = {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    };
-    const response = await axios.get(API_URL + 'profile', config);
+// Get user profile (getMe)
+// The token is now handled automatically by the axios interceptor
+const getMe = async () => {
+    const response = await api.get('/users/profile');
     return response.data;
 }
 

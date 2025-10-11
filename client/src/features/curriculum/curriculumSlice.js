@@ -1,3 +1,5 @@
+// src/features/curriculum/curriculumSlice.js (Revised)
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import curriculumService from './curriculumService';
 
@@ -12,63 +14,28 @@ const initialState = {
   message: '',
 };
 
-export const fetchItems = createAsyncThunk('curriculum/fetchItems', async (entity, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const data = await curriculumService.getItems(entity, token);
-    return { entity, data };
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue({ message, entity });
-  }
-});
+// --- Async Thunks (Simplified) ---
+// Thunks now pass a single object to the service, and no token logic is needed.
 
-// ADD THIS THUNK
-export const fetchChildren = createAsyncThunk('curriculum/fetchChildren', async ({ entity, parentEntity, parentId }, thunkAPI) => {
+const createApiThunk = (name, serviceCall) => {
+  return createAsyncThunk(`curriculum/${name}`, async (arg, thunkAPI) => {
     try {
-        const token = thunkAPI.getState().auth.user.token;
-        const data = await curriculumService.getChildrenOf({ entity, parentEntity, parentId }, token);
-        return { entity, data };
+      return await serviceCall(arg);
     } catch (error) {
-        const message = (error.response?.data?.message) || error.message || error.toString();
-        return thunkAPI.rejectWithValue({ message, entity });
+      const message = (error.response?.data?.message) || error.message || error.toString();
+      return thunkAPI.rejectWithValue({ message, entity: arg.entity });
     }
-});
+  });
+};
+
+export const fetchItems = createApiThunk('fetchItems', curriculumService.getItems);
+export const fetchChildren = createApiThunk('fetchChildren', curriculumService.getChildrenOf);
+export const createItem = createApiThunk('createItem', curriculumService.createItem);
+export const updateItem = createApiThunk('updateItem', curriculumService.updateItem);
+export const deleteItem = createApiThunk('deleteItem', curriculumService.deleteItem);
 
 
-export const createItem = createAsyncThunk('curriculum/createItem', async ({ entity, itemData }, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const data = await curriculumService.createItem(entity, itemData, token);
-    return { entity, data };
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue({ message, entity });
-  }
-});
-
-export const updateItem = createAsyncThunk('curriculum/updateItem', async ({ entity, itemData }, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const data = await curriculumService.updateItem(entity, itemData, token);
-    return { entity, data };
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue({ message, entity });
-  }
-});
-
-export const deleteItem = createAsyncThunk('curriculum/deleteItem', async ({ entity, itemId }, thunkAPI) => {
-  try {
-    const token = thunkAPI.getState().auth.user.token;
-    const deletedItemId = await curriculumService.deleteItem(entity, itemId, token);
-    return { entity, itemId: deletedItemId };
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue({ message, entity });
-  }
-});
-
+// --- Curriculum Slice ---
 
 const curriculumSlice = createSlice({
   name: 'curriculum',
@@ -79,49 +46,69 @@ const curriculumSlice = createSlice({
       state.isError = false;
       state.message = '';
     },
+    // Allows clearing specific parts of the curriculum tree, e.g., when a user selects a new level
+    clearChildren: (state, action) => {
+      const { entities } = action.payload; // e.g., ['classes', 'subjects', 'strands']
+      entities.forEach(entity => {
+        state[entity] = [];
+      });
+    }
   },
   extraReducers: (builder) => {
-    const handlePending = (state) => {
-      state.isLoading = true;
-    };
-    const handleRejected = (state, action) => {
-      state.isLoading = false;
-      state.isError = true;
-      state.message = action.payload.message;
-    };
-
     builder
+      // Fulfilled cases for fetching data
       .addCase(fetchItems.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state[action.payload.entity] = action.payload.data;
+        const { entity, data } = action.payload;
+        state[entity] = data;
       })
-      // ADD THIS CASE
       .addCase(fetchChildren.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state[action.payload.entity] = action.payload.data;
+        const { entity, data } = action.payload;
+        state[entity] = data;
       })
+
+      // Fulfilled cases for mutations
       .addCase(createItem.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state[action.payload.entity].push(action.payload.data);
+        const { entity, data } = action.payload;
+        state[entity].push(data);
       })
       .addCase(updateItem.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const items = state[action.payload.entity];
-        const index = items.findIndex(item => item._id === action.payload.data._id);
+        const { entity, data } = action.payload;
+        const items = state[entity];
+        const index = items.findIndex(item => item._id === data._id);
         if (index !== -1) {
-          items[index] = action.payload.data;
+          items[index] = data;
         }
       })
       .addCase(deleteItem.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state[action.payload.entity] = state[action.payload.entity].filter(
-          item => item._id !== action.payload.itemId
-        );
+        const { entity, itemId } = action.payload;
+        state[entity] = state[entity].filter(item => item._id !== itemId);
       })
-      .addMatcher((action) => action.type.startsWith('curriculum/') && action.type.endsWith('/pending'), handlePending)
-      .addMatcher((action) => action.type.startsWith('curriculum/') && action.type.endsWith('/rejected'), handleRejected);
+
+      // Generic matchers for pending, fulfilled, and rejected states
+      .addMatcher(
+        (action) => action.type.startsWith('curriculum/') && action.type.endsWith('/pending'),
+        (state) => {
+          state.isLoading = true;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('curriculum/') && action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.isLoading = false;
+          state.isError = false;
+          state.message = '';
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('curriculum/') && action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.isError = true;
+          state.message = action.payload.message;
+        }
+      );
   },
 });
 
-export const { reset } = curriculumSlice.actions;
+export const { reset, clearChildren } = curriculumSlice.actions;
 export default curriculumSlice.reducer;

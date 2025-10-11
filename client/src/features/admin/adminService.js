@@ -1,59 +1,53 @@
-import axios from 'axios';
-const API_URL = import.meta.env.VITE_API_URL + '/api/admin/';
+// src/features/admin/adminService.js (Revised)
 
-// Helper to get the auth config
-const getConfig = (token) => ({
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+import api from '../../api/axios'; // <-- Import our new centralized instance
 
 // Get all users with pagination
-const getUsers = async (pageNumber, token) => {
-  const response = await axios.get(API_URL + `users?pageNumber=${pageNumber}`, getConfig(token));
+const getUsers = async (pageNumber = 1) => {
+  const response = await api.get(`/admin/users?pageNumber=${pageNumber}`);
   return response.data;
 };
 
 // Approve a user
-const approveUser = async (userId, token) => {
-    const response = await axios.put(API_URL + `users/${userId}/approve`, {}, getConfig(token));
+const approveUser = async (userId) => {
+    const response = await api.put(`/admin/users/${userId}/approve`);
     return response.data;
 }
 
 // Delete a user
-const deleteUser = async (userId, token) => {
-    await axios.delete(API_URL + `users/${userId}`, getConfig(token));
-    return userId;
+const deleteUser = async (userId) => {
+    await api.delete(`/admin/users/${userId}`);
+    return userId; // Return the ID for easy removal from state
 }
 
 // Get usage stats
-const getStats = async (token) => {
-    const response = await axios.get(API_URL + 'stats', getConfig(token));
+const getStats = async () => {
+    const response = await api.get('/admin/stats');
     return response.data;
 }
 
 // Get all schools
-const getSchools = async (token) => {
-    const response = await axios.get(API_URL + 'schools', getConfig(token));
+const getSchools = async () => {
+    const response = await api.get('/admin/schools');
     return response.data;
 }
 
 // Create a new school
-const createSchool = async (schoolData, token) => {
-    const response = await axios.post(API_URL + 'schools', schoolData, getConfig(token));
+const createSchool = async (schoolData) => {
+    const response = await api.post('/admin/schools', schoolData);
     return response.data;
 }
 
 // Delete a school
-const deleteSchool = async (schoolId, token) => {
-    await axios.delete(API_URL + `schools/${schoolId}`, getConfig(token));
-    return schoolId;
+const deleteSchool = async (schoolId) => {
+    await api.delete(`/admin/schools/${schoolId}`);
+    return schoolId; // Return the ID
 }
 
 // Assign a user to a school
-const assignUserToSchool = async (data, token) => {
+const assignUserToSchool = async (data) => {
     const { userId, schoolId } = data;
-    const response = await axios.put(API_URL + `users/${userId}/assign-school`, { schoolId }, getConfig(token));
+    const response = await api.put(`/admin/users/${userId}/assign-school`, { schoolId });
     return response.data;
 }
 
