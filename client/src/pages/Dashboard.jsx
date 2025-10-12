@@ -38,6 +38,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import HTMLtoDOCX from 'html-docx-js-typescript';
 
 function Dashboard() {
   const dispatch = useDispatch();
@@ -180,23 +181,37 @@ function Dashboard() {
   );
 
   // --- WORD Download ---
-  const handleDownloadWord = useCallback(async (noteId, noteTopic) => {
+  const handleDownloadWord = useCallback((noteId, noteTopic) => {
     try {
       const element = document.getElementById(`note-content-${noteId}`);
-      if (!element) return;
+      if (!element) {
+        alert('Note content not found.');
+        return;
+      }
 
-      const htmlToDocx = (await import('html-to-docx')).default;
-      const html = element.innerHTML;
-      const blob = await htmlToDocx(html, {
-        orientation: 'portrait',
-        margins: { top: 720 },
-      });
+      // Create a full HTML structure for better compatibility
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8" />
+          </head>
+          <body>${element.innerHTML}</body>
+        </html>
+      `;
 
+      const blob = HTMLtoDOCX(html); // Use the imported function
+      const safeName = (noteTopic || 'lesson_note').replace(/[^a-zA-Z0-9]/g, '_');
+
+      // This part remains the same
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${noteTopic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+      link.download = `${safeName}.docx`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
+
     } catch (err) {
       console.error('Error generating Word document:', err);
       alert('Failed to generate Word file. Please try again.');
