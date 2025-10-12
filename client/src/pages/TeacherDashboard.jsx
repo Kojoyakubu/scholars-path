@@ -4,7 +4,6 @@ import { Link as RouterLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   fetchItems,
-  fetchChildren,
   clearChildren,
 } from '../features/curriculum/curriculumSlice';
 import {
@@ -14,7 +13,7 @@ import {
   resetTeacherState,
 } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
-import HTMLtoDOCX from 'html-docx-js-typescript';
+import HTMLtoDOCX from 'html-docx-js-typescript'; // ✅ Stable DOCX generator
 
 import {
   Box,
@@ -37,7 +36,7 @@ import {
 import ArticleIcon from '@mui/icons-material/Article';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
-import DeleteIcon from '@mui/icons-material/Delete'; // ✅
+import DeleteIcon from '@mui/icons-material/Delete'; // ✅ new icon
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
@@ -57,6 +56,7 @@ function TeacherDashboard() {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // --- Load data on mount ---
   useEffect(() => {
     dispatch(getMyLessonNotes());
     dispatch(fetchItems({ entity: 'levels' }));
@@ -65,12 +65,117 @@ function TeacherDashboard() {
     };
   }, [dispatch]);
 
+  // --- Dropdown Change Handler ---
+  const handleSelectionChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setSelections((prev) => {
+        const newSelections = { ...prev, [name]: value };
+        const resetMap = {
+          level: ['class', 'subject', 'strand', 'subStrand'],
+          class: ['subject', 'strand', 'subStrand'],
+          subject: ['strand', 'subStrand'],
+          strand: ['subStrand'],
+        };
+        if (resetMap[name]) {
+          resetMap[name].forEach((key) => (newSelections[key] = ''));
+          dispatch(clearChildren({ entities: resetMap[name] }));
+        }
+        return newSelections;
+      });
+    },
+    [dispatch]
+  );
+
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
+
+  // --- Generate lesson note ---
+  const handleGenerateNote = useCallback(
+    (formData) => {
+      const noteData = { ...formData, subStrandId: selections.subStrand };
+      dispatch(generateLessonNote(noteData));
+    },
+    [dispatch, selections.subStrand]
+  );
+
+  // --- Close modal after success ---
+  useEffect(() => {
+    if (isSuccess && isModalOpen) {
+      handleCloseModal();
+    }
+  }, [isSuccess, isModalOpen]);
+
+  // --- PDF DOWNLOAD ---
+  const handleDownloadPdf = useCallback((noteId, noteTopic) => {
+    const element = document.getElementById(`note-content-${noteId}`);
+    if (!element) return;
+
+    const filename = `${noteTopic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    const opt = {
+      margin: 10,
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    };
+
+    if (window.html2pdf) {
+      window.html2pdf().set(opt).from(element).save();
+    } else {
+      console.error('html2pdf library not loaded!');
+      alert('Could not generate PDF. Please refresh the page.');
+    }
+  }, []);
+
+  // --- WORD DOWNLOAD ---
+  const handleDownloadWord = useCallback((noteId, noteTopic) => {
+    try {
+      const element = document.getElementById(`note-content-${noteId}`);
+      if (!element) {
+        alert('Note content not found.');
+        return;
+      }
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8" />
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; }
+              h1, h2, h3 { color: #2e7d32; }
+              p { margin-bottom: 8px; }
+              h1, h2 { page-break-before: always; }
+            </style>
+          </head>
+          <body>${element.innerHTML}</body>
+        </html>
+      `;
+
+      const blob = HTMLtoDOCX(html);
+      const safeName = (noteTopic || 'lesson-note').replace(/[^a-zA-Z0-9]/g, '_');
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${safeName}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error('Word generation failed:', err);
+      alert('Could not generate Word document. Please try again.');
+    }
+  }, []);
+
+  // --- DELETE NOTE ---
   const handleDeleteNote = useCallback(
     async (noteId) => {
       if (window.confirm('Are you sure you want to delete this lesson note?')) {
         try {
           await dispatch(deleteLessonNote(noteId));
-          dispatch(getMyLessonNotes());
+          dispatch(getMyLessonNotes()); // refresh list
         } catch (err) {
           console.error('Failed to delete note:', err);
           alert('Could not delete the note. Please try again.');
@@ -80,14 +185,77 @@ function TeacherDashboard() {
     [dispatch]
   );
 
-  // (PDF and Word handlers stay the same as your last version)
-
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
-        {/* ... existing top sections ... */}
+        {/* --- Page Title --- */}
+        <Box textAlign="center" my={5}>
+          <Typography variant="h4" component="h1">
+            Teacher Dashboard
+          </Typography>
+        </Box>
 
-        {/* Lesson Notes List */}
+        {/* --- Note Generator Section --- */}
+        <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
+          <Typography variant="h6" gutterBottom>
+            Select Topic to Generate Note
+          </Typography>
+
+          <Grid container spacing={2}>
+            {[
+              { label: 'Level', name: 'level', items: levels },
+              { label: 'Class', name: 'class', items: classes, disabled: !selections.level },
+              { label: 'Subject', name: 'subject', items: subjects, disabled: !selections.class },
+              { label: 'Strand', name: 'strand', items: strands, disabled: !selections.subject },
+            ].map(({ label, name, items, disabled }) => (
+              <Grid item xs={12} sm={6} md={3} key={name}>
+                <FormControl fullWidth disabled={disabled}>
+                  <InputLabel>{label}</InputLabel>
+                  <Select
+                    name={name}
+                    value={selections[name]}
+                    label={label}
+                    onChange={handleSelectionChange}
+                  >
+                    {items.map((i) => (
+                      <MenuItem key={i._id} value={i._id}>
+                        {i.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            ))}
+            <Grid item xs={12}>
+              <FormControl fullWidth disabled={!selections.strand}>
+                <InputLabel>Sub-Strand</InputLabel>
+                <Select
+                  name="subStrand"
+                  value={selections.subStrand}
+                  label="Sub-Strand"
+                  onChange={handleSelectionChange}
+                >
+                  {subStrands.map((s) => (
+                    <MenuItem key={s._id} value={s._id}>
+                      {s.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+
+          <Button
+            variant="contained"
+            onClick={handleOpenModal}
+            disabled={!selections.subStrand || isLoading}
+            sx={{ mt: 2 }}
+          >
+            Generate AI Lesson Note
+          </Button>
+        </Paper>
+
+        {/* --- Lesson Notes List --- */}
         <Paper elevation={3} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
             My Generated Lesson Notes
@@ -108,9 +276,7 @@ function TeacherDashboard() {
                       primaryTypographyProps={{ noWrap: true, fontWeight: 500 }}
                       primary={
                         note.content.split('\n')[1] ||
-                        `Note created on ${new Date(
-                          note.createdAt
-                        ).toLocaleDateString()}`
+                        `Note created on ${new Date(note.createdAt).toLocaleDateString()}`
                       }
                       secondary={note.content.substring(0, 150) + '...'}
                     />
@@ -150,7 +316,16 @@ function TeacherDashboard() {
           )}
         </Paper>
 
-        {/* ... your LessonNoteForm component stays the same ... */}
+        {/* --- Lesson Note Modal --- */}
+        <LessonNoteForm
+          open={isModalOpen}
+          onClose={handleCloseModal}
+          onSubmit={handleGenerateNote}
+          subStrandName={
+            subStrands.find((s) => s._id === selections.subStrand)?.name || ''
+          }
+          isLoading={isLoading}
+        />
       </Container>
     </motion.div>
   );
