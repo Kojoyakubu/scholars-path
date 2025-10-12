@@ -5,8 +5,7 @@ import { motion } from 'framer-motion';
 import { fetchItems, fetchChildren, clearChildren, resetCurriculumState } from '../features/curriculum/curriculumSlice';
 import { getLearnerNotes, getQuizzes, getResources, logNoteView } from '../features/student/studentSlice';
 
-// --- THE FIX IS HERE ---
-import { jsPDF } from 'jspdf'; // Changed to a named import
+// --- LIBRARIES ARE IMPORTED DYNAMICALLY NOW ---
 import html2canvas from 'html2canvas';
 
 import {
@@ -75,18 +74,22 @@ function Dashboard() {
     dispatch(logNoteView(noteId));
   }, [dispatch]);
 
-  const handleDownloadPdf = useCallback((noteId, noteTopic) => {
+  // --- UPDATED PDF DOWNLOAD HANDLER ---
+  const handleDownloadPdf = useCallback(async (noteId, noteTopic) => { // Made async
     handleNoteView(noteId);
     const input = document.getElementById(`note-content-${noteId}`);
     if (!input) return;
-    html2canvas(input, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`${noteTopic || 'note'}.pdf`);
-    });
+
+    // Dynamically import jspdf only when needed
+    const { default: jsPDF } = await import('jspdf');
+    
+    const canvas = await html2canvas(input, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${noteTopic || 'note'}.pdf`);
   }, [handleNoteView]);
 
   return (

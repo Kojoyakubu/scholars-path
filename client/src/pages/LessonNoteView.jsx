@@ -5,8 +5,7 @@ import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacher
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 
-// --- THE FIX IS HERE ---
-import { jsPDF } from 'jspdf'; // Changed to a named import
+// --- LIBRARIES ARE IMPORTED DYNAMICALLY NOW ---
 import html2canvas from 'html2canvas';
 import HtmlToDocx from 'html-to-docx';
 
@@ -27,18 +26,22 @@ function LessonNoteView() {
     return () => { dispatch(resetCurrentNote()); };
   }, [dispatch, noteId]);
 
-  const handleDownloadPdf = useCallback(() => {
+  // --- UPDATED PDF DOWNLOAD HANDLER ---
+  const handleDownloadPdf = useCallback(async () => { // Made async
     const input = document.getElementById('note-content-container');
     if (!input || !currentNote) return;
-    html2canvas(input, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      const title = currentNote.content.split('\n')[1] || 'lesson-note';
-      pdf.save(`${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
-    });
+
+    // Dynamically import jspdf only when needed
+    const { default: jsPDF } = await import('jspdf');
+
+    const canvas = await html2canvas(input, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    const title = currentNote.content.split('\n')[1] || 'lesson-note';
+    pdf.save(`${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
   }, [currentNote]);
 
   const handleDownloadWord = useCallback(async () => {
