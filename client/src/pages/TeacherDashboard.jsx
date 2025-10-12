@@ -10,11 +10,10 @@ import {
 import {
   generateLessonNote,
   getMyLessonNotes,
-  deleteLessonNote,
   resetTeacherState,
 } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
-import HTMLtoDOCX from 'html-docx-js-typescript';
+import HTMLtoDOCX from 'html-docx-js-typescript'; // ✅ Stable DOCX generator
 
 import {
   Box,
@@ -37,7 +36,6 @@ import {
 import ArticleIcon from '@mui/icons-material/Article';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
@@ -57,7 +55,6 @@ function TeacherDashboard() {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // --- Load user’s lesson notes and base levels ---
   useEffect(() => {
     dispatch(getMyLessonNotes());
     dispatch(fetchItems({ entity: 'levels' }));
@@ -66,34 +63,23 @@ function TeacherDashboard() {
     };
   }, [dispatch]);
 
-  // --- Handle dropdown changes and fetch children ---
   const handleSelectionChange = useCallback(
-    async (e) => {
+    (e) => {
       const { name, value } = e.target;
-      setSelections((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-
-      switch (name) {
-        case 'level':
-          dispatch(fetchChildren({ parentId: value, entity: 'classes' }));
-          dispatch(clearChildren({ entities: ['subjects', 'strands', 'subStrands'] }));
-          break;
-        case 'class':
-          dispatch(fetchChildren({ parentId: value, entity: 'subjects' }));
-          dispatch(clearChildren({ entities: ['strands', 'subStrands'] }));
-          break;
-        case 'subject':
-          dispatch(fetchChildren({ parentId: value, entity: 'strands' }));
-          dispatch(clearChildren({ entities: ['subStrands'] }));
-          break;
-        case 'strand':
-          dispatch(fetchChildren({ parentId: value, entity: 'subStrands' }));
-          break;
-        default:
-          break;
-      }
+      setSelections((prev) => {
+        const newSelections = { ...prev, [name]: value };
+        const resetMap = {
+          level: ['class', 'subject', 'strand', 'subStrand'],
+          class: ['subject', 'strand', 'subStrand'],
+          subject: ['strand', 'subStrand'],
+          strand: ['subStrand'],
+        };
+        if (resetMap[name]) {
+          resetMap[name].forEach((key) => (newSelections[key] = ''));
+          dispatch(clearChildren({ entities: resetMap[name] }));
+        }
+        return newSelections;
+      });
     },
     [dispatch]
   );
@@ -101,7 +87,6 @@ function TeacherDashboard() {
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  // --- Generate lesson note ---
   const handleGenerateNote = useCallback(
     (formData) => {
       const noteData = { ...formData, subStrandId: selections.subStrand };
@@ -110,7 +95,6 @@ function TeacherDashboard() {
     [dispatch, selections.subStrand]
   );
 
-  // --- Close modal after success ---
   useEffect(() => {
     if (isSuccess && isModalOpen) {
       handleCloseModal();
@@ -139,7 +123,7 @@ function TeacherDashboard() {
     }
   }, []);
 
-  // --- WORD DOWNLOAD ---
+  // --- WORD DOWNLOAD (Stable) ---
   const handleDownloadWord = useCallback((noteId, noteTopic) => {
     try {
       const element = document.getElementById(`note-content-${noteId}`);
@@ -180,22 +164,6 @@ function TeacherDashboard() {
     }
   }, []);
 
-  // --- DELETE NOTE ---
-  const handleDeleteNote = useCallback(
-    async (noteId) => {
-      if (window.confirm('Are you sure you want to delete this lesson note?')) {
-        try {
-          await dispatch(deleteLessonNote(noteId));
-          dispatch(getMyLessonNotes());
-        } catch (err) {
-          console.error('Failed to delete note:', err);
-          alert('Could not delete the note. Please try again.');
-        }
-      }
-    },
-    [dispatch]
-  );
-
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
@@ -205,12 +173,13 @@ function TeacherDashboard() {
           </Typography>
         </Box>
 
-        {/* --- Note Generator --- */}
+        {/* Note Generator Section */}
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
           <Typography variant="h6" gutterBottom>
             Select Topic to Generate Note
           </Typography>
 
+          {/* Curriculum Dropdowns */}
           <Grid container spacing={2}>
             {[
               { label: 'Level', name: 'level', items: levels },
@@ -221,16 +190,9 @@ function TeacherDashboard() {
               <Grid item xs={12} sm={6} md={3} key={name}>
                 <FormControl fullWidth disabled={disabled}>
                   <InputLabel>{label}</InputLabel>
-                  <Select
-                    name={name}
-                    value={selections[name]}
-                    label={label}
-                    onChange={handleSelectionChange}
-                  >
+                  <Select name={name} value={selections[name]} label={label} onChange={handleSelectionChange}>
                     {items.map((i) => (
-                      <MenuItem key={i._id} value={i._id}>
-                        {i.name}
-                      </MenuItem>
+                      <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -265,7 +227,7 @@ function TeacherDashboard() {
           </Button>
         </Paper>
 
-        {/* --- Lesson Notes --- */}
+        {/* Lesson Notes List */}
         <Paper elevation={3} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
             My Generated Lesson Notes
@@ -277,7 +239,10 @@ function TeacherDashboard() {
             <List>
               {lessonNotes.map((note) => (
                 <ListItem key={note._id} disablePadding>
-                  <ListItemButton component={RouterLink} to={`/teacher/notes/${note._id}`}>
+                  <ListItemButton
+                    component={RouterLink}
+                    to={`/teacher/notes/${note._id}`}
+                  >
                     <ArticleIcon sx={{ mr: 2, color: 'action.active' }} />
                     <ListItemText
                       primaryTypographyProps={{ noWrap: true, fontWeight: 500 }}
@@ -306,15 +271,6 @@ function TeacherDashboard() {
                       onClick={() => handleDownloadWord(note._id, 'lesson_note')}
                     >
                       Word
-                    </Button>
-                    <Button
-                      startIcon={<DeleteIcon />}
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={() => handleDeleteNote(note._id)}
-                    >
-                      Delete
                     </Button>
                   </Stack>
                 </ListItem>

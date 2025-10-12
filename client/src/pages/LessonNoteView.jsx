@@ -1,10 +1,10 @@
 import { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getLessonNoteById, resetCurrentNote, deleteLessonNote, getMyLessonNotes } from '../features/teacher/teacherSlice';
+import { useParams } from 'react-router-dom';
+import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
-import HTMLtoDOCX from 'html-docx-js-typescript';
+import HTMLtoDOCX from 'html-docx-js-typescript'; // ✅ New library
 
 import {
   Box, Typography, Container, Paper, CircularProgress,
@@ -12,11 +12,9 @@ import {
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { noteId } = useParams();
   const { currentNote, isLoading, isError, message } = useSelector((state) => state.teacher);
 
@@ -25,27 +23,32 @@ function LessonNoteView() {
     return () => { dispatch(resetCurrentNote()); };
   }, [dispatch, noteId]);
 
+  // --- PDF DOWNLOAD HANDLER ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
 
+    if (!window.html2pdf) {
+      console.error('PDF generation library not loaded!');
+      alert('Could not download PDF. Please refresh the page and try again.');
+      return;
+    }
+
     const title = currentNote.content.split('\n')[1] || 'lesson-note';
     const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-    if (window.html2pdf) {
-      const opt = {
-        margin: 15,
-        filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-      window.html2pdf().set(opt).from(element).save();
-    } else {
-      alert('Could not generate PDF. Please refresh and try again.');
-    }
+    const opt = {
+      margin: 15,
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    window.html2pdf().set(opt).from(element).save();
   }, [currentNote]);
 
+  // --- WORD DOWNLOAD HANDLER (html-docx-js-typescript) ---
   const handleDownloadWord = useCallback(() => {
     try {
       const element = document.getElementById('note-content-container');
@@ -60,7 +63,7 @@ function LessonNoteView() {
               body { font-family: Arial, sans-serif; line-height: 1.6; }
               h1, h2, h3 { color: #2e7d32; }
               p { margin-bottom: 8px; }
-              h1, h2 { page-break-before: always; }
+              h1, h2 { page-break-before: always; } /* optional page breaks */
             </style>
           </head>
           <body>${element.innerHTML}</body>
@@ -84,15 +87,6 @@ function LessonNoteView() {
     }
   }, [currentNote]);
 
-  // ✅ DELETE HANDLER
-  const handleDeleteNote = async () => {
-    if (window.confirm('Are you sure you want to delete this lesson note?')) {
-      await dispatch(deleteLessonNote(noteId));
-      dispatch(getMyLessonNotes());
-      navigate('/teacher/dashboard');
-    }
-  };
-
   if (isLoading || !currentNote) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
@@ -114,14 +108,14 @@ function LessonNoteView() {
       <Container maxWidth="md">
         <Paper elevation={3} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
           <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" gutterBottom>Actions</Typography>
+            <Typography variant="h6" gutterBottom>Download Options</Typography>
             <Stack direction="row" spacing={2}>
               <Button
                 variant="contained"
                 startIcon={<PictureAsPdfIcon />}
                 onClick={handleDownloadPdf}
               >
-                Download PDF
+                Download as PDF
               </Button>
               <Button
                 variant="contained"
@@ -129,15 +123,7 @@ function LessonNoteView() {
                 startIcon={<DescriptionIcon />}
                 onClick={handleDownloadWord}
               >
-                Download Word
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={handleDeleteNote}
-              >
-                Delete
+                Download as Word
               </Button>
             </Stack>
           </Box>
