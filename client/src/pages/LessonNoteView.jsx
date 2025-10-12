@@ -36,6 +36,7 @@ function LessonNoteView() {
   }, [dispatch, noteId]);
 
   // --- PDF DOWNLOAD HANDLER ---
+   // --- PDF DOWNLOAD HANDLER (A4 Perfectly Scaled) ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
@@ -45,16 +46,59 @@ function LessonNoteView() {
       return;
     }
 
+    // Clone to avoid altering live DOM
+    const clone = element.cloneNode(true);
+    clone.style.width = '210mm'; // A4 width
+    clone.style.minHeight = '297mm'; // A4 height
+    clone.style.padding = '20mm';
+    clone.style.margin = '0 auto';
+    clone.style.backgroundColor = '#fff';
+    clone.style.fontFamily = 'Arial, sans-serif';
+    clone.style.fontSize = '12pt';
+    clone.style.lineHeight = '1.5';
+    clone.style.color = '#000';
+
+    // Improve table rendering
+    const tables = clone.querySelectorAll('table');
+    tables.forEach((table) => {
+      table.style.borderCollapse = 'collapse';
+      table.style.width = '100%';
+      table.style.fontSize = '11pt';
+      table.style.pageBreakInside = 'avoid';
+    });
+
+    // Add a footer at the very end
+    const footer = document.createElement('div');
+    footer.innerHTML = `
+      <div style="text-align:center; margin-top:20mm; font-size:11pt;">
+        — End of Lesson Note —
+      </div>
+    `;
+    clone.appendChild(footer);
+
     const filename = 'lesson_note.pdf';
     const opt = {
-      margin: 10,
+      margin: [10, 10, 15, 10], // Top, right, bottom, left (in mm)
       filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        letterRendering: true,
+        dpi: 300, // ensures print-quality A4 output
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait', // strictly A4 portrait layout
+      },
+      pagebreak: {
+        mode: ['avoid-all', 'css', 'legacy'],
+      },
     };
 
-    window.html2pdf().set(opt).from(element).save();
+    window.html2pdf().set(opt).from(clone).save();
   }, [currentNote]);
 
   // --- WORD DOWNLOAD HANDLER ---
