@@ -18,7 +18,6 @@
     "axios": "^1.12.2",
     "framer-motion": "^12.23.22",
     "html-to-docx": "^1.8.0",
-    "html2pdf.js": "^0.12.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-markdown": "^10.1.0",
