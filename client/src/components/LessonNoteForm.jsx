@@ -1,122 +1,111 @@
-import { useState, useEffect } from 'react';
 import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
-  Box,
-  CircularProgress, // For loading state
+  Dialog, DialogActions, DialogContent, DialogTitle, Button,
+  TextField, CircularProgress, Stack, Box, Typography
 } from '@mui/material';
+import { useState, useEffect } from 'react';
 
-const LessonNoteForm = ({ open, onClose, onSubmit, subStrandName, isLoading }) => {
+function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
   const [formData, setFormData] = useState({
     objectives: '',
     aids: '',
-    duration: '',
+    duration: '1hr 10 mins',
+    // ✅ ADDED NEW FIELDS
+    contentStandard: '',
+    performanceIndicator: '',
+    coreCompetencies: 'Critical Thinking, Problem Solving',
   });
-  const [isFormValid, setIsFormValid] = useState(false);
 
-  const { objectives, aids, duration } = formData;
-  
-  // Validate the form whenever formData changes
   useEffect(() => {
-    // Basic validation: ensure required fields are not empty
-    if (objectives.trim() !== '' && duration.trim() !== '') {
-      setIsFormValid(true);
-    } else {
-      setIsFormValid(false);
+    // Reset form when the modal is opened for a new note
+    if (open) {
+      setFormData({
+        objectives: '',
+        aids: '',
+        duration: '1hr 10 mins',
+        contentStandard: '',
+        performanceIndicator: '',
+        coreCompetencies: 'Critical Thinking, Problem Solving',
+      });
     }
-  }, [objectives, duration]);
+  }, [open]);
 
-
-  const onChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.name]: e.target.value,
-    }));
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isFormValid) return; // Prevent submission if form is invalid
     onSubmit(formData);
-    // Let the parent component handle closing the dialog on success
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Generate AI Lesson Note</DialogTitle>
-      <DialogContent>
-        <Box component="form" id="lesson-note-form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Selected Sub-Strand"
-            value={subStrandName}
-            disabled
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            multiline
-            rows={3}
-            name="objectives"
-            label="Learning Objectives"
-            value={objectives}
-            onChange={onChange}
-            autoFocus
-            helperText="Required"
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            name="aids"
-            label="Teaching Aids (e.g., videos, charts)"
-            value={aids}
-            onChange={onChange}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="duration"
-            label="Lesson Duration (e.g., 45 minutes)"
-            value={duration}
-            onChange={onChange}
-            helperText="Required"
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={onClose} disabled={isLoading}>Cancel</Button>
-        <Box sx={{ position: 'relative' }}>
-          <Button 
-            type="submit" 
-            form="lesson-note-form" 
-            variant="contained"
-            disabled={!isFormValid || isLoading} // Disable button if form is invalid or submitting
-          >
-            Generate Note
-          </Button>
-          {isLoading && (
-            <CircularProgress
-              size={24}
-              sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                marginTop: '-12px',
-                marginLeft: '-12px',
-              }}
+      <form onSubmit={handleSubmit}>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="h6" gutterBottom>Topic:</Typography>
+              <Typography variant="body1">{subStrandName || 'N/A'}</Typography>
+            </Box>
+            <TextField
+              name="contentStandard"
+              label="Content Standard (e.g., B7.2.1.1)"
+              value={formData.contentStandard}
+              onChange={handleChange}
+              required
             />
-          )}
-        </Box>
-      </DialogActions>
+            <TextField
+              name="performanceIndicator"
+              label="Performance Indicator"
+              value={formData.performanceIndicator}
+              onChange={handleChange}
+              multiline
+              rows={2}
+              required
+            />
+            <TextField
+              name="objectives"
+              label="Learning Objectives"
+              value={formData.objectives}
+              onChange={handleChange}
+              multiline
+              rows={3}
+              required
+              helperText="Clearly state what learners should be able to do by the end of the lesson."
+            />
+            <TextField
+              name="coreCompetencies"
+              label="Core Competencies"
+              value={formData.coreCompetencies}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="aids"
+              label="Teaching/Learning Materials"
+              value={formData.aids}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="duration"
+              label="Duration"
+              value={formData.duration}
+              onChange={handleChange}
+              required
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="contained" disabled={isLoading}>
+            {isLoading ? <CircularProgress size={24} /> : 'Generate Note'}
+          </Button>
+        </DialogActions>
+      </form>
     </Dialog>
   );
-};
+}
 
 export default LessonNoteForm;
