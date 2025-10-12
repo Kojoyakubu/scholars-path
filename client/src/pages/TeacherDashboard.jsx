@@ -63,6 +63,56 @@ function TeacherDashboard() {
     };
   }, [dispatch]);
 
+  // ✅ ADDED THIS BLOCK TO CHAIN DROPDOWNS
+  useEffect(() => {
+    if (selections.level) {
+      dispatch(
+        fetchChildren({
+          entity: 'classes',
+          parentEntity: 'levels',
+          parentId: selections.level,
+        })
+      );
+    }
+  }, [selections.level, dispatch]);
+
+  useEffect(() => {
+    if (selections.class) {
+      dispatch(
+        fetchChildren({
+          entity: 'subjects',
+          parentEntity: 'classes',
+          parentId: selections.class,
+        })
+      );
+    }
+  }, [selections.class, dispatch]);
+
+  useEffect(() => {
+    if (selections.subject) {
+      dispatch(
+        fetchChildren({
+          entity: 'strands',
+          parentEntity: 'subjects',
+          parentId: selections.subject,
+        })
+      );
+    }
+  }, [selections.subject, dispatch]);
+
+  useEffect(() => {
+    if (selections.strand) {
+      dispatch(
+        fetchChildren({
+          entity: 'subStrands',
+          parentEntity: 'strands',
+          parentId: selections.strand,
+        })
+      );
+    }
+  }, [selections.strand, dispatch]);
+  // ✅ END OF ADDED BLOCK
+
   const handleSelectionChange = useCallback(
     (e) => {
       const { name, value } = e.target;
