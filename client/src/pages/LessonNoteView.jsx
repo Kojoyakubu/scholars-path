@@ -8,14 +8,14 @@ import { motion } from 'framer-motion';
 // Import libraries for downloading
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { asBlob } from 'html-to-docx';
+import HtmlToDocx from 'html-to-docx'; // <-- CORRECTED IMPORT
 
-import { 
-    Box, Typography, Container, Paper, CircularProgress, 
-    Alert, Button, Stack 
+import {
+    Box, Typography, Container, Paper, CircularProgress,
+    Alert, Button, Stack
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import DescriptionIcon from '@mui/icons-material/Description'; // Word icon
+import DescriptionIcon from '@mui/icons-material/Description';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -34,36 +34,32 @@ function LessonNoteView() {
     const input = document.getElementById('note-content-container');
     if (!input || !currentNote) return;
 
-    html2canvas(input, { scale: 2 }) // Use higher scale for better quality
+    html2canvas(input, { scale: 2 })
       .then((canvas) => {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        
-        // Use the first line of the note as a title, or a default
         const title = currentNote.content.split('\n')[1] || 'lesson-note';
         pdf.save(`${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
       });
   }, [currentNote]);
 
-  const handleDownloadWord = useCallback(() => {
+  const handleDownloadWord = useCallback(async () => { // <-- Made this function async
     const noteContainer = document.getElementById('note-content-container');
     if (!noteContainer || !currentNote) return;
-    
-    // Convert the rendered HTML to a DOCX blob
-    asBlob(noteContainer.innerHTML).then(data => {
-      const url = URL.createObjectURL(data);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      
-      const title = currentNote.content.split('\n')[1] || 'lesson-note';
-      anchor.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
-      
-      anchor.click();
-      URL.revokeObjectURL(url);
-    });
+
+    // --- CORRECTED USAGE ---
+    const fileBlob = await HtmlToDocx.getBlob(noteContainer.innerHTML);
+
+    const url = URL.createObjectURL(fileBlob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    const title = currentNote.content.split('\n')[1] || 'lesson-note';
+    anchor.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }, [currentNote]);
 
 
@@ -83,21 +79,20 @@ function LessonNoteView() {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="md">
         <Paper elevation={3} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
-          
-          {/* Download Buttons Section */}
+
           <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6" gutterBottom>Download Options</Typography>
             <Stack direction="row" spacing={2}>
-              <Button 
-                variant="contained" 
-                startIcon={<PictureAsPdfIcon />} 
+              <Button
+                variant="contained"
+                startIcon={<PictureAsPdfIcon />}
                 onClick={handleDownloadPdf}
               >
                 Download as PDF
               </Button>
-              <Button 
-                variant="contained" 
-                color="secondary" 
+              <Button
+                variant="contained"
+                color="secondary"
                 startIcon={<DescriptionIcon />}
                 onClick={handleDownloadWord}
               >
@@ -105,8 +100,7 @@ function LessonNoteView() {
               </Button>
             </Stack>
           </Box>
-          
-          {/* Note Content Section */}
+
           <div id="note-content-container">
             <ReactMarkdown
               components={{
