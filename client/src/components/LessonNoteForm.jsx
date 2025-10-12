@@ -6,25 +6,24 @@ import { useState, useEffect } from 'react';
 
 function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
   const [formData, setFormData] = useState({
-    objectives: '',
-    aids: '',
-    duration: '1hr 10 mins',
-    // ✅ ADDED NEW FIELDS
-    contentStandard: '',
+    school: '',
+    term: '',
+    duration: '',
     performanceIndicator: '',
-    coreCompetencies: 'Critical Thinking, Problem Solving',
+    dayDate: '',
+    class: '', // Optional field
   });
 
   useEffect(() => {
-    // Reset form when the modal is opened for a new note
+    // Reset form when the modal is opened
     if (open) {
       setFormData({
-        objectives: '',
-        aids: '',
-        duration: '1hr 10 mins',
-        contentStandard: '',
+        school: '',
+        term: 'One', // Default value
+        duration: '1hr 10 mins / 2 Periods', // Default value
         performanceIndicator: '',
-        coreCompetencies: 'Critical Thinking, Problem Solving',
+        dayDate: '',
+        class: '',
       });
     }
   }, [open]);
@@ -43,15 +42,37 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
       <DialogTitle>Generate AI Lesson Note</DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
-          <Stack spacing={2}>
+          <Stack spacing={2} sx={{ mt: 1 }}>
             <Box>
-              <Typography variant="h6" gutterBottom>Topic:</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Topic (from selection):</Typography>
               <Typography variant="body1">{subStrandName || 'N/A'}</Typography>
             </Box>
             <TextField
-              name="contentStandard"
-              label="Content Standard (e.g., B7.2.1.1)"
-              value={formData.contentStandard}
+              name="school"
+              label="School Name"
+              value={formData.school}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="term"
+              label="Term"
+              value={formData.term}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="dayDate"
+              label="Day / Date"
+              placeholder="e.g., Monday, October 20, 2025"
+              value={formData.dayDate}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="duration"
+              label="Time / Duration"
+              value={formData.duration}
               onChange={handleChange}
               required
             />
@@ -61,43 +82,20 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
               value={formData.performanceIndicator}
               onChange={handleChange}
               multiline
-              rows={2}
-              required
-            />
-            <TextField
-              name="objectives"
-              label="Learning Objectives"
-              value={formData.objectives}
-              onChange={handleChange}
-              multiline
               rows={3}
               required
-              helperText="Clearly state what learners should be able to do by the end of the lesson."
+              helperText="Describe what learners should be able to do by the end of the lesson."
             />
-            <TextField
-              name="coreCompetencies"
-              label="Core Competencies"
-              value={formData.coreCompetencies}
+             <TextField
+              name="class"
+              label="Class Name (Optional)"
+              value={formData.class}
               onChange={handleChange}
-              required
-            />
-            <TextField
-              name="aids"
-              label="Teaching/Learning Materials"
-              value={formData.aids}
-              onChange={handleChange}
-              required
-            />
-            <TextField
-              name="duration"
-              label="Duration"
-              value={formData.duration}
-              onChange={handleChange}
-              required
+              helperText="Leave blank to use the class from your topic selection."
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2 }}>
           <Button onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="contained" disabled={isLoading}>
             {isLoading ? <CircularProgress size={24} /> : 'Generate Note'}
