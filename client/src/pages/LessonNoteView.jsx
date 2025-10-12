@@ -24,9 +24,7 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
 function LessonNoteView() {
   const dispatch = useDispatch();
   const { noteId } = useParams();
-  const { currentNote, isLoading, isError, message } = useSelector(
-    (state) => state.teacher
-  );
+  const { currentNote, isLoading, isError, message } = useSelector((state) => state.teacher);
 
   useEffect(() => {
     dispatch(getLessonNoteById(noteId));
@@ -35,8 +33,7 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER ---
-   // --- PDF DOWNLOAD HANDLER (A4 Perfectly Scaled) ---
+  // --- PDF DOWNLOAD HANDLER (A4 Portrait, Font Size 10) ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
@@ -46,7 +43,7 @@ function LessonNoteView() {
       return;
     }
 
-    // Clone to avoid altering live DOM
+    // Clone content to avoid modifying live DOM
     const clone = element.cloneNode(true);
     clone.style.width = '210mm'; // A4 width
     clone.style.minHeight = '297mm'; // A4 height
@@ -54,48 +51,47 @@ function LessonNoteView() {
     clone.style.margin = '0 auto';
     clone.style.backgroundColor = '#fff';
     clone.style.fontFamily = 'Arial, sans-serif';
-    clone.style.fontSize = '12pt';
-    clone.style.lineHeight = '1.5';
+    clone.style.fontSize = '10pt'; // ✅ consistent 10pt font
+    clone.style.lineHeight = '1.4';
     clone.style.color = '#000';
+    clone.style.boxSizing = 'border-box';
 
-    // Improve table rendering
+    // Fix table appearance
     const tables = clone.querySelectorAll('table');
     tables.forEach((table) => {
       table.style.borderCollapse = 'collapse';
       table.style.width = '100%';
-      table.style.fontSize = '11pt';
+      table.style.fontSize = '9pt';
       table.style.pageBreakInside = 'avoid';
     });
 
-    // Add a footer at the very end
+    // Add footer once at the end
     const footer = document.createElement('div');
     footer.innerHTML = `
-      <div style="text-align:center; margin-top:20mm; font-size:11pt;">
+      <div style="text-align:center; margin-top:10mm; font-size:9pt; color:#555;">
         — End of Lesson Note —
       </div>
     `;
     clone.appendChild(footer);
 
-    const filename = 'lesson_note.pdf';
+    // PDF options
     const opt = {
-      margin: [10, 10, 15, 10], // Top, right, bottom, left (in mm)
-      filename,
+      margin: [10, 10, 15, 10], // top, right, bottom, left (mm)
+      filename: 'lesson_note.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
         scale: 2,
         useCORS: true,
         scrollY: 0,
         letterRendering: true,
-        dpi: 300, // ensures print-quality A4 output
+        dpi: 300,
       },
       jsPDF: {
         unit: 'mm',
         format: 'a4',
-        orientation: 'portrait', // strictly A4 portrait layout
+        orientation: 'portrait', // ✅ Standard A4 layout
       },
-      pagebreak: {
-        mode: ['avoid-all', 'css', 'legacy'],
-      },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
     };
 
     window.html2pdf().set(opt).from(clone).save();
@@ -111,7 +107,9 @@ function LessonNoteView() {
         <!DOCTYPE html>
         <html>
           <head><meta charset="UTF-8" /></head>
-          <body>${element.innerHTML}</body>
+          <body style="font-family:Arial, sans-serif; font-size:10pt; line-height:1.4;">
+            ${element.innerHTML}
+          </body>
         </html>
       `;
       const blob = HTMLtoDOCX(html);
@@ -126,6 +124,7 @@ function LessonNoteView() {
     }
   }, [currentNote]);
 
+  // --- Loading and Error States ---
   if (isLoading || !currentNote) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
@@ -150,10 +149,19 @@ function LessonNoteView() {
   const table = content.substring(tableStart, tableEnd + 1).trim();
   const footer = content.substring(tableEnd + 1).trim();
 
+  // --- Rendered Output ---
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
-        <Paper elevation={3} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
+        <Paper
+          elevation={3}
+          sx={{
+            my: 5,
+            p: { xs: 2, md: 4 },
+            fontSize: '10pt', // ✅ consistent with export
+            lineHeight: 1.4,
+          }}
+        >
           {/* Download Buttons */}
           <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6" gutterBottom>
@@ -178,7 +186,7 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
-          {/* Content Display */}
+          {/* Lesson Note Content */}
           <div id="note-content-container">
             {/* Header Section */}
             <Box sx={{ mb: 3 }}>
@@ -192,8 +200,8 @@ function LessonNoteView() {
                       sx={{
                         mb: 0.8,
                         whiteSpace: 'pre-line',
-                        fontSize: '0.95rem',
-                        lineHeight: 1.5,
+                        fontSize: '10pt',
+                        lineHeight: 1.4,
                       }}
                       {...props}
                     />
@@ -219,6 +227,7 @@ function LessonNoteView() {
                 overflowX: 'auto',
                 borderRadius: 2,
                 mb: 3,
+                fontSize: '9pt',
               }}
             >
               <ReactMarkdown
@@ -236,14 +245,16 @@ function LessonNoteView() {
                           color: '#2e7d32',
                           fontWeight: 700,
                           border: '1px solid #c8e6c9',
-                          padding: '10px',
+                          padding: '8px',
                           textAlign: 'center',
+                          fontSize: '9pt',
                         },
                         '& td': {
                           border: '1px solid #ddd',
-                          padding: '12px',
+                          padding: '10px',
                           verticalAlign: 'top',
                           whiteSpace: 'pre-wrap',
+                          fontSize: '9pt',
                         },
                         '& tr:nth-of-type(even)': {
                           backgroundColor: '#fafafa',
@@ -272,8 +283,8 @@ function LessonNoteView() {
                       sx={{
                         mb: 1,
                         whiteSpace: 'pre-line',
-                        fontSize: '0.95rem',
-                        lineHeight: 1.5,
+                        fontSize: '10pt',
+                        lineHeight: 1.4,
                       }}
                       {...props}
                     />
