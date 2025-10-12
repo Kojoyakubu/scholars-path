@@ -4,9 +4,7 @@ import { useParams } from 'react-router-dom';
 import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
-
-// --- THE FIX IS HERE ---
-import { jsPDF } from 'jspdf'; // Changed to a named import
+import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import HtmlToDocx from 'html-to-docx';
 
@@ -89,7 +87,7 @@ function LessonNoteView() {
           </div>
         </Paper>
       </Container>
-    </motion.div>.
+    </motion.div>
   );
 }
 
