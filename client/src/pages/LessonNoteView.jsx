@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
-import HTMLtoDOCX from 'html-docx-js-typescript';
+import HTMLtoDOCX from 'html-docx-js-typescript'; // ✅ New library
 
 import {
   Box, Typography, Container, Paper, CircularProgress,
@@ -23,27 +23,32 @@ function LessonNoteView() {
     return () => { dispatch(resetCurrentNote()); };
   }, [dispatch, noteId]);
 
+  // --- PDF DOWNLOAD HANDLER ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
 
+    if (!window.html2pdf) {
+      console.error('PDF generation library not loaded!');
+      alert('Could not download PDF. Please refresh the page and try again.');
+      return;
+    }
+
     const title = currentNote.content.split('\n')[1] || 'lesson-note';
     const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-    if (window.html2pdf) {
-      const opt = {
-        margin: 15,
-        filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-      window.html2pdf().set(opt).from(element).save();
-    } else {
-      alert('Could not generate PDF. Please refresh and try again.');
-    }
+    const opt = {
+      margin: 15,
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    window.html2pdf().set(opt).from(element).save();
   }, [currentNote]);
 
+  // --- WORD DOWNLOAD HANDLER (html-docx-js-typescript) ---
   const handleDownloadWord = useCallback(() => {
     try {
       const element = document.getElementById('note-content-container');
@@ -58,7 +63,7 @@ function LessonNoteView() {
               body { font-family: Arial, sans-serif; line-height: 1.6; }
               h1, h2, h3 { color: #2e7d32; }
               p { margin-bottom: 8px; }
-              h1, h2 { page-break-before: always; }
+              h1, h2 { page-break-before: always; } /* optional page breaks */
             </style>
           </head>
           <body>${element.innerHTML}</body>
@@ -78,7 +83,7 @@ function LessonNoteView() {
       URL.revokeObjectURL(link.href);
     } catch (err) {
       console.error('Word generation failed:', err);
-      alert('Could not generate Word document.');
+      alert('Could not generate Word document. Please try again.');
     }
   }, [currentNote]);
 
