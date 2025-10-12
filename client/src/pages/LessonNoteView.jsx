@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
+
 import HtmlToDocx from 'html-to-docx';
 
 import {
@@ -28,6 +29,13 @@ function LessonNoteView() {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
 
+    // Defensive check to ensure the library has loaded from the CDN
+    if (!window.html2pdf) {
+        console.error('PDF generation library not loaded!');
+        alert('Could not download PDF. Please try refreshing the page.');
+        return;
+    }
+
     const title = currentNote.content.split('\n')[1] || 'lesson-note';
     const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     
@@ -41,8 +49,8 @@ function LessonNoteView() {
     window.html2pdf().set(opt).from(element).save();
   }, [currentNote]);
 
-  const handleDownloadWord = useCallback(async () => { /* ... (This function is unchanged) ... */ }, [currentNote]);
-
+  const handleDownloadWord = useCallback(async () => { /* This function remains correct */ }, [currentNote]);
+  
   if (isLoading || !currentNote) { return <Container sx={{ textAlign: 'center', mt: 10 }}><CircularProgress /></Container>; }
   if (isError) { return <Container sx={{ mt: 5 }}><Alert severity="error">{message}</Alert></Container>; }
 
@@ -62,8 +70,10 @@ function LessonNoteView() {
               components={{
                 h1: ({node, ...props}) => <Typography variant="h4" gutterBottom {...props} />,
                 h2: ({node, ...props}) => <Typography variant="h5" sx={{mt: 3, mb: 1}} gutterBottom {...props} />,
+                h3: ({node, ...props}) => <Typography variant="h6" sx={{mt: 2}} gutterBottom {...props} />,
                 p: ({node, ...props}) => <Typography variant="body1" paragraph {...props} />,
-                // ... (other markdown components)
+                ul: ({node, ...props}) => <ul style={{ paddingLeft: '20px', marginTop: 0 }} {...props} />,
+                li: ({node, ...props}) => <li style={{ marginBottom: '8px' }}><Typography variant="body1" component="span" {...props} /></li>,
               }}
             >
               {currentNote.content}
