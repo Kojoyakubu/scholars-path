@@ -4,7 +4,9 @@ import { useParams } from 'react-router-dom';
 import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
-import { jsPDF } from 'jspdf';
+
+// --- THE FIX IS HERE ---
+import { jsPDF } from 'jspdf'; // Changed to a named import
 import html2canvas from 'html2canvas';
 import HtmlToDocx from 'html-to-docx';
 
