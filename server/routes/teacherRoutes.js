@@ -25,7 +25,7 @@ const handleValidationErrors = (req, res, next) => {
 router.use(protect, authorize('teacher', 'school_admin', 'admin'));
 
 // ✅ **START: UPDATED VALIDATOR**
-// This now checks for the new fields sent from the frontend form.
+// This now checks for the new fields sent from the simplified frontend form.
 const generateNoteValidator = [
     check('subStrandId', 'A valid Sub-Strand ID is required').isMongoId(),
     check('school', 'School name is required').not().isEmpty().trim().escape(),
@@ -46,7 +46,7 @@ router.get('/analytics', getTeacherAnalytics);
 router.get('/lessonnotes', getMyLessonNotes);
 router.get('/notes/:id', [check('id').isMongoId()], handleValidationErrors, getLessonNoteById);
 
-// The generate-note route now uses the updated validator
+// The generate-note route now correctly uses the updated validator
 router.post('/generate-note', generateNoteValidator, handleValidationErrors, generateLessonNote);
 
 router.delete('/notes/:id', [check('id').isMongoId()], handleValidationErrors, deleteLessonNote);
