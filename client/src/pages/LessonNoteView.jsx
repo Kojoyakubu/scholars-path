@@ -2,16 +2,20 @@ import { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
-import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
-import HTMLtoDOCX from 'html-docx-js-typescript'; // ✅ New library
 
+// Imports for rendering the structured Markdown table
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+// MUI component imports
 import {
   Box, Typography, Container, Paper, CircularProgress,
   Alert, Button, Stack
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
+import HTMLtoDOCX from 'html-docx-js-typescript'; // Assuming this is for your Word download
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -20,7 +24,10 @@ function LessonNoteView() {
 
   useEffect(() => {
     dispatch(getLessonNoteById(noteId));
-    return () => { dispatch(resetCurrentNote()); };
+    // Cleanup function to reset the note when the component unmounts
+    return () => {
+      dispatch(resetCurrentNote());
+    };
   }, [dispatch, noteId]);
 
   // --- PDF DOWNLOAD HANDLER ---
@@ -30,49 +37,44 @@ function LessonNoteView() {
 
     if (!window.html2pdf) {
       console.error('PDF generation library not loaded!');
+      // Consider using a Snackbar for a better user experience
       alert('Could not download PDF. Please refresh the page and try again.');
       return;
     }
 
-    const title = currentNote.content.split('\n')[1] || 'lesson-note';
+    const title = 'lesson-note'; // You can derive a better title from the content if needed
     const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
     const opt = {
-      margin: 15,
+      margin: 10, // Adjust margins as needed
       filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } // Landscape might be better for tables
     };
 
     window.html2pdf().set(opt).from(element).save();
   }, [currentNote]);
 
-  // --- WORD DOWNLOAD HANDLER (html-docx-js-typescript) ---
+  // --- WORD DOWNLOAD HANDLER ---
   const handleDownloadWord = useCallback(() => {
     try {
       const element = document.getElementById('note-content-container');
       if (!element || !currentNote) return;
 
+      // Wrap the content in basic HTML for better compatibility
       const html = `
         <!DOCTYPE html>
         <html>
           <head>
             <meta charset="UTF-8" />
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; }
-              h1, h2, h3 { color: #2e7d32; }
-              p { margin-bottom: 8px; }
-              h1, h2 { page-break-before: always; } /* optional page breaks */
-            </style>
           </head>
           <body>${element.innerHTML}</body>
         </html>
       `;
 
       const blob = HTMLtoDOCX(html);
-      const safeName = (currentNote.content.split('\n')[1] || 'lesson-note')
-        .replace(/[^a-zA-Z0-9]/g, '_');
+      const safeName = 'lesson-note'.replace(/[^a-zA-Z0-9]/g, '_');
 
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -105,7 +107,7 @@ function LessonNoteView() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      <Container maxWidth="md">
+      <Container maxWidth="lg"> {/* Using lg for wider content area */}
         <Paper elevation={3} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
           <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6" gutterBottom>Download Options</Typography>
@@ -128,21 +130,11 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
+          {/* This div is crucial for the download handlers to target the content */}
           <div id="note-content-container">
-            <ReactMarkdown
-              components={{
-                h1: ({ node, ...props }) => <Typography variant="h4" gutterBottom {...props} />,
-                h2: ({ node, ...props }) => <Typography variant="h5" sx={{ mt: 3, mb: 1 }} gutterBottom {...props} />,
-                h3: ({ node, ...props }) => <Typography variant="h6" sx={{ mt: 2 }} gutterBottom {...props} />,
-                p: ({ node, ...props }) => <Typography variant="body1" paragraph {...props} />,
-                ul: ({ node, ...props }) => <ul style={{ paddingLeft: '20px', marginTop: 0 }} {...props} />,
-                li: ({ node, ...props }) => (
-                  <li style={{ marginBottom: '8px' }}>
-                    <Typography variant="body1" component="span" {...props} />
-                  </li>
-                ),
-              }}
-            >
+            {/* The ReactMarkdown component renders the Markdown string into proper HTML */}
+            {/* The remarkGfm plugin is essential for table support */}
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {currentNote.content}
             </ReactMarkdown>
           </div>
