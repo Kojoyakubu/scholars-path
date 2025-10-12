@@ -3,13 +3,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
 import { motion } from 'framer-motion';
-
-// Markdown and plugins
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import rehypeRaw from 'rehype-raw'; // ✅ allows <br> to render correctly
 
-// MUI components
+// MUI Components
 import {
   Box,
   Typography,
@@ -22,7 +20,7 @@ import {
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
-import HTMLtoDOCX from 'html-docx-js-typescript'; // Word export
+import HTMLtoDOCX from 'html-docx-js-typescript';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -31,7 +29,7 @@ function LessonNoteView() {
     (state) => state.teacher
   );
 
-  // Load selected note
+  // Fetch lesson note
   useEffect(() => {
     dispatch(getLessonNoteById(noteId));
     return () => {
@@ -45,19 +43,17 @@ function LessonNoteView() {
     if (!element || !currentNote) return;
 
     if (!window.html2pdf) {
-      alert('PDF generator not loaded. Please refresh and try again.');
+      alert('PDF library not loaded. Please refresh and try again.');
       return;
     }
 
-    const filename = `${(currentNote?.content?.split('\n')[1] || 'lesson-note')
-      .replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-
+    const filename = 'lesson_note.pdf';
     const opt = {
       margin: 10,
       filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
     };
 
     window.html2pdf().set(opt).from(element).save();
@@ -72,29 +68,15 @@ function LessonNoteView() {
       const html = `
         <!DOCTYPE html>
         <html>
-          <head>
-            <meta charset="UTF-8" />
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; }
-              table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-              th, td { border: 1px solid #ccc; padding: 8px; vertical-align: top; }
-              th { background: #e8f5e9; color: #2e7d32; }
-            </style>
-          </head>
+          <head><meta charset="UTF-8" /></head>
           <body>${element.innerHTML}</body>
         </html>
       `;
-
       const blob = HTMLtoDOCX(html);
-      const safeName = (currentNote?.content?.split('\n')[1] || 'lesson-note')
-        .replace(/[^a-zA-Z0-9]/g, '_');
-
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${safeName}.docx`;
-      document.body.appendChild(link);
+      link.download = 'lesson_note.docx';
       link.click();
-      document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch (err) {
       console.error('Word generation failed:', err);
@@ -102,7 +84,7 @@ function LessonNoteView() {
     }
   }, [currentNote]);
 
-  // --- Loading / Error States ---
+  // --- Conditional Rendering ---
   if (isLoading || !currentNote) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
@@ -119,12 +101,12 @@ function LessonNoteView() {
     );
   }
 
-  // --- Render ---
+  // --- MAIN RENDER ---
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
         <Paper elevation={3} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
-          {/* === Header & Buttons === */}
+          {/* Download Buttons */}
           <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6" gutterBottom>
               Download Options
@@ -148,20 +130,33 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
-          {/* === Lesson Note Content === */}
+          {/* Lesson Note Display */}
           <div id="note-content-container">
-            <Box sx={{ overflowX: 'auto', boxShadow: 1, borderRadius: 2 }}>
+            <Box
+              sx={{
+                overflowX: 'auto',
+                boxShadow: 1,
+                borderRadius: 2,
+                p: 2,
+              }}
+            >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
                 components={{
+                  // Headers
                   h1: (props) => (
-                    <Typography variant="h4" gutterBottom {...props} />
+                    <Typography
+                      variant="h4"
+                      gutterBottom
+                      sx={{ fontWeight: 'bold', mt: 2 }}
+                      {...props}
+                    />
                   ),
                   h2: (props) => (
                     <Typography
                       variant="h5"
-                      sx={{ mt: 3, mb: 1, color: 'primary.main' }}
+                      sx={{ mt: 3, mb: 1, color: 'primary.main', fontWeight: 600 }}
                       gutterBottom
                       {...props}
                     />
@@ -169,35 +164,25 @@ function LessonNoteView() {
                   h3: (props) => (
                     <Typography
                       variant="h6"
-                      sx={{ mt: 2, color: 'primary.dark' }}
+                      sx={{ mt: 2, mb: 1, color: 'text.secondary', fontWeight: 500 }}
                       gutterBottom
                       {...props}
                     />
                   ),
+                  // Paragraphs
                   p: (props) => (
                     <Typography
                       variant="body1"
                       paragraph
-                      sx={{ mb: 1.5, whiteSpace: 'pre-line' }}
+                      sx={{ mb: 1.5, whiteSpace: 'pre-line', lineHeight: 1.6 }}
                       {...props}
                     />
                   ),
-                  ul: (props) => (
-                    <ul
-                      style={{
-                        paddingLeft: '20px',
-                        marginTop: '8px',
-                        marginBottom: '8px',
-                      }}
-                      {...props}
-                    />
+                  // Bold text
+                  strong: (props) => (
+                    <Box component="strong" sx={{ fontWeight: 'bold', color: 'text.primary' }} {...props} />
                   ),
-                  li: (props) => (
-                    <li style={{ marginBottom: '6px' }}>
-                      <Typography variant="body1" component="span" {...props} />
-                    </li>
-                  ),
-                  // ✅ Enhanced Table Styling
+                  // Table styling
                   table: (props) => (
                     <Box
                       component="table"
@@ -213,6 +198,7 @@ function LessonNoteView() {
                           border: '1px solid #c8e6c9',
                           padding: '12px',
                           textAlign: 'center',
+                          fontSize: '0.95rem',
                         },
                         '& td': {
                           border: '1px solid #ddd',
