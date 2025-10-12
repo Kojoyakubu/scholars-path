@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
 import { motion } from 'framer-motion';
 
-// Markdown renderer and plugins
+// Markdown and plugins
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
-import HTMLtoDOCX from 'html-docx-js-typescript'; // For Word download
+import HTMLtoDOCX from 'html-docx-js-typescript'; // Word export
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -31,6 +31,7 @@ function LessonNoteView() {
     (state) => state.teacher
   );
 
+  // Load selected note
   useEffect(() => {
     dispatch(getLessonNoteById(noteId));
     return () => {
@@ -38,7 +39,7 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD ---
+  // --- PDF DOWNLOAD HANDLER ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
@@ -62,7 +63,7 @@ function LessonNoteView() {
     window.html2pdf().set(opt).from(element).save();
   }, [currentNote]);
 
-  // --- WORD DOWNLOAD ---
+  // --- WORD DOWNLOAD HANDLER ---
   const handleDownloadWord = useCallback(() => {
     try {
       const element = document.getElementById('note-content-container');
@@ -77,7 +78,7 @@ function LessonNoteView() {
               body { font-family: Arial, sans-serif; line-height: 1.6; }
               table { border-collapse: collapse; width: 100%; margin-top: 10px; }
               th, td { border: 1px solid #ccc; padding: 8px; vertical-align: top; }
-              th { background: #f4f4f4; }
+              th { background: #e8f5e9; color: #2e7d32; }
             </style>
           </head>
           <body>${element.innerHTML}</body>
@@ -101,7 +102,7 @@ function LessonNoteView() {
     }
   }, [currentNote]);
 
-  // --- Render States ---
+  // --- Loading / Error States ---
   if (isLoading || !currentNote) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
@@ -118,11 +119,12 @@ function LessonNoteView() {
     );
   }
 
+  // --- Render ---
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
         <Paper elevation={3} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
-          {/* --- Header / Download Buttons --- */}
+          {/* === Header & Buttons === */}
           <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6" gutterBottom>
               Download Options
@@ -146,89 +148,92 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
-          {/* --- Lesson Note Display --- */}
+          {/* === Lesson Note Content === */}
           <div id="note-content-container">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]} // 👈 Allows embedded HTML like <br>, <strong>, etc.
-              components={{
-                h1: (props) => (
-                  <Typography variant="h4" gutterBottom {...props} />
-                ),
-                h2: (props) => (
-                  <Typography
-                    variant="h5"
-                    sx={{ mt: 3, mb: 1, color: 'primary.main' }}
-                    gutterBottom
-                    {...props}
-                  />
-                ),
-                h3: (props) => (
-                  <Typography
-                    variant="h6"
-                    sx={{ mt: 2, color: 'primary.dark' }}
-                    gutterBottom
-                    {...props}
-                  />
-                ),
-                p: (props) => (
-                  <Typography
-                    variant="body1"
-                    paragraph
-                    sx={{ mb: 1.5, whiteSpace: 'pre-line' }}
-                    {...props}
-                  />
-                ),
-                table: (props) => (
-                  <table
-                    style={{
-                      borderCollapse: 'collapse',
-                      width: '100%',
-                      marginTop: '15px',
-                    }}
-                    {...props}
-                  />
-                ),
-                th: (props) => (
-                  <th
-                    style={{
-                      border: '1px solid #ccc',
-                      backgroundColor: '#f5f5f5',
-                      padding: '8px',
-                      textAlign: 'left',
-                    }}
-                    {...props}
-                  />
-                ),
-                td: (props) => (
-                  <td
-                    style={{
-                      border: '1px solid #ccc',
-                      padding: '8px',
-                      verticalAlign: 'top',
-                    }}
-                    {...props}
-                  />
-                ),
-                ul: (props) => (
-                  <ul
-                    style={{
-                      paddingLeft: '20px',
-                      marginTop: '8px',
-                      marginBottom: '8px',
-                    }}
-                    {...props}
-                  />
-                ),
-                li: (props) => (
-                  <li style={{ marginBottom: '6px' }}>
-                    <Typography variant="body1" component="span" {...props} />
-                  </li>
-                ),
-              }}
-            >
-              {currentNote.content}
-            </ReactMarkdown>
+            <Box sx={{ overflowX: 'auto', boxShadow: 1, borderRadius: 2 }}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  h1: (props) => (
+                    <Typography variant="h4" gutterBottom {...props} />
+                  ),
+                  h2: (props) => (
+                    <Typography
+                      variant="h5"
+                      sx={{ mt: 3, mb: 1, color: 'primary.main' }}
+                      gutterBottom
+                      {...props}
+                    />
+                  ),
+                  h3: (props) => (
+                    <Typography
+                      variant="h6"
+                      sx={{ mt: 2, color: 'primary.dark' }}
+                      gutterBottom
+                      {...props}
+                    />
+                  ),
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      paragraph
+                      sx={{ mb: 1.5, whiteSpace: 'pre-line' }}
+                      {...props}
+                    />
+                  ),
+                  ul: (props) => (
+                    <ul
+                      style={{
+                        paddingLeft: '20px',
+                        marginTop: '8px',
+                        marginBottom: '8px',
+                      }}
+                      {...props}
+                    />
+                  ),
+                  li: (props) => (
+                    <li style={{ marginBottom: '6px' }}>
+                      <Typography variant="body1" component="span" {...props} />
+                    </li>
+                  ),
+                  // ✅ Enhanced Table Styling
+                  table: (props) => (
+                    <Box
+                      component="table"
+                      sx={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        mt: 3,
+                        mb: 3,
+                        '& th': {
+                          backgroundColor: '#e8f5e9',
+                          color: '#2e7d32',
+                          fontWeight: 'bold',
+                          border: '1px solid #c8e6c9',
+                          padding: '12px',
+                          textAlign: 'center',
+                        },
+                        '& td': {
+                          border: '1px solid #ddd',
+                          padding: '12px',
+                          verticalAlign: 'top',
+                          width: '33%',
+                          lineHeight: 1.6,
+                          whiteSpace: 'pre-wrap',
+                        },
+                        '& tr:nth-of-type(even)': {
+                          backgroundColor: '#fafafa',
+                        },
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
+              >
+                {currentNote.content}
+              </ReactMarkdown>
+            </Box>
           </div>
         </Paper>
       </Container>
