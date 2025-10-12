@@ -100,51 +100,6 @@ function TeacherDashboard() {
     }
   }, [isSuccess, isModalOpen]);
 
-  // --- Chained dropdown logic ---
-  useEffect(() => {
-    if (selections.level)
-      dispatch(
-        fetchChildren({
-          entity: 'classes',
-          parentEntity: 'levels',
-          parentId: selections.level,
-        })
-      );
-  }, [selections.level, dispatch]);
-
-  useEffect(() => {
-    if (selections.class)
-      dispatch(
-        fetchChildren({
-          entity: 'subjects',
-          parentEntity: 'classes',
-          parentId: selections.class,
-        })
-      );
-  }, [selections.class, dispatch]);
-
-  useEffect(() => {
-    if (selections.subject)
-      dispatch(
-        fetchChildren({
-          entity: 'strands',
-          parentEntity: 'subjects',
-          parentId: selections.subject,
-        })
-      );
-  }, [selections.subject, dispatch]);
-
-  useEffect(() => {
-    if (selections.strand)
-      dispatch(
-        fetchChildren({
-          entity: 'subStrands',
-          parentEntity: 'strands',
-          parentId: selections.strand,
-        })
-      );
-  }, [selections.strand, dispatch]);
-
   // --- PDF Download ---
   const handleDownloadPdf = useCallback((noteId, noteTopic) => {
     const element = document.getElementById(`note-content-${noteId}`);
@@ -171,10 +126,27 @@ function TeacherDashboard() {
   const handleDownloadWord = useCallback(async (noteId, noteTopic) => {
     try {
       const element = document.getElementById(`note-content-${noteId}`);
-      if (!element) return;
+      if (!element) {
+        alert('Note content not found.');
+        return;
+      }
 
       const htmlToDocx = (await import('html-to-docx')).default;
-      const html = element.innerHTML;
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8" />
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; }
+              h1,h2,h3 { color: #2e7d32; }
+            </style>
+          </head>
+          <body>${element.innerHTML}</body>
+        </html>
+      `;
+
       const blob = await htmlToDocx(html, {
         orientation: 'portrait',
         margins: { top: 720 },
@@ -182,12 +154,15 @@ function TeacherDashboard() {
 
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${noteTopic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+      const safeName = (noteTopic || 'lesson-note').replace(/[^a-zA-Z0-9]/g, '_');
+      link.download = `${safeName}.docx`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch (err) {
-      console.error('Error generating Word document:', err);
-      alert('Failed to generate Word file. Please try again.');
+      console.error('Word generation failed:', err);
+      alert('Could not generate Word document. Check console for details.');
     }
   }, []);
 
@@ -335,7 +310,6 @@ function TeacherDashboard() {
                     />
                   </ListItemButton>
 
-                  {/* PDF/Word Download Buttons */}
                   <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
                     <Button
                       startIcon={<PictureAsPdfIcon />}
