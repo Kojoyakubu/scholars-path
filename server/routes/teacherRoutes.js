@@ -1,18 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
+
 const {
   getMyLessonNotes,
   generateLessonNote,
   generateLearnerNote,
   createQuiz,
-  generateAiQuestion,
   uploadResource,
-  generateAiQuizSection,
   getTeacherAnalytics,
 } = require('../controllers/teacherController');
+
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { checkSubscription } = require('../middleware/subscriptionMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 // Middleware to handle validation errors
@@ -24,37 +23,33 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Protect all routes with Teacher (or higher) authorization
-router.use(protect, authorize('teacher', 'school_admin', 'admin')); // Note: Subscription check is commented out as per original file
+// Protect all routes in this file with Teacher (or higher) authorization
+router.use(protect, authorize('teacher', 'school_admin', 'admin'));
 
-// Validation Chains
-const mongoIdValidator = (fieldName) => check(fieldName, 'Invalid ID format').isMongoId();
-
+// --- Validation Chains ---
 const generateNoteValidator = [
-    mongoIdValidator('subStrandId'),
+    check('subStrandId', 'A valid Sub-Strand ID is required').isMongoId(),
     check('objectives', 'Learning objectives are required').not().isEmpty().trim().escape(),
     check('aids', 'Teaching aids are required').not().isEmpty().trim().escape(),
-    check('duration', 'Duration is required').not().isEmpty().trim().escape(),
+    check('duration', 'Lesson duration is required').not().isEmpty().trim().escape(),
 ];
 
 const createQuizValidator = [
     check('title', 'Quiz title is required').not().isEmpty().trim().escape(),
-    mongoIdValidator('subjectId'),
+    check('subjectId', 'A valid Subject ID is required').isMongoId(),
 ];
 
-const uploadResourceValidator = [
-    mongoIdValidator('subStrandId'),
-];
+// --- Route Definitions ---
 
-// Route Definitions
-router.get('/lessonnotes', getMyLessonNotes);
+// NOTE: Specific routes like '/analytics' and '/lessonnotes' must come before any routes with parameters like '/:id'
 router.get('/analytics', getTeacherAnalytics);
+router.get('/lessonnotes', getMyLessonNotes);
 
 router.post('/generate-note', generateNoteValidator, handleValidationErrors, generateLessonNote);
-router.post('/generate-learner-note', [mongoIdValidator('lessonNoteId')], handleValidationErrors, generateLearnerNote);
+router.post('/generate-learner-note', [check('lessonNoteId').isMongoId()], handleValidationErrors, generateLearnerNote);
 router.post('/create-quiz', createQuizValidator, handleValidationErrors, createQuiz);
-router.post('/generate-ai-question', generateAiQuestion); // Add validation if implemented
-router.post('/generate-ai-quiz-section', generateAiQuizSection); // Add validation if implemented
-router.post('/upload-resource', upload, uploadResourceValidator, handleValidationErrors, uploadResource);
+
+// The 'upload' middleware handles the file, then the controller function runs.
+router.post('/upload-resource', upload, [check('subStrandId').isMongoId()], handleValidationErrors, uploadResource);
 
 module.exports = router;
