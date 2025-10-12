@@ -5,8 +5,8 @@ import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacher
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 
-// --- LIBRARIES ARE IMPORTED DYNAMICALLY NOW ---
-import html2canvas from 'html2canvas';
+// --- NEW, SIMPLER IMPORTS ---
+import html2pdf from 'html2pdf.js';
 import HtmlToDocx from 'html-to-docx';
 
 import {
@@ -26,22 +26,24 @@ function LessonNoteView() {
     return () => { dispatch(resetCurrentNote()); };
   }, [dispatch, noteId]);
 
-  // --- UPDATED PDF DOWNLOAD HANDLER ---
-  const handleDownloadPdf = useCallback(async () => { // Made async
-    const input = document.getElementById('note-content-container');
-    if (!input || !currentNote) return;
+  // --- FINAL, CORRECTED PDF DOWNLOAD HANDLER ---
+  const handleDownloadPdf = useCallback(() => {
+    const element = document.getElementById('note-content-container');
+    if (!element || !currentNote) return;
 
-    // Dynamically import jspdf only when needed
-    const { default: jsPDF } = await import('jspdf');
-
-    const canvas = await html2canvas(input, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     const title = currentNote.content.split('\n')[1] || 'lesson-note';
-    pdf.save(`${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+    const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+
+    const opt = {
+      margin:       10,
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // The html2pdf library handles the entire conversion process.
+    html2pdf().set(opt).from(element).save();
   }, [currentNote]);
 
   const handleDownloadWord = useCallback(async () => {
