@@ -11,12 +11,11 @@ import {
   generateLessonNote,
   getMyLessonNotes,
   deleteLessonNote,
-  resetTeacherState, // Make sure reset is imported to clear messages
+  resetTeacherState,
 } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
 import HTMLtoDOCX from 'html-docx-js-typescript';
 
-// ✅ 1. ADD MUI DIALOG AND SNACKBAR IMPORTS
 import {
   Box,
   Typography,
@@ -50,11 +49,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
+
   const { levels, classes, subjects, strands, subStrands } = useSelector(
     (state) => state.curriculum
   );
-  // Destructure message, isError, isSuccess from the teacher state
-  const { lessonNotes, isLoading, isSuccess, isError, message } = useSelector(
+  const { lessonNotes, isLoading, isError, message } = useSelector(
     (state) => state.teacher
   );
 
@@ -66,31 +65,28 @@ function TeacherDashboard() {
     subStrand: '',
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // ✅ 2. ADD STATE FOR DIALOG AND SNACKBAR
   const [dialogOpen, setDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
+  // Initial data fetch
   useEffect(() => {
-    dispatch(getMyLessonNotes());
     dispatch(fetchItems({ entity: 'levels' }));
-    return () => {
-      dispatch(resetTeacherState());
-    };
+    dispatch(getMyLessonNotes());
   }, [dispatch]);
 
-  // Effect to show snackbar on success or error
+  // This effect now specifically watches the `message` property to show notifications.
+  // It avoids interfering with other data loading operations.
   useEffect(() => {
-    if (isSuccess && message) {
-      setSnackbar({ open: true, message, severity: 'success' });
-      dispatch(resetTeacherState());
+    if (message) {
+      setSnackbar({
+        open: true,
+        message,
+        severity: isError ? 'error' : 'success',
+      });
+      dispatch(resetTeacherState()); // Clears the message so it doesn't show again
     }
-    if (isError && message) {
-      setSnackbar({ open: true, message, severity: 'error' });
-      dispatch(resetTeacherState());
-    }
-  }, [isSuccess, isError, message, dispatch]);
+  }, [message, isError, dispatch]);
 
   // Chain dropdowns
   useEffect(() => { if (selections.level) { dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); } }, [selections.level, dispatch]);
@@ -120,17 +116,13 @@ function TeacherDashboard() {
   const handleCloseModal = () => setIsModalOpen(false);
 
   const handleGenerateNote = useCallback((formData) => {
-    const noteData = { ...formData, subStrandId: selections.subStrand };
-    dispatch(generateLessonNote(noteData));
+    dispatch(generateLessonNote({ ...formData, subStrandId: selections.subStrand }))
+      .unwrap()
+      .then(() => handleCloseModal())
+      .catch(() => {}); // Errors are handled by the message useEffect
   }, [dispatch, selections.subStrand]);
 
-  useEffect(() => {
-    if (isSuccess && isModalOpen) {
-      handleCloseModal();
-    }
-  }, [isSuccess, isModalOpen]);
-
-  // ✅ 3. MODIFY DELETE HANDLER TO USE THE DIALOG
+  // --- Delete Handlers ---
   const handleDeleteClick = (noteId) => {
     setNoteToDelete(noteId);
     setDialogOpen(true);
@@ -147,17 +139,14 @@ function TeacherDashboard() {
     }
     handleDialogClose();
   };
-
+  
   const handleSnackbarClose = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
+    if (reason === 'clickaway') return;
     setSnackbar({ ...snackbar, open: false });
   };
   
-  // --- DOWNLOAD HANDLERS (No alerts needed, using Snackbar now) ---
+  // --- Download Handlers ---
   const handleDownloadPdf = useCallback((noteId, noteTopic) => {
-    // ... (rest of the function is the same, just remove alert())
     const element = document.getElementById(`note-content-${noteId}`);
     if (!element) return;
     if (!window.html2pdf) {
@@ -165,18 +154,28 @@ function TeacherDashboard() {
       setSnackbar({ open: true, message: 'PDF generation failed. Please refresh.', severity: 'error' });
       return;
     }
-    //... (pdf generation logic)
+    const filename = `${noteTopic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    const opt = { margin: 10, filename, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    window.html2pdf().set(opt).from(element).save();
   }, []);
 
   const handleDownloadWord = useCallback((noteId, noteTopic) => {
-    // ... (rest of the function is the same, just remove alert())
     try {
       const element = document.getElementById(`note-content-${noteId}`);
       if (!element) {
           setSnackbar({ open: true, message: 'Note content not found.', severity: 'error' });
           return;
       }
-      //... (docx generation logic)
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8" /><style>body { font-family: Arial, sans-serif; line-height: 1.6; } h1, h2, h3 { color: #2e7d32; } p { margin-bottom: 8px; } h1, h2 { page-break-before: always; }</style></head><body>${element.innerHTML}</body></html>`;
+      const blob = HTMLtoDOCX(html);
+      const safeName = (noteTopic || 'lesson-note').replace(/[^a-zA-Z0-9]/g, '_');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${safeName}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
     } catch (err) {
       console.error('Word generation failed:', err);
       setSnackbar({ open: true, message: 'Could not generate Word document.', severity: 'error' });
@@ -186,36 +185,62 @@ function TeacherDashboard() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
-        {/* Main Content */}
         <Box textAlign="center" my={5}>
           <Typography variant="h4" component="h1">Teacher Dashboard</Typography>
         </Box>
 
         {/* Note Generator Section */}
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
-          {/* ... (Your dropdowns and generate button) ... */}
+          <Typography variant="h6" gutterBottom>Select Topic to Generate Note</Typography>
+          <Grid container spacing={2}>
+            {[
+              { label: 'Level', name: 'level', items: levels },
+              { label: 'Class', name: 'class', items: classes, disabled: !selections.level },
+              { label: 'Subject', name: 'subject', items: subjects, disabled: !selections.class },
+              { label: 'Strand', name: 'strand', items: strands, disabled: !selections.subject },
+            ].map(({ label, name, items, disabled }) => (
+              <Grid item xs={12} sm={6} md={3} key={name}>
+                <FormControl fullWidth disabled={disabled || false}>
+                  <InputLabel>{label}</InputLabel>
+                  <Select name={name} value={selections[name]} label={label} onChange={handleSelectionChange}>
+                    {(items || []).map((i) => (
+                      <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            ))}
+            <Grid item xs={12}>
+              <FormControl fullWidth disabled={!selections.strand}>
+                <InputLabel>Sub-Strand</InputLabel>
+                <Select name="subStrand" value={selections.subStrand} label="Sub-Strand" onChange={handleSelectionChange}>
+                  {(subStrands || []).map((s) => (
+                    <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+          <Button variant="contained" onClick={handleOpenModal} disabled={!selections.subStrand || isLoading} sx={{ mt: 2 }}>
+            Generate AI Lesson Note
+          </Button>
         </Paper>
 
         {/* Lesson Notes List */}
         <Paper elevation={3} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>My Generated Lesson Notes</Typography>
           {isLoading && lessonNotes.length === 0 ? (
-            <CircularProgress />
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}><CircularProgress /></Box>
           ) : (
             <List>
               {lessonNotes.map((note) => (
-                <ListItem
-                  key={note._id}
-                  disablePadding
-                  secondaryAction={
+                <ListItem key={note._id} disablePadding secondaryAction={
                     <Stack direction="row" spacing={0.5} alignItems="center">
-                      {/* ... Download Buttons ... */}
                       <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(note._id)}>
                         <DeleteIcon />
                       </IconButton>
                     </Stack>
-                  }
-                >
+                  }>
                   <ListItemButton component={RouterLink} to={`/teacher/notes/${note._id}`}>
                     <ArticleIcon sx={{ mr: 2, color: 'action.active' }} />
                     <ListItemText
@@ -238,38 +263,24 @@ function TeacherDashboard() {
           isLoading={isLoading}
         />
 
-        {/* ✅ 4. ADD DIALOG AND SNACKBAR COMPONENTS TO THE RENDER OUTPUT */}
-        <Dialog
-          open={dialogOpen}
-          onClose={handleDialogClose}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">{"Confirm Deletion"}</DialogTitle>
+        <Dialog open={dialogOpen} onClose={handleDialogClose}>
+          <DialogTitle>{"Confirm Deletion"}</DialogTitle>
           <DialogContent>
-            <DialogContentText id="alert-dialog-description">
+            <DialogContentText>
               Are you sure you want to permanently delete this lesson note? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleDialogClose}>Cancel</Button>
-            <Button onClick={handleConfirmDelete} color="error" autoFocus>
-              Delete
-            </Button>
+            <Button onClick={handleConfirmDelete} color="error" autoFocus>Delete</Button>
           </DialogActions>
         </Dialog>
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
+        <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
           <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
             {snackbar.message}
           </Alert>
         </Snackbar>
-
       </Container>
     </motion.div>
   );
