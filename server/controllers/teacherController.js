@@ -30,11 +30,10 @@ const generateLessonNote = asyncHandler(async (req, res) => {
       throw new Error('Sub-strand not found');
   }
 
-  // Final prompt using headings and horizontal rules for clean formatting.
+  // Final prompt engineered to match the user's high-quality example in both structure and tone.
   const prompt = `
-    You are an expert curriculum developer for the Ghanaian Basic School system.
-    Your task is to generate a complete lesson plan based on the provided information.
-    You must STRICTLY follow the structure and formatting below, using Markdown headings and horizontal rules. Do not use <br> tags or Markdown tables for the lesson phases.
+    You are an award-winning master teacher and curriculum designer for the Ghanaian JHS system.
+    Your task is to generate a complete, high-quality lesson plan. The output must STRICTLY follow the structure and, most importantly, the pedagogical tone and content style of a master teacher.
 
     **Teacher-Provided Information:**
     - Topic (Sub-Strand): "${subStrand.name}"
@@ -46,10 +45,11 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     - Day/Date: "${dayDate}"
 
     **Your Task:**
-    1. Logically infer and generate the missing curriculum details: **Subject, Strand, Content Standard (Code), Indicator (Code), Core Competencies, Teaching & Learning Materials, Reference, Week, and Week Ending**.
-    2. Assume a **Class Size** of 45.
-    3. Create engaging content for the three Lesson Phases, ensuring each activity, evaluation, and assignment is clearly separated as shown in the format.
-    4. Assemble everything into the final Markdown format below. Leave 'Vetted By', 'Signature', and 'Date' blank.
+    1.  Logically infer and generate all missing curriculum details.
+    2.  Create content for the three lesson phases within a three-column Markdown table.
+    3.  **TONE & CONTENT INSTRUCTIONS (CRITICAL):** The content must be practical and descriptive. It should detail the actions of the teacher (facilitator) and the learners. Use active, pedagogical language like "The lesson begins with a quick recap...", "Learners identify familiar devices...", "The facilitator demonstrates...", "Groups explore the strengths and limitations...".
+    4.  In the "Phase 2" cell, generate 3-4 distinct activities, each with a title. Also include separate, clearly labeled "Evaluation" and "Assignment" sections at the bottom of this same cell.
+    5.  Assemble everything into the final format below.
 
     **--- START OF REQUIRED OUTPUT FORMAT ---**
 
@@ -67,47 +67,15 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     **Content Standard (Code):** [AI to generate, e.g., B7.X.X.X]
     **Indicator (Code):** [AI to generate, e.g., B7.X.X.X.X]
     **Performance Indicator:** ${performanceIndicator}
-    **Core Competencies:** [AI to generate, e.g., Critical Thinking, Communication]
-    **Teaching & Learning Materials:** [AI to generate, e.g., Whiteboard, markers, projector]
-    **Reference:** [AI to generate, e.g., NaCCA Computing Curriculum for JHS]
+    **Core Competencies:** [AI to generate, e.g., Critical Thinking, Communication and Collaboration]
+    **Teaching & Learning Materials:** [AI to generate, e.g., Actual keyboard, mouse, projector (if available), charts/pictures of devices]
+    **Reference:** [AI to generate, e.g., NaCCA Computing Curriculum for JHS 1]
 
-    ---
     ### **Lesson Phases**
 
-    #### **Phase 1: Starter (Preparing the brain for learning)**
-    [AI to generate a 2-3 sentence engaging starter activity here.]
-
-    ---
-
-    #### **Phase 2: Main (New learning including assessment)**
-
-    **Activity 1: [Give a descriptive title]**
-    [AI to generate content for the first teacher-led or group activity. Use a new paragraph for each logical step.]
-
-    **Activity 2: [Give a descriptive title]**
-    [AI to generate content for a second, hands-on activity for learners.]
-
-    **Activity 3: [Give a descriptive title]**
-    [AI to generate content for a third activity to deepen understanding.]
-
-    ---
-
-    **Evaluation**
-    1. [Generate a relevant evaluation question.]
-    2. [Generate a second relevant evaluation question.]
-    3. [Generate a third relevant evaluation question.]
-
-    ---
-
-    **Assignment**
-    [Generate a concise, relevant take-home assignment.]
-
-    ---
-
-    #### **Phase 3: Plenary / Reflection**
-    [AI to generate a 1-2 sentence summary of the key learning points, followed by a final reflective question for learners.]
-
-    ---
+    | PHASE 1: Starter (preparing the brain for learning) | PHASE 2: Main (new learning including assessment) | PHASE 3: Plenary/Reflections |
+    | :--- | :--- | :--- |
+    | The lesson begins with a quick recap of [relevant prior topic].<br><br>Learners identify familiar examples related to the new topic, such as [example 1] and [example 2].<br><br>A short visual (e.g., video or slideshow) is shown to set the stage for deeper exploration. | **Activity 1: [Descriptive Title]**<br>The facilitator demonstrates [concept 1]. Learners observe and handle [materials or examples]. They describe how each item works.<br><br>**Activity 2: [Descriptive Title]**<br>The class discusses the difference between [concept A] and [concept B]. A simple two-column chart is created to compare the two categories.<br><br>**Activity 3: [Descriptive Title]**<br>Groups explore the strengths and limitations of [the topic]. Findings are shared with the whole class.<br><br>**Activity 4: [Descriptive Title]**<br>Learners brainstorm where [the topic] is commonly used, such as [real-world example 1] and [real-world example 2].<br><br>**Evaluation**<br>1. [Question 1]<br>2. [Question 2]<br>3. [Question 3]<br><br>**Assignment**<br>[A concise, relevant take-home assignment.] | The session is rounded off with a recap of the key learning points.<br><br>Learners reflect on the question: “[A deep, reflective question related to the topic.]” |
 
     **Facilitator:**
     **Vetted By:** ....................................................
