@@ -1,44 +1,65 @@
-import api from '../../api/axios';
+// teacherService.js
+const API_URL = '/api/teacher/lesson-notes/';
 
-const getMyLessonNotes = async () => {
-    const response = await api.get('/teacher/lessonnotes');
-    return response.data;
+// Get user token
+const getToken = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user?.token || '';
 };
 
+// --- Generate new lesson note ---
 const generateLessonNote = async (noteData) => {
-    const response = await api.post('/teacher/generate-note', noteData);
-    return response.data;
+  const token = getToken();
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(noteData),
+  });
+
+  if (!response.ok) throw new Error('Failed to generate note');
+  return await response.json();
 };
 
+// --- Get all lesson notes for current teacher ---
+const getMyLessonNotes = async () => {
+  const token = getToken();
+  const response = await fetch(API_URL, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch notes');
+  return await response.json();
+};
+
+// --- Get single lesson note by ID ---
 const getLessonNoteById = async (noteId) => {
-    const response = await api.get(`/teacher/notes/${noteId}`);
-    return response.data;
+  const token = getToken();
+  const response = await fetch(`${API_URL}${noteId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch note');
+  return await response.json();
 };
 
-const createQuiz = async (quizData) => {
-    const response = await api.post('/teacher/create-quiz', quizData);
-    return response.data;
-};
+// --- ✅ Delete lesson note ---
+const deleteLessonNote = async (noteId) => {
+  const token = getToken();
+  const response = await fetch(`${API_URL}${noteId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-const uploadResource = async (resourceFormData) => {
-    const response = await api.post('/teacher/upload-resource', resourceFormData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-};
-
-const getTeacherAnalytics = async () => {
-    const response = await api.get('/teacher/analytics');
-    return response.data;
+  if (!response.ok) throw new Error('Failed to delete note');
+  return await response.json();
 };
 
 const teacherService = {
-    getMyLessonNotes,
-    generateLessonNote,
-    getLessonNoteById,
-    createQuiz,
-    uploadResource,
-    getTeacherAnalytics,
+  generateLessonNote,
+  getMyLessonNotes,
+  getLessonNoteById,
+  deleteLessonNote, // ✅ export added
 };
 
 export default teacherService;
