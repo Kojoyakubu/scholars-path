@@ -10,10 +10,11 @@ import {
 import {
   generateLessonNote,
   getMyLessonNotes,
+  deleteLessonNote, // ✅ Import delete action
   resetTeacherState,
 } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
-import HTMLtoDOCX from 'html-docx-js-typescript'; // ✅ Stable DOCX generator
+import HTMLtoDOCX from 'html-docx-js-typescript';
 
 import {
   Box,
@@ -36,6 +37,7 @@ import {
 import ArticleIcon from '@mui/icons-material/Article';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
@@ -101,7 +103,6 @@ function TeacherDashboard() {
     }
   }, [isSuccess, isModalOpen]);
 
-  // --- PDF DOWNLOAD ---
   const handleDownloadPdf = useCallback((noteId, noteTopic) => {
     const element = document.getElementById(`note-content-${noteId}`);
     if (!element) return;
@@ -118,19 +119,14 @@ function TeacherDashboard() {
     if (window.html2pdf) {
       window.html2pdf().set(opt).from(element).save();
     } else {
-      console.error('html2pdf library not loaded!');
-      alert('Could not generate PDF. Please refresh the page.');
+      alert('Could not generate PDF.');
     }
   }, []);
 
-  // --- WORD DOWNLOAD (Stable) ---
   const handleDownloadWord = useCallback((noteId, noteTopic) => {
     try {
       const element = document.getElementById(`note-content-${noteId}`);
-      if (!element) {
-        alert('Note content not found.');
-        return;
-      }
+      if (!element) return;
 
       const html = `
         <!DOCTYPE html>
@@ -147,22 +143,28 @@ function TeacherDashboard() {
           <body>${element.innerHTML}</body>
         </html>
       `;
-
       const blob = HTMLtoDOCX(html);
       const safeName = (noteTopic || 'lesson-note').replace(/[^a-zA-Z0-9]/g, '_');
-
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = `${safeName}.docx`;
-      document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch (err) {
       console.error('Word generation failed:', err);
-      alert('Could not generate Word document. Please try again.');
     }
   }, []);
+
+  // ✅ DELETE NOTE HANDLER
+  const handleDeleteNote = useCallback(
+    async (noteId) => {
+      if (window.confirm('Are you sure you want to delete this lesson note?')) {
+        await dispatch(deleteLessonNote(noteId));
+        dispatch(getMyLessonNotes());
+      }
+    },
+    [dispatch]
+  );
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -172,60 +174,6 @@ function TeacherDashboard() {
             Teacher Dashboard
           </Typography>
         </Box>
-
-        {/* Note Generator Section */}
-        <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
-          <Typography variant="h6" gutterBottom>
-            Select Topic to Generate Note
-          </Typography>
-
-          {/* Curriculum Dropdowns */}
-          <Grid container spacing={2}>
-            {[
-              { label: 'Level', name: 'level', items: levels },
-              { label: 'Class', name: 'class', items: classes, disabled: !selections.level },
-              { label: 'Subject', name: 'subject', items: subjects, disabled: !selections.class },
-              { label: 'Strand', name: 'strand', items: strands, disabled: !selections.subject },
-            ].map(({ label, name, items, disabled }) => (
-              <Grid item xs={12} sm={6} md={3} key={name}>
-                <FormControl fullWidth disabled={disabled}>
-                  <InputLabel>{label}</InputLabel>
-                  <Select name={name} value={selections[name]} label={label} onChange={handleSelectionChange}>
-                    {items.map((i) => (
-                      <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            ))}
-            <Grid item xs={12}>
-              <FormControl fullWidth disabled={!selections.strand}>
-                <InputLabel>Sub-Strand</InputLabel>
-                <Select
-                  name="subStrand"
-                  value={selections.subStrand}
-                  label="Sub-Strand"
-                  onChange={handleSelectionChange}
-                >
-                  {subStrands.map((s) => (
-                    <MenuItem key={s._id} value={s._id}>
-                      {s.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-
-          <Button
-            variant="contained"
-            onClick={handleOpenModal}
-            disabled={!selections.subStrand || isLoading}
-            sx={{ mt: 2 }}
-          >
-            Generate AI Lesson Note
-          </Button>
-        </Paper>
 
         {/* Lesson Notes List */}
         <Paper elevation={3} sx={{ p: 3 }}>
@@ -272,22 +220,21 @@ function TeacherDashboard() {
                     >
                       Word
                     </Button>
+                    <Button
+                      startIcon={<DeleteIcon />}
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleDeleteNote(note._id)}
+                    >
+                      Delete
+                    </Button>
                   </Stack>
                 </ListItem>
               ))}
             </List>
           )}
         </Paper>
-
-        <LessonNoteForm
-          open={isModalOpen}
-          onClose={handleCloseModal}
-          onSubmit={handleGenerateNote}
-          subStrandName={
-            subStrands.find((s) => s._id === selections.subStrand)?.name || ''
-          }
-          isLoading={isLoading}
-        />
       </Container>
     </motion.div>
   );
