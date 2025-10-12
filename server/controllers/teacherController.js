@@ -35,55 +35,47 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // ✅ IMPROVED PROMPT — Markdown-only structured output for front-end rendering
+  // ✅ Refined prompt that locks table structure
   const prompt = `
-You are an award-winning Ghanaian master teacher and curriculum designer. 
-Your task is to generate a **professionally structured lesson note** for the JHS curriculum in **clean Markdown format (no HTML tags)**.
+You are a Ghanaian master teacher and curriculum designer.  
+Your task is to create a **well-formatted Markdown lesson note** for the JHS Computing curriculum.
 
-**Teacher-Provided Information:**
-- Topic (Sub-Strand): "${subStrand.name}"
-- School: "${school}"
-- Class: "${className || subStrand.strand.subject.class.name}"
-- Term: "${term}"
-- Duration: "${duration}"
-- Performance Indicator: "${performanceIndicator}"
-- Day/Date: "${dayDate}"
+⚠️ IMPORTANT FORMATTING RULES
+- Use **pure Markdown** (no HTML tags).
+- Keep the **Lesson Phases** strictly inside a **3-column table**.
+- Use **<br>** for line breaks *inside table cells only* (this is valid for Markdown tables).
+- Never move "Evaluation" or "Assignment" outside the table.
+- Each phase must be a single cell separated by vertical bars \`|\`.
 
 ---
 
-### 📘 REQUIRED OUTPUT STRUCTURE (Markdown Only — No HTML Tags)
-
-All fields must be **clearly labeled** and separated by blank lines.
+### TEACHER INFORMATION
 
 **School:** ${school}  
 **Class:** ${className || subStrand.strand.subject.class.name}  
 **Subject:** ${subStrand.strand.subject.name}  
 **Strand:** ${subStrand.strand.name}  
 **Sub-Strand:** ${subStrand.name}  
-**Week:** [AI to generate week number]  
-**Week Ending:** [AI to generate Friday date]  
+**Week:** [AI to determine week number]  
+**Week Ending:** [AI to determine Friday date]  
 **Day/Date:** ${dayDate}  
 **Term:** ${term}  
 **Class Size:** 45  
 **Time/Duration:** ${duration}  
-**Content Standard (Code):** [AI to generate, e.g., B7.X.X.X]  
-**Indicator (Code):** [AI to generate, e.g., B7.X.X.X.X]  
+**Content Standard (Code):** [AI to generate]  
+**Indicator (Code):** [AI to generate]  
 **Performance Indicator:** ${performanceIndicator}  
-**Core Competencies:** [AI to generate, e.g., Critical Thinking, Communication, Collaboration]  
-**Teaching & Learning Materials:** [AI to generate, e.g., Computer, projector, flash cards, textbook]  
+**Core Competencies:** [AI to generate, e.g., Communication, Collaboration, Critical Thinking]  
+**Teaching & Learning Materials:** [AI to generate, e.g., Computer, projector, charts, pictures of devices]  
 **Reference:** [AI to generate, e.g., NaCCA Computing Curriculum for JHS 1]
 
 ---
 
-### **Lesson Phases Table**
+### **Lesson Phases**
 
-| **PHASE 1: Starter (Preparing the Brain for Learning)** | **PHASE 2: Main (New Learning and Assessment)** | **PHASE 3: Plenary/Reflection** |
+| **PHASE 1: Starter (Preparing the Brain for Learning)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
 |----------------------------------------------------------|--------------------------------------------------|----------------------------------|
-| Recap previous lesson briefly. Introduce the new topic with real-life examples or visuals. Ask simple questions to engage learners. | **Activity 1:** Explain the new concept clearly using real examples.  
-**Activity 2:** Guide learners to practice or explore the topic hands-on.  
-**Activity 3:** Group discussion or activity.  
-**Evaluation:** Include 3 short questions to test understanding.  
-**Assignment:** Give one short take-home task related to the topic. | Summarize the key ideas discussed. Ask learners reflective questions. Allow brief sharing of what they learned. |
+| The facilitator begins the lesson with a quick recap of previous knowledge.<br><br>Learners identify familiar examples related to the topic through brainstorming or pictures.<br><br>The teacher introduces today’s lesson using simple demonstrations or real-life analogies. | **Activity 1:** Introduce the new concept through discussion and demonstration.<br><br>**Activity 2:** Learners perform short tasks or group work to explore the concept.<br><br>**Activity 3:** The class discusses key differences and examples, writing short notes in groups.<br><br>**Evaluation:**<br>1. [Short question 1]<br>2. [Short question 2]<br>3. [Short question 3]<br><br>**Assignment:**<br>Write two sentences explaining how [the topic] applies in your daily life. | The facilitator leads a recap of the key points discussed.<br><br>Learners share what they have learned and answer reflective questions.<br><br>The teacher reinforces key ideas and gives motivational feedback. |
 
 ---
 
@@ -94,11 +86,10 @@ All fields must be **clearly labeled** and separated by blank lines.
 
 ---
 
-### ⚙️ OUTPUT RULES
-1. Output **pure Markdown** (no raw HTML tags like <br> or <p>).  
-2. Keep the table structure consistent with the 3-column layout shown above.  
-3. Add a blank line between every section for readability.  
-4. Use Ghanaian classroom tone, clarity, and concise wording.  
+### AI Output Rules
+1. Use only Markdown syntax and \`<br>\` for line breaks in table cells.  
+2. Ensure all content stays inside the 3-column table.  
+3. Keep the Ghanaian JHS lesson tone — clear, direct, and participatory.  
 `;
 
   const aiContent = await aiService.generateContent(prompt);
@@ -112,6 +103,7 @@ All fields must be **clearly labeled** and separated by blank lines.
 
   res.status(201).json(lessonNote);
 });
+
 
 /**
  * @desc    Get all lesson notes for the logged-in teacher
