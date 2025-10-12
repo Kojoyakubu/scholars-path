@@ -35,14 +35,17 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // ✅ Stronger, table-safe prompt
+  // ✅ Dynamic Facilitator name from logged-in user
+  const facilitatorName = req.user.name || 'Teacher';
+
+  // ✅ Stronger AI prompt with Ghanaian JHS tone and Markdown format
   const prompt = `
 You are a Ghanaian master teacher and curriculum designer.
 Your task is to create a **high-quality Markdown lesson note** for the JHS Computing curriculum.
 
 ⚠️ IMPORTANT FORMATTING RULES
 - Output must be **pure Markdown**, not HTML.
-- Keep the **Lesson Phases** strictly in a **3-column table**.
+- Keep the **Lesson Phases** strictly in a **3-column Markdown table**.
 - Use **<br>** for line breaks *inside* table cells.
 - Do **not** let any content appear outside the table.
 - All "Evaluation" and "Assignment" sections must stay **inside** the Phase 2 column.
@@ -80,7 +83,7 @@ Your task is to create a **high-quality Markdown lesson note** for the JHS Compu
 
 ---
 
-**Facilitator:**  
+**Facilitator:** ${facilitatorName}  
 **Vetted By:** ....................................................  
 **Signature:** ....................................................  
 **Date:** ....................................................  
@@ -93,13 +96,24 @@ Your task is to create a **high-quality Markdown lesson note** for the JHS Compu
 3. Maintain a Ghanaian JHS teacher’s tone: clear, engaging, and practical.
 `;
 
+  // ✅ Generate content using AI
   const aiContent = await aiService.generateContent(prompt);
 
+  // ✅ Fallback: Ensure the Facilitator footer always appears
+  const facilitatorFooter = `
+\n\n**Facilitator:** ${facilitatorName}\n**Vetted By:** ....................................................\n**Signature:** ....................................................\n**Date:** ....................................................\n
+`;
+
+  const finalContent = aiContent.includes('**Facilitator:**')
+    ? aiContent
+    : aiContent + facilitatorFooter;
+
+  // ✅ Save lesson note
   const lessonNote = await LessonNote.create({
     teacher: req.user._id,
     school: req.user.school,
     subStrand: subStrandId,
-    content: aiContent,
+    content: finalContent,
   });
 
   res.status(201).json(lessonNote);
@@ -156,14 +170,17 @@ const generateLearnerNote = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Lesson note not found');
   }
+
   const prompt = `Based on the following teacher's lesson note, create a simplified and engaging version for learners:\n\n${lessonNote.content}`;
   const learnerContent = await aiService.generateContent(prompt);
+
   const learnerNote = await LearnerNote.create({
     author: req.user._id,
     school: req.user.school,
     subStrand: lessonNote.subStrand,
     content: learnerContent,
   });
+
   res.status(201).json(learnerNote);
 });
 
@@ -190,6 +207,7 @@ const uploadResource = asyncHandler(async (req, res) => {
     throw new Error('Please upload a file');
   }
   const { subStrandId } = req.body;
+
   const resource = await Resource.create({
     teacher: req.user._id,
     school: req.user.school,
@@ -198,6 +216,7 @@ const uploadResource = asyncHandler(async (req, res) => {
     filePath: req.file.path,
     fileType: req.file.mimetype,
   });
+
   res.status(201).json(resource);
 });
 
@@ -209,6 +228,7 @@ const getTeacherAnalytics = asyncHandler(async (req, res) => {
   const schoolId = req.user.school;
   const quizzes = await Quiz.find({ teacher: teacherId, school: schoolId }).select('_id');
   const quizIds = quizzes.map((q) => q._id);
+
   const [totalNoteViews, totalQuizAttempts, averageScoreAggregation] = await Promise.all([
     NoteView.countDocuments({ teacher: teacherId, school: schoolId }),
     QuizAttempt.countDocuments({ quiz: { $in: quizIds }, school: schoolId }),
@@ -230,10 +250,12 @@ const getTeacherAnalytics = asyncHandler(async (req, res) => {
         ])
       : Promise.resolve([]),
   ]);
+
   let averageScore = 0;
   if (averageScoreAggregation.length > 0 && averageScoreAggregation[0].avgScore) {
     averageScore = averageScoreAggregation[0].avgScore * 100;
   }
+
   res.json({
     totalNoteViews,
     totalQuizAttempts,
