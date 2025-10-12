@@ -5,9 +5,7 @@ import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacher
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw'; // ✅ allows <br> to render correctly
-
-// MUI Components
+import rehypeRaw from 'rehype-raw';
 import {
   Box,
   Typography,
@@ -17,6 +15,7 @@ import {
   Alert,
   Button,
   Stack,
+  Divider,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -29,7 +28,6 @@ function LessonNoteView() {
     (state) => state.teacher
   );
 
-  // Fetch lesson note
   useEffect(() => {
     dispatch(getLessonNoteById(noteId));
     return () => {
@@ -84,7 +82,6 @@ function LessonNoteView() {
     }
   }, [currentNote]);
 
-  // --- Conditional Rendering ---
   if (isLoading || !currentNote) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
@@ -101,7 +98,14 @@ function LessonNoteView() {
     );
   }
 
-  // --- MAIN RENDER ---
+  // Split note into header, table, and footer sections
+  const content = currentNote.content;
+  const tableStart = content.indexOf('| PHASE');
+  const tableEnd = content.lastIndexOf('|');
+  const header = content.substring(0, tableStart).trim();
+  const table = content.substring(tableStart, tableEnd + 1).trim();
+  const footer = content.substring(tableEnd + 1).trim();
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
@@ -130,82 +134,71 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
-          {/* Lesson Note Display */}
+          {/* Content Display */}
           <div id="note-content-container">
+            {/* Header Section */}
+            <Box sx={{ mb: 3 }}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 0.8,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                  strong: (props) => (
+                    <Box
+                      component="strong"
+                      sx={{ fontWeight: 600, color: 'text.primary' }}
+                      {...props}
+                    />
+                  ),
+                }}
+              >
+                {header}
+              </ReactMarkdown>
+            </Box>
+
+            <Divider sx={{ mb: 3 }} />
+
+            {/* Lesson Phases Table */}
             <Box
               sx={{
                 overflowX: 'auto',
-                boxShadow: 1,
                 borderRadius: 2,
-                p: 2,
+                mb: 3,
               }}
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
                 components={{
-                  // Headers
-                  h1: (props) => (
-                    <Typography
-                      variant="h4"
-                      gutterBottom
-                      sx={{ fontWeight: 'bold', mt: 2 }}
-                      {...props}
-                    />
-                  ),
-                  h2: (props) => (
-                    <Typography
-                      variant="h5"
-                      sx={{ mt: 3, mb: 1, color: 'primary.main', fontWeight: 600 }}
-                      gutterBottom
-                      {...props}
-                    />
-                  ),
-                  h3: (props) => (
-                    <Typography
-                      variant="h6"
-                      sx={{ mt: 2, mb: 1, color: 'text.secondary', fontWeight: 500 }}
-                      gutterBottom
-                      {...props}
-                    />
-                  ),
-                  // Paragraphs
-                  p: (props) => (
-                    <Typography
-                      variant="body1"
-                      paragraph
-                      sx={{ mb: 1.5, whiteSpace: 'pre-line', lineHeight: 1.6 }}
-                      {...props}
-                    />
-                  ),
-                  // Bold text
-                  strong: (props) => (
-                    <Box component="strong" sx={{ fontWeight: 'bold', color: 'text.primary' }} {...props} />
-                  ),
-                  // Table styling
                   table: (props) => (
                     <Box
                       component="table"
                       sx={{
                         width: '100%',
                         borderCollapse: 'collapse',
-                        mt: 3,
-                        mb: 3,
                         '& th': {
                           backgroundColor: '#e8f5e9',
                           color: '#2e7d32',
-                          fontWeight: 'bold',
+                          fontWeight: 700,
                           border: '1px solid #c8e6c9',
-                          padding: '12px',
+                          padding: '10px',
                           textAlign: 'center',
-                          fontSize: '0.95rem',
                         },
                         '& td': {
                           border: '1px solid #ddd',
                           padding: '12px',
                           verticalAlign: 'top',
-                          width: '33%',
-                          lineHeight: 1.6,
                           whiteSpace: 'pre-wrap',
                         },
                         '& tr:nth-of-type(even)': {
@@ -217,7 +210,33 @@ function LessonNoteView() {
                   ),
                 }}
               >
-                {currentNote.content}
+                {table}
+              </ReactMarkdown>
+            </Box>
+
+            <Divider sx={{ mb: 3 }} />
+
+            {/* Footer Section */}
+            <Box sx={{ mt: 2 }}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 1,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
+              >
+                {footer}
               </ReactMarkdown>
             </Box>
           </div>
