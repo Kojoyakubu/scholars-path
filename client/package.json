@@ -24,7 +24,8 @@
     "react-markdown": "^10.1.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.2",
-    "react-select": "^5.10.2"
+    "react-select": "^5.10.2",
+    "react-toastify": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
