@@ -10,10 +10,11 @@ import {
 import {
   generateLessonNote,
   getMyLessonNotes,
+  deleteLessonNote, // ✅ 1. IMPORT DELETE ACTION
   resetTeacherState,
 } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
-import HTMLtoDOCX from 'html-docx-js-typescript'; // ✅ Stable DOCX generator
+import HTMLtoDOCX from 'html-docx-js-typescript';
 
 import {
   Box,
@@ -32,10 +33,12 @@ import {
   ListItemButton,
   CircularProgress,
   Stack,
+  IconButton, // ✅ 2. IMPORT ICON BUTTON
 } from '@mui/material';
 import ArticleIcon from '@mui/icons-material/Article';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
+import DeleteIcon from '@mui/icons-material/Delete'; // ✅ 2. IMPORT DELETE ICON
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
@@ -63,7 +66,7 @@ function TeacherDashboard() {
     };
   }, [dispatch]);
 
-  // ✅ ADDED THIS BLOCK TO CHAIN DROPDOWNS
+  // Chain dropdowns
   useEffect(() => {
     if (selections.level) {
       dispatch(
@@ -111,7 +114,6 @@ function TeacherDashboard() {
       );
     }
   }, [selections.strand, dispatch]);
-  // ✅ END OF ADDED BLOCK
 
   const handleSelectionChange = useCallback(
     (e) => {
@@ -151,6 +153,16 @@ function TeacherDashboard() {
     }
   }, [isSuccess, isModalOpen]);
 
+  // ✅ 3. CREATE DELETE HANDLER
+  const handleDeleteNote = useCallback(
+    (noteId) => {
+      if (window.confirm('Are you sure you want to delete this lesson note?')) {
+        dispatch(deleteLessonNote(noteId));
+      }
+    },
+    [dispatch]
+  );
+
   // --- PDF DOWNLOAD ---
   const handleDownloadPdf = useCallback((noteId, noteTopic) => {
     const element = document.getElementById(`note-content-${noteId}`);
@@ -173,7 +185,7 @@ function TeacherDashboard() {
     }
   }, []);
 
-  // --- WORD DOWNLOAD (Stable) ---
+  // --- WORD DOWNLOAD ---
   const handleDownloadWord = useCallback((noteId, noteTopic) => {
     try {
       const element = document.getElementById(`note-content-${noteId}`);
@@ -223,13 +235,11 @@ function TeacherDashboard() {
           </Typography>
         </Box>
 
-        {/* Note Generator Section */}
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
           <Typography variant="h6" gutterBottom>
             Select Topic to Generate Note
           </Typography>
 
-          {/* Curriculum Dropdowns */}
           <Grid container spacing={2}>
             {[
               { label: 'Level', name: 'level', items: levels },
@@ -277,7 +287,6 @@ function TeacherDashboard() {
           </Button>
         </Paper>
 
-        {/* Lesson Notes List */}
         <Paper elevation={3} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
             My Generated Lesson Notes
@@ -288,7 +297,40 @@ function TeacherDashboard() {
           ) : (
             <List>
               {lessonNotes.map((note) => (
-                <ListItem key={note._id} disablePadding>
+                <ListItem
+                  key={note._id}
+                  disablePadding
+                  secondaryAction={ // ✅ 4. ADD BUTTON CONTAINER
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <Button
+                        startIcon={<PictureAsPdfIcon />}
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleDownloadPdf(note._id, 'lesson_note')}
+                        sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                      >
+                        PDF
+                      </Button>
+                      <Button
+                        startIcon={<DescriptionIcon />}
+                        variant="outlined"
+                        color="secondary"
+                        size="small"
+                        onClick={() => handleDownloadWord(note._id, 'lesson_note')}
+                        sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                      >
+                        Word
+                      </Button>
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={() => handleDeleteNote(note._id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Stack>
+                  }
+                >
                   <ListItemButton
                     component={RouterLink}
                     to={`/teacher/notes/${note._id}`}
@@ -303,26 +345,6 @@ function TeacherDashboard() {
                       secondary={note.content.substring(0, 150) + '...'}
                     />
                   </ListItemButton>
-
-                  <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
-                    <Button
-                      startIcon={<PictureAsPdfIcon />}
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleDownloadPdf(note._id, 'lesson_note')}
-                    >
-                      PDF
-                    </Button>
-                    <Button
-                      startIcon={<DescriptionIcon />}
-                      variant="outlined"
-                      color="secondary"
-                      size="small"
-                      onClick={() => handleDownloadWord(note._id, 'lesson_note')}
-                    >
-                      Word
-                    </Button>
-                  </Stack>
                 </ListItem>
               ))}
             </List>

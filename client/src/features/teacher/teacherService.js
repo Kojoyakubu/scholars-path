@@ -15,6 +15,12 @@ const getLessonNoteById = async (noteId) => {
     return response.data;
 };
 
+// ✅ ADD DELETE LESSON NOTE SERVICE FUNCTION
+const deleteLessonNote = async (noteId) => {
+    const response = await api.delete(`/teacher/notes/${noteId}`);
+    return response.data;
+};
+
 const createQuiz = async (quizData) => {
     const response = await api.post('/teacher/create-quiz', quizData);
     return response.data;
@@ -36,6 +42,7 @@ const teacherService = {
     getMyLessonNotes,
     generateLessonNote,
     getLessonNoteById,
+    deleteLessonNote, // ✅ EXPORT THE NEW SERVICE
     createQuiz,
     uploadResource,
     getTeacherAnalytics,

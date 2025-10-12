@@ -5,6 +5,7 @@ const {
   getMyLessonNotes,
   generateLessonNote,
   getLessonNoteById,
+  deleteLessonNote, // ✅ IMPORT THE NEW CONTROLLER FUNCTION
   generateLearnerNote,
   createQuiz,
   uploadResource,
@@ -39,6 +40,10 @@ router.get('/analytics', getTeacherAnalytics);
 router.get('/lessonnotes', getMyLessonNotes);
 router.get('/notes/:id', [check('id').isMongoId()], handleValidationErrors, getLessonNoteById);
 router.post('/generate-note', generateNoteValidator, handleValidationErrors, generateLessonNote);
+
+// ✅ ADD THE DELETE ROUTE
+router.delete('/notes/:id', [check('id').isMongoId()], handleValidationErrors, deleteLessonNote);
+
 router.post('/generate-learner-note', [check('lessonNoteId', 'A valid Lesson Note ID is required').isMongoId()], handleValidationErrors, generateLearnerNote);
 router.post('/create-quiz', createQuizValidator, handleValidationErrors, createQuiz);
 router.post('/upload-resource', upload, [check('subStrandId', 'A valid Sub-Strand ID is required').isMongoId()], handleValidationErrors, uploadResource);

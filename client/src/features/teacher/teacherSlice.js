@@ -27,6 +27,10 @@ const createTeacherThunk = (name, serviceCall) => {
 export const getMyLessonNotes = createTeacherThunk('getMyLessonNotes', teacherService.getMyLessonNotes);
 export const generateLessonNote = createTeacherThunk('generateLessonNote', teacherService.generateLessonNote);
 export const getLessonNoteById = createTeacherThunk('getLessonNoteById', teacherService.getLessonNoteById);
+
+// ✅ CREATE AND EXPORT THE DELETE THUNK
+export const deleteLessonNote = createTeacherThunk('deleteLessonNote', teacherService.deleteLessonNote);
+
 export const createQuiz = createTeacherThunk('createQuiz', teacherService.createQuiz);
 export const uploadResource = createTeacherThunk('uploadResource', teacherService.uploadResource);
 export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
@@ -54,6 +58,17 @@ const teacherSlice = createSlice({
         state.lessonNotes.unshift(action.payload);
         state.message = 'Lesson Note Generated Successfully!';
       })
+
+      // ✅ ADD THE REDUCER CASE FOR A SUCCESSFUL DELETE
+      .addCase(deleteLessonNote.fulfilled, (state, action) => {
+        state.isSuccess = true;
+        // Filter out the deleted note from the lessonNotes array
+        state.lessonNotes = state.lessonNotes.filter(
+          (note) => note._id !== action.payload.id
+        );
+        state.message = action.payload.message;
+      })
+
       .addCase(createQuiz.fulfilled, (state, action) => {
         state.isSuccess = true;
         state.quizzes.push(action.payload.quiz);

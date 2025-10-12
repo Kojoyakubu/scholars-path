@@ -63,6 +63,29 @@ const getLessonNoteById = asyncHandler(async (req, res) => {
   res.json(note);
 });
 
+// ✅ **START: ADDED DELETE FUNCTION**
+// @desc    Delete a lesson note
+const deleteLessonNote = asyncHandler(async (req, res) => {
+  const note = await LessonNote.findById(req.params.id);
+
+  if (!note) {
+    res.status(404);
+    throw new Error('Lesson note not found');
+  }
+
+  // Ensure the user owns the note before deleting
+  if (note.teacher.toString() !== req.user._id.toString()) {
+    res.status(403); // Forbidden
+    throw new Error('User not authorized to delete this note');
+  }
+
+  await note.deleteOne();
+
+  res.status(200).json({ id: req.params.id, message: 'Lesson note deleted successfully' });
+});
+// ✅ **END: ADDED DELETE FUNCTION**
+
+
 // @desc    Generate a learner's version of a lesson note
 const generateLearnerNote = asyncHandler(async (req, res) => {
     const { lessonNoteId } = req.body;
@@ -119,6 +142,7 @@ module.exports = {
   getMyLessonNotes,
   generateLessonNote,
   getLessonNoteById,
+  deleteLessonNote, // ✅ EXPORT THE NEW FUNCTION
   generateLearnerNote,
   createQuiz,
   uploadResource,
