@@ -5,7 +5,7 @@ const {
   getMyLessonNotes,
   generateLessonNote,
   getLessonNoteById,
-  deleteLessonNote, // ✅ IMPORT THE NEW CONTROLLER FUNCTION
+  deleteLessonNote,
   generateLearnerNote,
   createQuiz,
   uploadResource,
@@ -24,24 +24,31 @@ const handleValidationErrors = (req, res, next) => {
 
 router.use(protect, authorize('teacher', 'school_admin', 'admin'));
 
+// ✅ **START: UPDATED VALIDATOR**
+// This now checks for the new fields sent from the frontend form.
 const generateNoteValidator = [
     check('subStrandId', 'A valid Sub-Strand ID is required').isMongoId(),
-    check('objectives', 'Learning objectives are required').not().isEmpty().trim().escape(),
-    check('aids', 'Teaching aids are required').not().isEmpty().trim().escape(),
-    check('duration', 'Lesson duration is required').not().isEmpty().trim().escape(),
+    check('school', 'School name is required').not().isEmpty().trim().escape(),
+    check('term', 'Term is required').not().isEmpty().trim().escape(),
+    check('duration', 'Duration is required').not().isEmpty().trim().escape(),
+    check('dayDate', 'Day/Date is required').not().isEmpty().trim().escape(),
+    check('performanceIndicator', 'Performance Indicator is required').not().isEmpty().trim().escape(),
 ];
+// ✅ **END: UPDATED VALIDATOR**
 
 const createQuizValidator = [
     check('title', 'Quiz title is required').not().isEmpty().trim().escape(),
     check('subjectId', 'A valid Subject ID is required').isMongoId(),
 ];
 
+// --- Routes ---
 router.get('/analytics', getTeacherAnalytics);
 router.get('/lessonnotes', getMyLessonNotes);
 router.get('/notes/:id', [check('id').isMongoId()], handleValidationErrors, getLessonNoteById);
+
+// The generate-note route now uses the updated validator
 router.post('/generate-note', generateNoteValidator, handleValidationErrors, generateLessonNote);
 
-// ✅ ADD THE DELETE ROUTE
 router.delete('/notes/:id', [check('id').isMongoId()], handleValidationErrors, deleteLessonNote);
 
 router.post('/generate-learner-note', [check('lessonNoteId', 'A valid Lesson Note ID is required').isMongoId()], handleValidationErrors, generateLearnerNote);
