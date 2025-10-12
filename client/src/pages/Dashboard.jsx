@@ -4,14 +4,15 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fetchItems, fetchChildren, clearChildren, resetCurriculumState } from '../features/curriculum/curriculumSlice';
 import { getLearnerNotes, getQuizzes, getResources, logNoteView } from '../features/student/studentSlice';
-import jsPDF from 'jspdf';
+
+// --- THE FIX IS HERE ---
+import { jsPDF } from 'jspdf'; // Changed to a named import
 import html2canvas from 'html2canvas';
 
 import {
   Box, Typography, Container, Button, Grid, Select, MenuItem,
   FormControl, InputLabel, Paper, List, ListItem, ListItemText, ListItemIcon, CircularProgress
 } from '@mui/material';
-import ArticleIcon from '@mui/icons-material/Article';
 import QuizIcon from '@mui/icons-material/Quiz';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -37,10 +38,7 @@ function Dashboard() {
     if (user.role === 'student') {
         dispatch(fetchItems({ entity: 'levels' }));
     }
-    return () => {
-      // Dispatch the correctly named reset action on unmount
-      dispatch(resetCurriculumState());
-    }
+    return () => { dispatch(resetCurriculumState()); }
   }, [dispatch, user, navigate]);
 
   useEffect(() => { if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })) }, [selections.level, dispatch]);
@@ -78,7 +76,7 @@ function Dashboard() {
   }, [dispatch]);
 
   const handleDownloadPdf = useCallback((noteId, noteTopic) => {
-    handleNoteView(noteId); // Log view on download
+    handleNoteView(noteId);
     const input = document.getElementById(`note-content-${noteId}`);
     if (!input) return;
     html2canvas(input, { scale: 2 }).then((canvas) => {
@@ -107,7 +105,6 @@ function Dashboard() {
             <Grid item xs={12}><FormControl fullWidth disabled={!selections.strand}><InputLabel>Sub-Strand</InputLabel><Select name="subStrand" value={selections.subStrand} label="Sub-Strand" onChange={handleSelectionChange}>{subStrands.map(s => <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>)}</Select></FormControl></Grid>
           </Grid>
         </Paper>
-
         {selections.subStrand && (
           isLoading ? <Box sx={{display: 'flex', justifyContent: 'center', mt: 4}}><CircularProgress /></Box> : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
