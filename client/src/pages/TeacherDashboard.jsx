@@ -13,6 +13,7 @@ import {
   resetTeacherState,
 } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
+import HTMLtoDOCX from 'html-docx-js-typescript'; // ✅ Stable DOCX generator
 
 import {
   Box,
@@ -100,7 +101,7 @@ function TeacherDashboard() {
     }
   }, [isSuccess, isModalOpen]);
 
-  // --- PDF Download ---
+  // --- PDF DOWNLOAD ---
   const handleDownloadPdf = useCallback((noteId, noteTopic) => {
     const element = document.getElementById(`note-content-${noteId}`);
     if (!element) return;
@@ -122,16 +123,14 @@ function TeacherDashboard() {
     }
   }, []);
 
-  // --- WORD Download ---
-  const handleDownloadWord = useCallback(async (noteId, noteTopic) => {
+  // --- WORD DOWNLOAD (Stable) ---
+  const handleDownloadWord = useCallback((noteId, noteTopic) => {
     try {
       const element = document.getElementById(`note-content-${noteId}`);
       if (!element) {
         alert('Note content not found.');
         return;
       }
-
-      const htmlToDocx = (await import('html-to-docx')).default;
 
       const html = `
         <!DOCTYPE html>
@@ -140,21 +139,20 @@ function TeacherDashboard() {
             <meta charset="UTF-8" />
             <style>
               body { font-family: Arial, sans-serif; line-height: 1.6; }
-              h1,h2,h3 { color: #2e7d32; }
+              h1, h2, h3 { color: #2e7d32; }
+              p { margin-bottom: 8px; }
+              h1, h2 { page-break-before: always; }
             </style>
           </head>
           <body>${element.innerHTML}</body>
         </html>
       `;
 
-      const blob = await htmlToDocx(html, {
-        orientation: 'portrait',
-        margins: { top: 720 },
-      });
+      const blob = HTMLtoDOCX(html);
+      const safeName = (noteTopic || 'lesson-note').replace(/[^a-zA-Z0-9]/g, '_');
 
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      const safeName = (noteTopic || 'lesson-note').replace(/[^a-zA-Z0-9]/g, '_');
       link.download = `${safeName}.docx`;
       document.body.appendChild(link);
       link.click();
@@ -162,7 +160,7 @@ function TeacherDashboard() {
       URL.revokeObjectURL(link.href);
     } catch (err) {
       console.error('Word generation failed:', err);
-      alert('Could not generate Word document. Check console for details.');
+      alert('Could not generate Word document. Please try again.');
     }
   }, []);
 
@@ -175,80 +173,31 @@ function TeacherDashboard() {
           </Typography>
         </Box>
 
-        {/* Note Generator */}
+        {/* Note Generator Section */}
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
           <Typography variant="h6" gutterBottom>
             Select Topic to Generate Note
           </Typography>
+
+          {/* Curriculum Dropdowns */}
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              <FormControl fullWidth>
-                <InputLabel>Level</InputLabel>
-                <Select
-                  name="level"
-                  value={selections.level}
-                  label="Level"
-                  onChange={handleSelectionChange}
-                >
-                  {levels.map((l) => (
-                    <MenuItem key={l._id} value={l._id}>
-                      {l.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <FormControl fullWidth disabled={!selections.level}>
-                <InputLabel>Class</InputLabel>
-                <Select
-                  name="class"
-                  value={selections.class}
-                  label="Class"
-                  onChange={handleSelectionChange}
-                >
-                  {classes.map((c) => (
-                    <MenuItem key={c._id} value={c._id}>
-                      {c.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <FormControl fullWidth disabled={!selections.class}>
-                <InputLabel>Subject</InputLabel>
-                <Select
-                  name="subject"
-                  value={selections.subject}
-                  label="Subject"
-                  onChange={handleSelectionChange}
-                >
-                  {subjects.map((s) => (
-                    <MenuItem key={s._id} value={s._id}>
-                      {s.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <FormControl fullWidth disabled={!selections.subject}>
-                <InputLabel>Strand</InputLabel>
-                <Select
-                  name="strand"
-                  value={selections.strand}
-                  label="Strand"
-                  onChange={handleSelectionChange}
-                >
-                  {strands.map((s) => (
-                    <MenuItem key={s._id} value={s._id}>
-                      {s.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+            {[
+              { label: 'Level', name: 'level', items: levels },
+              { label: 'Class', name: 'class', items: classes, disabled: !selections.level },
+              { label: 'Subject', name: 'subject', items: subjects, disabled: !selections.class },
+              { label: 'Strand', name: 'strand', items: strands, disabled: !selections.subject },
+            ].map(({ label, name, items, disabled }) => (
+              <Grid item xs={12} sm={6} md={3} key={name}>
+                <FormControl fullWidth disabled={disabled}>
+                  <InputLabel>{label}</InputLabel>
+                  <Select name={name} value={selections[name]} label={label} onChange={handleSelectionChange}>
+                    {items.map((i) => (
+                      <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            ))}
             <Grid item xs={12}>
               <FormControl fullWidth disabled={!selections.strand}>
                 <InputLabel>Sub-Strand</InputLabel>
@@ -296,15 +245,10 @@ function TeacherDashboard() {
                   >
                     <ArticleIcon sx={{ mr: 2, color: 'action.active' }} />
                     <ListItemText
-                      primaryTypographyProps={{
-                        noWrap: true,
-                        fontWeight: 500,
-                      }}
+                      primaryTypographyProps={{ noWrap: true, fontWeight: 500 }}
                       primary={
                         note.content.split('\n')[1] ||
-                        `Note created on ${new Date(
-                          note.createdAt
-                        ).toLocaleDateString()}`
+                        `Note created on ${new Date(note.createdAt).toLocaleDateString()}`
                       }
                       secondary={note.content.substring(0, 150) + '...'}
                     />
@@ -315,9 +259,7 @@ function TeacherDashboard() {
                       startIcon={<PictureAsPdfIcon />}
                       variant="outlined"
                       size="small"
-                      onClick={() =>
-                        handleDownloadPdf(note._id, 'lesson_note')
-                      }
+                      onClick={() => handleDownloadPdf(note._id, 'lesson_note')}
                     >
                       PDF
                     </Button>
@@ -326,9 +268,7 @@ function TeacherDashboard() {
                       variant="outlined"
                       color="secondary"
                       size="small"
-                      onClick={() =>
-                        handleDownloadWord(note._id, 'lesson_note')
-                      }
+                      onClick={() => handleDownloadWord(note._id, 'lesson_note')}
                     >
                       Word
                     </Button>
