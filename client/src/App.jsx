@@ -1,74 +1,74 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// Import Components
+// Core Components
 import Header from './components/Header';
 import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
 import RoleRoute from './components/RoleRoute';
-import SubscriptionGate from './components/SubscriptionGate'; // We'll leave the import but not use it
 
-// Import Pages
+// Pages
+import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import PricingPage from './pages/PricingPage';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
-import Dashboard from './pages/Dashboard';
-import TakeQuiz from './pages/TakeQuiz';
 import MyBadges from './pages/MyBadges';
-import TeacherDashboard from './pages/TeacherDashboard';
+
+// Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
-import AdminCurriculum from './pages/AdminCurriculum';
 import AdminUsers from './pages/AdminUsers';
+import AdminCurriculum from './pages/AdminCurriculum';
 import AdminSchools from './pages/AdminSchools';
-import SchoolDashboard from './pages/SchoolDashboard';
+
+// Teacher Pages
+import TeacherDashboard from './pages/TeacherDashboard';
+import LessonNoteView from './pages/LessonNoteView';
 
 function App() {
   return (
-    <Router>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <>
+      <Router>
         <Header />
-        <main style={{ flex: 1, padding: '20px 0' }}>
+        <main style={{ flexGrow: 1, padding: '20px 0' }}>
           <Routes>
             {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/payment-failed" element={<PaymentFailed />} />
+            <Route path='/login' element={<Login />} />
+            <Route path='/register' element={<Register />} />
+            <Route path='/pricing' element={<PricingPage />} />
+            <Route path='/payment-success' element={<PaymentSuccess />} />
+            <Route path='/payment-failed' element={<PaymentFailed />} />
 
-            {/* Private Routes (All logged-in users) */}
-            <Route element={<PrivateRoute />}>
-              {/* REMOVED SubscriptionGate from Dashboard */}
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/quiz/:id" element={<TakeQuiz />} />
-              <Route path="/my-badges" element={<MyBadges />} />
-              
-              {/* Teacher Routes */}
-              <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin', 'admin']} />}>
-                {/* REMOVED SubscriptionGate from TeacherDashboard */}
-                <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-              </Route>
-              
-              {/* School Admin Routes */}
-              <Route element={<RoleRoute allowedRoles={['school_admin', 'admin']} />}>
-                <Route path="/school/dashboard/:schoolId" element={<SchoolDashboard />} />
-              </Route>
-
-              {/* Admin Routes */}
-              <Route element={<RoleRoute allowedRoles={['admin']} />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/curriculum" element={<AdminCurriculum />} />
-                <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/schools" element={<AdminSchools />} />
-              </Route>
+            {/* General Private Routes */}
+            <Route path='/' element={<PrivateRoute />}>
+              <Route path='/' element={<Dashboard />} />
+              <Route path='/my-badges' element={<MyBadges />} />
             </Route>
-            
+
+            {/* Admin Routes */}
+            <Route path='/admin' element={<RoleRoute allowedRoles={['admin']} />}>
+              <Route path='' element={<AdminDashboard />} />
+              <Route path='users' element={<AdminUsers />} />
+              <Route path='curriculum' element={<AdminCurriculum />} />
+              <Route path='schools' element={<AdminSchools />} />
+            </Route>
+
+            {/* Teacher Routes */}
+            <Route path='/teacher' element={<RoleRoute allowedRoles={['teacher', 'school_admin', 'admin']} />}>
+              <Route path='dashboard' element={<TeacherDashboard />} />
+              <Route path='notes/:noteId' element={<LessonNoteView />} />
+            </Route>
+
+            {/* Fallback Route */}
+            <Route path='*' element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <Footer />
-      </div>
-    </Router>
+      </Router>
+      <ToastContainer />
+    </>
   );
 }
 
