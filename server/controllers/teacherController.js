@@ -15,15 +15,9 @@ const aiService = require('../services/aiService');
  * @access  Private (Teacher)
  */
 const generateLessonNote = asyncHandler(async (req, res) => {
-  // Destructure the simplified inputs provided by the teacher
   const {
-    subStrandId,
-    school, // Compulsory
-    term, // Compulsory
-    duration, // Compulsory
-    performanceIndicator, // Compulsory
-    dayDate, // Compulsory
-    class: className, // Optional
+    subStrandId, school, term, duration,
+    performanceIndicator, dayDate, class: className,
   } = req.body;
 
   const subStrand = await SubStrand.findById(subStrandId).populate({
@@ -36,12 +30,11 @@ const generateLessonNote = asyncHandler(async (req, res) => {
       throw new Error('Sub-strand not found');
   }
 
-  // This intelligent prompt instructs the AI to act as a curriculum expert,
-  // filling in the blanks logically based on the teacher's input.
+  // Final prompt using headings and horizontal rules for clean formatting.
   const prompt = `
     You are an expert curriculum developer for the Ghanaian Basic School system.
     Your task is to generate a complete lesson plan based on the provided information.
-    You must STRICTLY follow the structure and formatting below. Do not add any extra text or explanations.
+    You must STRICTLY follow the structure and formatting below, using Markdown headings and horizontal rules. Do not use <br> tags or Markdown tables for the lesson phases.
 
     **Teacher-Provided Information:**
     - Topic (Sub-Strand): "${subStrand.name}"
@@ -53,58 +46,72 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     - Day/Date: "${dayDate}"
 
     **Your Task:**
-    1. Based on the Topic and Performance Indicator, logically infer and generate the missing curriculum details: **Subject, Strand, Content Standard (Code), Indicator (Code), Core Competencies, Teaching & Learning Materials, and Reference**.
-    2. Infer a relevant **Week** and **Week Ending** date based on the provided Day/Date.
-    3. Assume a **Class Size** of 45.
-    4. Create engaging and pedagogically sound content for the three **Lesson Phases** (Starter, Main, and Plenary). The "Main" phase must include distinct activities, an evaluation section, and an assignment.
-    5. Assemble everything into the final Markdown format below. Leave 'Vetted By', 'Signature', and 'Date' blank.
+    1. Logically infer and generate the missing curriculum details: **Subject, Strand, Content Standard (Code), Indicator (Code), Core Competencies, Teaching & Learning Materials, Reference, Week, and Week Ending**.
+    2. Assume a **Class Size** of 45.
+    3. Create engaging content for the three Lesson Phases, ensuring each activity, evaluation, and assignment is clearly separated as shown in the format.
+    4. Assemble everything into the final Markdown format below. Leave 'Vetted By', 'Signature', and 'Date' blank.
 
     **--- START OF REQUIRED OUTPUT FORMAT ---**
 
     **School:** ${school}
-
     **Class:** ${className || subStrand.strand.subject.class.name}
-
     **Subject:** ${subStrand.strand.subject.name}
-
     **Strand:** ${subStrand.strand.name}
-
     **Sub-Strand:** ${subStrand.name}
-
     **Week:** [AI to generate week number]
-
     **Week Ending:** [AI to generate Friday date]
-
     **Day/Date:** ${dayDate}
-
     **Term:** ${term}
-
     **Class Size:** 45
-
     **Time/Duration:** ${duration}
-
     **Content Standard (Code):** [AI to generate, e.g., B7.X.X.X]
-
     **Indicator (Code):** [AI to generate, e.g., B7.X.X.X.X]
-
     **Performance Indicator:** ${performanceIndicator}
-
     **Core Competencies:** [AI to generate, e.g., Critical Thinking, Communication]
-
     **Teaching & Learning Materials:** [AI to generate, e.g., Whiteboard, markers, projector]
-
     **Reference:** [AI to generate, e.g., NaCCA Computing Curriculum for JHS]
 
+    ---
     ### **Lesson Phases**
 
-    | Phase 1: Starter (Preparing the brain for learning) | Phase 2: Main (New learning including assessment) | Phase 3: Plenary / Reflection |
-    | :--- | :--- | :--- |
-    | [AI to generate brief starter content.] | **Activity 1: [Title]**<br>[AI to generate content.]<br><br>**Activity 2: [Title]**<br>[AI to generate content.]<br><br>**Evaluation**<br>1. [Question 1]<br>2. [Question 2]<br><br>**Assignment**<br>[AI to generate assignment.] | [AI to generate plenary and reflection content.] |
+    #### **Phase 1: Starter (Preparing the brain for learning)**
+    [AI to generate a 2-3 sentence engaging starter activity here.]
 
-    **Facilitator:** **Vetted By:** ....................................................
+    ---
 
+    #### **Phase 2: Main (New learning including assessment)**
+
+    **Activity 1: [Give a descriptive title]**
+    [AI to generate content for the first teacher-led or group activity. Use a new paragraph for each logical step.]
+
+    **Activity 2: [Give a descriptive title]**
+    [AI to generate content for a second, hands-on activity for learners.]
+
+    **Activity 3: [Give a descriptive title]**
+    [AI to generate content for a third activity to deepen understanding.]
+
+    ---
+
+    **Evaluation**
+    1. [Generate a relevant evaluation question.]
+    2. [Generate a second relevant evaluation question.]
+    3. [Generate a third relevant evaluation question.]
+
+    ---
+
+    **Assignment**
+    [Generate a concise, relevant take-home assignment.]
+
+    ---
+
+    #### **Phase 3: Plenary / Reflection**
+    [AI to generate a 1-2 sentence summary of the key learning points, followed by a final reflective question for learners.]
+
+    ---
+
+    **Facilitator:**
+    **Vetted By:** ....................................................
     **Signature:** ....................................................
-
     **Date:** ....................................................
     **--- END OF REQUIRED OUTPUT FORMAT ---**
   `;
@@ -113,18 +120,15 @@ const generateLessonNote = asyncHandler(async (req, res) => {
 
   const lessonNote = await LessonNote.create({
     teacher: req.user._id,
-    school: req.user.school, // Note: req.user.school might be different from the one provided in the form
+    school: req.user.school,
     subStrand: subStrandId,
     content: aiContent,
   });
   res.status(201).json(lessonNote);
 });
 
-
 /**
  * @desc    Get all lesson notes for the logged-in teacher
- * @route   GET /api/teacher/lessonnotes
- * @access  Private (Teacher)
  */
 const getMyLessonNotes = asyncHandler(async (req, res) => {
   const notes = await LessonNote.find({ teacher: req.user._id }).sort({ createdAt: -1 });
@@ -133,52 +137,31 @@ const getMyLessonNotes = asyncHandler(async (req, res) => {
 
 /**
  * @desc    Get a single lesson note by ID
- * @route   GET /api/teacher/notes/:id
- * @access  Private (Teacher)
  */
 const getLessonNoteById = asyncHandler(async (req, res) => {
   const note = await LessonNote.findById(req.params.id);
-
-  if (!note) {
-    res.status(404);
-    throw new Error('Lesson note not found');
-  }
-
+  if (!note) { res.status(404); throw new Error('Lesson note not found'); }
   if (note.teacher.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-    res.status(403);
-    throw new Error('User not authorized to view this note');
+    res.status(403); throw new Error('User not authorized to view this note');
   }
-
   res.json(note);
 });
 
 /**
  * @desc    Delete a lesson note
- * @route   DELETE /api/teacher/notes/:id
- * @access  Private (Teacher)
  */
 const deleteLessonNote = asyncHandler(async (req, res) => {
   const note = await LessonNote.findById(req.params.id);
-
-  if (!note) {
-    res.status(404);
-    throw new Error('Lesson note not found');
-  }
-
+  if (!note) { res.status(404); throw new Error('Lesson note not found'); }
   if (note.teacher.toString() !== req.user._id.toString()) {
-    res.status(403);
-    throw new Error('User not authorized to delete this note');
+    res.status(403); throw new Error('User not authorized to delete this note');
   }
-
   await note.deleteOne();
-
   res.status(200).json({ id: req.params.id, message: 'Lesson note deleted successfully' });
 });
 
 /**
  * @desc    Generate a learner's version of a lesson note
- * @route   POST /api/teacher/generate-learner-note
- * @access  Private (Teacher)
  */
 const generateLearnerNote = asyncHandler(async (req, res) => {
     const { lessonNoteId } = req.body;
@@ -194,8 +177,6 @@ const generateLearnerNote = asyncHandler(async (req, res) => {
 
 /**
  * @desc    Create a new quiz
- * @route   POST /api/teacher/create-quiz
- * @access  Private (Teacher)
  */
 const createQuiz = asyncHandler(async (req, res) => {
     const { title, subjectId } = req.body;
@@ -205,8 +186,6 @@ const createQuiz = asyncHandler(async (req, res) => {
 
 /**
  * @desc    Upload a resource file
- * @route   POST /api/teacher/upload-resource
- * @access  Private (Teacher)
  */
 const uploadResource = asyncHandler(async (req, res) => {
     if (!req.file) { res.status(400); throw new Error('Please upload a file'); }
@@ -220,8 +199,6 @@ const uploadResource = asyncHandler(async (req, res) => {
 
 /**
  * @desc    Get teacher analytics dashboard
- * @route   GET /api/teacher/analytics
- * @access  Private (Teacher)
  */
 const getTeacherAnalytics = asyncHandler(async (req, res) => {
   const teacherId = req.user._id;
