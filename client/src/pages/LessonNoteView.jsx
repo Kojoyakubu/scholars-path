@@ -7,8 +7,15 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import {
-  Box, Typography, Container, Paper, CircularProgress, Alert,
-  Button, Stack, Divider,
+  Box,
+  Typography,
+  Container,
+  Paper,
+  CircularProgress,
+  Alert,
+  Button,
+  Stack,
+  Divider,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -28,10 +35,111 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  const handleDownloadPdf = useCallback(() => { /* Your existing PDF download logic */ }, [currentNote]);
-  const handleDownloadWord = useCallback(() => { /* Your existing Word download logic */ }, [currentNote]);
+  // --- PDF DOWNLOAD HANDLER (Smart A4 Scaling) ---
+  const handleDownloadPdf = useCallback(() => {
+    const element = document.getElementById('note-content-container');
+    if (!element || !currentNote) return;
 
-  // This loading check now correctly prevents the code below it from running on null data
+    if (!window.html2pdf) {
+      alert('PDF library not loaded. Please refresh and try again.');
+      return;
+    }
+
+    // Clone content for manipulation
+    const clone = element.cloneNode(true);
+    document.body.appendChild(clone);
+    clone.style.width = '210mm';
+    clone.style.minHeight = '297mm';
+    clone.style.padding = '20mm';
+    clone.style.margin = '0 auto';
+    clone.style.backgroundColor = '#fff';
+    clone.style.fontFamily = 'Arial, sans-serif';
+    clone.style.lineHeight = '1.5';
+    clone.style.color = '#000';
+    clone.style.wordBreak = 'break-word';
+
+    // Measure height to adjust font size/margins
+    document.body.appendChild(clone);
+    const height = clone.scrollHeight;
+    document.body.removeChild(clone);
+
+    // Default A4 limits in pixels (~1123px = 297mm at 96dpi)
+    const a4Height = 1123;
+    const isLongContent = height > a4Height * 1.2; // allow some margin
+
+    // Apply scaling styles
+    clone.style.fontSize = isLongContent ? '9pt' : '10pt';
+    clone.style.padding = isLongContent ? '10mm' : '20mm';
+
+    // Fix table visuals
+    const tables = clone.querySelectorAll('table');
+    tables.forEach((table) => {
+      table.style.borderCollapse = 'collapse';
+      table.style.width = '100%';
+      table.style.pageBreakInside = 'avoid';
+      table.style.fontSize = isLongContent ? '8.5pt' : '9.5pt';
+    });
+
+    // Footer (only once at the end)
+    const footer = document.createElement('div');
+    footer.innerHTML = `
+      <div style="text-align:center; margin-top:15mm; font-size:9pt;">
+        — End of Lesson Note —
+      </div>
+    `;
+    clone.appendChild(footer);
+
+    // PDF configuration
+    const filename = 'lesson_note.pdf';
+    const opt = {
+      margin: [10, 10, 15, 10],
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        letterRendering: true,
+        dpi: 300,
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait',
+      },
+      pagebreak: {
+        mode: ['avoid-all', 'css', 'legacy'],
+      },
+    };
+
+    window.html2pdf().set(opt).from(clone).save();
+  }, [currentNote]);
+
+  // --- WORD DOWNLOAD HANDLER ---
+  const handleDownloadWord = useCallback(() => {
+    try {
+      const element = document.getElementById('note-content-container');
+      if (!element || !currentNote) return;
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head><meta charset="UTF-8" /></head>
+          <body>${element.innerHTML}</body>
+        </html>
+      `;
+      const blob = HTMLtoDOCX(html);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'lesson_note.docx';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error('Word generation failed:', err);
+      alert('Could not generate Word document. Please try again.');
+    }
+  }, [currentNote]);
+
   if (isLoading || !currentNote) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
@@ -48,8 +156,7 @@ function LessonNoteView() {
     );
   }
 
-  // ✅ **FIX:** The content splitting logic is now moved here.
-  // It will only run AFTER the checks above have passed, guaranteeing `currentNote` is not null.
+  // Split note into header, table, and footer sections
   const content = currentNote.content;
   const tableStart = content.indexOf('| PHASE');
   const tableEnd = content.lastIndexOf('|');
@@ -88,10 +195,31 @@ function LessonNoteView() {
           {/* Content Display */}
           <div id="note-content-container">
             {/* Header Section */}
-            <Box id="note-header" sx={{ mb: 3 }}>
+            <Box sx={{ mb: 3 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 0.8,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                  strong: (props) => (
+                    <Box
+                      component="strong"
+                      sx={{ fontWeight: 600, color: 'text.primary' }}
+                      {...props}
+                    />
+                  ),
+                }}
               >
                 {header}
               </ReactMarkdown>
@@ -100,10 +228,47 @@ function LessonNoteView() {
             <Divider sx={{ mb: 3 }} />
 
             {/* Lesson Phases Table */}
-            <Box id="note-table-container" sx={{ overflowX: 'auto', mb: 3 }}>
+            <Box
+              sx={{
+                overflowX: 'auto',
+                borderRadius: 2,
+                mb: 3,
+              }}
+            >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
+                components={{
+                  table: (props) => (
+                    <Box
+                      component="table"
+                      sx={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        '& th': {
+                          backgroundColor: '#e8f5e9',
+                          color: '#2e7d32',
+                          fontWeight: 700,
+                          border: '1px solid #c8e6c9',
+                          padding: '10px',
+                          textAlign: 'center',
+                          fontSize: '0.9rem',
+                        },
+                        '& td': {
+                          border: '1px solid #ddd',
+                          padding: '12px',
+                          verticalAlign: 'top',
+                          whiteSpace: 'pre-wrap',
+                          fontSize: '0.9rem',
+                        },
+                        '& tr:nth-of-type(even)': {
+                          backgroundColor: '#fafafa',
+                        },
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
               >
                 {table}
               </ReactMarkdown>
@@ -112,10 +277,24 @@ function LessonNoteView() {
             <Divider sx={{ mb: 3 }} />
 
             {/* Footer Section */}
-            <Box id="note-footer" sx={{ mt: 2 }}>
+            <Box sx={{ mt: 2 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 1,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
               >
                 {footer}
               </ReactMarkdown>
