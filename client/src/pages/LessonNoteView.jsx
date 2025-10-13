@@ -41,50 +41,47 @@ function LessonNoteView() {
     try {
         const doc = new jsPDF('p', 'mm', 'a4');
         const marginX = 15;
-        let finalY = 20;
+        let finalY = 15;
 
-        // --- Teacher Information Section ---
-        const teacherInfo = [
-            { label: 'School:', value: currentNote.school?.name || 'Aperade Presby Basic School' },
-            { label: 'Subject:', value: currentNote.subject || 'Computing' },
-            { label: 'Strand:', value: currentNote.strand || 'Introduction to Computing' },
-            { label: 'Sub-Strand:', value: currentNote.subStrand || 'Components of Computers & Computer Systems' },
-            { label: 'Week:', value: currentNote.week || '7' },
-            { label: 'Week Ending:', value: currentNote.weekEnding || 'Friday, 17th October, 2025' },
-            { label: 'Day/Date:', value: currentNote.day || 'Monday, 13th October, 2025' },
-            { label: 'Term:', value: currentNote.term || 'One' },
-            { label: 'Class:', value: currentNote.class || 'JHS 1' },
-            { label: 'Class Size:', value: currentNote.classSize || '45' },
-            { label: 'Time/Duration:', value: currentNote.duration || '1hr 10 mins / 2 Periods' },
-            { label: 'Content Standard (Code):', value: currentNote.contentStandard || 'B1.1.1.1: Demonstrate understanding of the basic components of a computer system.' },
-            { label: 'Indicator (Code):', value: currentNote.indicator || 'B1.1.1.1.1: Identify and describe the difference between hardware and software components of a computer.' },
-            { label: 'Performance Indicator:', value: currentNote.performanceIndicator || 'Learners will be able to identify and classify at least three examples of computer hardware and three examples of computer software with 80% accuracy.' },
-            { label: 'Core Competencies:', value: currentNote.coreCompetencies || 'Communication & Collaboration, Critical Thinking & Problem Solving, Digital Literacy' },
-            { label: 'Teaching & Learning Materials:', value: currentNote.tAndLMaterials || 'A functional computer (desktop or laptop), projector (if available), charts/posters showing different computer parts (monitor, keyboard, mouse, CPU, printer) and software icons (Microsoft Word, Google Chrome, Paint), pictures of hardware and software components, whiteboard/marker.' },
-            { label: 'Reference:', value: currentNote.reference || 'NaCCA Computing Curriculum for JHS 1' }
-        ];
-
+        // --- 1. Header Section (Using a borderless table for perfect alignment) ---
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
         doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, finalY, { align: 'center' });
         finalY += 8;
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        const headerElement = document.getElementById('note-header');
+        if (headerElement) {
+            const headerText = headerElement.innerText;
+            // Create an array of [label, value] pairs from the header text
+            const headerRows = headerText.split('\n').filter(line => line.trim() !== '').map(line => {
+                const parts = line.split(':');
+                const label = parts[0] ? `${parts[0]}:` : '';
+                const value = parts.slice(1).join(':').trim();
+                return [label, value];
+            });
 
-        teacherInfo.forEach(info => {
-            const splitValue = doc.splitTextToSize(`${info.label} ${info.value}`, doc.internal.pageSize.width - (marginX * 2));
-            doc.setFont('helvetica', 'bold');
-            doc.text(info.label, marginX, finalY);
-            doc.setFont('helvetica', 'normal');
-            const labelWidth = doc.getTextWidth(info.label);
-            doc.text(info.value, marginX + labelWidth + 1, finalY);
-            finalY += (splitValue.length > 1 ? (splitValue.length * 5) + 2 : 6);
-        });
+            autoTable(doc, {
+                startY: finalY,
+                body: headerRows,
+                theme: 'plain', // Use 'plain' theme for no borders
+                styles: {
+                    fontSize: 9,
+                    cellPadding: { top: 0.5, right: 1, bottom: 0.5, left: 0 },
+                },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 55 }, // Style for labels
+                    1: { fontStyle: 'normal' }, // Style for values
+                },
+                didDrawPage: (data) => {
+                    finalY = data.cursor.y;
+                },
+            });
+            finalY = doc.lastAutoTable.finalY;
+        }
 
         finalY += 5;
 
-        // --- Lesson Phases Table ---
+        // --- 2. Lesson Phases Table (With specific column widths) ---
         const tableElement = document.getElementById('lesson-phases-table');
         if (tableElement) {
             autoTable(doc, {
@@ -97,44 +94,64 @@ function LessonNoteView() {
                     fontStyle: 'bold',
                     halign: 'center',
                     lineWidth: 0.1,
-                    lineColor: [0, 0, 0],
+                    lineColor: [100, 100, 100],
                 },
                 styles: {
-                    fontSize: 10,
+                    fontSize: 9,
                     cellPadding: 2,
-                    lineColor: [0, 0, 0],
+                    lineColor: [100, 100, 100],
                     lineWidth: 0.1,
+                    valign: 'top',
+                },
+                // Define column widths to match the screenshot
+                columnStyles: {
+                    0: { cellWidth: '25%' }, // PHASE 1
+                    1: { cellWidth: '50%' }, // PHASE 2 (Main)
+                    2: { cellWidth: '25%' }, // PHASE 3
                 },
                 didDrawPage: (data) => {
                     finalY = data.cursor.y;
                 },
             });
-            finalY = doc.lastAutoTable.finalY;
+            finalY = doc.lastAutoTable.finalY || finalY;
         }
 
-        finalY += 15;
+        finalY += 15; // Space before footer
 
-        // --- Signature Section ---
-        if (finalY + 30 > doc.internal.pageSize.height) {
+        // --- 3. Signature Section (With correct side-by-side alignment) ---
+        if (finalY + 20 > doc.internal.pageSize.height) { // Check if space is available
             doc.addPage();
             finalY = 20;
         }
 
         doc.setFontSize(10);
-        doc.text('Facilitator: ................................................................', marginX, finalY);
-        doc.text('Vetted By: ................................................................', doc.internal.pageSize.width / 2, finalY);
+        doc.setFont('helvetica', 'normal');
+        
+        const line = '................................................................';
+        const facilitatorText = `Facilitator: ${line}`;
+        const vettedByText = `Vetted By: ${line}`;
+        
+        // First row of signatures
+        doc.text(facilitatorText, marginX, finalY);
+        
+        // Second row of signatures
+        finalY += 12;
+        doc.text(`Signature: ${line}`, marginX, finalY);
+        
+        // Vetted By section (aligned to the right, can be adjusted)
+        const vettedByX = doc.internal.pageSize.width - marginX - doc.getTextWidth(vettedByText);
+        // Reset Y to align with Facilitator
+        doc.text(vettedByText, vettedByX, finalY - 12);
+        doc.text(`Date: ${line}`, vettedByX, finalY);
 
-        finalY += 10;
-        doc.text('Signature: .................................................................', marginX, finalY);
-        doc.text('Date: .......................................................................', doc.internal.pageSize.width / 2, finalY);
 
-        doc.save('lesson_note.pdf');
+        doc.save('lesson_note_revised.pdf');
 
     } catch (error) {
         console.error('PDF generation error:', error);
         alert('An error occurred while generating the PDF. Check the console for details.');
     }
-}, [currentNote]);
+}, []);
 
   const handleDownloadWord = useCallback(() => {
     const element = document.getElementById('note-content-container');
