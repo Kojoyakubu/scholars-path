@@ -43,89 +43,109 @@ function LessonNoteView() {
         const marginX = 15;
         let finalY = 15;
 
-        // --- 1. Header Section (as a two-column borderless table) ---
+        // --- 1. Header Section (Using a borderless table for perfect alignment) ---
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(12);
         doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, finalY, { align: 'center' });
         finalY += 8;
 
-        // Structure the header data as an array of [label, value] pairs
-        // This ensures perfect alignment and is more reliable than reading from the DOM
-        const headerData = [
-            [cite_start]['School:', 'Aperade Presby Basic School'], // [cite: 72]
-            [cite_start]['Class:', 'JHS 1'], // [cite: 73]
-            [cite_start]['Subject:', 'Computing'], // [cite: 74]
-            [cite_start]['Strand:', 'Introduction to Computing'], // [cite: 75]
-            [cite_start]['Sub-Strand:', 'Components of Computers & Computer Systems'], // [cite: 76]
-            ['Week:', '7'], // Adapted from source 32, as source 77 has a different value
-            [cite_start]['Week Ending:', 'Friday, 17th October, 2025'], // [cite: 78]
-            [cite_start]['Day/Date:', 'Monday, 13th October, 2025'], // [cite: 79]
-            [cite_start]['Term:', 'One'], // [cite: 80]
-            [cite_start]['Class Size:', '45'], // [cite: 81]
-            [cite_start]['Time/Duration:', '1hr 10 mins / 2 Periods'], // [cite: 82]
-            ['Content Standard (Code):', 'B1.1.1.1: Demonstrate understanding of the basic components of a computer system.'], // Adapted from source 39
-            ['Indicator (Code):', 'B1.1.1.1.1: Identify and describe the difference between hardware and software components of a computer.'], // Adapted from source 40
-            ['Performance Indicator:', 'Learners will be able to identify and classify at least three examples of computer hardware and three examples of computer software with 80% accuracy.'], // Adapted from previous context
-            [cite_start]['Core Competencies:', 'Communication & Collaboration, Critical Thinking & Problem Solving, Digital Literacy'], // [cite: 42]
-            ['Teaching & Learning Materials:', 'A functional computer (desktop or laptop), projector (if available), charts/posters showing different computer parts... and software icons...'], // Adapted from source 42
-            [cite_start]['Reference:', 'NaCCA Computing Curriculum for JHS 1'], // [cite: 43]
-        ];
+        const headerElement = document.getElementById('note-header');
+        if (headerElement) {
+            const headerText = headerElement.innerText;
+            // Create an array of [label, value] pairs from the header text
+            const headerRows = headerText.split('\n').filter(line => line.trim() !== '').map(line => {
+                const parts = line.split(':');
+                const label = parts[0] ? `${parts[0]}:` : '';
+                const value = parts.slice(1).join(':').trim();
+                return [label, value];
+            });
 
-        autoTable(doc, {
-            startY: finalY,
-            body: headerData,
-            theme: 'plain', // This is key! It removes all borders.
-            styles: {
-                fontSize: 9,
-                cellPadding: { top: 0, right: 2, bottom: 1, left: 0 },
-            },
-            columnStyles: {
-                0: { fontStyle: 'bold', cellWidth: 60 }, // Column 0 (Labels) -> Bold text, fixed width
-                1: { fontStyle: 'normal' },             // Column 1 (Values) -> Normal text
-            },
-        });
-        finalY = doc.lastAutoTable.finalY;
-
-        // --- 2. Lesson Phases Table ---
-        const tableElement = document.getElementById('lesson-phases-table');
-        if (tableElement) {
             autoTable(doc, {
-                html: tableElement,
-                startY: finalY + 5, // Add a little space after the header
-                theme: 'grid',
-                headStyles: {
-                    fillColor: [240, 240, 240], textColor: [0, 0, 0],
-                    fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [100, 100, 100],
-                },
+                startY: finalY,
+                body: headerRows,
+                theme: 'plain', // Use 'plain' theme for no borders
                 styles: {
-                    fontSize: 9, cellPadding: 2, lineColor: [100, 100, 100],
-                    lineWidth: 0.1, valign: 'top',
+                    fontSize: 9,
+                    cellPadding: { top: 0.5, right: 1, bottom: 0.5, left: 0 },
                 },
                 columnStyles: {
-                    0: { cellWidth: '25%' }, // PHASE 1
-                    1: { cellWidth: '50%' }, // PHASE 2 (Main)
-                    2: { cellWidth: '25%' }, // PHASE 3
+                    0: { fontStyle: 'bold', cellWidth: 55 }, // Style for labels
+                    1: { fontStyle: 'normal' }, // Style for values
+                },
+                didDrawPage: (data) => {
+                    finalY = data.cursor.y;
                 },
             });
             finalY = doc.lastAutoTable.finalY;
         }
 
-        // --- 3. Signature Section ---
-        finalY += 15;
-        if (finalY + 20 > doc.internal.pageSize.height) {
+        finalY += 5;
+
+        // --- 2. Lesson Phases Table (With specific column widths) ---
+        const tableElement = document.getElementById('lesson-phases-table');
+        if (tableElement) {
+            autoTable(doc, {
+                html: tableElement,
+                startY: finalY,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [240, 240, 240],
+                    textColor: [0, 0, 0],
+                    fontStyle: 'bold',
+                    halign: 'center',
+                    lineWidth: 0.1,
+                    lineColor: [100, 100, 100],
+                },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 2,
+                    lineColor: [100, 100, 100],
+                    lineWidth: 0.1,
+                    valign: 'top',
+                },
+                // Define column widths to match the screenshot
+                columnStyles: {
+                    0: { cellWidth: '25%' }, // PHASE 1
+                    1: { cellWidth: '50%' }, // PHASE 2 (Main)
+                    2: { cellWidth: '25%' }, // PHASE 3
+                },
+                didDrawPage: (data) => {
+                    finalY = data.cursor.y;
+                },
+            });
+            finalY = doc.lastAutoTable.finalY || finalY;
+        }
+
+        finalY += 15; // Space before footer
+
+        // --- 3. Signature Section (With correct side-by-side alignment) ---
+        if (finalY + 20 > doc.internal.pageSize.height) { // Check if space is available
             doc.addPage();
             finalY = 20;
         }
-        
-        const line = '.........................................................';
+
         doc.setFontSize(10);
-        doc.text(`Facilitator: ${line}`, marginX, finalY);
-        doc.text(`Vetted By: ${line}`, doc.internal.pageSize.width / 2 + 5, finalY);
+        doc.setFont('helvetica', 'normal');
+        
+        const line = '................................................................';
+        const facilitatorText = `Facilitator: ${line}`;
+        const vettedByText = `Vetted By: ${line}`;
+        
+        // First row of signatures
+        doc.text(facilitatorText, marginX, finalY);
+        
+        // Second row of signatures
         finalY += 12;
         doc.text(`Signature: ${line}`, marginX, finalY);
-        doc.text(`Date: ${line}`, doc.internal.pageSize.width / 2 + 5, finalY);
+        
+        // Vetted By section (aligned to the right, can be adjusted)
+        const vettedByX = doc.internal.pageSize.width - marginX - doc.getTextWidth(vettedByText);
+        // Reset Y to align with Facilitator
+        doc.text(vettedByText, vettedByX, finalY - 12);
+        doc.text(`Date: ${line}`, vettedByX, finalY);
 
-        doc.save('lesson_note_final.pdf');
+
+        doc.save('lesson_note_revised.pdf');
 
     } catch (error) {
         console.error('PDF generation error:', error);
