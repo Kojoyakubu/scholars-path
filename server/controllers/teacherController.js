@@ -36,17 +36,17 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // ✅ Updated and generalized AI prompt for any subject
+  // ✅ Allow multiple indicator codes and combine for AI
+  const codes = Array.isArray(indicatorCodes)
+    ? indicatorCodes.join(', ')
+    : indicatorCodes;
+
+  // ✅ Updated and generalized AI prompt for all Ghanaian teachers
   const prompt = `
 You are a Ghanaian master teacher and curriculum designer.
 Your task is to create a **well-formatted Markdown lesson note** suitable for any subject and class level in the Ghanaian Basic School Curriculum.
 
-⚠️ IMPORTANT FORMATTING RULES
-- Use **pure Markdown** (no HTML tags except <br> inside tables).
-- Maintain the **Lesson Phases** strictly in a **3-column table**.
-- Each phase must stay in its column, separated by vertical bars "|".
-- Keep "Evaluation" and "Assignment" *inside* the Main phase cell.
-- Do not use lists outside the table.
+Follow the exact structure and layout below — do not alter section names or order.
 
 ---
 
@@ -64,15 +64,15 @@ Your task is to create a **well-formatted Markdown lesson note** suitable for an
 **Class Size:** ${classSize || 45}  
 **Time/Duration:** ${duration}  
 **Content Standard (Code):** [AI to generate based on sub-strand]  
-**Indicator Code(s):** ${Array.isArray(indicatorCodes) ? indicatorCodes.join(', ') : indicatorCodes}  
-**Performance Indicator:** [AI to generate based on the given indicator codes]  
-**Core Competencies:** [AI to generate, e.g., Communication, Collaboration, Critical Thinking]  
-**Teaching & Learning Materials:** [AI to generate relevant items based on subject]  
-**Reference:** [AI to generate, e.g., NaCCA Subject Curriculum Guide]
+**Indicator Code(s):** ${codes}  
+**Performance Indicator:** Generate a concise, specific statement describing what learners should be able to do, based on the provided indicator code(s).  
+**Core Competencies:** List the most relevant competencies (e.g., Communication, Critical Thinking, Collaboration, Digital Literacy).  
+**Teaching & Learning Materials:** Suggest relevant and realistic items based on the subject and sub-strand.  
+**Reference:** State the appropriate Ghanaian curriculum or textbook reference (e.g., NaCCA Curriculum for ${subStrand.strand.subject.name}).
 
 ---
 
-### **Lesson Phases**
+### LESSON PHASES (Maintain this exact 3-column structure)
 
 | **PHASE 1: Starter (Preparing the Brain for Learning)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
 |----------------------------------------------------------|--------------------------------------------------|----------------------------------|
@@ -87,10 +87,10 @@ Your task is to create a **well-formatted Markdown lesson note** suitable for an
 
 ---
 
-### AI Output Rules
-1. Use only Markdown syntax and <br> for line breaks inside table cells.  
-2. Keep all phases in a single 3-column table.  
-3. Ensure the tone fits Ghanaian classroom style: simple, participatory, and engaging.
+**AI Output Rules:**  
+1. Use only Markdown syntax (and <br> for line breaks inside tables).  
+2. Preserve the exact section headings and formatting.  
+3. Keep tone Ghanaian — participatory, engaging, and curriculum-aligned.
 `;
 
   const aiContent = await aiService.generateContent(prompt);
