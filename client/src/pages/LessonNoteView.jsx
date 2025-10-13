@@ -35,7 +35,7 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER (Stable, Clean A4 Layout) ---
+  // --- PDF DOWNLOAD HANDLER (Perfect A4 Layout) ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
@@ -45,60 +45,49 @@ function LessonNoteView() {
       return;
     }
 
-    // Clone content
     const clone = element.cloneNode(true);
 
-    // Apply consistent, print-perfect A4 styles
+    // Force consistent A4 page layout
     clone.style.width = '210mm';
     clone.style.minHeight = '297mm';
-    clone.style.margin = '0 auto';
+    clone.style.margin = 'auto';
     clone.style.padding = '20mm';
     clone.style.backgroundColor = '#fff';
     clone.style.fontFamily = 'Arial, sans-serif';
-    clone.style.fontSize = '10pt';
-    clone.style.lineHeight = '1.5';
+    clone.style.fontSize = '11pt';
     clone.style.color = '#000';
-    clone.style.boxSizing = 'border-box';
+    clone.style.lineHeight = '1.6';
 
-    // Improve tables
-    const tables = clone.querySelectorAll('table');
-    tables.forEach((table) => {
-      table.style.borderCollapse = 'collapse';
+    // Apply styles to tables
+    clone.querySelectorAll('table').forEach((table) => {
       table.style.width = '100%';
-      table.style.fontSize = '9.5pt';
+      table.style.borderCollapse = 'collapse';
       table.style.pageBreakInside = 'avoid';
     });
-
-    // Add borders to table cells
-    const cells = clone.querySelectorAll('th, td');
-    cells.forEach((cell) => {
-      cell.style.border = '1px solid #444';
-      cell.style.padding = '6px';
+    clone.querySelectorAll('th, td').forEach((cell) => {
+      cell.style.border = '1px solid #555';
+      cell.style.padding = '8px';
       cell.style.verticalAlign = 'top';
     });
 
-    // Ensure headers and dividers are consistent
-    const headings = clone.querySelectorAll('h1, h2, h3, h4');
-    headings.forEach((h) => {
-      h.style.marginTop = '8pt';
-      h.style.marginBottom = '4pt';
-      h.style.fontSize = '11pt';
-    });
-
-    // Footer (once, at the very end)
+    // Add clean footer with facilitator info (only once)
     const footer = document.createElement('div');
     footer.innerHTML = `
-      <div style="text-align:center; margin-top:25mm; font-size:9pt; color:#333;">
+      <div style="margin-top: 20mm; text-align: left; font-size: 10pt;">
+        <strong>Facilitator:</strong> ${currentNote.teacher?.name || '________________'} <br/>
+        <strong>Signature:</strong> __________________________ <br/>
+        <strong>Date:</strong> __________________________
+      </div>
+      <div style="text-align:center; margin-top:10mm; font-size:9pt; color:#333;">
         — End of Lesson Note —
       </div>
     `;
     clone.appendChild(footer);
 
     // PDF configuration
-    const filename = 'lesson_note.pdf';
     const opt = {
-      margin: [10, 10, 15, 10], // top, right, bottom, left
-      filename,
+      margin: [10, 10, 10, 10],
+      filename: 'lesson_note.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -111,14 +100,9 @@ function LessonNoteView() {
         format: 'a4',
         orientation: 'portrait',
       },
-      pagebreak: {
-        mode: ['css', 'legacy'],
-        before: '.page-break',
-        after: ['#footer'],
-      },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
     };
 
-    // Trigger the PDF
     window.html2pdf().set(opt).from(clone).save();
   }, [currentNote]);
 
@@ -132,7 +116,13 @@ function LessonNoteView() {
         <!DOCTYPE html>
         <html>
           <head><meta charset="UTF-8" /></head>
-          <body>${element.innerHTML}</body>
+          <body style="font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.6;">
+            ${element.innerHTML}
+            <br/><br/>
+            <strong>Facilitator:</strong> ${currentNote.teacher?.name || '________________'} <br/>
+            <strong>Signature:</strong> __________________________ <br/>
+            <strong>Date:</strong> __________________________
+          </body>
         </html>
       `;
       const blob = HTMLtoDOCX(html);
@@ -163,13 +153,13 @@ function LessonNoteView() {
     );
   }
 
-  // Split note into header, table, and footer sections
-  const content = currentNote.content;
+  // Safely split the note
+  const content = currentNote.content || '';
   const tableStart = content.indexOf('| PHASE');
   const tableEnd = content.lastIndexOf('|');
-  const header = content.substring(0, tableStart).trim();
-  const table = content.substring(tableStart, tableEnd + 1).trim();
-  const footer = content.substring(tableEnd + 1).trim();
+  const header = tableStart !== -1 ? content.substring(0, tableStart).trim() : content;
+  const table = tableStart !== -1 ? content.substring(tableStart, tableEnd + 1).trim() : '';
+  const footer = tableEnd !== -1 ? content.substring(tableEnd + 1).trim() : '';
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -201,32 +191,10 @@ function LessonNoteView() {
 
           {/* Content Display */}
           <div id="note-content-container">
-            {/* Header Section */}
             <Box sx={{ mb: 3 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
-                components={{
-                  p: (props) => (
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        mb: 0.8,
-                        whiteSpace: 'pre-line',
-                        fontSize: '0.9rem',
-                        lineHeight: 1.5,
-                      }}
-                      {...props}
-                    />
-                  ),
-                  strong: (props) => (
-                    <Box
-                      component="strong"
-                      sx={{ fontWeight: 600, color: 'text.primary' }}
-                      {...props}
-                    />
-                  ),
-                }}
               >
                 {header}
               </ReactMarkdown>
@@ -234,48 +202,10 @@ function LessonNoteView() {
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* Lesson Phases Table */}
-            <Box
-              sx={{
-                overflowX: 'auto',
-                borderRadius: 2,
-                mb: 3,
-              }}
-            >
+            <Box sx={{ overflowX: 'auto', borderRadius: 2, mb: 3 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
-                components={{
-                  table: (props) => (
-                    <Box
-                      component="table"
-                      sx={{
-                        width: '100%',
-                        borderCollapse: 'collapse',
-                        '& th': {
-                          backgroundColor: '#e8f5e9',
-                          color: '#2e7d32',
-                          fontWeight: 700,
-                          border: '1px solid #c8e6c9',
-                          padding: '10px',
-                          textAlign: 'center',
-                          fontSize: '0.9rem',
-                        },
-                        '& td': {
-                          border: '1px solid #ddd',
-                          padding: '12px',
-                          verticalAlign: 'top',
-                          whiteSpace: 'pre-wrap',
-                          fontSize: '0.9rem',
-                        },
-                        '& tr:nth-of-type(even)': {
-                          backgroundColor: '#fafafa',
-                        },
-                      }}
-                      {...props}
-                    />
-                  ),
-                }}
               >
                 {table}
               </ReactMarkdown>
@@ -283,25 +213,10 @@ function LessonNoteView() {
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* Footer Section */}
             <Box sx={{ mt: 2 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
-                components={{
-                  p: (props) => (
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        mb: 1,
-                        whiteSpace: 'pre-line',
-                        fontSize: '0.9rem',
-                        lineHeight: 1.5,
-                      }}
-                      {...props}
-                    />
-                  ),
-                }}
               >
                 {footer}
               </ReactMarkdown>
