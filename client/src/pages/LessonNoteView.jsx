@@ -37,9 +37,7 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- FINAL PDF DOWNLOAD HANDLER ---
   const handleDownloadPdf = useCallback(() => {
-    // 1. First, check if the necessary elements exist on the page.
     const headerElement = document.getElementById('note-header');
     const tableElement = document.getElementById('lesson-phases-table');
 
@@ -53,15 +51,14 @@ function LessonNoteView() {
       const doc = new jsPDF('p', 'mm', 'a4');
       let finalY = 20;
       const LEFT_MARGIN = 15;
-      
-      // 2. Process Header
+
+      // Use autoTable for a more structured header
       doc.autoTable({
         html: headerElement,
         startY: finalY,
         theme: 'plain',
         styles: { fontSize: 11, cellPadding: 1 },
         didParseCell: (data) => {
-            // Make text bold if it's a label (e.g., "School:", "Subject:")
             if (data.cell.text[0] && data.cell.text[0].endsWith(':')) {
                 data.cell.styles.fontStyle = 'bold';
             }
@@ -71,7 +68,6 @@ function LessonNoteView() {
       
       finalY += 5;
 
-      // 3. Process Lesson Phases Table
       doc.autoTable({
         html: tableElement,
         startY: finalY,
@@ -81,7 +77,6 @@ function LessonNoteView() {
         didDrawPage: (data) => { finalY = data.cursor.y; }
       });
 
-      // 4. Process Footer Content
       const footerElement = document.getElementById('note-footer');
       if (footerElement) {
           const footerText = footerElement.innerText;
@@ -94,7 +89,6 @@ function LessonNoteView() {
           finalY += textHeight;
       }
 
-      // 5. Add Vetting/Signature section
       if (finalY + 40 > doc.internal.pageSize.height) { doc.addPage(); finalY = 20; } 
       else { finalY += 20; }
       doc.setFontSize(9);
@@ -106,7 +100,6 @@ function LessonNoteView() {
       finalY += 10;
       doc.text('Date: __________________________', LEFT_MARGIN, finalY);
 
-      // 6. Add Page Numbers
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
@@ -115,7 +108,6 @@ function LessonNoteView() {
           doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
       }
 
-      // 7. Save the PDF
       doc.save('lesson_note.pdf');
 
     } catch (error) {
@@ -124,7 +116,6 @@ function LessonNoteView() {
     }
   }, [currentNote]);
 
-  // --- WORD DOWNLOAD HANDLER (Unchanged) ---
   const handleDownloadWord = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element) return;
@@ -145,22 +136,24 @@ function LessonNoteView() {
     return <Container sx={{ mt: 5 }}><Alert severity="error">{message}</Alert></Container>;
   }
 
-  // --- Safer Content Splitting ---
+  // --- Robust Content Splitting Logic ---
   const content = currentNote.content;
-  const tableStart = content.indexOf('| PHASE');
+  // Make the search case-insensitive to prevent parsing errors
+  const tableStart = content.toUpperCase().indexOf('| PHASE');
   let header, table, footerContent;
 
   if (tableStart === -1) {
-    // If the table marker isn't found, show an error instead of crashing.
     return (
       <Container sx={{ mt: 5 }}>
         <Alert severity="warning">Could not parse the lesson note. The required table format was not found.</Alert>
       </Container>
     );
   } else {
+    // Use the found index from the original content string
+    const actualTableStart = content.toLowerCase().indexOf('| phase', tableStart);
     const tableEnd = content.lastIndexOf('|');
-    header = content.substring(0, tableStart).trim();
-    table = content.substring(tableStart, tableEnd + 1).trim();
+    header = content.substring(0, actualTableStart).trim();
+    table = content.substring(actualTableStart, tableEnd + 1).trim();
     footerContent = content.substring(tableEnd + 1).trim();
   }
 
@@ -175,9 +168,7 @@ function LessonNoteView() {
               <Button variant="contained" color="secondary" startIcon={<DescriptionIcon />} onClick={handleDownloadWord}>Download as Word</Button>
             </Stack>
           </Box>
-
           <div id="note-content-container">
-            {/* The IDs are essential for the download functions to find the content */}
             <Box id="note-header">
               <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{header}</ReactMarkdown>
             </Box>
