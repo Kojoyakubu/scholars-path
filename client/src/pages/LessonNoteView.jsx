@@ -35,7 +35,7 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER (Perfect A4 Layout) ---
+  // --- PDF DOWNLOAD HANDLER (Refined Final Layout) ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
@@ -45,9 +45,9 @@ function LessonNoteView() {
       return;
     }
 
+    // Clone and style content for printing
     const clone = element.cloneNode(true);
 
-    // Force consistent A4 page layout
     clone.style.width = '210mm';
     clone.style.minHeight = '297mm';
     clone.style.margin = 'auto';
@@ -58,7 +58,7 @@ function LessonNoteView() {
     clone.style.color = '#000';
     clone.style.lineHeight = '1.6';
 
-    // Apply styles to tables
+    // Tables formatting
     clone.querySelectorAll('table').forEach((table) => {
       table.style.width = '100%';
       table.style.borderCollapse = 'collapse';
@@ -70,18 +70,25 @@ function LessonNoteView() {
       cell.style.verticalAlign = 'top';
     });
 
-    // Add clean footer with facilitator info (only once)
+    // ✅ Ensure only ONE footer at the end
     const footer = document.createElement('div');
     footer.innerHTML = `
-      <div style="margin-top: 20mm; text-align: left; font-size: 10pt;">
+      <div style="page-break-before: always; text-align: left; font-size: 10pt; margin-top: 10mm;">
         <strong>Facilitator:</strong> ${currentNote.teacher?.name || '________________'} <br/>
+        <strong>Vetted By:</strong> __________________________ <br/>
         <strong>Signature:</strong> __________________________ <br/>
         <strong>Date:</strong> __________________________
       </div>
-      <div style="text-align:center; margin-top:10mm; font-size:9pt; color:#333;">
+      <div style="text-align:center; margin-top:5mm; font-size:9pt; color:#333;">
         — End of Lesson Note —
       </div>
     `;
+
+    // Remove any old footer already present
+    const oldFooters = clone.querySelectorAll('div:has(strong)');
+    oldFooters.forEach(f => f.remove());
+
+    // Append a single final footer
     clone.appendChild(footer);
 
     // PDF configuration
@@ -89,17 +96,8 @@ function LessonNoteView() {
       margin: [10, 10, 10, 10],
       filename: 'lesson_note.pdf',
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        scrollY: 0,
-        letterRendering: true,
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: 'portrait',
-      },
+      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
     };
 
@@ -116,13 +114,7 @@ function LessonNoteView() {
         <!DOCTYPE html>
         <html>
           <head><meta charset="UTF-8" /></head>
-          <body style="font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.6;">
-            ${element.innerHTML}
-            <br/><br/>
-            <strong>Facilitator:</strong> ${currentNote.teacher?.name || '________________'} <br/>
-            <strong>Signature:</strong> __________________________ <br/>
-            <strong>Date:</strong> __________________________
-          </body>
+          <body>${element.innerHTML}</body>
         </html>
       `;
       const blob = HTMLtoDOCX(html);
@@ -153,13 +145,13 @@ function LessonNoteView() {
     );
   }
 
-  // Safely split the note
-  const content = currentNote.content || '';
+  // Split note into header, table, and footer sections
+  const content = currentNote.content;
   const tableStart = content.indexOf('| PHASE');
   const tableEnd = content.lastIndexOf('|');
-  const header = tableStart !== -1 ? content.substring(0, tableStart).trim() : content;
-  const table = tableStart !== -1 ? content.substring(tableStart, tableEnd + 1).trim() : '';
-  const footer = tableEnd !== -1 ? content.substring(tableEnd + 1).trim() : '';
+  const header = content.substring(0, tableStart).trim();
+  const table = content.substring(tableStart, tableEnd + 1).trim();
+  const footer = content.substring(tableEnd + 1).trim();
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -191,10 +183,32 @@ function LessonNoteView() {
 
           {/* Content Display */}
           <div id="note-content-container">
+            {/* Header Section */}
             <Box sx={{ mb: 3 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 0.8,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                  strong: (props) => (
+                    <Box
+                      component="strong"
+                      sx={{ fontWeight: 600, color: 'text.primary' }}
+                      {...props}
+                    />
+                  ),
+                }}
               >
                 {header}
               </ReactMarkdown>
@@ -202,10 +216,48 @@ function LessonNoteView() {
 
             <Divider sx={{ mb: 3 }} />
 
-            <Box sx={{ overflowX: 'auto', borderRadius: 2, mb: 3 }}>
+            {/* Lesson Phases Table */}
+            <Box
+              sx={{
+                overflowX: 'auto',
+                borderRadius: 2,
+                mb: 3,
+              }}
+            >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
+                components={{
+                  table: (props) => (
+                    <Box
+                      component="table"
+                      sx={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        '& th': {
+                          backgroundColor: '#e8f5e9',
+                          color: '#2e7d32',
+                          fontWeight: 700,
+                          border: '1px solid #c8e6c9',
+                          padding: '10px',
+                          textAlign: 'center',
+                          fontSize: '0.9rem',
+                        },
+                        '& td': {
+                          border: '1px solid #ddd',
+                          padding: '12px',
+                          verticalAlign: 'top',
+                          whiteSpace: 'pre-wrap',
+                          fontSize: '0.9rem',
+                        },
+                        '& tr:nth-of-type(even)': {
+                          backgroundColor: '#fafafa',
+                        },
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
               >
                 {table}
               </ReactMarkdown>
@@ -213,10 +265,25 @@ function LessonNoteView() {
 
             <Divider sx={{ mb: 3 }} />
 
+            {/* Footer Section */}
             <Box sx={{ mt: 2 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 1,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
               >
                 {footer}
               </ReactMarkdown>
