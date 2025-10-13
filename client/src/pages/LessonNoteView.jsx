@@ -24,47 +24,90 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
 function LessonNoteView() {
   const dispatch = useDispatch();
   const { noteId } = useParams();
-  const { currentNote, isLoading, isError, message } = useSelector((state) => state.teacher);
-  const { user } = useSelector((state) => state.auth);
+  const { currentNote, isLoading, isError, message } = useSelector(
+    (state) => state.teacher
+  );
 
   useEffect(() => {
     dispatch(getLessonNoteById(noteId));
-    return () => dispatch(resetCurrentNote());
+    return () => {
+      dispatch(resetCurrentNote());
+    };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD (direct from backend) ---
-  const handleDownloadPdf = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/teacher/generate-note`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({
-          subStrandId: currentNote.subStrand,
-          school: user.school,
-          term: 'One',
-          duration: '60 mins',
-          performanceIndicator: 'Understand and identify parts of the computer',
-          dayDate: new Date().toDateString(),
-          class: 'JHS 1',
-        }),
-      });
+  // --- PDF DOWNLOAD HANDLER (Stable A4 Layout) ---
+  const handleDownloadPdf = useCallback(() => {
+    const element = document.getElementById('note-content-container');
+    if (!element || !currentNote) return;
 
-      if (!response.ok) throw new Error('Failed to download PDF.');
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'lesson_note.pdf';
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      alert('Error downloading PDF: ' + err.message);
+    if (!window.html2pdf) {
+      alert('PDF library not loaded. Please refresh and try again.');
+      return;
     }
-  }, [currentNote, user]);
+
+    const clone = element.cloneNode(true);
+    clone.style.width = '210mm';
+    clone.style.minHeight = '297mm';
+    clone.style.margin = '0 auto';
+    clone.style.padding = '20mm';
+    clone.style.backgroundColor = '#fff';
+    clone.style.fontFamily = 'Arial, sans-serif';
+    clone.style.fontSize = '10pt';
+    clone.style.lineHeight = '1.5';
+    clone.style.color = '#000';
+    clone.style.boxSizing = 'border-box';
+
+    const tables = clone.querySelectorAll('table');
+    tables.forEach((table) => {
+      table.style.borderCollapse = 'collapse';
+      table.style.width = '100%';
+      table.style.fontSize = '9.5pt';
+      table.style.pageBreakInside = 'avoid';
+    });
+
+    const cells = clone.querySelectorAll('th, td');
+    cells.forEach((cell) => {
+      cell.style.border = '1px solid #444';
+      cell.style.padding = '6px';
+      cell.style.verticalAlign = 'top';
+    });
+
+    const headings = clone.querySelectorAll('h1, h2, h3, h4');
+    headings.forEach((h) => {
+      h.style.marginTop = '8pt';
+      h.style.marginBottom = '4pt';
+      h.style.fontSize = '11pt';
+    });
+
+    const footer = document.createElement('div');
+    footer.innerHTML = `
+      <div style="text-align:center; margin-top:25mm; font-size:9pt; color:#333;">
+        — End of Lesson Note —
+      </div>
+    `;
+    clone.appendChild(footer);
+
+    const filename = 'lesson_note.pdf';
+    const opt = {
+      margin: [10, 10, 15, 10],
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        letterRendering: true,
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait',
+      },
+      pagebreak: { mode: ['css', 'legacy'] },
+    };
+
+    window.html2pdf().set(opt).from(clone).save();
+  }, [currentNote]);
 
   // --- WORD DOWNLOAD HANDLER ---
   const handleDownloadWord = useCallback(() => {
@@ -86,30 +129,48 @@ function LessonNoteView() {
       link.click();
       URL.revokeObjectURL(link.href);
     } catch (err) {
-      alert('Word generation failed.');
+      console.error('Word generation failed:', err);
+      alert('Could not generate Word document. Please try again.');
     }
   }, [currentNote]);
 
-  if (isLoading || !currentNote)
+  // --- Handle Loading / Errors / Empty State ---
+  if (isLoading) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
         <CircularProgress />
       </Container>
     );
+  }
 
-  if (isError)
+  if (isError) {
     return (
       <Container sx={{ mt: 5 }}>
         <Alert severity="error">{message}</Alert>
       </Container>
     );
+  }
 
-  const content = currentNote.content;
+  if (!currentNote || !currentNote.content) {
+    return (
+      <Container sx={{ textAlign: 'center', mt: 10 }}>
+        <Alert severity="info">Lesson note not available yet.</Alert>
+      </Container>
+    );
+  }
+
+  // --- Safe parsing of Markdown sections ---
+  const content = currentNote.content || '';
   const tableStart = content.indexOf('| PHASE');
   const tableEnd = content.lastIndexOf('|');
-  const header = content.substring(0, tableStart).trim();
-  const table = content.substring(tableStart, tableEnd + 1).trim();
-  const footer = content.substring(tableEnd + 1).trim();
+  const header =
+    tableStart !== -1 ? content.substring(0, tableStart).trim() : content.trim();
+  const table =
+    tableStart !== -1 && tableEnd !== -1
+      ? content.substring(tableStart, tableEnd + 1).trim()
+      : '';
+  const footer =
+    tableEnd !== -1 ? content.substring(tableEnd + 1).trim() : '';
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -139,29 +200,112 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
-          {/* Display Section */}
+          {/* Content Display */}
           <div id="note-content-container">
-            {/* Header */}
+            {/* Header Section */}
             <Box sx={{ mb: 3 }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 0.8,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                  strong: (props) => (
+                    <Box
+                      component="strong"
+                      sx={{ fontWeight: 600, color: 'text.primary' }}
+                      {...props}
+                    />
+                  ),
+                }}
+              >
                 {header}
               </ReactMarkdown>
             </Box>
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* Table */}
-            <Box sx={{ overflowX: 'auto', borderRadius: 2, mb: 3 }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                {table}
-              </ReactMarkdown>
-            </Box>
+            {/* Lesson Phases Table */}
+            {table && (
+              <Box
+                sx={{
+                  overflowX: 'auto',
+                  borderRadius: 2,
+                  mb: 3,
+                }}
+              >
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    table: (props) => (
+                      <Box
+                        component="table"
+                        sx={{
+                          width: '100%',
+                          borderCollapse: 'collapse',
+                          '& th': {
+                            backgroundColor: '#e8f5e9',
+                            color: '#2e7d32',
+                            fontWeight: 700,
+                            border: '1px solid #c8e6c9',
+                            padding: '10px',
+                            textAlign: 'center',
+                            fontSize: '0.9rem',
+                          },
+                          '& td': {
+                            border: '1px solid #ddd',
+                            padding: '12px',
+                            verticalAlign: 'top',
+                            whiteSpace: 'pre-wrap',
+                            fontSize: '0.9rem',
+                          },
+                          '& tr:nth-of-type(even)': {
+                            backgroundColor: '#fafafa',
+                          },
+                        }}
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {table}
+                </ReactMarkdown>
+              </Box>
+            )}
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* Footer */}
+            {/* Footer Section */}
             <Box sx={{ mt: 2 }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 1,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
+              >
                 {footer}
               </ReactMarkdown>
             </Box>
