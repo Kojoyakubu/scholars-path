@@ -35,139 +35,111 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER ---
+  // --- PDF DOWNLOAD HANDLER (Smart A4 Scaling) ---
   const handleDownloadPdf = useCallback(() => {
-    if (!currentNote) {
-      alert('Content is not ready for download.');
-      return;
-    }
+    const element = document.getElementById('note-content-container');
+    if (!element || !currentNote) return;
+
     if (!window.html2pdf) {
       alert('PDF library not loaded. Please refresh and try again.');
       return;
     }
 
-    // 1. Split the raw Markdown content into logical parts.
-    const content = currentNote.content;
-    const tableStart = content.indexOf('| PHASE');
-    const footerStart = content.lastIndexOf('---');
-    const headerMarkdown = content.substring(0, tableStart).trim();
-    const tableMarkdown = content.substring(tableStart, footerStart).trim();
-    const footerMarkdown = content.substring(footerStart).replace('---', '').trim();
+    // Clone content for manipulation
+    const clone = element.cloneNode(true);
+    document.body.appendChild(clone);
+    clone.style.width = '210mm';
+    clone.style.minHeight = '297mm';
+    clone.style.padding = '20mm';
+    clone.style.margin = '0 auto';
+    clone.style.backgroundColor = '#fff';
+    clone.style.fontFamily = 'Arial, sans-serif';
+    clone.style.lineHeight = '1.5';
+    clone.style.color = '#000';
+    clone.style.wordBreak = 'break-word';
 
-    // 2. Define print-specific CSS for a professional A4 document.
-    const printStyles = `
-      <style>
-        @page { size: A4 portrait; margin: 15mm; }
-        body { font-family: 'Times New Roman', Times, serif; font-size: 10pt; line-height: 1.4; color: #000; }
-        strong { font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; page-break-inside: auto; font-size: 9.5pt; }
-        tr { page-break-inside: avoid; page-break-after: auto; }
-        th, td { border: 1px solid #333; padding: 6px; text-align: left; vertical-align: top; }
-        th { background-color: #f0f0f0; font-weight: bold; }
-        br { display: block; margin-bottom: 0.5em; content: ""; }
-      </style>
-    `;
+    // Measure height to adjust font size/margins
+    document.body.appendChild(clone);
+    const height = clone.scrollHeight;
+    document.body.removeChild(clone);
 
-    // 3. Manually construct a clean HTML table from the Markdown table.
-    let tableHtml = '<table>';
-    const rows = tableMarkdown.split('\n').filter(row => row.startsWith('|'));
-    rows.forEach((row, index) => {
-      const tag = index === 0 ? 'th' : 'td';
-      const cells = row.split('|').slice(1, -1); // Get content between pipes
-      tableHtml += '<tr>';
-      cells.forEach(cell => {
-        const cellContent = cell.trim().replace(/<br>/g, '<br/>');
-        tableHtml += `<${tag}>${cellContent}</${tag}>`;
-      });
-      tableHtml += '</tr>';
+    // Default A4 limits in pixels (~1123px = 297mm at 96dpi)
+    const a4Height = 1123;
+    const isLongContent = height > a4Height * 1.2; // allow some margin
+
+    // Apply scaling styles
+    clone.style.fontSize = isLongContent ? '9pt' : '10pt';
+    clone.style.padding = isLongContent ? '10mm' : '20mm';
+
+    // Fix table visuals
+    const tables = clone.querySelectorAll('table');
+    tables.forEach((table) => {
+      table.style.borderCollapse = 'collapse';
+      table.style.width = '100%';
+      table.style.pageBreakInside = 'avoid';
+      table.style.fontSize = isLongContent ? '8.5pt' : '9.5pt';
     });
-    tableHtml += '</table>';
 
-    // 4. Assemble the final HTML document for printing.
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          ${printStyles}
-        </head>
-        <body>
-          <div>${headerMarkdown.replace(/\n/g, '<br/>')}</div>
-          <br/>
-          ${tableHtml}
-          <br/>
-          <div>${footerMarkdown.replace(/\n/g, '<br/>')}</div>
-        </body>
-      </html>
+    // Footer (only once at the end)
+    const footer = document.createElement('div');
+    footer.innerHTML = `
+      <div style="text-align:center; margin-top:15mm; font-size:9pt;">
+        — End of Lesson Note —
+      </div>
     `;
+    clone.appendChild(footer);
 
-    // 5. Configure html2pdf to handle automatic multi-page splitting.
+    // PDF configuration
+    const filename = 'lesson_note.pdf';
     const opt = {
-      margin: 15,
-      filename: 'lesson_note.pdf',
+      margin: [10, 10, 15, 10],
+      filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        letterRendering: true,
+        dpi: 300,
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait',
+      },
+      pagebreak: {
+        mode: ['avoid-all', 'css', 'legacy'],
+      },
     };
 
-    window.html2pdf().set(opt).from(printContent).save();
+    window.html2pdf().set(opt).from(clone).save();
   }, [currentNote]);
 
   // --- WORD DOWNLOAD HANDLER ---
   const handleDownloadWord = useCallback(() => {
-    if (!currentNote) {
-        alert('Content is not ready for download.');
-        return;
-    }
     try {
-        const content = currentNote.content;
-        const tableStart = content.indexOf('| PHASE');
-        const footerStart = content.lastIndexOf('---');
-        const headerMarkdown = content.substring(0, tableStart).trim();
-        const tableMarkdown = content.substring(tableStart, footerStart).trim();
-        const footerMarkdown = content.substring(footerStart).replace('---', '').trim();
+      const element = document.getElementById('note-content-container');
+      if (!element || !currentNote) return;
 
-        let tableHtml = '<table style="width:100%; border-collapse:collapse;">';
-        const rows = tableMarkdown.split('\n').filter(row => row.startsWith('|'));
-        rows.forEach((row, index) => {
-            const tag = index === 0 ? 'th' : 'td';
-            const cells = row.split('|').slice(1, -1);
-            tableHtml += '<tr>';
-            cells.forEach(cell => {
-                const style = 'border: 1px solid black; padding: 5px;';
-                const cellContent = cell.trim().replace(/<br>/g, '<br/>');
-                tableHtml += `<${tag} style="${style}">${cellContent}</${tag}>`;
-            });
-            tableHtml += '</tr>';
-        });
-        tableHtml += '</table>';
-
-        const html = `
-            <!DOCTYPE html><html><head><meta charset="UTF-8" /></head>
-            <body>
-                <div style="font-family: Arial, sans-serif; font-size: 11pt;">
-                    ${headerMarkdown.replace(/\n/g, '<br/>')}
-                    <br/>
-                    ${tableHtml}
-                    <br/>
-                    ${footerMarkdown.replace(/\n/g, '<br/>')}
-                </div>
-            </body></html>
-        `;
-
-        const blob = HTMLtoDOCX(html);
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'lesson_note.docx';
-        link.click();
-        URL.revokeObjectURL(link.href);
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head><meta charset="UTF-8" /></head>
+          <body>${element.innerHTML}</body>
+        </html>
+      `;
+      const blob = HTMLtoDOCX(html);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'lesson_note.docx';
+      link.click();
+      URL.revokeObjectURL(link.href);
     } catch (err) {
-        console.error('Word generation failed:', err);
-        alert('Could not generate Word document. Please try again.');
+      console.error('Word generation failed:', err);
+      alert('Could not generate Word document. Please try again.');
     }
   }, [currentNote]);
 
-  // Guard clause: Prevents rendering with null data, fixing the crash.
   if (isLoading || !currentNote) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
@@ -184,13 +156,13 @@ function LessonNoteView() {
     );
   }
 
-  // Content splitting logic, moved here to run only after data is confirmed to exist.
+  // Split note into header, table, and footer sections
   const content = currentNote.content;
   const tableStart = content.indexOf('| PHASE');
-  const footerStart = content.lastIndexOf('---');
-  const header = tableStart !== -1 ? content.substring(0, tableStart).trim() : content;
-  const table = tableStart !== -1 && footerStart !== -1 ? content.substring(tableStart, footerStart).trim() : '';
-  const footer = footerStart !== -1 ? content.substring(footerStart).replace('---', '').trim() : '';
+  const tableEnd = content.lastIndexOf('|');
+  const header = content.substring(0, tableStart).trim();
+  const table = content.substring(tableStart, tableEnd + 1).trim();
+  const footer = content.substring(tableEnd + 1).trim();
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -220,20 +192,112 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
-          {/* On-screen Content Display */}
+          {/* Content Display */}
           <div id="note-content-container">
+            {/* Header Section */}
             <Box sx={{ mb: 3 }}>
-              <ReactMarkdown>{header}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 0.8,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                  strong: (props) => (
+                    <Box
+                      component="strong"
+                      sx={{ fontWeight: 600, color: 'text.primary' }}
+                      {...props}
+                    />
+                  ),
+                }}
+              >
+                {header}
+              </ReactMarkdown>
             </Box>
+
             <Divider sx={{ mb: 3 }} />
-            <Box sx={{ overflowX: 'auto', mb: 3 }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+
+            {/* Lesson Phases Table */}
+            <Box
+              sx={{
+                overflowX: 'auto',
+                borderRadius: 2,
+                mb: 3,
+              }}
+            >
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  table: (props) => (
+                    <Box
+                      component="table"
+                      sx={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        '& th': {
+                          backgroundColor: '#e8f5e9',
+                          color: '#2e7d32',
+                          fontWeight: 700,
+                          border: '1px solid #c8e6c9',
+                          padding: '10px',
+                          textAlign: 'center',
+                          fontSize: '0.9rem',
+                        },
+                        '& td': {
+                          border: '1px solid #ddd',
+                          padding: '12px',
+                          verticalAlign: 'top',
+                          whiteSpace: 'pre-wrap',
+                          fontSize: '0.9rem',
+                        },
+                        '& tr:nth-of-type(even)': {
+                          backgroundColor: '#fafafa',
+                        },
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
+              >
                 {table}
               </ReactMarkdown>
             </Box>
+
             <Divider sx={{ mb: 3 }} />
+
+            {/* Footer Section */}
             <Box sx={{ mt: 2 }}>
-              <ReactMarkdown>{footer}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  p: (props) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 1,
+                        whiteSpace: 'pre-line',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
+                      }}
+                      {...props}
+                    />
+                  ),
+                }}
+              >
+                {footer}
+              </ReactMarkdown>
             </Box>
           </div>
         </Paper>
