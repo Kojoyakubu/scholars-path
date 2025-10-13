@@ -9,21 +9,27 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
     school: '',
     term: 'One',
     duration: '1hr 10 mins / 2 Periods',
-    performanceIndicator: '',
     dayDate: '',
     class: '', // Optional field
+    // --- New required fields ---
+    week: '',
+    contentStandardCode: '',
+    indicatorCode: '',
   });
 
   useEffect(() => {
-    // Reset form data when the modal is opened, but keep defaults
+    // Reset form data when the modal is opened
     if (open) {
       setFormData({
         school: '',
         term: 'One',
         duration: '1hr 10 mins / 2 Periods',
-        performanceIndicator: '',
         dayDate: '',
         class: '',
+        // --- Reset new fields ---
+        week: '',
+        contentStandardCode: '',
+        indicatorCode: '',
       });
     }
   }, [open]);
@@ -54,6 +60,34 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
               onChange={handleChange}
               required
             />
+            {/* --- NEW FIELDS ADDED HERE --- */}
+            <TextField
+              name="week"
+              label="Week Number"
+              type="number"
+              value={formData.week}
+              onChange={handleChange}
+              placeholder="e.g., 7"
+              required
+            />
+            <TextField
+              name="contentStandardCode"
+              label="Content Standard Code"
+              value={formData.contentStandardCode}
+              onChange={handleChange}
+              placeholder="e.g., B1.1.1.1"
+              required
+            />
+            <TextField
+              name="indicatorCode"
+              label="Indicator Code(s)"
+              value={formData.indicatorCode}
+              onChange={handleChange}
+              placeholder="e.g., B1.1.1.1.1"
+              helperText="For multiple codes, use a comma to separate them."
+              required
+            />
+            {/* --- END OF NEW FIELDS --- */}
             <TextField
               name="term"
               label="Term"
@@ -64,7 +98,7 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
             <TextField
               name="dayDate"
               label="Day / Date"
-              placeholder="e.g., Monday, October 20, 2025"
+              placeholder="e.g., Monday, 13 October, 2025"
               value={formData.dayDate}
               onChange={handleChange}
               required
@@ -75,16 +109,6 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
               value={formData.duration}
               onChange={handleChange}
               required
-            />
-            <TextField
-              name="performanceIndicator"
-              label="Performance Indicator"
-              value={formData.performanceIndicator}
-              onChange={handleChange} // ✅ CORRECTED THIS SECTION
-              multiline
-              rows={3}
-              required
-              helperText="Describe what learners should be able to do by the end of the lesson."
             />
              <TextField
               name="class"

@@ -15,15 +15,24 @@ const aiService = require('../services/aiService');
  * @access  Private (Teacher)
  */
 const generateLessonNote = asyncHandler(async (req, res) => {
+  // --- MODIFIED: Updated the request body to accept teacher's input ---
   const {
     subStrandId,
     school,
     term,
     duration,
-    performanceIndicator,
+    week, // ADDED
+    contentStandardCode, // ADDED
+    indicatorCode, // ADDED
     dayDate,
     class: className,
   } = req.body;
+
+  // Validate required new fields
+  if (!week || !contentStandardCode || !indicatorCode) {
+    res.status(400);
+    throw new Error('Please provide the Week, Content Standard Code, and Indicator Code.');
+  }
 
   const subStrand = await SubStrand.findById(subStrandId).populate({
     path: 'strand',
@@ -35,17 +44,15 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // ✅ Refined prompt that locks table structure
+  // --- MODIFIED: Updated the AI prompt to reflect the new roles ---
   const prompt = `
 You are a Ghanaian master teacher and curriculum designer.  
-Your task is to create a **well-formatted Markdown lesson note** for the JHS Computing curriculum.
+Your task is to create a **well-formatted Markdown lesson note** for the JHS Computing curriculum based on the specific details provided by the teacher.
 
-⚠️ IMPORTANT FORMATTING RULES
-- Use **pure Markdown** (no HTML tags).
-- Keep the **Lesson Phases** strictly inside a **3-column table**.
-- Use **<br>** for line breaks *inside table cells only* (this is valid for Markdown tables).
-- Never move "Evaluation" or "Assignment" outside the table.
-- Each phase must be a single cell separated by vertical bars \`|\`.
+⚠️ **AI INSTRUCTIONS**
+1.  You **MUST** use the Week, Content Standard Code, and Indicator Code exactly as provided below.
+2.  Your primary creative task is to generate a relevant and measurable **Performance Indicator** that directly aligns with the provided codes.
+3.  Fill in the remaining sections (Core Competencies, T&L Materials, Reference) with appropriate content.
 
 ---
 
@@ -56,15 +63,15 @@ Your task is to create a **well-formatted Markdown lesson note** for the JHS Com
 **Subject:** ${subStrand.strand.subject.name}  
 **Strand:** ${subStrand.strand.name}  
 **Sub-Strand:** ${subStrand.name}  
-**Week:** [AI to determine week number]  
-**Week Ending:** [AI to determine Friday date]  
+**Week:** ${week} 
+**Week Ending:** [AI to determine Friday date based on the Day/Date]  
 **Day/Date:** ${dayDate}  
 **Term:** ${term}  
 **Class Size:** 45  
 **Time/Duration:** ${duration}  
-**Content Standard (Code):** [AI to generate]  
-**Indicator (Code):** [AI to generate]  
-**Performance Indicator:** ${performanceIndicator}  
+**Content Standard (Code):** ${contentStandardCode} 
+**Indicator (Code):** ${indicatorCode}
+**Performance Indicator:** [AI to generate based on the Content Standard and Indicator codes]
 **Core Competencies:** [AI to generate, e.g., Communication, Collaboration, Critical Thinking]  
 **Teaching & Learning Materials:** [AI to generate, e.g., Computer, projector, charts, pictures of devices]  
 **Reference:** [AI to generate, e.g., NaCCA Computing Curriculum for JHS 1]
@@ -79,17 +86,9 @@ Your task is to create a **well-formatted Markdown lesson note** for the JHS Com
 
 ---
 
-**Facilitator:**  
-**Vetted By:** ....................................................  
+**Facilitator:** **Vetted By:** ....................................................  
 **Signature:** ....................................................  
 **Date:** ....................................................  
-
----
-
-### AI Output Rules
-1. Use only Markdown syntax and \`<br>\` for line breaks in table cells.  
-2. Ensure all content stays inside the 3-column table.  
-3. Keep the Ghanaian JHS lesson tone — clear, direct, and participatory.  
 `;
 
   const aiContent = await aiService.generateContent(prompt);
