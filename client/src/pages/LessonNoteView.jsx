@@ -20,6 +20,8 @@ import {
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
 import HTMLtoDOCX from 'html-docx-js-typescript';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -35,117 +37,109 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER (Stable, Clean A4 Layout) ---
   const handleDownloadPdf = useCallback(() => {
-    const element = document.getElementById('note-content-container');
-    if (!element || !currentNote) return;
-
-    if (!window.html2pdf) {
-      alert('PDF library not loaded. Please refresh and try again.');
-      return;
-    }
-
-    // Clone content
-    const clone = element.cloneNode(true);
-
-    // Apply consistent, print-perfect A4 styles
-    clone.style.width = '210mm';
-    clone.style.minHeight = '297mm';
-    clone.style.margin = '0 auto';
-    clone.style.padding = '20mm';
-    clone.style.backgroundColor = '#fff';
-    clone.style.fontFamily = 'Arial, sans-serif';
-    clone.style.fontSize = '10pt';
-    clone.style.lineHeight = '1.5';
-    clone.style.color = '#000';
-    clone.style.boxSizing = 'border-box';
-
-    // Improve tables
-    const tables = clone.querySelectorAll('table');
-    tables.forEach((table) => {
-      table.style.borderCollapse = 'collapse';
-      table.style.width = '100%';
-      table.style.fontSize = '9.5pt';
-      table.style.pageBreakInside = 'avoid';
-    });
-
-    // Add borders to table cells
-    const cells = clone.querySelectorAll('th, td');
-    cells.forEach((cell) => {
-      cell.style.border = '1px solid #444';
-      cell.style.padding = '6px';
-      cell.style.verticalAlign = 'top';
-    });
-
-    // Ensure headers and dividers are consistent
-    const headings = clone.querySelectorAll('h1, h2, h3, h4');
-    headings.forEach((h) => {
-      h.style.marginTop = '8pt';
-      h.style.marginBottom = '4pt';
-      h.style.fontSize = '11pt';
-    });
-
-    // Footer (once, at the very end)
-    const footer = document.createElement('div');
-    footer.innerHTML = `
-      <div style="text-align:center; margin-top:25mm; font-size:9pt; color:#333;">
-        — End of Lesson Note —
-      </div>
-    `;
-    clone.appendChild(footer);
-
-    // PDF configuration
-    const filename = 'lesson_note.pdf';
-    const opt = {
-      margin: [10, 10, 15, 10], // top, right, bottom, left
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        scrollY: 0,
-        letterRendering: true,
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: 'portrait',
-      },
-      pagebreak: {
-        mode: ['css', 'legacy'],
-        before: '.page-break',
-        after: ['#footer'],
-      },
-    };
-
-    // Trigger the PDF
-    window.html2pdf().set(opt).from(clone).save();
-  }, [currentNote]);
-
-  // --- WORD DOWNLOAD HANDLER ---
-  const handleDownloadWord = useCallback(() => {
     try {
-      const element = document.getElementById('note-content-container');
-      if (!element || !currentNote) return;
+      const headerElement = document.getElementById('note-header');
+      const tableElement = document.getElementById('lesson-phases-table');
+      const footerElement = document.getElementById('note-footer');
 
-      const html = `
-        <!DOCTYPE html>
-        <html>
-          <head><meta charset="UTF-8" /></head>
-          <body>${element.innerHTML}</body>
-        </html>
-      `;
-      const blob = HTMLtoDOCX(html);
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'lesson_note.docx';
-      link.click();
-      URL.revokeObjectURL(link.href);
-    } catch (err) {
-      console.error('Word generation failed:', err);
-      alert('Could not generate Word document. Please try again.');
+      if (!headerElement || !tableElement) {
+        alert('Cannot generate PDF — please wait for content to load.');
+        return;
+      }
+
+      const doc = new jsPDF('p', 'mm', 'a4');
+      let finalY = 15;
+      const marginX = 14;
+
+      // Add header (convert to text lines)
+      const headerText = headerElement.innerText || '';
+      const headerLines = doc.splitTextToSize(headerText, 180);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(headerLines, marginX, finalY);
+      finalY += headerLines.length * 7;
+
+      // Add table
+      autoTable(doc, {
+        html: tableElement,
+        startY: finalY,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [46, 125, 50],
+          textColor: 255,
+          fontStyle: 'bold',
+          halign: 'center',
+        },
+        styles: {
+          fontSize: 9,
+          cellPadding: 2.5,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1,
+        },
+        didDrawPage: (data) => {
+          finalY = data.cursor.y;
+        },
+      });
+
+      finalY = doc.lastAutoTable?.finalY || finalY + 10;
+
+      // Footer
+      if (footerElement) {
+        const footerText = footerElement.innerText;
+        const splitText = doc.splitTextToSize(footerText, 180);
+        doc.setFontSize(11);
+        if (finalY + splitText.length * 7 > 280) {
+          doc.addPage();
+          finalY = 20;
+        }
+        doc.text(splitText, marginX, finalY + 10);
+        finalY += splitText.length * 6;
+      }
+
+      // Signature lines
+      if (finalY + 40 > 280) {
+        doc.addPage();
+        finalY = 20;
+      }
+      doc.setFontSize(10);
+      doc.text(`Facilitator: ${currentNote.teacher?.name || '________________'}`, marginX, finalY + 10);
+      doc.text('Vetted By: __________________________', marginX, finalY + 20);
+      doc.text('Signature: __________________________', marginX, finalY + 30);
+      doc.text('Date: __________________________', marginX, finalY + 40);
+
+      // Page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Page ${i} of ${pageCount}`,
+          doc.internal.pageSize.width / 2,
+          doc.internal.pageSize.height - 10,
+          { align: 'center' }
+        );
+      }
+
+      doc.save('lesson_note.pdf');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('An error occurred while generating the PDF. Check the console for details.');
     }
   }, [currentNote]);
+
+  const handleDownloadWord = useCallback(() => {
+    const element = document.getElementById('note-content-container');
+    if (!element) return;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${element.innerHTML}</body></html>`;
+    const blob = HTMLtoDOCX(html);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'lesson_note.docx';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }, []);
 
   if (isLoading || !currentNote) {
     return (
@@ -163,23 +157,37 @@ function LessonNoteView() {
     );
   }
 
-  // Split note into header, table, and footer sections
-  const content = currentNote.content;
-  const tableStart = content.indexOf('| PHASE');
-  const tableEnd = content.lastIndexOf('|');
-  const header = content.substring(0, tableStart).trim();
-  const table = content.substring(tableStart, tableEnd + 1).trim();
-  const footer = content.substring(tableEnd + 1).trim();
+  // Split content into header, table, footer
+  const content = currentNote.content || '';
+  const lines = content.split('\n');
+  const tableStartIndex = lines.findIndex(
+    (line) => line.trim().startsWith('|') && line.toLowerCase().includes('phase')
+  );
+
+  if (tableStartIndex === -1) {
+    return (
+      <Container sx={{ mt: 5 }}>
+        <Alert severity="warning">Could not parse the lesson note. No table found.</Alert>
+      </Container>
+    );
+  }
+
+  let tableEndIndex = tableStartIndex;
+  for (let i = tableStartIndex + 1; i < lines.length; i++) {
+    if (lines[i].trim().startsWith('|')) tableEndIndex = i;
+    else break;
+  }
+
+  const header = lines.slice(0, tableStartIndex).join('\n');
+  const table = lines.slice(tableStartIndex, tableEndIndex + 1).join('\n');
+  const footer = lines.slice(tableEndIndex + 1).join('\n');
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
         <Paper elevation={3} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
-          {/* Download Buttons */}
           <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" gutterBottom>
-              Download Options
-            </Typography>
+            <Typography variant="h6" gutterBottom>Download Options</Typography>
             <Stack direction="row" spacing={2}>
               <Button
                 variant="contained"
@@ -199,49 +207,16 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
-          {/* Content Display */}
           <div id="note-content-container">
-            {/* Header Section */}
-            <Box sx={{ mb: 3 }}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                components={{
-                  p: (props) => (
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        mb: 0.8,
-                        whiteSpace: 'pre-line',
-                        fontSize: '0.9rem',
-                        lineHeight: 1.5,
-                      }}
-                      {...props}
-                    />
-                  ),
-                  strong: (props) => (
-                    <Box
-                      component="strong"
-                      sx={{ fontWeight: 600, color: 'text.primary' }}
-                      {...props}
-                    />
-                  ),
-                }}
-              >
+            <Box id="note-header">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                 {header}
               </ReactMarkdown>
             </Box>
 
-            <Divider sx={{ mb: 3 }} />
+            <Divider sx={{ my: 3 }} />
 
-            {/* Lesson Phases Table */}
-            <Box
-              sx={{
-                overflowX: 'auto',
-                borderRadius: 2,
-                mb: 3,
-              }}
-            >
+            <Box id="note-table-container" sx={{ overflowX: 'auto' }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
@@ -249,28 +224,12 @@ function LessonNoteView() {
                   table: (props) => (
                     <Box
                       component="table"
+                      id="lesson-phases-table"
                       sx={{
                         width: '100%',
                         borderCollapse: 'collapse',
-                        '& th': {
-                          backgroundColor: '#e8f5e9',
-                          color: '#2e7d32',
-                          fontWeight: 700,
-                          border: '1px solid #c8e6c9',
-                          padding: '10px',
-                          textAlign: 'center',
-                          fontSize: '0.9rem',
-                        },
-                        '& td': {
-                          border: '1px solid #ddd',
-                          padding: '12px',
-                          verticalAlign: 'top',
-                          whiteSpace: 'pre-wrap',
-                          fontSize: '0.9rem',
-                        },
-                        '& tr:nth-of-type(even)': {
-                          backgroundColor: '#fafafa',
-                        },
+                        '& th': { p: 1.5, border: '1px solid #ddd', backgroundColor: '#f2f2f2' },
+                        '& td': { p: 1.5, border: '1px solid #ddd', verticalAlign: 'top' },
                       }}
                       {...props}
                     />
@@ -281,28 +240,10 @@ function LessonNoteView() {
               </ReactMarkdown>
             </Box>
 
-            <Divider sx={{ mb: 3 }} />
+            <Divider sx={{ my: 3 }} />
 
-            {/* Footer Section */}
-            <Box sx={{ mt: 2 }}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                components={{
-                  p: (props) => (
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        mb: 1,
-                        whiteSpace: 'pre-line',
-                        fontSize: '0.9rem',
-                        lineHeight: 1.5,
-                      }}
-                      {...props}
-                    />
-                  ),
-                }}
-              >
+            <Box id="note-footer">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                 {footer}
               </ReactMarkdown>
             </Box>
