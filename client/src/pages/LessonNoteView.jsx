@@ -35,7 +35,7 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER (Stable A4 Layout) ---
+  // --- PDF DOWNLOAD HANDLER (Stable, Clean A4 Layout) ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
@@ -45,7 +45,10 @@ function LessonNoteView() {
       return;
     }
 
+    // Clone content
     const clone = element.cloneNode(true);
+
+    // Apply consistent, print-perfect A4 styles
     clone.style.width = '210mm';
     clone.style.minHeight = '297mm';
     clone.style.margin = '0 auto';
@@ -57,6 +60,7 @@ function LessonNoteView() {
     clone.style.color = '#000';
     clone.style.boxSizing = 'border-box';
 
+    // Improve tables
     const tables = clone.querySelectorAll('table');
     tables.forEach((table) => {
       table.style.borderCollapse = 'collapse';
@@ -65,6 +69,7 @@ function LessonNoteView() {
       table.style.pageBreakInside = 'avoid';
     });
 
+    // Add borders to table cells
     const cells = clone.querySelectorAll('th, td');
     cells.forEach((cell) => {
       cell.style.border = '1px solid #444';
@@ -72,6 +77,7 @@ function LessonNoteView() {
       cell.style.verticalAlign = 'top';
     });
 
+    // Ensure headers and dividers are consistent
     const headings = clone.querySelectorAll('h1, h2, h3, h4');
     headings.forEach((h) => {
       h.style.marginTop = '8pt';
@@ -79,6 +85,7 @@ function LessonNoteView() {
       h.style.fontSize = '11pt';
     });
 
+    // Footer (once, at the very end)
     const footer = document.createElement('div');
     footer.innerHTML = `
       <div style="text-align:center; margin-top:25mm; font-size:9pt; color:#333;">
@@ -87,9 +94,10 @@ function LessonNoteView() {
     `;
     clone.appendChild(footer);
 
+    // PDF configuration
     const filename = 'lesson_note.pdf';
     const opt = {
-      margin: [10, 10, 15, 10],
+      margin: [10, 10, 15, 10], // top, right, bottom, left
       filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
@@ -103,9 +111,14 @@ function LessonNoteView() {
         format: 'a4',
         orientation: 'portrait',
       },
-      pagebreak: { mode: ['css', 'legacy'] },
+      pagebreak: {
+        mode: ['css', 'legacy'],
+        before: '.page-break',
+        after: ['#footer'],
+      },
     };
 
+    // Trigger the PDF
     window.html2pdf().set(opt).from(clone).save();
   }, [currentNote]);
 
@@ -134,8 +147,7 @@ function LessonNoteView() {
     }
   }, [currentNote]);
 
-  // --- Handle Loading / Errors / Empty State ---
-  if (isLoading) {
+  if (isLoading || !currentNote) {
     return (
       <Container sx={{ textAlign: 'center', mt: 10 }}>
         <CircularProgress />
@@ -151,26 +163,13 @@ function LessonNoteView() {
     );
   }
 
-  if (!currentNote || !currentNote.content) {
-    return (
-      <Container sx={{ textAlign: 'center', mt: 10 }}>
-        <Alert severity="info">Lesson note not available yet.</Alert>
-      </Container>
-    );
-  }
-
-  // --- Safe parsing of Markdown sections ---
-  const content = currentNote.content || '';
+  // Split note into header, table, and footer sections
+  const content = currentNote.content;
   const tableStart = content.indexOf('| PHASE');
   const tableEnd = content.lastIndexOf('|');
-  const header =
-    tableStart !== -1 ? content.substring(0, tableStart).trim() : content.trim();
-  const table =
-    tableStart !== -1 && tableEnd !== -1
-      ? content.substring(tableStart, tableEnd + 1).trim()
-      : '';
-  const footer =
-    tableEnd !== -1 ? content.substring(tableEnd + 1).trim() : '';
+  const header = content.substring(0, tableStart).trim();
+  const table = content.substring(tableStart, tableEnd + 1).trim();
+  const footer = content.substring(tableEnd + 1).trim();
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -236,53 +235,51 @@ function LessonNoteView() {
             <Divider sx={{ mb: 3 }} />
 
             {/* Lesson Phases Table */}
-            {table && (
-              <Box
-                sx={{
-                  overflowX: 'auto',
-                  borderRadius: 2,
-                  mb: 3,
+            <Box
+              sx={{
+                overflowX: 'auto',
+                borderRadius: 2,
+                mb: 3,
+              }}
+            >
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  table: (props) => (
+                    <Box
+                      component="table"
+                      sx={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        '& th': {
+                          backgroundColor: '#e8f5e9',
+                          color: '#2e7d32',
+                          fontWeight: 700,
+                          border: '1px solid #c8e6c9',
+                          padding: '10px',
+                          textAlign: 'center',
+                          fontSize: '0.9rem',
+                        },
+                        '& td': {
+                          border: '1px solid #ddd',
+                          padding: '12px',
+                          verticalAlign: 'top',
+                          whiteSpace: 'pre-wrap',
+                          fontSize: '0.9rem',
+                        },
+                        '& tr:nth-of-type(even)': {
+                          backgroundColor: '#fafafa',
+                        },
+                      }}
+                      {...props}
+                    />
+                  ),
                 }}
               >
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
-                  components={{
-                    table: (props) => (
-                      <Box
-                        component="table"
-                        sx={{
-                          width: '100%',
-                          borderCollapse: 'collapse',
-                          '& th': {
-                            backgroundColor: '#e8f5e9',
-                            color: '#2e7d32',
-                            fontWeight: 700,
-                            border: '1px solid #c8e6c9',
-                            padding: '10px',
-                            textAlign: 'center',
-                            fontSize: '0.9rem',
-                          },
-                          '& td': {
-                            border: '1px solid #ddd',
-                            padding: '12px',
-                            verticalAlign: 'top',
-                            whiteSpace: 'pre-wrap',
-                            fontSize: '0.9rem',
-                          },
-                          '& tr:nth-of-type(even)': {
-                            backgroundColor: '#fafafa',
-                          },
-                        }}
-                        {...props}
-                      />
-                    ),
-                  }}
-                >
-                  {table}
-                </ReactMarkdown>
-              </Box>
-            )}
+                {table}
+              </ReactMarkdown>
+            </Box>
 
             <Divider sx={{ mb: 3 }} />
 

@@ -8,11 +8,9 @@ const NoteView = require('../models/noteViewModel');
 const QuizAttempt = require('../models/quizAttemptModel');
 const SubStrand = require('../models/subStrandModel');
 const aiService = require('../services/aiService');
-const PDFDocument = require('pdfkit');
-const MarkdownIt = require('markdown-it');
 
 /**
- * @desc    Generate a lesson note as downloadable PDF + save copy in DB
+ * @desc    Generate a lesson note with AI
  * @route   POST /api/teacher/generate-note
  * @access  Private (Teacher)
  */
@@ -37,23 +35,65 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // Prompt for AI generation
+  // ✅ Refined prompt that locks table structure
   const prompt = `
-You are a Ghanaian master teacher designing a professional JHS Computing lesson note.
-Use Markdown formatting, including a proper 3-column table for Lesson Phases (Starter, Main, Plenary).
-Include all sections expected in a Ghanaian JHS lesson note.
+You are a Ghanaian master teacher and curriculum designer.  
+Your task is to create a **well-formatted Markdown lesson note** for the JHS Computing curriculum.
 
-Return Markdown only.
+⚠️ IMPORTANT FORMATTING RULES
+- Use **pure Markdown** (no HTML tags).
+- Keep the **Lesson Phases** strictly inside a **3-column table**.
+- Use **<br>** for line breaks *inside table cells only* (this is valid for Markdown tables).
+- Never move "Evaluation" or "Assignment" outside the table.
+- Each phase must be a single cell separated by vertical bars \`|\`.
+
+---
+
+### TEACHER INFORMATION
+
+**School:** ${school}  
+**Class:** ${className || subStrand.strand.subject.class.name}  
+**Subject:** ${subStrand.strand.subject.name}  
+**Strand:** ${subStrand.strand.name}  
+**Sub-Strand:** ${subStrand.name}  
+**Week:** [AI to determine week number]  
+**Week Ending:** [AI to determine Friday date]  
+**Day/Date:** ${dayDate}  
+**Term:** ${term}  
+**Class Size:** 45  
+**Time/Duration:** ${duration}  
+**Content Standard (Code):** [AI to generate]  
+**Indicator (Code):** [AI to generate]  
+**Performance Indicator:** ${performanceIndicator}  
+**Core Competencies:** [AI to generate, e.g., Communication, Collaboration, Critical Thinking]  
+**Teaching & Learning Materials:** [AI to generate, e.g., Computer, projector, charts, pictures of devices]  
+**Reference:** [AI to generate, e.g., NaCCA Computing Curriculum for JHS 1]
+
+---
+
+### **Lesson Phases**
+
+| **PHASE 1: Starter (Preparing the Brain for Learning)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
+|----------------------------------------------------------|--------------------------------------------------|----------------------------------|
+| The facilitator begins the lesson with a quick recap of previous knowledge.<br><br>Learners identify familiar examples related to the topic through brainstorming or pictures.<br><br>The teacher introduces today’s lesson using simple demonstrations or real-life analogies. | **Activity 1:** Introduce the new concept through discussion and demonstration.<br><br>**Activity 2:** Learners perform short tasks or group work to explore the concept.<br><br>**Activity 3:** The class discusses key differences and examples, writing short notes in groups.<br><br>**Evaluation:**<br>1. [Short question 1]<br>2. [Short question 2]<br>3. [Short question 3]<br><br>**Assignment:**<br>Write two sentences explaining how [the topic] applies in your daily life. | The facilitator leads a recap of the key points discussed.<br><br>Learners share what they have learned and answer reflective questions.<br><br>The teacher reinforces key ideas and gives motivational feedback. |
+
+---
+
+**Facilitator:**  
+**Vetted By:** ....................................................  
+**Signature:** ....................................................  
+**Date:** ....................................................  
+
+---
+
+### AI Output Rules
+1. Use only Markdown syntax and \`<br>\` for line breaks in table cells.  
+2. Ensure all content stays inside the 3-column table.  
+3. Keep the Ghanaian JHS lesson tone — clear, direct, and participatory.  
 `;
 
-  // Generate content
   const aiContent = await aiService.generateContent(prompt);
 
-  // Convert Markdown → plain text for PDF readability
-  const md = new MarkdownIt({ html: false, breaks: true });
-  const plainText = md.render(aiContent).replace(/<[^>]+>/g, '');
-
-  // Save to database (for dashboard)
   const lessonNote = await LessonNote.create({
     teacher: req.user._id,
     school: req.user.school,
@@ -61,77 +101,15 @@ Return Markdown only.
     content: aiContent,
   });
 
-  // Generate downloadable PDF
-  const doc = new PDFDocument({
-    size: 'A4',
-    margins: { top: 50, bottom: 50, left: 50, right: 50 },
-  });
-
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader(
-    'Content-Disposition',
-    'attachment; filename="lesson_note.pdf"'
-  );
-
-  doc.pipe(res);
-
-  // --- PDF Header ---
-  doc
-    .font('Times-Bold')
-    .fontSize(14)
-    .text('Lesson Note', { align: 'center' })
-    .moveDown(0.5);
-
-  doc
-    .font('Times-Roman')
-    .fontSize(10)
-    .text(
-      `School: ${school}
-Class: ${className || subStrand.strand.subject.class.name}
-Subject: ${subStrand.strand.subject.name}
-Strand: ${subStrand.strand.name}
-Sub-Strand: ${subStrand.name}
-Term: ${term}
-Duration: ${duration}
-Date: ${dayDate}
-Performance Indicator: ${performanceIndicator}`,
-      { align: 'left' }
-    )
-    .moveDown(1);
-
-  // --- Main Lesson Note Content ---
-  doc
-    .font('Times-Roman')
-    .fontSize(10)
-    .text(plainText, { align: 'left', lineGap: 4 });
-
-  // --- Footer ---
-  doc.moveDown(2);
-  doc
-    .font('Times-Italic')
-    .fontSize(9)
-    .text(`Facilitator: ${req.user.name || '_________________'}`, {
-      align: 'left',
-    })
-    .moveDown(0.5)
-    .text('Vetted By: ___________________', { align: 'left' })
-    .moveDown(0.5)
-    .text('Signature: ___________________', { align: 'left' })
-    .moveDown(0.5)
-    .text('Date: ___________________', { align: 'left' })
-    .moveDown(1)
-    .text('— End of Lesson Note —', { align: 'center' });
-
-  doc.end();
+  res.status(201).json(lessonNote);
 });
+
 
 /**
  * @desc    Get all lesson notes for the logged-in teacher
  */
 const getMyLessonNotes = asyncHandler(async (req, res) => {
-  const notes = await LessonNote.find({ teacher: req.user._id }).sort({
-    createdAt: -1,
-  });
+  const notes = await LessonNote.find({ teacher: req.user._id }).sort({ createdAt: -1 });
   res.json(notes);
 });
 
@@ -165,11 +143,13 @@ const deleteLessonNote = asyncHandler(async (req, res) => {
     throw new Error('User not authorized to delete this note');
   }
   await note.deleteOne();
-  res.status(200).json({ id: req.params.id, message: 'Lesson note deleted successfully' });
+  res
+    .status(200)
+    .json({ id: req.params.id, message: 'Lesson note deleted successfully' });
 });
 
 /**
- * @desc    Generate learner's version of a lesson note
+ * @desc    Generate a learner's version of a lesson note
  */
 const generateLearnerNote = asyncHandler(async (req, res) => {
   const { lessonNoteId } = req.body;
@@ -178,9 +158,10 @@ const generateLearnerNote = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Lesson note not found');
   }
-  const prompt = `Simplify the following teacher's lesson note for learners. Use Markdown and make it engaging:\n\n${lessonNote.content}`;
-  const learnerContent = await aiService.generateContent(prompt);
+  const prompt = `Based on the following teacher's lesson note, create a simplified and engaging Markdown version suitable for JHS learners. Keep it clear and friendly:
 
+${lessonNote.content}`;
+  const learnerContent = await aiService.generateContent(prompt);
   const learnerNote = await LearnerNote.create({
     author: req.user._id,
     school: req.user.school,
@@ -201,7 +182,9 @@ const createQuiz = asyncHandler(async (req, res) => {
     teacher: req.user._id,
     school: req.user.school,
   });
-  res.status(201).json({ quiz, message: `Quiz '${title}' created successfully.` });
+  res
+    .status(201)
+    .json({ quiz, message: `Quiz '${title}' created successfully.` });
 });
 
 /**
@@ -225,39 +208,49 @@ const uploadResource = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get teacher analytics
+ * @desc    Get teacher analytics dashboard
  */
 const getTeacherAnalytics = asyncHandler(async (req, res) => {
   const teacherId = req.user._id;
   const schoolId = req.user.school;
 
-  const quizzes = await Quiz.find({ teacher: teacherId, school: schoolId }).select('_id');
+  const quizzes = await Quiz.find({
+    teacher: teacherId,
+    school: schoolId,
+  }).select('_id');
+
   const quizIds = quizzes.map((q) => q._id);
 
-  const [totalNoteViews, totalQuizAttempts, averageScoreAggregation] = await Promise.all([
-    NoteView.countDocuments({ teacher: teacherId, school: schoolId }),
-    QuizAttempt.countDocuments({ quiz: { $in: quizIds }, school: schoolId }),
-    quizIds.length > 0
-      ? QuizAttempt.aggregate([
-          {
-            $match: {
-              quiz: { $in: quizIds },
-              school: schoolId,
-              totalQuestions: { $gt: 0 },
+  const [totalNoteViews, totalQuizAttempts, averageScoreAggregation] =
+    await Promise.all([
+      NoteView.countDocuments({ teacher: teacherId, school: schoolId }),
+      QuizAttempt.countDocuments({ quiz: { $in: quizIds }, school: schoolId }),
+      quizIds.length > 0
+        ? QuizAttempt.aggregate([
+            {
+              $match: {
+                quiz: { $in: quizIds },
+                school: schoolId,
+                totalQuestions: { $gt: 0 },
+              },
             },
-          },
-          {
-            $group: {
-              _id: null,
-              avgScore: { $avg: { $divide: ['$score', '$totalQuestions'] } },
+            {
+              $group: {
+                _id: null,
+                avgScore: {
+                  $avg: { $divide: ['$score', '$totalQuestions'] },
+                },
+              },
             },
-          },
-        ])
-      : Promise.resolve([]),
-  ]);
+          ])
+        : Promise.resolve([]),
+    ]);
 
   let averageScore = 0;
-  if (averageScoreAggregation.length > 0 && averageScoreAggregation[0].avgScore) {
+  if (
+    averageScoreAggregation.length > 0 &&
+    averageScoreAggregation[0].avgScore
+  ) {
     averageScore = averageScoreAggregation[0].avgScore * 100;
   }
 
