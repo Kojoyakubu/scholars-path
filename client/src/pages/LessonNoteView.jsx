@@ -35,7 +35,7 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER (Smart A4 Scaling) ---
+  // --- PDF DOWNLOAD HANDLER (Stable, Clean A4 Layout) ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
@@ -45,45 +45,50 @@ function LessonNoteView() {
       return;
     }
 
-    // Clone content for manipulation
+    // Clone content
     const clone = element.cloneNode(true);
-    document.body.appendChild(clone);
+
+    // Apply consistent, print-perfect A4 styles
     clone.style.width = '210mm';
     clone.style.minHeight = '297mm';
-    clone.style.padding = '20mm';
     clone.style.margin = '0 auto';
+    clone.style.padding = '20mm';
     clone.style.backgroundColor = '#fff';
     clone.style.fontFamily = 'Arial, sans-serif';
+    clone.style.fontSize = '10pt';
     clone.style.lineHeight = '1.5';
     clone.style.color = '#000';
-    clone.style.wordBreak = 'break-word';
+    clone.style.boxSizing = 'border-box';
 
-    // Measure height to adjust font size/margins
-    document.body.appendChild(clone);
-    const height = clone.scrollHeight;
-    document.body.removeChild(clone);
-
-    // Default A4 limits in pixels (~1123px = 297mm at 96dpi)
-    const a4Height = 1123;
-    const isLongContent = height > a4Height * 1.2; // allow some margin
-
-    // Apply scaling styles
-    clone.style.fontSize = isLongContent ? '9pt' : '10pt';
-    clone.style.padding = isLongContent ? '10mm' : '20mm';
-
-    // Fix table visuals
+    // Improve tables
     const tables = clone.querySelectorAll('table');
     tables.forEach((table) => {
       table.style.borderCollapse = 'collapse';
       table.style.width = '100%';
+      table.style.fontSize = '9.5pt';
       table.style.pageBreakInside = 'avoid';
-      table.style.fontSize = isLongContent ? '8.5pt' : '9.5pt';
     });
 
-    // Footer (only once at the end)
+    // Add borders to table cells
+    const cells = clone.querySelectorAll('th, td');
+    cells.forEach((cell) => {
+      cell.style.border = '1px solid #444';
+      cell.style.padding = '6px';
+      cell.style.verticalAlign = 'top';
+    });
+
+    // Ensure headers and dividers are consistent
+    const headings = clone.querySelectorAll('h1, h2, h3, h4');
+    headings.forEach((h) => {
+      h.style.marginTop = '8pt';
+      h.style.marginBottom = '4pt';
+      h.style.fontSize = '11pt';
+    });
+
+    // Footer (once, at the very end)
     const footer = document.createElement('div');
     footer.innerHTML = `
-      <div style="text-align:center; margin-top:15mm; font-size:9pt;">
+      <div style="text-align:center; margin-top:25mm; font-size:9pt; color:#333;">
         — End of Lesson Note —
       </div>
     `;
@@ -92,7 +97,7 @@ function LessonNoteView() {
     // PDF configuration
     const filename = 'lesson_note.pdf';
     const opt = {
-      margin: [10, 10, 15, 10],
+      margin: [10, 10, 15, 10], // top, right, bottom, left
       filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
@@ -100,7 +105,6 @@ function LessonNoteView() {
         useCORS: true,
         scrollY: 0,
         letterRendering: true,
-        dpi: 300,
       },
       jsPDF: {
         unit: 'mm',
@@ -108,10 +112,13 @@ function LessonNoteView() {
         orientation: 'portrait',
       },
       pagebreak: {
-        mode: ['avoid-all', 'css', 'legacy'],
+        mode: ['css', 'legacy'],
+        before: '.page-break',
+        after: ['#footer'],
       },
     };
 
+    // Trigger the PDF
     window.html2pdf().set(opt).from(clone).save();
   }, [currentNote]);
 
