@@ -35,7 +35,7 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER (Stable, Clean A4 Layout) ---
+  // --- PDF DOWNLOAD HANDLER (Final Polished A4 Layout) ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
@@ -45,107 +45,79 @@ function LessonNoteView() {
       return;
     }
 
-    // Clone content
+    // Clone content for clean export
     const clone = element.cloneNode(true);
-
-    // Apply consistent, print-perfect A4 styles
     clone.style.width = '210mm';
     clone.style.minHeight = '297mm';
     clone.style.margin = '0 auto';
-    clone.style.padding = '20mm';
-    clone.style.backgroundColor = '#fff';
+    clone.style.padding = '15mm 20mm';
+    clone.style.backgroundColor = '#ffffff';
     clone.style.fontFamily = 'Arial, sans-serif';
     clone.style.fontSize = '10pt';
-    clone.style.lineHeight = '1.5';
+    clone.style.lineHeight = '1.4';
     clone.style.color = '#000';
     clone.style.boxSizing = 'border-box';
+    clone.style.pageBreakInside = 'avoid';
 
-    // Improve tables
+    // Make tables consistent
     const tables = clone.querySelectorAll('table');
     tables.forEach((table) => {
       table.style.borderCollapse = 'collapse';
       table.style.width = '100%';
       table.style.fontSize = '9.5pt';
+      table.style.marginBottom = '10pt';
       table.style.pageBreakInside = 'avoid';
     });
 
-    // Add borders to table cells
     const cells = clone.querySelectorAll('th, td');
     cells.forEach((cell) => {
-      cell.style.border = '1px solid #444';
-      cell.style.padding = '6px';
+      cell.style.border = '1px solid #333';
+      cell.style.padding = '5px';
       cell.style.verticalAlign = 'top';
     });
 
-    // Ensure headers and dividers are consistent
-    const headings = clone.querySelectorAll('h1, h2, h3, h4');
-    headings.forEach((h) => {
-      h.style.marginTop = '8pt';
-      h.style.marginBottom = '4pt';
-      h.style.fontSize = '11pt';
-    });
-
-    // Footer (once, at the very end)
+    // Add spacing control before footer
     const footer = document.createElement('div');
     footer.innerHTML = `
-      <div style="text-align:center; margin-top:25mm; font-size:9pt; color:#333;">
+      <div style="text-align:center; margin-top:15mm; font-size:9pt; color:#444;">
         — End of Lesson Note —
       </div>
     `;
     clone.appendChild(footer);
 
-    // PDF configuration
+    // Create wrapper to ensure proper A4 scaling
+    const wrapper = document.createElement('div');
+    wrapper.style.width = '210mm';
+    wrapper.style.minHeight = '297mm';
+    wrapper.style.margin = 'auto';
+    wrapper.style.padding = '0';
+    wrapper.appendChild(clone);
+
+    // PDF options tuned for accuracy
     const filename = 'lesson_note.pdf';
     const opt = {
-      margin: [10, 10, 15, 10], // top, right, bottom, left
+      margin: 0,
       filename,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg', quality: 1 },
       html2canvas: {
-        scale: 2,
+        scale: 3, // high-quality scaling
         useCORS: true,
         scrollY: 0,
         letterRendering: true,
+        dpi: 300, // print clarity
       },
       jsPDF: {
         unit: 'mm',
         format: 'a4',
         orientation: 'portrait',
+        compress: true,
       },
-      pagebreak: {
-        mode: ['css', 'legacy'],
-        before: '.page-break',
-        after: ['#footer'],
-      },
+      pagebreak: { mode: ['css', 'legacy'] },
     };
 
-    // Trigger the PDF
-    window.html2pdf().set(opt).from(clone).save();
+    window.html2pdf().set(opt).from(wrapper).save();
   }, [currentNote]);
 
-  // --- WORD DOWNLOAD HANDLER ---
-  const handleDownloadWord = useCallback(() => {
-    try {
-      const element = document.getElementById('note-content-container');
-      if (!element || !currentNote) return;
-
-      const html = `
-        <!DOCTYPE html>
-        <html>
-          <head><meta charset="UTF-8" /></head>
-          <body>${element.innerHTML}</body>
-        </html>
-      `;
-      const blob = HTMLtoDOCX(html);
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'lesson_note.docx';
-      link.click();
-      URL.revokeObjectURL(link.href);
-    } catch (err) {
-      console.error('Word generation failed:', err);
-      alert('Could not generate Word document. Please try again.');
-    }
-  }, [currentNote]);
 
   if (isLoading || !currentNote) {
     return (
