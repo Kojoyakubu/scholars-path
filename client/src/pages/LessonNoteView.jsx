@@ -20,8 +20,10 @@ import {
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
 import HTMLtoDOCX from 'html-docx-js-typescript';
-import html2canvas from 'html2canvas';
+
+// --- NEW IMPORTS FOR BETTER PDF GENERATION ---
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -37,71 +39,141 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER (Multi-page) ---
+  // --- NEW & IMPROVED PDF DOWNLOAD HANDLER ---
   const handleDownloadPdf = useCallback(() => {
-    const element = document.getElementById('note-content-container');
-    if (!element || !currentNote) return;
+    if (!currentNote) return;
 
-    // Add a temporary footer for PDF
-    const footer = document.createElement('div');
-    footer.innerHTML = `
-      <div style="page-break-before: always; text-align: left; font-size: 10pt; margin-top: 10mm;">
-        <strong>Facilitator:</strong> ${currentNote.teacher?.name || '________________'} <br/>
-        <strong>Vetted By:</strong> __________________________ <br/>
-        <strong>Signature:</strong> __________________________ <br/>
-        <strong>Date:</strong> __________________________
-      </div>
-      <div style="text-align:center; margin-top:5mm; font-size:9pt; color:#333;">
-        — End of Lesson Note —
-      </div>
-    `;
-    element.appendChild(footer);
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const FONT_SIZE_NORMAL = 11;
+    const FONT_SIZE_SMALL = 9;
+    const LEFT_MARGIN = 15;
+    const LINE_HEIGHT = 1.5;
 
-    html2canvas(element, { scale: 2, useCORS: true }).then((canvas) => {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgData = canvas.toDataURL('image/png');
+    // Helper function to parse and add header text from the DOM
+    const addHeaderInfo = () => {
+        const headerElement = document.getElementById('note-header');
+        if (!headerElement) return 20; // Default start position
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+        const headerText = headerElement.innerText;
+        const lines = headerText.split('\n');
+        let yPosition = 20;
 
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
+        doc.setFontSize(FONT_SIZE_NORMAL + 4);
+        doc.setFont(undefined, 'bold');
+        doc.text('TEACHER INFORMATION', LEFT_MARGIN, yPosition);
+        yPosition += 10;
 
-      // Calculate height of one PDF page in pixels
-      const pageHeightPx = (canvasWidth / pdfWidth) * pdfHeight;
+        doc.setFontSize(FONT_SIZE_NORMAL);
+        doc.setFont(undefined, 'normal');
 
-      let position = 0;
+        lines.forEach(line => {
+            if (line.trim()) {
+                const parts = line.split(':');
+                if (parts.length > 1) {
+                    const label = parts[0].trim() + ':';
+                    const value = parts.slice(1).join(':').trim();
+                    
+                    doc.setFont(undefined, 'bold');
+                    doc.text(label, LEFT_MARGIN, yPosition);
 
-      while (position < canvasHeight) {
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvasWidth;
-        pageCanvas.height = Math.min(pageHeightPx, canvasHeight - position);
-        const ctx = pageCanvas.getContext('2d');
+                    doc.setFont(undefined, 'normal');
+                    const labelWidth = doc.getStringUnitWidth(label) * doc.getFontSize() / doc.internal.scaleFactor;
+                    
+                    // Handle multi-line values
+                    const valueLines = doc.splitTextToSize(value, doc.internal.pageSize.width - LEFT_MARGIN - labelWidth - 20);
+                    doc.text(valueLines, LEFT_MARGIN + labelWidth + 2, yPosition);
 
-        ctx.drawImage(
-          canvas,
-          0, position, canvasWidth, pageCanvas.height,
-          0, 0, canvasWidth, pageCanvas.height
-        );
+                    // Adjust yPosition based on how many lines the value took
+                    yPosition += (valueLines.length * (FONT_SIZE_NORMAL * 0.35 * LINE_HEIGHT));
+                }
+            }
+        });
+        return yPosition; // Return the Y position to continue from
+    };
 
-        const pageData = pageCanvas.toDataURL('image/png');
-        if (position > 0) pdf.addPage();
-        pdf.addImage(pageData, 'PNG', 0, 0, pdfWidth, (pageCanvas.height * pdfWidth) / canvasWidth);
+    // 1. Add Header
+    let finalY = addHeaderInfo();
+    finalY += 5; // Add some space before the table
 
-        position += pageHeightPx;
-      }
-
-      pdf.save('lesson_note.pdf');
-
-      // Remove temporary footer
-      element.removeChild(footer);
-    }).catch(err => {
-      console.error('PDF generation failed:', err);
-      alert('Failed to generate PDF. Please try again.');
+    // 2. Add Lesson Phases Table using jspdf-autotable
+    doc.autoTable({
+        html: '#lesson-phases-table',
+        startY: finalY,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [46, 125, 50], // A nice shade of green
+            textColor: 255,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        styles: {
+            fontSize: FONT_SIZE_NORMAL - 1,
+            cellPadding: 2.5,
+            lineColor: [200, 200, 200], // Lighter grid lines
+            lineWidth: 0.1,
+        },
+        didDrawPage: (data) => {
+            // Update finalY in case the table spans multiple pages
+            finalY = data.cursor.y;
+        }
     });
+
+    // 3. Add Footer Content (Remarks, Evaluation, etc.)
+    const footerElement = document.getElementById('note-footer');
+    if (footerElement) {
+        const footerText = footerElement.innerText;
+        doc.setFontSize(FONT_SIZE_NORMAL);
+        doc.setFont(undefined, 'normal');
+        
+        // Check if there is enough space on the current page
+        const splitText = doc.splitTextToSize(footerText, doc.internal.pageSize.width - (LEFT_MARGIN * 2));
+        const textHeight = doc.getTextDimensions(splitText).h;
+        if (finalY + textHeight + 20 > doc.internal.pageSize.height) {
+            doc.addPage();
+            finalY = 20; // Reset Y position on new page
+        } else {
+           finalY += 10; // Space after table 
+        }
+
+        doc.text(splitText, LEFT_MARGIN, finalY);
+        finalY += textHeight;
+    }
+
+    // 4. Add Vetting/Signature section
+    // Check for space before adding signature lines
+    if (finalY + 40 > doc.internal.pageSize.height) {
+        doc.addPage();
+        finalY = 20;
+    } else {
+       finalY += 20; // More space before signature lines 
+    }
+
+    doc.setFontSize(FONT_SIZE_SMALL);
+    doc.text(`Facilitator: ${currentNote.teacher?.name || '________________'}`, LEFT_MARGIN, finalY);
+    finalY += 10;
+    doc.text('Vetted By: __________________________', LEFT_MARGIN, finalY);
+    finalY += 10;
+    doc.text('Signature: __________________________', LEFT_MARGIN, finalY);
+    finalY += 10;
+    doc.text('Date: __________________________', LEFT_MARGIN, finalY);
+
+    // 5. Add a final "End of Lesson Note" centered at the bottom of the last page
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(FONT_SIZE_SMALL - 1);
+        doc.setTextColor(150); // Gray color
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 15, { align: 'center' });
+    }
+     doc.setPage(pageCount); // Go back to the last page
+     doc.text('— End of Lesson Note —', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+
+    // 6. Save the PDF
+    doc.save('lesson_note.pdf');
+
   }, [currentNote]);
 
-  // --- WORD DOWNLOAD HANDLER ---
+  // --- WORD DOWNLOAD HANDLER (No changes needed here) ---
   const handleDownloadWord = useCallback(() => {
     try {
       const element = document.getElementById('note-content-container');
@@ -180,8 +252,8 @@ function LessonNoteView() {
 
           {/* Content Display */}
           <div id="note-content-container">
-            {/* Header Section */}
-            <Box sx={{ mb: 3 }}>
+            {/* Header Section - ADDED ID */}
+            <Box sx={{ mb: 3 }} id="note-header">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
@@ -204,7 +276,7 @@ function LessonNoteView() {
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* Lesson Phases Table */}
+            {/* Lesson Phases Table - ADDED ID TO TABLE */}
             <Box sx={{ overflowX: 'auto', borderRadius: 2, mb: 3 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -213,6 +285,7 @@ function LessonNoteView() {
                   table: (props) => (
                     <Box
                       component="table"
+                      id="lesson-phases-table" // ID ADDED HERE
                       sx={{
                         width: '100%',
                         borderCollapse: 'collapse',
@@ -247,8 +320,8 @@ function LessonNoteView() {
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* Footer Section */}
-            <Box sx={{ mt: 2 }}>
+            {/* Footer Section - ADDED ID */}
+            <Box sx={{ mt: 2 }} id="note-footer">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
