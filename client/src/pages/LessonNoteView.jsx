@@ -21,7 +21,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
 import HTMLtoDOCX from 'html-docx-js-typescript';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -37,14 +37,14 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER ---
+  // --- PDF DOWNLOAD ---
   const handleDownloadPdf = useCallback(() => {
     const headerElement = document.getElementById('note-header');
     const tableElement = document.getElementById('lesson-phases-table');
     const footerElement = document.getElementById('note-footer');
 
     if (!currentNote || !headerElement) {
-      alert('Error: Cannot generate PDF because the lesson note content is not yet visible. Please wait and try again.');
+      alert('Cannot generate PDF: lesson note content is not yet visible.');
       return;
     }
 
@@ -53,44 +53,65 @@ function LessonNoteView() {
       const LEFT_MARGIN = 15;
       let finalY = 20;
 
-      // Add header
-      doc.autoTable({
-        html: headerElement,
-        startY: finalY,
-        theme: 'plain',
-        styles: { fontSize: 11, cellPadding: 1 },
-        didDrawPage: (data) => { finalY = data.cursor.y; }
-      });
-      finalY += 5;
+      // Header
+      if (headerElement) {
+        autoTable(doc, {
+          html: headerElement,
+          startY: finalY,
+          theme: 'plain',
+          styles: { fontSize: 11, cellPadding: 1 },
+        });
+        finalY = doc.lastAutoTable.finalY || finalY + 5;
+      }
 
-      // Add table if exists
+      // Table
       if (tableElement) {
-        doc.autoTable({
+        autoTable(doc, {
           html: tableElement,
           startY: finalY,
           theme: 'grid',
-          headStyles: { fillColor: [46, 125, 50], textColor: 255, fontStyle: 'bold', halign: 'center' },
-          styles: { fontSize: 10, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
-          didDrawPage: (data) => { finalY = data.cursor.y; }
+          headStyles: {
+            fillColor: [46, 125, 50],
+            textColor: 255,
+            fontStyle: 'bold',
+            halign: 'center',
+          },
+          styles: {
+            fontSize: 10,
+            cellPadding: 2.5,
+            lineColor: [200, 200, 200],
+            lineWidth: 0.1,
+          },
         });
-        finalY += 5;
+        finalY = doc.lastAutoTable.finalY || finalY + 5;
       }
 
-      // Add footer content
+      // Footer content
       if (footerElement) {
         const footerText = footerElement.innerText;
-        const splitText = doc.splitTextToSize(footerText, doc.internal.pageSize.width - (LEFT_MARGIN * 2));
+        const splitText = doc.splitTextToSize(
+          footerText,
+          doc.internal.pageSize.width - LEFT_MARGIN * 2
+        );
         const textHeight = doc.getTextDimensions(splitText).h;
-        if (finalY + textHeight + 20 > doc.internal.pageSize.height) { doc.addPage(); finalY = 20; } 
-        else { finalY += 10; }
+        if (finalY + textHeight + 20 > doc.internal.pageSize.height) {
+          doc.addPage();
+          finalY = 20;
+        } else {
+          finalY += 10;
+        }
         doc.setFontSize(11);
         doc.text(splitText, LEFT_MARGIN, finalY);
         finalY += textHeight;
       }
 
-      // Add signature lines
-      if (finalY + 40 > doc.internal.pageSize.height) { doc.addPage(); finalY = 20; } 
-      else { finalY += 20; }
+      // Signature lines
+      if (finalY + 40 > doc.internal.pageSize.height) {
+        doc.addPage();
+        finalY = 20;
+      } else {
+        finalY += 20;
+      }
       doc.setFontSize(9);
       doc.text(`Facilitator: ${currentNote.teacher?.name || '________________'}`, LEFT_MARGIN, finalY);
       finalY += 10;
@@ -106,18 +127,22 @@ function LessonNoteView() {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        doc.text(
+          `Page ${i} of ${pageCount}`,
+          doc.internal.pageSize.width / 2,
+          doc.internal.pageSize.height - 10,
+          { align: 'center' }
+        );
       }
 
       doc.save('lesson_note.pdf');
-
     } catch (error) {
-      console.error("Failed to generate PDF:", error);
-      alert("An error occurred while building the PDF. Please check the console for details.");
+      console.error('Failed to generate PDF:', error);
+      alert('An error occurred while generating the PDF. Check console for details.');
     }
   }, [currentNote]);
 
-  // --- WORD DOWNLOAD HANDLER ---
+  // --- WORD DOWNLOAD ---
   const handleDownloadWord = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element) return;
@@ -142,11 +167,9 @@ function LessonNoteView() {
   const content = currentNote.content;
   const lines = content.split('\n');
 
-  // Find the table header line (starts with | and includes "phase")
+  // Detect table header (line starting with "|" and containing "phase")
   const tableStartIndex = lines.findIndex(line => line.trim().startsWith('|') && line.toLowerCase().includes('phase'));
-
   if (tableStartIndex === -1) {
-    // No table detected
     return (
       <Container sx={{ mt: 5 }}>
         <Alert severity="warning">
@@ -156,7 +179,7 @@ function LessonNoteView() {
     );
   }
 
-  // Find the last line of the table
+  // Find last line of the table
   let tableEndIndex = tableStartIndex;
   for (let i = tableStartIndex + 1; i < lines.length; i++) {
     if (lines[i].trim().startsWith('|')) tableEndIndex = i;
@@ -171,6 +194,7 @@ function LessonNoteView() {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
         <Paper elevation={3} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
+          {/* Download buttons */}
           <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6" gutterBottom>Download Options</Typography>
             <Stack direction="row" spacing={2}>
@@ -180,6 +204,7 @@ function LessonNoteView() {
           </Box>
 
           <div id="note-content-container">
+            {/* Header */}
             <Box id="note-header">
               <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                 {header}
@@ -188,6 +213,7 @@ function LessonNoteView() {
 
             <Divider sx={{ my: 3 }} />
 
+            {/* Table */}
             <Box id="note-table-container" sx={{ overflowX: 'auto' }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -214,6 +240,7 @@ function LessonNoteView() {
 
             <Divider sx={{ my: 3 }} />
 
+            {/* Footer */}
             <Box id="note-footer">
               <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                 {footerContent}
