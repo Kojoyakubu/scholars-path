@@ -39,15 +39,15 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // ✅ Same structure, just added the new fields into the prompt
+  // ✅ Universal Ghanaian teacher prompt (any subject & class)
   const prompt = `
 You are a Ghanaian master teacher and curriculum designer.  
-Your task is to create a **well-formatted Markdown lesson note** for the JHS Computing curriculum.
+Your task is to create a **well-formatted Markdown lesson note** suitable for any subject and class level in the Ghanaian Basic School Curriculum.
 
 ⚠️ IMPORTANT FORMATTING RULES
 - Use **pure Markdown** (no HTML tags).
 - Keep the **Lesson Phases** strictly inside a **3-column table**.
-- Use **<br>** for line breaks *inside table cells only* (this is valid for Markdown tables).
+- Use **<br>** for line breaks *inside table cells only* (valid for Markdown tables).
 - Never move "Evaluation" or "Assignment" outside the table.
 - Each phase must be a single cell separated by vertical bars \`|\`.
 
@@ -64,14 +64,14 @@ Your task is to create a **well-formatted Markdown lesson note** for the JHS Com
 **Week Ending:** [AI to determine Friday date]  
 **Day/Date:** ${dayDate}  
 **Term:** ${term}  
-**Class Size:** ${classSize || 45}  
+**Class Size:** ${classSize || '45'}  
 **Time/Duration:** ${duration}  
 **Content Standard (Code):** ${contentStandardCode || '[AI to generate]'}  
 **Indicator (Code):** ${indicatorCode || '[AI to generate]'}  
 **Performance Indicator:** ${performanceIndicator}  
 **Core Competencies:** [AI to generate, e.g., Communication, Collaboration, Critical Thinking]  
-**Teaching & Learning Materials:** [AI to generate, e.g., Computer, projector, charts, pictures of devices]  
-**Reference:** [AI to generate, e.g., NaCCA Computing Curriculum for JHS 1]
+**Teaching & Learning Materials:** [AI to generate, e.g., relevant subject materials]  
+**Reference:** [AI to generate, e.g., NaCCA Curriculum or approved Ghana Education Service materials]
 
 ---
 
@@ -93,7 +93,7 @@ Your task is to create a **well-formatted Markdown lesson note** for the JHS Com
 ### AI Output Rules
 1. Use only Markdown syntax and \`<br>\` for line breaks in table cells.  
 2. Ensure all content stays inside the 3-column table.  
-3. Keep the Ghanaian JHS lesson tone — clear, direct, and participatory.  
+3. Keep the Ghanaian classroom tone — clear, engaging, and participatory.  
 `;
 
   const aiContent = await aiService.generateContent(prompt);
@@ -103,9 +103,28 @@ Your task is to create a **well-formatted Markdown lesson note** for the JHS Com
     school: req.user.school,
     subStrand: subStrandId,
     content: aiContent,
+    metadata: {
+      week,
+      contentStandardCode,
+      indicatorCode,
+      classSize,
+      term,
+      duration,
+      performanceIndicator,
+      dayDate,
+      className,
+    },
   });
 
   res.status(201).json(lessonNote);
+});
+
+/**
+ * @desc    Get all lesson notes for the logged-in teacher
+ */
+const getMyLessonNotes = asyncHandler(async (req, res) => {
+  const notes = await LessonNote.find({ teacher: req.user._id }).sort({ createdAt: -1 });
+  res.json(notes);
 });
 
 /**
@@ -153,7 +172,7 @@ const generateLearnerNote = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Lesson note not found');
   }
-  const prompt = `Based on the following teacher's lesson note, create a simplified and engaging Markdown version suitable for JHS learners. Keep it clear and friendly:
+  const prompt = `Based on the following teacher's lesson note, create a simplified and engaging Markdown version suitable for Ghanaian Basic School learners. Keep it clear and friendly:
 
 ${lessonNote.content}`;
   const learnerContent = await aiService.generateContent(prompt);
