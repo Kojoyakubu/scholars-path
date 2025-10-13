@@ -23,6 +23,9 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     performanceIndicator,
     dayDate,
     class: className,
+    week,
+    contentStandardCode,
+    indicatorCodes,
   } = req.body;
 
   const subStrand = await SubStrand.findById(subStrandId).populate({
@@ -35,17 +38,18 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // ✅ Refined prompt that locks table structure
+  // 🧠 Updated AI Prompt
   const prompt = `
-You are a Ghanaian master teacher and curriculum designer.  
-Your task is to create a **well-formatted Markdown lesson note** for the JHS Computing curriculum.
+You are a Ghanaian master teacher and curriculum designer.
+Create a **well-formatted Markdown lesson note** for the JHS Computing curriculum using the information provided by the teacher.
 
-⚠️ IMPORTANT FORMATTING RULES
-- Use **pure Markdown** (no HTML tags).
-- Keep the **Lesson Phases** strictly inside a **3-column table**.
-- Use **<br>** for line breaks *inside table cells only* (this is valid for Markdown tables).
-- Never move "Evaluation" or "Assignment" outside the table.
-- Each phase must be a single cell separated by vertical bars \`|\`.
+**Do not change the teacher's provided data** (Week, Codes, etc).  
+Your task is to generate only:
+- A clear and measurable **performance indicator** (if not provided).
+- Lesson phases content (Starter, Main, Plenary).
+- Core Competencies.
+- Teaching & Learning Materials.
+- Reference.
 
 ---
 
@@ -56,26 +60,26 @@ Your task is to create a **well-formatted Markdown lesson note** for the JHS Com
 **Subject:** ${subStrand.strand.subject.name}  
 **Strand:** ${subStrand.strand.name}  
 **Sub-Strand:** ${subStrand.name}  
-**Week:** [AI to determine week number]  
-**Week Ending:** [AI to determine Friday date]  
+**Week:** ${week}  
+**Week Ending:** [AI to determine based on ${dayDate}]  
 **Day/Date:** ${dayDate}  
 **Term:** ${term}  
 **Class Size:** 45  
 **Time/Duration:** ${duration}  
-**Content Standard (Code):** [AI to generate]  
-**Indicator (Code):** [AI to generate]  
-**Performance Indicator:** ${performanceIndicator}  
-**Core Competencies:** [AI to generate, e.g., Communication, Collaboration, Critical Thinking]  
-**Teaching & Learning Materials:** [AI to generate, e.g., Computer, projector, charts, pictures of devices]  
-**Reference:** [AI to generate, e.g., NaCCA Computing Curriculum for JHS 1]
+**Content Standard (Code):** ${contentStandardCode}  
+**Indicator (Code):** ${indicatorCodes}  
+**Performance Indicator:** ${performanceIndicator || '[AI to refine a clear one based on topic]'}  
+**Core Competencies:** [AI to generate — e.g., Critical Thinking, Communication, Digital Literacy]  
+**Teaching & Learning Materials:** [AI to list relevant materials]  
+**Reference:** [AI to state a relevant source like NaCCA Computing Curriculum for JHS 1]
 
 ---
 
-### **Lesson Phases**
+### LESSON PHASES
 
 | **PHASE 1: Starter (Preparing the Brain for Learning)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
 |----------------------------------------------------------|--------------------------------------------------|----------------------------------|
-| The facilitator begins the lesson with a quick recap of previous knowledge.<br><br>Learners identify familiar examples related to the topic through brainstorming or pictures.<br><br>The teacher introduces today’s lesson using simple demonstrations or real-life analogies. | **Activity 1:** Introduce the new concept through discussion and demonstration.<br><br>**Activity 2:** Learners perform short tasks or group work to explore the concept.<br><br>**Activity 3:** The class discusses key differences and examples, writing short notes in groups.<br><br>**Evaluation:**<br>1. [Short question 1]<br>2. [Short question 2]<br>3. [Short question 3]<br><br>**Assignment:**<br>Write two sentences explaining how [the topic] applies in your daily life. | The facilitator leads a recap of the key points discussed.<br><br>Learners share what they have learned and answer reflective questions.<br><br>The teacher reinforces key ideas and gives motivational feedback. |
+| [AI to design engaging starter activities] | [AI to write detailed main lesson with tasks, group work, evaluation, and assignment] | [AI to write short reflective activities and feedback] |
 
 ---
 
@@ -83,13 +87,6 @@ Your task is to create a **well-formatted Markdown lesson note** for the JHS Com
 **Vetted By:** ....................................................  
 **Signature:** ....................................................  
 **Date:** ....................................................  
-
----
-
-### AI Output Rules
-1. Use only Markdown syntax and \`<br>\` for line breaks in table cells.  
-2. Ensure all content stays inside the 3-column table.  
-3. Keep the Ghanaian JHS lesson tone — clear, direct, and participatory.  
 `;
 
   const aiContent = await aiService.generateContent(prompt);
@@ -103,6 +100,7 @@ Your task is to create a **well-formatted Markdown lesson note** for the JHS Com
 
   res.status(201).json(lessonNote);
 });
+
 
 
 /**

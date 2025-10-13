@@ -11,11 +11,13 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
     duration: '1hr 10 mins / 2 Periods',
     performanceIndicator: '',
     dayDate: '',
-    class: '', // Optional field
+    class: '',
+    week: '',
+    contentStandardCode: '',
+    indicatorCodes: '',
   });
 
   useEffect(() => {
-    // Reset form data when the modal is opened, but keep defaults
     if (open) {
       setFormData({
         school: '',
@@ -24,6 +26,9 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
         performanceIndicator: '',
         dayDate: '',
         class: '',
+        week: '',
+        contentStandardCode: '',
+        indicatorCodes: '',
       });
     }
   }, [open]);
@@ -47,6 +52,7 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Topic (from selection):</Typography>
               <Typography variant="body1">{subStrandName || 'N/A'}</Typography>
             </Box>
+
             <TextField
               name="school"
               label="School Name"
@@ -55,9 +61,23 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
               required
             />
             <TextField
+              name="class"
+              label="Class Name (Optional)"
+              value={formData.class}
+              onChange={handleChange}
+            />
+            <TextField
               name="term"
               label="Term"
               value={formData.term}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="week"
+              label="Week"
+              placeholder="e.g., Week 3"
+              value={formData.week}
               onChange={handleChange}
               required
             />
@@ -77,21 +97,30 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
               required
             />
             <TextField
+              name="contentStandardCode"
+              label="Content Standard (Code)"
+              placeholder="e.g., B7.1.1.1"
+              value={formData.contentStandardCode}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="indicatorCodes"
+              label="Indicator Code(s)"
+              placeholder="e.g., B7.1.1.1.1"
+              value={formData.indicatorCodes}
+              onChange={handleChange}
+              required
+            />
+            <TextField
               name="performanceIndicator"
               label="Performance Indicator"
               value={formData.performanceIndicator}
-              onChange={handleChange} // ✅ CORRECTED THIS SECTION
+              onChange={handleChange}
               multiline
               rows={3}
               required
-              helperText="Describe what learners should be able to do by the end of the lesson."
-            />
-             <TextField
-              name="class"
-              label="Class Name (Optional)"
-              value={formData.class}
-              onChange={handleChange}
-              helperText="Leave blank to use the class from your topic selection."
+              helperText="Describe what learners should achieve by the end of the lesson."
             />
           </Stack>
         </DialogContent>
