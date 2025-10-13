@@ -39,95 +39,102 @@ function LessonNoteView() {
 
   const handleDownloadPdf = useCallback(() => {
     try {
-      const headerElement = document.getElementById('note-header');
-      const tableElement = document.getElementById('lesson-phases-table');
-      const footerElement = document.getElementById('note-footer');
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const marginX = 15;
+        let finalY = 20;
 
-      if (!headerElement || !tableElement) {
-        alert('Cannot generate PDF — please wait for content to load.');
-        return;
-      }
+        // --- Teacher Information Section ---
+        const teacherInfo = [
+            { label: 'School:', value: currentNote.school?.name || 'Aperade Presby Basic School' },
+            { label: 'Subject:', value: currentNote.subject || 'Computing' },
+            { label: 'Strand:', value: currentNote.strand || 'Introduction to Computing' },
+            { label: 'Sub-Strand:', value: currentNote.subStrand || 'Components of Computers & Computer Systems' },
+            { label: 'Week:', value: currentNote.week || '7' },
+            { label: 'Week Ending:', value: currentNote.weekEnding || 'Friday, 17th October, 2025' },
+            { label: 'Day/Date:', value: currentNote.day || 'Monday, 13th October, 2025' },
+            { label: 'Term:', value: currentNote.term || 'One' },
+            { label: 'Class:', value: currentNote.class || 'JHS 1' },
+            { label: 'Class Size:', value: currentNote.classSize || '45' },
+            { label: 'Time/Duration:', value: currentNote.duration || '1hr 10 mins / 2 Periods' },
+            { label: 'Content Standard (Code):', value: currentNote.contentStandard || 'B1.1.1.1: Demonstrate understanding of the basic components of a computer system.' },
+            { label: 'Indicator (Code):', value: currentNote.indicator || 'B1.1.1.1.1: Identify and describe the difference between hardware and software components of a computer.' },
+            { label: 'Performance Indicator:', value: currentNote.performanceIndicator || 'Learners will be able to identify and classify at least three examples of computer hardware and three examples of computer software with 80% accuracy.' },
+            { label: 'Core Competencies:', value: currentNote.coreCompetencies || 'Communication & Collaboration, Critical Thinking & Problem Solving, Digital Literacy' },
+            { label: 'Teaching & Learning Materials:', value: currentNote.tAndLMaterials || 'A functional computer (desktop or laptop), projector (if available), charts/posters showing different computer parts (monitor, keyboard, mouse, CPU, printer) and software icons (Microsoft Word, Google Chrome, Paint), pictures of hardware and software components, whiteboard/marker.' },
+            { label: 'Reference:', value: currentNote.reference || 'NaCCA Computing Curriculum for JHS 1' }
+        ];
 
-      const doc = new jsPDF('p', 'mm', 'a4');
-      let finalY = 15;
-      const marginX = 14;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, finalY, { align: 'center' });
+        finalY += 8;
 
-      // Add header (convert to text lines)
-      const headerText = headerElement.innerText || '';
-      const headerLines = doc.splitTextToSize(headerText, 180);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text(headerLines, marginX, finalY);
-      finalY += headerLines.length * 7;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
 
-      // Add table
-      autoTable(doc, {
-        html: tableElement,
-        startY: finalY,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [46, 125, 50],
-          textColor: 255,
-          fontStyle: 'bold',
-          halign: 'center',
-        },
-        styles: {
-          fontSize: 9,
-          cellPadding: 2.5,
-          lineColor: [200, 200, 200],
-          lineWidth: 0.1,
-        },
-        didDrawPage: (data) => {
-          finalY = data.cursor.y;
-        },
-      });
+        teacherInfo.forEach(info => {
+            const splitValue = doc.splitTextToSize(`${info.label} ${info.value}`, doc.internal.pageSize.width - (marginX * 2));
+            doc.setFont('helvetica', 'bold');
+            doc.text(info.label, marginX, finalY);
+            doc.setFont('helvetica', 'normal');
+            const labelWidth = doc.getTextWidth(info.label);
+            doc.text(info.value, marginX + labelWidth + 1, finalY);
+            finalY += (splitValue.length > 1 ? (splitValue.length * 5) + 2 : 6);
+        });
 
-      finalY = doc.lastAutoTable?.finalY || finalY + 10;
+        finalY += 5;
 
-      // Footer
-      if (footerElement) {
-        const footerText = footerElement.innerText;
-        const splitText = doc.splitTextToSize(footerText, 180);
-        doc.setFontSize(11);
-        if (finalY + splitText.length * 7 > 280) {
-          doc.addPage();
-          finalY = 20;
+        // --- Lesson Phases Table ---
+        const tableElement = document.getElementById('lesson-phases-table');
+        if (tableElement) {
+            autoTable(doc, {
+                html: tableElement,
+                startY: finalY,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [240, 240, 240],
+                    textColor: [0, 0, 0],
+                    fontStyle: 'bold',
+                    halign: 'center',
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0],
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 2,
+                    lineColor: [0, 0, 0],
+                    lineWidth: 0.1,
+                },
+                didDrawPage: (data) => {
+                    finalY = data.cursor.y;
+                },
+            });
+            finalY = doc.lastAutoTable.finalY;
         }
-        doc.text(splitText, marginX, finalY + 10);
-        finalY += splitText.length * 6;
-      }
 
-      // Signature lines
-      if (finalY + 40 > 280) {
-        doc.addPage();
-        finalY = 20;
-      }
-      doc.setFontSize(10);
-      doc.text(`Facilitator: ${currentNote.teacher?.name || '________________'}`, marginX, finalY + 10);
-      doc.text('Vetted By: __________________________', marginX, finalY + 20);
-      doc.text('Signature: __________________________', marginX, finalY + 30);
-      doc.text('Date: __________________________', marginX, finalY + 40);
+        finalY += 15;
 
-      // Page numbers
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Page ${i} of ${pageCount}`,
-          doc.internal.pageSize.width / 2,
-          doc.internal.pageSize.height - 10,
-          { align: 'center' }
-        );
-      }
+        // --- Signature Section ---
+        if (finalY + 30 > doc.internal.pageSize.height) {
+            doc.addPage();
+            finalY = 20;
+        }
 
-      doc.save('lesson_note.pdf');
+        doc.setFontSize(10);
+        doc.text('Facilitator: ................................................................', marginX, finalY);
+        doc.text('Vetted By: ................................................................', doc.internal.pageSize.width / 2, finalY);
+
+        finalY += 10;
+        doc.text('Signature: .................................................................', marginX, finalY);
+        doc.text('Date: .......................................................................', doc.internal.pageSize.width / 2, finalY);
+
+        doc.save('lesson_note.pdf');
+
     } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('An error occurred while generating the PDF. Check the console for details.');
+        console.error('PDF generation error:', error);
+        alert('An error occurred while generating the PDF. Check the console for details.');
     }
-  }, [currentNote]);
+}, [currentNote]);
 
   const handleDownloadWord = useCallback(() => {
     const element = document.getElementById('note-content-container');
