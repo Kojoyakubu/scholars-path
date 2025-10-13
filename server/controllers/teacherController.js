@@ -1,5 +1,5 @@
 const asyncHandler = require("express-async-handler");
-const LessonNote = require("../models/LessonNote");
+const LessonNote = require("../models/lessonNoteModel");
 const { generateLessonNoteMarkdown } = require("../utils/aiLessonNote");
 const { generateLessonNotePDF } = require("../utils/pdfGenerator");
 
