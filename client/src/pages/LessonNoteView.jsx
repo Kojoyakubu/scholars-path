@@ -20,6 +20,8 @@ import {
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
 import HTMLtoDOCX from 'html-docx-js-typescript';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -35,42 +37,12 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
-  // --- PDF DOWNLOAD HANDLER (Refined Final Layout) ---
+  // --- PDF DOWNLOAD HANDLER (Multi-page) ---
   const handleDownloadPdf = useCallback(() => {
     const element = document.getElementById('note-content-container');
     if (!element || !currentNote) return;
 
-    if (!window.html2pdf) {
-      alert('PDF library not loaded. Please refresh and try again.');
-      return;
-    }
-
-    // Clone and style content for printing
-    const clone = element.cloneNode(true);
-
-    clone.style.width = '210mm';
-    clone.style.minHeight = '297mm';
-    clone.style.margin = 'auto';
-    clone.style.padding = '20mm';
-    clone.style.backgroundColor = '#fff';
-    clone.style.fontFamily = 'Arial, sans-serif';
-    clone.style.fontSize = '11pt';
-    clone.style.color = '#000';
-    clone.style.lineHeight = '1.6';
-
-    // Tables formatting
-    clone.querySelectorAll('table').forEach((table) => {
-      table.style.width = '100%';
-      table.style.borderCollapse = 'collapse';
-      table.style.pageBreakInside = 'avoid';
-    });
-    clone.querySelectorAll('th, td').forEach((cell) => {
-      cell.style.border = '1px solid #555';
-      cell.style.padding = '8px';
-      cell.style.verticalAlign = 'top';
-    });
-
-    // ✅ Ensure only ONE footer at the end
+    // Add a temporary footer for PDF
     const footer = document.createElement('div');
     footer.innerHTML = `
       <div style="page-break-before: always; text-align: left; font-size: 10pt; margin-top: 10mm;">
@@ -83,25 +55,50 @@ function LessonNoteView() {
         — End of Lesson Note —
       </div>
     `;
+    element.appendChild(footer);
 
-    // Remove any old footer already present
-    const oldFooters = clone.querySelectorAll('div:has(strong)');
-    oldFooters.forEach(f => f.remove());
+    html2canvas(element, { scale: 2, useCORS: true }).then((canvas) => {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
 
-    // Append a single final footer
-    clone.appendChild(footer);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // PDF configuration
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: 'lesson_note.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-    };
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
 
-    window.html2pdf().set(opt).from(clone).save();
+      // Calculate height of one PDF page in pixels
+      const pageHeightPx = (canvasWidth / pdfWidth) * pdfHeight;
+
+      let position = 0;
+
+      while (position < canvasHeight) {
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvasWidth;
+        pageCanvas.height = Math.min(pageHeightPx, canvasHeight - position);
+        const ctx = pageCanvas.getContext('2d');
+
+        ctx.drawImage(
+          canvas,
+          0, position, canvasWidth, pageCanvas.height,
+          0, 0, canvasWidth, pageCanvas.height
+        );
+
+        const pageData = pageCanvas.toDataURL('image/png');
+        if (position > 0) pdf.addPage();
+        pdf.addImage(pageData, 'PNG', 0, 0, pdfWidth, (pageCanvas.height * pdfWidth) / canvasWidth);
+
+        position += pageHeightPx;
+      }
+
+      pdf.save('lesson_note.pdf');
+
+      // Remove temporary footer
+      element.removeChild(footer);
+    }).catch(err => {
+      console.error('PDF generation failed:', err);
+      alert('Failed to generate PDF. Please try again.');
+    });
   }, [currentNote]);
 
   // --- WORD DOWNLOAD HANDLER ---
@@ -151,7 +148,7 @@ function LessonNoteView() {
   const tableEnd = content.lastIndexOf('|');
   const header = content.substring(0, tableStart).trim();
   const table = content.substring(tableStart, tableEnd + 1).trim();
-  const footer = content.substring(tableEnd + 1).trim();
+  const footerContent = content.substring(tableEnd + 1).trim();
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -192,21 +189,12 @@ function LessonNoteView() {
                   p: (props) => (
                     <Typography
                       variant="body1"
-                      sx={{
-                        mb: 0.8,
-                        whiteSpace: 'pre-line',
-                        fontSize: '0.95rem',
-                        lineHeight: 1.5,
-                      }}
+                      sx={{ mb: 0.8, whiteSpace: 'pre-line', fontSize: '0.95rem', lineHeight: 1.5 }}
                       {...props}
                     />
                   ),
                   strong: (props) => (
-                    <Box
-                      component="strong"
-                      sx={{ fontWeight: 600, color: 'text.primary' }}
-                      {...props}
-                    />
+                    <Box component="strong" sx={{ fontWeight: 600, color: 'text.primary' }} {...props} />
                   ),
                 }}
               >
@@ -217,13 +205,7 @@ function LessonNoteView() {
             <Divider sx={{ mb: 3 }} />
 
             {/* Lesson Phases Table */}
-            <Box
-              sx={{
-                overflowX: 'auto',
-                borderRadius: 2,
-                mb: 3,
-              }}
-            >
+            <Box sx={{ overflowX: 'auto', borderRadius: 2, mb: 3 }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
@@ -274,18 +256,13 @@ function LessonNoteView() {
                   p: (props) => (
                     <Typography
                       variant="body1"
-                      sx={{
-                        mb: 1,
-                        whiteSpace: 'pre-line',
-                        fontSize: '0.95rem',
-                        lineHeight: 1.5,
-                      }}
+                      sx={{ mb: 1, whiteSpace: 'pre-line', fontSize: '0.95rem', lineHeight: 1.5 }}
                       {...props}
                     />
                   ),
                 }}
               >
-                {footer}
+                {footerContent}
               </ReactMarkdown>
             </Box>
           </div>
