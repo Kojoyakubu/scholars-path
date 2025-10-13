@@ -43,7 +43,6 @@ function LessonNoteView() {
 
     if (!currentNote || !headerElement || !tableElement) {
       alert('Error: Cannot generate PDF because the lesson note content is not yet visible. Please wait a moment and try again.');
-      console.error('PDF Generation Aborted: Missing required elements or data.');
       return;
     }
 
@@ -52,7 +51,6 @@ function LessonNoteView() {
       let finalY = 20;
       const LEFT_MARGIN = 15;
 
-      // Use autoTable for a more structured header
       doc.autoTable({
         html: headerElement,
         startY: finalY,
@@ -136,25 +134,37 @@ function LessonNoteView() {
     return <Container sx={{ mt: 5 }}><Alert severity="error">{message}</Alert></Container>;
   }
 
-  // --- Robust Content Splitting Logic ---
+  // --- Correct and Robust Content Splitting Logic ---
   const content = currentNote.content;
-  // Make the search case-insensitive to prevent parsing errors
-  const tableStart = content.toUpperCase().indexOf('| PHASE');
   let header, table, footerContent;
 
-  if (tableStart === -1) {
+  // Search for the table marker in a case-insensitive way.
+  const tableStartIndex = content.toLowerCase().indexOf('| phase');
+
+  if (tableStartIndex === -1) {
+    // If the marker isn't found, display the error.
     return (
       <Container sx={{ mt: 5 }}>
-        <Alert severity="warning">Could not parse the lesson note. The required table format was not found.</Alert>
+        <Alert severity="warning">Could not parse the lesson note. The required table marker (e.g., "| PHASE") was not found.</Alert>
       </Container>
     );
   } else {
-    // Use the found index from the original content string
-    const actualTableStart = content.toLowerCase().indexOf('| phase', tableStart);
-    const tableEnd = content.lastIndexOf('|');
-    header = content.substring(0, actualTableStart).trim();
-    table = content.substring(actualTableStart, tableEnd + 1).trim();
-    footerContent = content.substring(tableEnd + 1).trim();
+    // The marker was found, now find the end of the table.
+    const tableEndIndex = content.lastIndexOf('|');
+
+    // Perform a sanity check to make sure the end is after the start
+    if (tableEndIndex <= tableStartIndex) {
+         return (
+            <Container sx={{ mt: 5 }}>
+                <Alert severity="warning">Could not parse the lesson note. The table format appears to be incomplete or malformed.</Alert>
+            </Container>
+        );
+    }
+
+    // Use the found indices to split the original content string
+    header = content.substring(0, tableStartIndex).trim();
+    table = content.substring(tableStartIndex, tableEndIndex + 1).trim();
+    footerContent = content.substring(tableEndIndex + 1).trim();
   }
 
   return (
