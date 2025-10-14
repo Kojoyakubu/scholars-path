@@ -44,7 +44,7 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     ? indicatorCodes.join(', ')
     : indicatorCodes;
 
-  // 🧠 Refined prompt with your exact preferences
+  // 🧠 Refined AI prompt based on your preferences
   const prompt = `
 You are a Ghanaian master teacher and curriculum expert.
 Generate a **well-structured Markdown lesson note** following the exact layout below.
@@ -112,9 +112,64 @@ Guidelines:
   res.status(201).json(lessonNote);
 });
 
+/**
+ * @desc    Get all lesson notes for the logged-in teacher
+ * @route   GET /api/teacher/lesson-notes
+ * @access  Private
+ */
+const getMyLessonNotes = asyncHandler(async (req, res) => {
+  const notes = await LessonNote.find({ teacher: req.user._id }).sort({
+    createdAt: -1,
+  });
+  res.json(notes);
+});
+
+/**
+ * @desc    Get a single lesson note by ID
+ * @route   GET /api/teacher/lesson-notes/:id
+ * @access  Private
+ */
+const getLessonNoteById = asyncHandler(async (req, res) => {
+  const note = await LessonNote.findById(req.params.id);
+  if (!note) {
+    res.status(404);
+    throw new Error('Lesson note not found');
+  }
+  if (
+    note.teacher.toString() !== req.user._id.toString() &&
+    req.user.role !== 'admin'
+  ) {
+    res.status(403);
+    throw new Error('User not authorized to view this note');
+  }
+  res.json(note);
+});
+
+/**
+ * @desc    Delete a lesson note
+ * @route   DELETE /api/teacher/lesson-notes/:id
+ * @access  Private
+ */
+const deleteLessonNote = asyncHandler(async (req, res) => {
+  const note = await LessonNote.findById(req.params.id);
+  if (!note) {
+    res.status(404);
+    throw new Error('Lesson note not found');
+  }
+  if (note.teacher.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('User not authorized to delete this note');
+  }
+  await note.deleteOne();
+  res
+    .status(200)
+    .json({ id: req.params.id, message: 'Lesson note deleted successfully' });
+});
 
 /**
  * @desc    Generate a learner's version of a lesson note
+ * @route   POST /api/teacher/generate-learner-note
+ * @access  Private
  */
 const generateLearnerNote = asyncHandler(async (req, res) => {
   const { lessonNoteId } = req.body;
@@ -145,6 +200,8 @@ ${lessonNote.content}
 
 /**
  * @desc    Create a new quiz
+ * @route   POST /api/teacher/create-quiz
+ * @access  Private
  */
 const createQuiz = asyncHandler(async (req, res) => {
   const { title, subjectId } = req.body;
@@ -154,11 +211,15 @@ const createQuiz = asyncHandler(async (req, res) => {
     teacher: req.user._id,
     school: req.user.school,
   });
-  res.status(201).json({ quiz, message: `Quiz '${title}' created successfully.` });
+  res
+    .status(201)
+    .json({ quiz, message: `Quiz '${title}' created successfully.` });
 });
 
 /**
  * @desc    Upload a resource file
+ * @route   POST /api/teacher/upload-resource
+ * @access  Private
  */
 const uploadResource = asyncHandler(async (req, res) => {
   if (!req.file) {
@@ -182,6 +243,8 @@ const uploadResource = asyncHandler(async (req, res) => {
 
 /**
  * @desc    Get teacher analytics dashboard
+ * @route   GET /api/teacher/analytics
+ * @access  Private
  */
 const getTeacherAnalytics = asyncHandler(async (req, res) => {
   const teacherId = req.user._id;
@@ -194,30 +257,34 @@ const getTeacherAnalytics = asyncHandler(async (req, res) => {
 
   const quizIds = quizzes.map((q) => q._id);
 
-  const [totalNoteViews, totalQuizAttempts, averageScoreAggregation] = await Promise.all([
-    NoteView.countDocuments({ teacher: teacherId, school: schoolId }),
-    QuizAttempt.countDocuments({ quiz: { $in: quizIds }, school: schoolId }),
-    quizIds.length > 0
-      ? QuizAttempt.aggregate([
-          {
-            $match: {
-              quiz: { $in: quizIds },
-              school: schoolId,
-              totalQuestions: { $gt: 0 },
+  const [totalNoteViews, totalQuizAttempts, averageScoreAggregation] =
+    await Promise.all([
+      NoteView.countDocuments({ teacher: teacherId, school: schoolId }),
+      QuizAttempt.countDocuments({ quiz: { $in: quizIds }, school: schoolId }),
+      quizIds.length > 0
+        ? QuizAttempt.aggregate([
+            {
+              $match: {
+                quiz: { $in: quizIds },
+                school: schoolId,
+                totalQuestions: { $gt: 0 },
+              },
             },
-          },
-          {
-            $group: {
-              _id: null,
-              avgScore: { $avg: { $divide: ['$score', '$totalQuestions'] } },
+            {
+              $group: {
+                _id: null,
+                avgScore: { $avg: { $divide: ['$score', '$totalQuestions'] } },
+              },
             },
-          },
-        ])
-      : Promise.resolve([]),
-  ]);
+          ])
+        : Promise.resolve([]),
+    ]);
 
   let averageScore = 0;
-  if (averageScoreAggregation.length > 0 && averageScoreAggregation[0].avgScore) {
+  if (
+    averageScoreAggregation.length > 0 &&
+    averageScoreAggregation[0].avgScore
+  ) {
     averageScore = averageScoreAggregation[0].avgScore * 100;
   }
 
