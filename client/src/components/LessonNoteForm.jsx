@@ -22,7 +22,7 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
     classSize: '',
     week: '',
     contentStandardCode: '',
-    indicatorCodes: '',
+    indicatorCodes: '', // This remains a string for the TextField input
     reference: '',
   });
 
@@ -49,7 +49,18 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // 💡 FIX: Convert the comma-separated string of codes into an array
+    const indicatorCodesArray = formData.indicatorCodes
+      .split(',')
+      .map(code => code.trim()) // Trim whitespace from each code (e.g., " code " -> "code")
+      .filter(code => code.length > 0); // Remove any empty strings resulting from trailing commas or double commas
+
+    // Pass the updated data to the onSubmit handler, replacing the string with the array
+    onSubmit({ 
+      ...formData,
+      indicatorCodes: indicatorCodesArray, 
+    });
   };
 
   return (
