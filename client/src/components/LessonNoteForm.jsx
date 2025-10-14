@@ -1,6 +1,14 @@
 import {
-  Dialog, DialogActions, DialogContent, DialogTitle, Button,
-  TextField, CircularProgress, Stack, Box, Typography
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Button,
+  TextField,
+  CircularProgress,
+  Stack,
+  Box,
+  Typography,
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 
@@ -9,13 +17,13 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
     school: '',
     term: 'One',
     duration: '1hr 10 mins / 2 Periods',
-    performanceIndicator: '',
     dayDate: '',
     class: '',
+    classSize: '',
     week: '',
     contentStandardCode: '',
-    indicatorCode: '',
-    classSize: '',
+    indicatorCodes: '',
+    reference: '',
   });
 
   useEffect(() => {
@@ -24,13 +32,13 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
         school: '',
         term: 'One',
         duration: '1hr 10 mins / 2 Periods',
-        performanceIndicator: '',
         dayDate: '',
         class: '',
+        classSize: '',
         week: '',
         contentStandardCode: '',
-        indicatorCode: '',
-        classSize: '',
+        indicatorCodes: '',
+        reference: '',
       });
     }
   }, [open]);
@@ -57,18 +65,80 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
               <Typography variant="body1">{subStrandName || 'N/A'}</Typography>
             </Box>
 
-            <TextField name="school" label="School Name" value={formData.school} onChange={handleChange} required />
-            <TextField name="term" label="Term" value={formData.term} onChange={handleChange} required />
-            <TextField name="dayDate" label="Day / Date" placeholder="e.g., Monday, October 20, 2025" value={formData.dayDate} onChange={handleChange} required />
-            <TextField name="duration" label="Time / Duration" value={formData.duration} onChange={handleChange} required />
-            <TextField name="performanceIndicator" label="Performance Indicator" value={formData.performanceIndicator} onChange={handleChange} multiline rows={3} required helperText="Describe what learners should be able to do by the end of the lesson." />
-            <TextField name="class" label="Class Name (Optional)" value={formData.class} onChange={handleChange} helperText="Leave blank to use the class from your topic selection." />
-            
-            {/* ✅ NEW FIELDS */}
-            <TextField name="week" label="Week Number" value={formData.week} onChange={handleChange} required />
-            <TextField name="contentStandardCode" label="Content Standard Code" value={formData.contentStandardCode} onChange={handleChange} required />
-            <TextField name="indicatorCode" label="Indicator Code(s)" value={formData.indicatorCode} onChange={handleChange} required />
-            <TextField name="classSize" label="Class Size" value={formData.classSize} onChange={handleChange} required />
+            <TextField
+              name="school"
+              label="School Name"
+              value={formData.school}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="term"
+              label="Term"
+              value={formData.term}
+              onChange={handleChange}
+              required
+              helperText="e.g., One, Two, or Three"
+            />
+            <TextField
+              name="dayDate"
+              label="Day / Date"
+              placeholder="e.g., Monday, October 20, 2025"
+              value={formData.dayDate}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="duration"
+              label="Time / Duration"
+              value={formData.duration}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="class"
+              label="Class Name (Optional)"
+              value={formData.class}
+              onChange={handleChange}
+              helperText="Leave blank to use the class from your topic selection."
+            />
+            <TextField
+              name="classSize"
+              label="Class Size"
+              value={formData.classSize}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="week"
+              label="Week Number"
+              value={formData.week}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="contentStandardCode"
+              label="Content Standard Code"
+              value={formData.contentStandardCode}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              name="indicatorCodes"
+              label="Indicator Code(s)"
+              value={formData.indicatorCodes}
+              onChange={handleChange}
+              required
+              helperText="Enter one or more indicator codes separated by commas."
+            />
+            <TextField
+              name="reference"
+              label="Reference"
+              value={formData.reference}
+              onChange={handleChange}
+              required
+              helperText="E.g., NaCCA Computing Curriculum for JHS 1"
+            />
           </Stack>
         </DialogContent>
 

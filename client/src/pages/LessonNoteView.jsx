@@ -51,27 +51,19 @@ function LessonNoteView() {
         doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, finalY, { align: 'center' });
         finalY += 8;
 
-        // Using the static data as requested, since it's provided during generation
-        const headerData = [
-            ['School:', 'Aperade Presby Basic School'],
-            ['Class:', 'JHS 1'],
-            ['Subject:', 'Computing'],
-            ['Strand:', 'Introduction to Computing'],
-            ['Sub-Strand:', 'Components of Computers & Computer Systems'],
-            ['Week:', '7'],
-            ['Week Ending:', 'Friday, 17th October, 2025'],
-            ['Day/Date:', 'Monday, 13th October, 2025'],
-            ['Term:', 'One'],
-            ['Class Size:', '45'],
-            ['Time/Duration:', '1hr 10 mins / 2 Periods'],
-            ['Content Standard (Code):', 'B1.1.1.1: Demonstrate understanding of the basic components of a computer system.'],
-            ['Indicator (Code):', 'B1.1.1.1.1: Identify and describe the difference between hardware and software components of a computer.'],
-            ['Performance Indicator:', 'Learners will be able to identify and classify at least three examples of computer hardware and three examples of computer software with 80% accuracy.'],
-            ['Core Competencies:', 'Communication & Collaboration, Critical Thinking & Problem Solving, Digital Literacy'],
-            ['Teaching & Learning Materials:', 'A functional computer (desktop or laptop), projector (if available), charts/posters showing different computer parts... and software icons...'],
-            ['Reference:', 'NaCCA Computing Curriculum for JHS 1'],
-        ];
+        const headerData = extractHeaderData(currentNote.content);
 
+        // Define extractHeaderData helper:
+        function extractHeaderData(markdown) {
+          const lines = markdown.split('\n').filter(line => line.includes(':'));
+          return lines
+            .slice(0, 17) // limit to teacher info
+            .map(line => {
+              const [label, value] = line.split(':');
+              return [label.trim(), (value || '').trim()];
+            });
+        }
+        
         autoTable(doc, {
             startY: finalY,
             body: headerData,

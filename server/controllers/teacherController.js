@@ -24,6 +24,9 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     dayDate,
     class: className,
     classSize,
+    week,
+    contentStandardCode,
+    reference,
   } = req.body;
 
   const subStrand = await SubStrand.findById(subStrandId).populate({
@@ -36,17 +39,21 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // ✅ Allow multiple indicator codes and combine for AI
+  // 🧩 Normalize indicator codes
   const codes = Array.isArray(indicatorCodes)
     ? indicatorCodes.join(', ')
     : indicatorCodes;
 
-  // ✅ Updated and generalized AI prompt for all Ghanaian teachers
+  // 🧠 Refined prompt with your exact preferences
   const prompt = `
-You are a Ghanaian master teacher and curriculum designer.
-Your task is to create a **well-formatted Markdown lesson note** suitable for any subject and class level in the Ghanaian Basic School Curriculum.
+You are a Ghanaian master teacher and curriculum expert.
+Generate a **well-structured Markdown lesson note** following the exact layout below.
 
-Follow the exact structure and layout below — do not alter section names or order.
+Guidelines:
+- Use the provided details faithfully.
+- Generate a clear **Performance Indicator** based on the indicator code(s).
+- Determine **Week Ending (Friday date)** based on the given "Day/Date".
+- Keep the tone Ghanaian and classroom-appropriate.
 
 ---
 
@@ -57,26 +64,26 @@ Follow the exact structure and layout below — do not alter section names or or
 **Subject:** ${subStrand.strand.subject.name}  
 **Strand:** ${subStrand.strand.name}  
 **Sub-Strand:** ${subStrand.name}  
-**Week:** [AI to determine week number]  
-**Week Ending:** [AI to determine Friday date]  
+**Week:** ${week}  
+**Week Ending:** [AI to calculate Friday date based on ${dayDate}]  
 **Day/Date:** ${dayDate}  
 **Term:** ${term}  
 **Class Size:** ${classSize || 45}  
 **Time/Duration:** ${duration}  
-**Content Standard (Code):** [AI to generate based on sub-strand]  
+**Content Standard (Code):** ${contentStandardCode}  
 **Indicator Code(s):** ${codes}  
-**Performance Indicator:** Generate a concise, specific statement describing what learners should be able to do, based on the provided indicator code(s).  
-**Core Competencies:** List the most relevant competencies (e.g., Communication, Critical Thinking, Collaboration, Digital Literacy).  
-**Teaching & Learning Materials:** Suggest relevant and realistic items based on the subject and sub-strand.  
-**Reference:** State the appropriate Ghanaian curriculum or textbook reference (e.g., NaCCA Curriculum for ${subStrand.strand.subject.name}).
+**Performance Indicator:** [AI to generate based on the indicator code(s)]  
+**Core Competencies:** Select relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).  
+**Teaching & Learning Materials:** Suggest realistic materials relevant to the subject.  
+**Reference:** ${reference}
 
 ---
 
-### LESSON PHASES (Maintain this exact 3-column structure)
+### LESSON PHASES (Maintain this 3-column format)
 
 | **PHASE 1: Starter (Preparing the Brain for Learning)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
 |----------------------------------------------------------|--------------------------------------------------|----------------------------------|
-| The facilitator begins the lesson with a recap of previous knowledge.<br><br>Learners identify familiar examples related to the topic through brainstorming or short activities.<br><br>The teacher introduces today’s lesson using relatable examples or real-life analogies. | **Activity 1:** Introduce the new concept through teacher–learner discussion and demonstration.<br><br>**Activity 2:** Learners perform guided or group tasks to explore the concept.<br><br>**Activity 3:** Discuss observations and summarize key learning points.<br><br>**Evaluation:**<br>1. [Short question 1]<br>2. [Short question 2]<br>3. [Short question 3]<br><br>**Assignment:**<br>Write two sentences explaining how [the topic] applies in your daily life. | The facilitator leads a recap of the key points.<br><br>Learners share what they have learned and answer reflective questions.<br><br>The teacher reinforces the main ideas and encourages further study. |
+| Begin with recap or warm-up linked to prior knowledge.<br><br>Engage learners through questions or short tasks.<br><br>Introduce today’s lesson clearly. | **Activity 1:** Introduce the concept via discussion/demonstration.<br><br>**Activity 2:** Learners explore and practice through guided/group tasks.<br><br>**Activity 3:** Discuss findings and summarize key learning points.<br><br>**Evaluation:**<br>1. [Short question 1]<br>2. [Short question 2]<br>3. [Short question 3]<br><br>**Assignment:** Give a short reflective task linked to real-life application. | Recap the key ideas.<br><br>Allow learners to share what they learned.<br><br>Encourage application and further practice. |
 
 ---
 
@@ -87,10 +94,10 @@ Follow the exact structure and layout below — do not alter section names or or
 
 ---
 
-**AI Output Rules:**  
-1. Use only Markdown syntax (and <br> for line breaks inside tables).  
-2. Preserve the exact section headings and formatting.  
-3. Keep tone Ghanaian — participatory, engaging, and curriculum-aligned.
+**Rules for Output:**
+- Format only in Markdown (no code blocks).
+- Do not omit or rename any heading.
+- Replace all [AI to ...] placeholders with actual content.
 `;
 
   const aiContent = await aiService.generateContent(prompt);
@@ -105,46 +112,6 @@ Follow the exact structure and layout below — do not alter section names or or
   res.status(201).json(lessonNote);
 });
 
-/**
- * @desc    Get all lesson notes for the logged-in teacher
- */
-const getMyLessonNotes = asyncHandler(async (req, res) => {
-  const notes = await LessonNote.find({ teacher: req.user._id }).sort({ createdAt: -1 });
-  res.json(notes);
-});
-
-/**
- * @desc    Get a single lesson note by ID
- */
-const getLessonNoteById = asyncHandler(async (req, res) => {
-  const note = await LessonNote.findById(req.params.id);
-  if (!note) {
-    res.status(404);
-    throw new Error('Lesson note not found');
-  }
-  if (note.teacher.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-    res.status(403);
-    throw new Error('User not authorized to view this note');
-  }
-  res.json(note);
-});
-
-/**
- * @desc    Delete a lesson note
- */
-const deleteLessonNote = asyncHandler(async (req, res) => {
-  const note = await LessonNote.findById(req.params.id);
-  if (!note) {
-    res.status(404);
-    throw new Error('Lesson note not found');
-  }
-  if (note.teacher.toString() !== req.user._id.toString()) {
-    res.status(403);
-    throw new Error('User not authorized to delete this note');
-  }
-  await note.deleteOne();
-  res.status(200).json({ id: req.params.id, message: 'Lesson note deleted successfully' });
-});
 
 /**
  * @desc    Generate a learner's version of a lesson note
