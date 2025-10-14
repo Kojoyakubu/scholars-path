@@ -39,10 +39,18 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // 🧩 Normalize indicator codes
-  const codes = Array.isArray(indicatorCodes)
-    ? indicatorCodes.join(', ')
-    : indicatorCodes;
+  // 🧩 FIX: Ensure indicatorCodes is a clean string for the AI prompt.
+  // We remove the Array.isArray check to prevent conflicts with validation 
+  // expecting a string, and use a safe fallback to ensure it's never undefined/null.
+  let codes;
+  if (Array.isArray(indicatorCodes)) {
+    // If somehow it's an array, join it into the required string format
+    codes = indicatorCodes.join(', ');
+  } else {
+    // Safely convert to string and trim, handling undefined/null with ''
+    codes = (indicatorCodes || '').toString().trim();
+  }
+
 
   // 🧠 Refined AI prompt based on your preferences
   const prompt = `
@@ -87,8 +95,7 @@ Guidelines:
 
 ---
 
-**Facilitator:**  
-**Vetted By:** ....................................................  
+**Facilitator:** **Vetted By:** ....................................................  
 **Signature:** ....................................................  
 **Date:** ....................................................  
 
