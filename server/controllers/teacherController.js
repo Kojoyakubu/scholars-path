@@ -15,6 +15,9 @@ const aiService = require('../services/aiService');
  * @access  Private (Teacher)
  */
 const generateLessonNote = asyncHandler(async (req, res) => {
+
+  console.log('Received generate-note request with body:', req.body);
+
   const {
     subStrandId,
     school,
