@@ -116,30 +116,6 @@ function TeacherDashboard() {
   const handleCloseModal = () => setIsModalOpen(false);
 
   const handleGenerateNote = useCallback((formData) => {
-
-    if (!selections.subStrand) {
-        setSnackbar({ 
-            open: true, 
-            message: 'Please select a Sub-Strand before generating a note.', 
-            severity: 'error' 
-        });
-        handleCloseModal();
-        return; 
-    }
-    
-    // 💡 Check form data for mandatory fields (optional but robust)
-    const requiredFields = ['school', 'term', 'dayDate', 'duration', 'classSize', 'week', 'contentStandardCode', 'indicatorCodes', 'reference'];
-    const missingField = requiredFields.find(field => !formData[field]);
-
-    if (missingField) {
-        setSnackbar({ 
-            open: true, 
-            message: `Missing required field: ${missingField}. Please fill out all fields.`, 
-            severity: 'error' 
-        });
-        return; 
-    }
-
     dispatch(generateLessonNote({ ...formData, subStrandId: selections.subStrand }))
       .unwrap()
       .then(() => handleCloseModal())
