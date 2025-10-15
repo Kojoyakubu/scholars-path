@@ -12,7 +12,8 @@ import {
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 
-function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
+// 💡 Fix 1: Add subStrandId to the props
+function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading, subStrandId }) {
   const [formData, setFormData] = useState({
     school: '',
     term: 'One',
@@ -49,7 +50,8 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    // 💡 Fix 1: Merge the subStrandId with the form data before submission
+    onSubmit({ ...formData, subStrandId });
   };
 
   return (
@@ -64,6 +66,8 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
               </Typography>
               <Typography variant="body1">{subStrandName || 'N/A'}</Typography>
             </Box>
+
+            {/* Note: subStrandId is not visible here but is passed to onSubmit */}
 
             <TextField
               name="school"
@@ -154,4 +158,3 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading }) {
 }
 
 export default LessonNoteForm;
-       
