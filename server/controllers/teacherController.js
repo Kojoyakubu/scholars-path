@@ -32,6 +32,12 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     reference,
   } = req.body;
 
+  if (!subStrandId || !mongoose.Types.ObjectId.isValid(subStrandId)) {
+    res.status(400);
+    // This explicit error is easier to diagnose than a Mongoose internal failure
+    throw new Error('Invalid or missing Sub-strand ID in request.'); 
+  }
+
   const subStrand = await SubStrand.findById(subStrandId).populate({
     path: 'strand',
     populate: { path: 'subject', populate: { path: 'class' } },
