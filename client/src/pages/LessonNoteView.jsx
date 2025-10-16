@@ -1,5 +1,3 @@
-// frontend/src/views/LessonNoteView.jsx
-
 import { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
@@ -21,8 +19,9 @@ import {
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
-
-// 💡 NOTICE: jsPDF, jspdf-autotable, and HTMLtoDOCX are no longer imported.
+import HTMLtoDOCX from 'html-docx-js-typescript';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -32,25 +31,112 @@ function LessonNoteView() {
   );
 
   useEffect(() => {
-    if (noteId) {
-      dispatch(getLessonNoteById(noteId));
-    }
+    dispatch(getLessonNoteById(noteId));
     return () => {
       dispatch(resetCurrentNote());
     };
   }, [dispatch, noteId]);
 
-  /**
-   * ✨ IMPROVEMENT: Simplified download handler that calls the backend.
-   * This approach is more robust and scalable.
-   */
-  const handleDownload = useCallback((format) => {
-    // This assumes your API authentication (like a JWT in a cookie) is handled
-    // automatically by the browser. If you use an "Authorization" header, you'll
-    // need to use fetch/axios with responseType 'blob' to download the file.
-    const downloadUrl = `/api/teacher/notes/${noteId}/download/${format}`;
-    window.open(downloadUrl, '_blank');
-  }, [noteId]);
+  const handleDownloadPdf = useCallback(() => {
+    if (!currentNote) return;
+
+    try {
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const marginX = 15;
+        let finalY = 15;
+
+        // --- 1. Header Section (as a two-column borderless table) ---
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, finalY, { align: 'center' });
+        finalY += 8;
+
+        const headerData = extractHeaderData(currentNote.content);
+
+        // Define extractHeaderData helper:
+        function extractHeaderData(markdown) {
+          const lines = markdown.split('\n').filter(line => line.includes(':'));
+          return lines
+            .slice(0, 17) // limit to teacher info
+            .map(line => {
+              const [label, value] = line.split(':');
+              return [label.trim(), (value || '').trim()];
+            });
+        }
+        
+        autoTable(doc, {
+            startY: finalY,
+            body: headerData,
+            theme: 'plain',
+            styles: {
+                fontSize: 9,
+                cellPadding: { top: 0, right: 2, bottom: 1, left: 0 },
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold', cellWidth: 60 },
+                1: { fontStyle: 'normal' },
+            },
+        });
+        finalY = doc.lastAutoTable.finalY;
+
+        // --- 2. Lesson Phases Table ---
+        const tableElement = document.getElementById('lesson-phases-table');
+        if (tableElement) {
+            autoTable(doc, {
+                html: tableElement,
+                startY: finalY + 5,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [240, 240, 240], textColor: [0, 0, 0],
+                    fontStyle: 'bold', halign: 'center', lineWidth: 0.1, lineColor: [100, 100, 100],
+                },
+                styles: {
+                    fontSize: 9, cellPadding: 2, lineColor: [100, 100, 100],
+                    lineWidth: 0.1, valign: 'top',
+                },
+                columnStyles: {
+                    0: { cellWidth: '25%' },
+                    1: { cellWidth: '50%' },
+                    2: { cellWidth: '25%' },
+                },
+            });
+            finalY = doc.lastAutoTable.finalY;
+        }
+
+        // --- 3. Signature Section ---
+        finalY += 15;
+        if (finalY + 20 > doc.internal.pageSize.height) {
+            doc.addPage();
+            finalY = 20;
+        }
+        
+        const line = '.........................................................';
+        doc.setFontSize(10);
+        doc.text(`Facilitator: ${line}`, marginX, finalY);
+        doc.text(`Vetted By: ${line}`, doc.internal.pageSize.width / 2 + 5, finalY);
+        finalY += 12;
+        doc.text(`Signature: ${line}`, marginX, finalY);
+        doc.text(`Date: ${line}`, doc.internal.pageSize.width / 2 + 5, finalY);
+
+        doc.save('lesson_note_final.pdf');
+
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        alert('An error occurred while generating the PDF. Check the console for details.');
+    }
+  }, [currentNote]); // Retained dependency for robustness with note content
+
+  const handleDownloadWord = useCallback(() => {
+    const element = document.getElementById('note-content-container');
+    if (!element) return;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${element.innerHTML}</body></html>`;
+    const blob = HTMLtoDOCX(html);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'lesson_note.docx';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }, []);
 
   if (isLoading || !currentNote) {
     return (
@@ -68,7 +154,7 @@ function LessonNoteView() {
     );
   }
 
-  // The logic to split content into header, table, and footer remains useful for display purposes.
+  // Split content into header, table, footer
   const content = currentNote.content || '';
   const lines = content.split('\n');
   const tableStartIndex = lines.findIndex(
@@ -103,7 +189,7 @@ function LessonNoteView() {
               <Button
                 variant="contained"
                 startIcon={<PictureAsPdfIcon />}
-                onClick={() => handleDownload('pdf')} // ✨ CLEANER
+                onClick={handleDownloadPdf}
               >
                 Download as PDF
               </Button>
@@ -111,30 +197,31 @@ function LessonNoteView() {
                 variant="contained"
                 color="secondary"
                 startIcon={<DescriptionIcon />}
-                // Update this once the backend supports DOCX
-                onClick={() => alert('DOCX generation is not yet available.')}
-                // onClick={() => handleDownload('docx')}
+                onClick={handleDownloadWord}
               >
                 Download as Word
               </Button>
             </Stack>
           </Box>
 
-          {/* Display logic remains the same. The component now only focuses on displaying data. */}
           <div id="note-content-container">
             <Box id="note-header">
-              <ReactMarkdown children={header} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} />
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {header}
+              </ReactMarkdown>
             </Box>
+
             <Divider sx={{ my: 3 }} />
+
             <Box id="note-table-container" sx={{ overflowX: 'auto' }}>
               <ReactMarkdown
-                children={table}
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
                 components={{
                   table: (props) => (
                     <Box
                       component="table"
+                      id="lesson-phases-table"
                       sx={{
                         width: '100%',
                         borderCollapse: 'collapse',
@@ -145,11 +232,17 @@ function LessonNoteView() {
                     />
                   ),
                 }}
-              />
+              >
+                {table}
+              </ReactMarkdown>
             </Box>
+
             <Divider sx={{ my: 3 }} />
+
             <Box id="note-footer">
-              <ReactMarkdown children={footer} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} />
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {footer}
+              </ReactMarkdown>
             </Box>
           </div>
         </Paper>
