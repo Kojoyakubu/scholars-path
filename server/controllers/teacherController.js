@@ -143,7 +143,6 @@ module.exports = {
   getLessonNoteById,
   deleteLessonNote,
   downloadLessonNote, // ✨ EXPORT THE NEW CONTROLLER
-  generateLearnerNote,
   createQuiz,
   uploadResource,
   getTeacherAnalytics
