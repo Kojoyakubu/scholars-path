@@ -1,22 +1,17 @@
-// /server/services/aiService.js
-
-/**
- * AI Service for generating lesson notes and learner-friendly summaries
- * using Google's Gemini API.
- */
+// /server/services/aiService.js (Final Version)
 
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 
 // --- Initialization ---
 if (!process.env.GEMINI_API_KEY) {
-  throw new Error('❌ GEMINI_API_KEY is missing in environment variables.');
+  throw new Error('GEMINI_API_KEY is not set in environment variables.');
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // --- Model Configuration ---
 const modelConfig = {
-  model: 'gemini-2.5-pro', // Use the correct, efficient Gemini model
+  model: 'gemini-1.5-flash',
   safetySettings: [
     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -33,15 +28,11 @@ const model = genAI.getGenerativeModel(modelConfig);
  * @returns {Promise<string>} - Generated text output.
  */
 const generateContent = async (prompt) => {
-  if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Prompt must be a non-empty string.');
-  }
-
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
 
-    const text = response?.text?.();
+    const text = response?.text();
     if (!text) {
       console.warn('⚠️ Gemini API returned no text or content was blocked.');
       throw new Error('The AI failed to generate a response. Please try rephrasing or simplifying your input.');
@@ -76,43 +67,37 @@ const generateGhanaianLessonNote = async (details = {}) => {
     dayDate = '[Day/Date]',
   } = details;
 
-  const codes = Array.isArray(indicatorCodes)
-    ? indicatorCodes.join(', ')
-    : indicatorCodes || '[Indicator Code]';
+  const codes = Array.isArray(indicatorCodes) ? indicatorCodes.join(', ') : indicatorCodes || '[Indicator Code]';
 
-  const prompt = `
-You are a Ghanaian master teacher and curriculum expert.
-
-Generate a **professionally formatted Markdown lesson note** following this exact structure and tone.
+  const prompt = `You are a Ghanaian master teacher and curriculum expert. Generate a professionally formatted Markdown lesson note following this exact structure and tone.
 
 Follow these rules:
 - Use the details provided below faithfully.
-- Generate a realistic **Performance Indicator** from the indicator code(s).
-- Derive **Week Ending (Friday date)** from the given "Day/Date".
-- Use a Ghanaian classroom tone and simple, clear phrasing.
-- Do not include placeholders like [AI to ...]; replace them with real content.
-- Ensure correct use of Markdown formatting.
+- Generate a realistic Performance Indicator from the indicator code(s).
+- Derive Week Ending (Friday date) from the given "Day/Date".
+- Replace all placeholders like [AI to ...] with real content.
+- **CRITICAL RULE: Do not add any introductory sentences or preambles. Start the response directly with the '### TEACHER INFORMATION' heading.**
 
 ---
 
 ### TEACHER INFORMATION
 
-**School:** ${school}  
-**Class:** ${className}  
-**Subject:** ${subjectName}  
-**Strand:** ${strandName}  
-**Sub-Strand:** ${subStrandName}  
-**Week:** ${week}  
-**Week Ending:** [AI to compute Friday date based on ${dayDate}]  
-**Day/Date:** ${dayDate}  
-**Term:** ${term}  
-**Class Size:** ${classSize}  
-**Time/Duration:** ${duration}  
-**Content Standard (Code):** ${contentStandardCode}  
-**Indicator Code(s):** ${codes}  
-**Performance Indicator:** [AI to generate from indicator code(s)]  
-**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).  
-**Teaching & Learning Materials:** Suggest realistic and accessible materials.  
+**School:** ${school}
+**Class:** ${className}
+**Subject:** ${subjectName}
+**Strand:** ${strandName}
+**Sub-Strand:** ${subStrandName}
+**Week:** ${week}
+**Week Ending:** [AI to compute Friday date based on ${dayDate}]
+**Day/Date:** ${dayDate}
+**Term:** ${term}
+**Class Size:** ${classSize}
+**Time/Duration:** ${duration}
+**Content Standard (Code):** ${contentStandardCode}
+**Indicator Code(s):** ${codes}
+**Performance Indicator:** [AI to generate from indicator code(s)]
+**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).
+**Teaching & Learning Materials:** Suggest realistic and accessible materials.
 **Reference:** ${reference}
 
 ---
@@ -125,13 +110,12 @@ Follow these rules:
 
 ---
 
-**Facilitator:**  
-**Vetted By:** ....................................................  
-**Signature:** ....................................................  
+**Facilitator:**
+**Vetted By:** ....................................................
+**Signature:** ....................................................
 **Date:** ....................................................
 
 ---
-
 `;
 
   return generateContent(prompt);
@@ -143,19 +127,14 @@ Follow these rules:
  * @returns {Promise<string>} - Simplified learner version.
  */
 const generateLearnerFriendlyNote = async (teacherContent) => {
-  if (!teacherContent || typeof teacherContent !== 'string') {
-    throw new Error('Teacher content must be a non-empty string.');
-  }
-
   const prompt = `
-Transform the following teacher's lesson note into a **learner-friendly summary**.
+Transform the following teacher's lesson note into a learner-friendly summary.
 
 Guidelines:
 - Use simple Ghanaian English suitable for Basic school learners.
-- Write short, clear sentences.
-- Use bullet points and friendly tone.
-- Highlight only key learning points and definitions.
-- Keep it concise but engaging.
+- Use bullet points and a friendly tone.
+- Highlight only key learning points.
+- **CRITICAL RULE: Do not add any introductory text. Start directly with the first heading of the learner's note.**
 
 **Teacher's Lesson Note:**
 ${teacherContent}
