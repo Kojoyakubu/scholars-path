@@ -1,10 +1,8 @@
-// server/services/aiService.js
+// /server/services/aiService.js
 
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 
 // --- Initialization ---
-
-// Fail fast if the API key is missing
 if (!process.env.GEMINI_API_KEY) {
   throw new Error('GEMINI_API_KEY is not set in environment variables.');
 }
@@ -13,22 +11,18 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Configuration for the generative model
 const modelConfig = {
-  // Use a stable, recent model. Default to 'gemini-1.5-flash-latest' if not specified.
-  model: process.env.GEMINI_MODEL_NAME || 'gemini-2.5-pro',
-  // Configuration to reduce the chances of the AI blocking legitimate educational content.
-  // Adjust these settings based on observed API behavior.
+  // Use the corrected model name for Gemini
+  model: 'gemini-2.5-pro',
+  // Relax safety settings to prevent legitimate educational content from being blocked
   safetySettings: [
-    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
   ],
 };
 
 const model = genAI.getGenerativeModel(modelConfig);
-
-
-// --- Core Generation Function ---
 
 /**
  * A robust wrapper for the Gemini API call.
@@ -41,62 +35,75 @@ const generateContent = async (prompt) => {
     const response = await result.response;
 
     // Check if the response was blocked by safety settings or returned no text
-    if (!response || !response.text) {
+    if (!response || !response.text()) {
       console.warn('Gemini API response was empty or blocked.', response);
-      throw new Error('The AI failed to generate a response. This may be due to safety filters.');
+      throw new Error('The AI failed to generate a response, likely due to safety filters blocking the content. Please try rephrasing your input.');
     }
 
     return response.text();
   } catch (error) {
-    console.error('Error calling Gemini API:', error);
-    // Re-throw a user-friendly error to be caught by the controller's error handler
-    throw new Error('An error occurred while generating AI content.');
+    console.error('Error calling Gemini API:', error.message);
+    throw new Error(error.message || 'An unknown error occurred while generating AI content.');
   }
 };
 
-
-// --- Specific Use-Case Functions ---
-
 /**
- * Generates a well-structured Ghanaian lesson note.
- * @param {object} details - An object containing all necessary details for the lesson note.
- * @returns {Promise<string>} The generated markdown content for the lesson note.
+ * Generates a well-structured Ghanaian lesson note using your specific prompt format.
  */
 const generateGhanaianLessonNote = async (details) => {
-  // Normalize indicator codes from array to string if necessary
-  const indicatorCodes = Array.isArray(details.indicatorCodes)
+  // Normalize the indicator codes from an array to a string
+  const codes = Array.isArray(details.indicatorCodes)
     ? details.indicatorCodes.join(', ')
     : details.indicatorCodes;
 
-  // This prompt is now the single source of truth for lesson note generation.
-  const prompt = `
-You are an expert Ghanaian teacher and curriculum developer. Generate a complete and well-structured lesson note in Markdown format based on the details provided.
+  // The entire set of instructions and the template is a single prompt for Gemini.
+  const prompt = `You are a Ghanaian master teacher and curriculum expert.
+Generate a **well-structured Markdown lesson note** following the exact layout below.
 
-**Lesson Details:**
-- School: ${details.school}
-- Class: ${details.className}
-- Subject: ${details.subjectName}
-- Strand: ${details.strandName}
-- Sub-Strand: ${details.subStrandName}
-- Week: ${details.week}
-- Day/Date: ${details.dayDate}
-- Term: ${details.term}
-- Class Size: ${details.classSize || 45}
-- Duration: ${details.duration}
-- Content Standard Code: ${details.contentStandardCode}
-- Indicator Code(s): ${indicatorCodes}
-- Reference Material: ${details.reference}
-
-**Instructions:**
-1.  Based on the "Day/Date", calculate and fill in the "Week Ending" date (which should be the Friday of that week).
-2.  Based on the "Indicator Code(s)", write a clear, concise "Performance Indicator".
-3.  Suggest relevant "Core Competencies" (e.g., Critical Thinking, Digital Literacy).
-4.  Suggest realistic "Teaching & Learning Materials" (TLMs).
-5.  Fill out all three phases of the lesson plan (Starter, Main, Plenary) with practical, engaging activities suitable for a Ghanaian classroom. The Main phase must include at least two learner activities and a short evaluation with 2-3 questions.
-6.  The final output must be only the Markdown content, strictly following the official lesson note structure. Do not include any extra explanations.
+Guidelines:
+- Use the provided details faithfully.
+- Generate a clear **Performance Indicator** based on the indicator code(s).
+- Determine **Week Ending (Friday date)** based on the given "Day/Date".
+- Keep the tone Ghanaian and classroom-appropriate.
+- Replace all placeholders like [AI to ...] with actual, relevant content.
 
 ---
-[BEGIN LESSON NOTE]
+
+### TEACHER INFORMATION
+
+**School:** ${details.school}
+**Class:** ${details.className}
+**Subject:** ${details.subjectName}
+**Strand:** ${details.strandName}
+**Sub-Strand:** ${details.subStrandName}
+**Week:** ${details.week}
+**Week Ending:** [AI to calculate Friday date based on ${details.dayDate}]
+**Day/Date:** ${details.dayDate}
+**Term:** ${details.term}
+**Class Size:** ${details.classSize || 45}
+**Time/Duration:** ${details.duration}
+**Content Standard (Code):** ${details.contentStandardCode}
+**Indicator Code(s):** ${codes}
+**Performance Indicator:** [AI to generate based on the indicator code(s)]
+**Core Competencies:** Select relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).
+**Teaching & Learning Materials:** Suggest realistic materials relevant to the subject.
+**Reference:** ${details.reference}
+
+---
+
+### LESSON PHASES (Maintain this 3-column format)
+
+| **PHASE 1: Starter (Preparing the Brain for Learning)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
+|---|---|---|
+| Begin with recap or warm-up linked to prior knowledge.<br><br>Engage learners through questions or short tasks.<br><br>Introduce today’s lesson clearly. | **Activity 1:** Introduce the concept via discussion/demonstration.<br><br>**Activity 2:** Learners explore and practice through guided/group tasks.<br><br>**Activity 3:** Discuss findings and summarize key learning points.<br><br>**Evaluation:**<br>1. [Short question 1]<br>2. [Short question 2]<br>3. [Short question 3]<br><br>**Assignment:** Give a short reflective task linked to real-life application. | Recap the key ideas.<br><br>Allow learners to share what they learned.<br><br>Encourage application and further practice. |
+
+---
+
+**Facilitator:**
+**Vetted By:** ....................................................
+**Signature:** ....................................................
+**Date:** ....................................................
+
 ---
 `;
 
@@ -105,20 +112,10 @@ You are an expert Ghanaian teacher and curriculum developer. Generate a complete
 
 /**
  * Simplifies a teacher's lesson note for learners.
- * @param {string} teacherContent - The original markdown content of the teacher's note.
- * @returns {Promise<string>} A simplified, learner-friendly markdown version.
  */
 const generateLearnerFriendlyNote = async (teacherContent) => {
   const prompt = `
-Analyze the following teacher's lesson note. Your task is to transform it into a simplified, engaging, and easy-to-understand summary for the students.
-
-**Guidelines:**
-- Use simple language, short sentences, and a friendly, encouraging tone.
-- Focus on the key learning points from the "Main (New Learning & Assessment)" phase.
-- Extract the main concepts and activities.
-- Present the information with clear headings, bullet points, and bold keywords.
-- Ignore teacher-specific information like "School," "Duration," "Core Competencies," etc.
-- The output should be pure Markdown.
+Analyze the following teacher's lesson note. Transform it into a simplified, engaging, and easy-to-understand summary for the students. Use simple language, short sentences, and a friendly tone with clear headings and bullet points. Focus on the key learning points.
 
 **Teacher's Note:**
 ${teacherContent}
@@ -131,9 +128,7 @@ ${teacherContent}
   return generateContent(prompt);
 };
 
-
 module.exports = {
-  generateContent,
   generateGhanaianLessonNote,
   generateLearnerFriendlyNote,
 };
