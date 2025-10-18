@@ -92,6 +92,7 @@ Follow these rules:
 - Use a Ghanaian classroom tone and simple, clear phrasing.
 - Do not include placeholders like [AI to ...]; replace them with real content.
 - Ensure correct use of Markdown formatting.
+**CRITICAL RULE: Do not add any introductory sentences or preambles. Start the response directly with the '### TEACHER INFORMATION' heading.**
 
 ---
 
