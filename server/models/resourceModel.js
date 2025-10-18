@@ -1,3 +1,4 @@
+// server/models/resourceModel.js
 const mongoose = require('mongoose');
 
 const resourceSchema = new mongoose.Schema({
@@ -5,15 +6,18 @@ const resourceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User',
+    index: true,
   },
   subStrand: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'SubStrand',
+    index: true,
   },
   fileName: {
     type: String,
     required: true,
+    trim: true,
   },
   filePath: {
     type: String,
@@ -26,6 +30,7 @@ const resourceSchema = new mongoose.Schema({
   school: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',
+    index: true,
   },
 }, { timestamps: true });
 

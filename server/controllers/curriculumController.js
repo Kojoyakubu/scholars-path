@@ -1,3 +1,5 @@
+// server/controllers/curriculumController.js
+
 const asyncHandler = require('express-async-handler');
 const Level = require('../models/levelModel');
 const Class = require('../models/classModel');
@@ -8,6 +10,7 @@ const SubStrand = require('../models/subStrandModel');
 // --- DYNAMIC FETCHING CONTROLLERS ---
 
 const getClassesByLevel = asyncHandler(async (req, res) => {
+  // Assumes a middleware has validated req.params.levelId is a valid ObjectId
   const classes = await Class.find({ level: req.params.levelId });
   res.json(classes);
 });
@@ -27,46 +30,71 @@ const getSubStrandsByStrand = asyncHandler(async (req, res) => {
   res.json(subStrands);
 });
 
-// --- GENERIC CRUD CONTROLLERS ---
+// --- GENERIC CRUD FACTORY FUNCTIONS ---
+// This is an excellent pattern for keeping code DRY.
 
+/**
+ * Factory function to create a controller for adding a new document.
+ * @param {mongoose.Model} Model - The Mongoose model to use.
+ * @returns {Function} An Express controller function.
+ */
 const createItem = (Model) => asyncHandler(async (req, res) => {
+  // Note: Add validation for req.body in the route or here.
   const item = await Model.create(req.body);
   res.status(201).json(item);
 });
 
+/**
+ * Factory function to create a controller for fetching all documents of a model.
+ * @param {mongoose.Model} Model - The Mongoose model to use.
+ * @param {object|string} [populateOptions] - Optional populate options for the query.
+ * @returns {Function} An Express controller function.
+ */
 const getItems = (Model, populateOptions) => asyncHandler(async (req, res) => {
   let query = Model.find({});
   if (populateOptions) {
     query = query.populate(populateOptions);
   }
-  const items = await query;
+  const items = await query.exec(); // .exec() is good practice
   res.json(items);
 });
 
+/**
+ * Factory function to create a controller for updating a document by ID.
+ * @param {mongoose.Model} Model - The Mongoose model to use.
+ * @returns {Function} An Express controller function.
+ */
 const updateItem = (Model) => asyncHandler(async (req, res) => {
   const item = await Model.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
+    new: true, // Return the modified document
+    runValidators: true, // Ensure updates follow schema rules
   });
-  if (item) {
-    res.json(item);
-  } else {
+  
+  if (!item) {
     res.status(404);
-    throw new Error('Item not found');
+    throw new Error(`${Model.modelName} not found`);
   }
+  res.json(item);
 });
 
+/**
+ * Factory function to create a controller for deleting a document by ID.
+ * @param {mongoose.Model} Model - The Mongoose model to use.
+ * @returns {Function} An Express controller function.
+ */
 const deleteItem = (Model) => asyncHandler(async (req, res) => {
   const item = await Model.findById(req.params.id);
-  if (item) {
-    await item.deleteOne(); // Use deleteOne() to trigger 'pre' middleware hooks
-    res.json({ message: 'Item removed' });
-  } else {
+
+  if (!item) {
     res.status(404);
-    throw new Error('Item not found');
+    throw new Error(`${Model.modelName} not found`);
   }
+  
+  await item.deleteOne(); // Replaces remove() which is deprecated
+  res.json({ message: `${Model.modelName} removed successfully` });
 });
 
+// Export all the generated controller functions
 module.exports = {
   // Dynamic fetching
   getClassesByLevel,

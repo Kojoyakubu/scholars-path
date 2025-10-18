@@ -1,3 +1,4 @@
+// server/models/lessonNoteModel.js
 const mongoose = require('mongoose');
 
 const lessonNoteSchema = new mongoose.Schema({
@@ -5,28 +6,22 @@ const lessonNoteSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User',
+    index: true, // Index for faster queries by teacher
   },
   subStrand: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'SubStrand',
+    index: true, // Index for faster queries by sub-strand
   },
-  content: {
+  content: { // The AI-generated markdown content is the single source of truth.
     type: String,
     required: true,
-  },
-  learningObjectives: {
-    type: String,
-  },
-  teachingAids: {
-    type: String,
-  },
-  duration: {
-    type: String,
   },
   school: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',
+    index: true, // Index for faster queries by school
   },
 }, { timestamps: true });
 

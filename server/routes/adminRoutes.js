@@ -1,7 +1,10 @@
+// server/routes/adminRoutes.js
+
 const express = require('express');
 const router = express.Router();
-const { check, validationResult } = require('express-validator');
+const { param, body } = require('express-validator');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { handleValidationErrors } = require('../middleware/validatorMiddleware'); // <-- IMPORT
 const {
   getUsers,
   approveUser,
@@ -13,43 +16,32 @@ const {
   assignUserToSchool,
 } = require('../controllers/adminController');
 
-// Middleware to handle validation errors
-const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  next();
-};
-
 // Protect all routes in this file with Admin authorization
 router.use(protect, authorize('admin'));
 
-// Validation Chains
-const mongoIdValidator = (fieldName) => check(fieldName, 'Invalid ID format').isMongoId();
+// --- Validation Chains ---
+const mongoIdValidator = (paramName) => param(paramName, 'Invalid ID format in URL').isMongoId();
 
 const createSchoolValidator = [
-  check('name', 'School name is required').not().isEmpty().trim().escape(),
-  check('adminName', 'Admin name is required').not().isEmpty().trim().escape(),
-  check('adminEmail', 'A valid admin email is required').isEmail().normalizeEmail(),
-  check('adminPassword', 'Admin password must be at least 6 characters').isLength({ min: 6 }),
+  body('name', 'School name is required').not().isEmpty().trim(),
+  body('adminName', 'Admin name is required').not().isEmpty().trim(),
+  body('adminEmail', 'A valid admin email is required').isEmail().normalizeEmail(),
+  body('adminPassword', 'Admin password must be at least 6 characters').isLength({ min: 6 }),
 ];
 
 const assignSchoolValidator = [
-    mongoIdValidator('id'),
-    check('schoolId', 'A valid school ID is required').isMongoId(),
+  mongoIdValidator('id'),
+  body('schoolId', 'A valid school ID is required in the request body').isMongoId(),
 ];
 
-// User management routes
+// --- Route Definitions ---
 router.get('/users', getUsers);
 router.put('/users/:id/approve', mongoIdValidator('id'), handleValidationErrors, approveUser);
 router.delete('/users/:id', mongoIdValidator('id'), handleValidationErrors, deleteUser);
 router.put('/users/:id/assign-school', assignSchoolValidator, handleValidationErrors, assignUserToSchool);
 
-// Stats routes
 router.get('/stats', getUsageStats);
 
-// School management routes
 router.post('/schools', createSchoolValidator, handleValidationErrors, createSchool);
 router.get('/schools', getSchools);
 router.delete('/schools/:id', mongoIdValidator('id'), handleValidationErrors, deleteSchool);

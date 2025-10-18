@@ -1,32 +1,25 @@
+// server/routes/paymentRoutes.js
+
 const express = require('express');
 const router = express.Router();
-const { check, validationResult } = require('express-validator');
-const { initializePayment, verifyPayment } = require('../controllers/paymentController');
+const { body } = require('express-validator');
+const { initializePayment, handlePaystackWebhook } = require('../controllers/paymentController');
 const { protect } = require('../middleware/authMiddleware');
+const { handleValidationErrors } = require('../middleware/validatorMiddleware'); // <-- IMPORT
 
-// Middleware to handle validation errors
-const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  next();
-};
-
-// Validation Chains
+// --- Validation Chains ---
 const initializePaymentValidator = [
-    check('email', 'A valid email is required').isEmail(),
-    check('amount', 'Amount must be a numeric value').isNumeric(),
-    check('plan', 'Subscription plan is required').isIn(['monthly', 'yearly']),
+  body('amount', 'Amount must be a numeric value and greater than 0').isFloat({ gt: 0 }),
+  body('plan', 'Subscription plan must be either "monthly" or "yearly"').isIn(['monthly', 'yearly']),
 ];
 
-const verifyPaymentValidator = [
-    check('reference', 'Payment reference is required').not().isEmpty().trim().escape(),
-];
+// --- Route Definitions ---
 
-// Route Definitions
+// User initiates a payment. This is protected.
 router.post('/initialize', protect, initializePaymentValidator, handleValidationErrors, initializePayment);
-// The verify route is a callback from Paystack, so it doesn't need 'protect' middleware
-router.get('/verify/:reference', verifyPaymentValidator, handleValidationErrors, verifyPayment);
+
+// Paystack sends a POST request to this endpoint after a transaction. This is a public webhook.
+// The security is handled inside the controller by verifying the Paystack signature.
+router.post('/webhook', handlePaystackWebhook);
 
 module.exports = router;

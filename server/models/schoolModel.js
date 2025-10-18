@@ -1,12 +1,14 @@
+// server/models/schoolModel.js
 const mongoose = require('mongoose');
 
 const schoolSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, 'School name is required.'],
     unique: true,
+    trim: true,
   },
-  admin: { // The user who created/owns this school account
+  admin: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User',

@@ -6,29 +6,32 @@ const quizAttemptSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'Quiz',
-    index: true, // ADDED: Index
+    index: true,
   },
   student: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User',
-    index: true, // ADDED: Index
+    index: true,
   },
   score: {
     type: Number,
     required: true,
+    min: [0, 'Score cannot be negative.'], // Added validation
   },
   totalQuestions: {
     type: Number,
     required: true,
+    min: [0, 'Total questions cannot be negative.'], // Added validation
   },
   school: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',
-    index: true, // ADDED: Index
+    index: true,
   },
   answers: [
     {
+      _id: false, // Don't create a separate _id for each answer subdocument
       questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
       selectedOptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Option' },
     }

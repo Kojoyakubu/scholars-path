@@ -1,3 +1,4 @@
+// server/models/optionModel.js
 const mongoose = require('mongoose');
 
 const optionSchema = new mongoose.Schema({
@@ -5,10 +6,12 @@ const optionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'Question',
+    index: true, // CRITICAL: Speeds up finding options for a question.
   },
   text: {
     type: String,
-    required: true,
+    required: [true, 'Option text cannot be empty.'],
+    trim: true,
   },
   isCorrect: {
     type: Boolean,

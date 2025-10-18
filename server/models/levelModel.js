@@ -1,19 +1,21 @@
 // server/models/levelModel.js
 const mongoose = require('mongoose');
-const Class = require('./classModel'); // Required for the cleanup hook
+const Class = require('./classModel');
 
 const levelSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, 'Level name is required.'], // Added custom error message
     unique: true,
-    trim: true, // ADDED: Removes whitespace
+    trim: true, // Removes leading/trailing whitespace
   },
 }, { timestamps: true });
 
-// ADDED: Middleware hook to remove children classes before deleting a level
+// Middleware Hook: Before a Level document is deleted, this hook will
+// find and delete all Class documents that reference this level.
+// This prevents orphaned Class documents in the database.
 levelSchema.pre('deleteOne', { document: true, query: false }, async function(next) {
-  console.log(`Classes being removed for level: ${this._id}`);
+  console.log(`Cascading delete: Removing classes for level: ${this.name}`);
   await Class.deleteMany({ level: this._id });
   next();
 });

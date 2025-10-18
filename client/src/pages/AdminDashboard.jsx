@@ -7,6 +7,22 @@ import { motion } from 'framer-motion';
 // --- MUI Imports ---
 import { Box, Typography, Container, Button, Grid, Card, CardContent, CircularProgress, Paper } from '@mui/material';
 
+// Reusable component for displaying a statistic
+const StatCard = ({ value, title, color = 'primary.main' }) => (
+  <Grid item xs={12} sm={6} md={3}>
+    <Card elevation={3} sx={{ height: '100%' }}>
+      <CardContent sx={{ textAlign: 'center', p: 3 }}>
+        <Typography variant="h3" component="p" sx={{ color, fontWeight: 700 }}>
+          {value || 0}
+        </Typography>
+        <Typography color="text.secondary" sx={{ mt: 1 }}>
+          {title}
+        </Typography>
+      </CardContent>
+    </Card>
+  </Grid>
+);
+
 function AdminDashboard() {
   const dispatch = useDispatch();
   const { stats, isLoading } = useSelector((state) => state.admin);
@@ -27,7 +43,7 @@ function AdminDashboard() {
             Admin Dashboard
           </Typography>
           <Typography variant="h6" color="text.secondary">
-            Overview of site activity.
+            Platform-wide overview and management tools.
           </Typography>
         </Box>
 
@@ -35,42 +51,10 @@ function AdminDashboard() {
           <Box display="flex" justifyContent="center"><CircularProgress /></Box>
         ) : (
           <Grid container spacing={3} sx={{ mb: 4 }} justifyContent="center">
-            <Grid item xs={12} sm={6} md={3}>
-              <Card elevation={3}>
-                <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" component="h2" sx={{ color: 'var(--primary-blue)', fontWeight: 700 }}>
-                    {stats.students || 0}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Total Students
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card elevation={3}>
-                <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" component="h2" sx={{ color: 'var(--primary-blue)', fontWeight: 700 }}>
-                    {stats.teachers || 0}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Total Teachers
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card elevation={3}>
-                <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" component="h2" sx={{ color: 'var(--primary-blue)', fontWeight: 700 }}>
-                    {stats.quizAttempts || 0}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Total Quizzes Taken
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+            <StatCard value={stats?.totalUsers} title="Total Users" />
+            <StatCard value={stats?.totalSchools} title="Total Schools" />
+            <StatCard value={stats?.totalQuizAttempts} title="Total Quizzes Taken" />
+            <StatCard value={stats?.pendingUsers} title="Pending Approvals" color="warning.main" />
           </Grid>
         )}
 
@@ -88,7 +72,6 @@ function AdminDashboard() {
           <Button component={RouterLink} to="/admin/users" variant="contained">Manage Users</Button>
           <Button component={RouterLink} to="/admin/curriculum" variant="contained">Manage Curriculum</Button>
           <Button component={RouterLink} to="/admin/schools" variant="contained">Manage Schools</Button>
-          <Button component={RouterLink} to="/teacher/dashboard" variant="contained" sx={{ background: '#5cb85c' }}>Content Creation Tools</Button>
         </Box>
       </Container>
     </motion.div>

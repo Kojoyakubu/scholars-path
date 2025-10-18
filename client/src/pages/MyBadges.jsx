@@ -6,12 +6,12 @@ import { motion } from 'framer-motion';
 
 function MyBadges() {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
   const { badges, isLoading } = useSelector((state) => state.student);
 
   useEffect(() => {
+    // Fetches badges when the component mounts
     dispatch(getMyBadges());
-  }, [dispatch, user]); // Added user dependency
+  }, [dispatch]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -30,19 +30,19 @@ function MyBadges() {
         ) : (
           <Grid container spacing={3} justifyContent="center">
             {badges.length > 0 ? (
-              badges.map((studentBadge) => (
-                <Grid item key={studentBadge._id} xs={12} sm={6} md={4}>
+              badges.map(({ _id, badge }) => (
+                <Grid item key={_id} xs={12} sm={6} md={4}>
                   <motion.div whileHover={{ scale: 1.05 }}>
                     <Card sx={{ textAlign: 'center', p: 2, height: '100%' }}>
                       <CardContent>
-                        <Typography variant="h2" sx={{ fontSize: '60px' }}>
-                          {studentBadge.badge.icon}
+                        <Typography component="div" sx={{ fontSize: '60px' }}>
+                          {badge.icon}
                         </Typography>
                         <Typography variant="h6" component="h3" sx={{ mt: 1, fontWeight: 'bold' }}>
-                          {studentBadge.badge.name}
+                          {badge.name}
                         </Typography>
                         <Typography color="text.secondary" sx={{ mt: 1 }}>
-                          {studentBadge.badge.description}
+                          {badge.description}
                         </Typography>
                       </CardContent>
                     </Card>

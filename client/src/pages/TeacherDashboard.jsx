@@ -2,98 +2,57 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  fetchItems,
-  fetchChildren,
-  clearChildren,
-} from '../features/curriculum/curriculumSlice';
-import {
-  generateLessonNote,
-  getMyLessonNotes,
-  deleteLessonNote,
-  resetTeacherState,
-} from '../features/teacher/teacherSlice';
-import LessonNoteForm from '../components/LessonNoteForm';
-import HTMLtoDOCX from 'html-docx-js-typescript';
 
+// --- Redux Imports ---
+import { fetchItems, fetchChildren, clearChildren } from '../features/curriculum/curriculumSlice';
+import { generateLessonNote, getMyLessonNotes, deleteLessonNote, resetTeacherState } from '../features/teacher/teacherSlice';
+
+// --- Component & Helper Imports ---
+import LessonNoteForm from '../components/LessonNoteForm';
+// Make sure you have the download helper utility from the previous steps
+// import { downloadLessonNoteAsPdf, downloadAsWord } from '../utils/downloadHelper';
+
+// --- MUI Imports ---
 import {
-  Box,
-  Typography,
-  Container,
-  Button,
-  Grid,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemButton,
-  CircularProgress,
-  Stack,
-  IconButton,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Snackbar,
-  Alert,
+  Box, Typography, Container, Button, Grid, Select, MenuItem, FormControl,
+  InputLabel, Paper, List, ListItem, ListItemText, ListItemButton, CircularProgress,
+  Stack, IconButton, Dialog, DialogActions, DialogContent, DialogContentText,
+  DialogTitle, Snackbar, Alert,
 } from '@mui/material';
 import ArticleIcon from '@mui/icons-material/Article';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import DescriptionIcon from '@mui/icons-material/Description';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
+  const { levels, classes, subjects, strands, subStrands } = useSelector((state) => state.curriculum);
+  const { lessonNotes, isLoading, isError, message } = useSelector((state) => state.teacher);
 
-  const { levels, classes, subjects, strands, subStrands } = useSelector(
-    (state) => state.curriculum
-  );
-  const { lessonNotes, isLoading, isError, message } = useSelector(
-    (state) => state.teacher
-  );
-
-  const [selections, setSelections] = useState({
-    level: '',
-    class: '',
-    subject: '',
-    strand: '',
-    subStrand: '',
-  });
+  // State management
+  const [selections, setSelections] = useState({ level: '', class: '', subject: '', strand: '', subStrand: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Initial data fetch
+  // --- Effects for data fetching and state management ---
   useEffect(() => {
     dispatch(fetchItems({ entity: 'levels' }));
     dispatch(getMyLessonNotes());
   }, [dispatch]);
 
-  // This effect now specifically watches the `message` property to show notifications.
-  // It avoids interfering with other data loading operations.
   useEffect(() => {
     if (message) {
-      setSnackbar({
-        open: true,
-        message,
-        severity: isError ? 'error' : 'success',
-      });
-      dispatch(resetTeacherState()); // Clears the message so it doesn't show again
+      setSnackbar({ open: true, message, severity: isError ? 'error' : 'success' });
     }
+    return () => { if (message) dispatch(resetTeacherState()); };
   }, [message, isError, dispatch]);
 
-  // Chain dropdowns
-  useEffect(() => { if (selections.level) { dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); } }, [selections.level, dispatch]);
-  useEffect(() => { if (selections.class) { dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class })); } }, [selections.class, dispatch]);
-  useEffect(() => { if (selections.subject) { dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject })); } }, [selections.subject, dispatch]);
-  useEffect(() => { if (selections.strand) { dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand })); } }, [selections.strand, dispatch]);
+  // Chained dropdown fetching effects
+  useEffect(() => { if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); }, [selections.level, dispatch]);
+  useEffect(() => { if (selections.class) dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class })); }, [selections.class, dispatch]);
+  useEffect(() => { if (selections.subject) dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject })); }, [selections.subject, dispatch]);
+  useEffect(() => { if (selections.strand) dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand })); }, [selections.strand, dispatch]);
 
+  // --- Handlers ---
   const handleSelectionChange = useCallback((e) => {
     const { name, value } = e.target;
     setSelections((prev) => {
@@ -112,75 +71,33 @@ function TeacherDashboard() {
     });
   }, [dispatch]);
 
-  const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
-
   const handleGenerateNote = useCallback((formData) => {
     dispatch(generateLessonNote({ ...formData, subStrandId: selections.subStrand }))
       .unwrap()
-      .then(() => handleCloseModal())
-      .catch(() => {}); // Errors are handled by the message useEffect
+      .then(() => setIsModalOpen(false))
+      .catch(() => {});
   }, [dispatch, selections.subStrand]);
 
-  // --- Delete Handlers ---
-  const handleDeleteClick = (noteId) => {
-    setNoteToDelete(noteId);
-    setDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    setNoteToDelete(null);
-  };
-
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = useCallback(() => {
     if (noteToDelete) {
       dispatch(deleteLessonNote(noteToDelete));
+      setNoteToDelete(null);
     }
-    handleDialogClose();
-  };
-  
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === 'clickaway') return;
-    setSnackbar({ ...snackbar, open: false });
-  };
-  
-  // --- Download Handlers ---
-  const handleDownloadPdf = useCallback((noteId, noteTopic) => {
-    const element = document.getElementById(`note-content-${noteId}`);
-    if (!element) return;
-    if (!window.html2pdf) {
-      console.error('html2pdf library not loaded!');
-      setSnackbar({ open: true, message: 'PDF generation failed. Please refresh.', severity: 'error' });
-      return;
-    }
-    const filename = `${noteTopic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    const opt = { margin: 10, filename, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-    window.html2pdf().set(opt).from(element).save();
-  }, []);
+  }, [dispatch, noteToDelete]);
 
-  const handleDownloadWord = useCallback((noteId, noteTopic) => {
-    try {
-      const element = document.getElementById(`note-content-${noteId}`);
-      if (!element) {
-          setSnackbar({ open: true, message: 'Note content not found.', severity: 'error' });
-          return;
-      }
-      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8" /><style>body { font-family: Arial, sans-serif; line-height: 1.6; } h1, h2, h3 { color: #2e7d32; } p { margin-bottom: 8px; } h1, h2 { page-break-before: always; }</style></head><body>${element.innerHTML}</body></html>`;
-      const blob = HTMLtoDOCX(html);
-      const safeName = (noteTopic || 'lesson-note').replace(/[^a-zA-Z0-9]/g, '_');
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `${safeName}.docx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-    } catch (err) {
-      console.error('Word generation failed:', err);
-      setSnackbar({ open: true, message: 'Could not generate Word document.', severity: 'error' });
-    }
-  }, []);
+  const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
+  
+  // Reusable dropdown component
+  const renderDropdown = (name, label, value, items, disabled = false) => (
+    <FormControl fullWidth disabled={disabled}>
+      <InputLabel>{label}</InputLabel>
+      <Select name={name} value={value} label={label} onChange={handleSelectionChange}>
+        {items.map((item) => (
+          <MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -189,89 +106,67 @@ function TeacherDashboard() {
           <Typography variant="h4" component="h1">Teacher Dashboard</Typography>
         </Box>
 
-        {/* Note Generator Section */}
+        {/* --- 📍 START OF MISSING UI CODE --- */}
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
           <Typography variant="h6" gutterBottom>Select Topic to Generate Note</Typography>
           <Grid container spacing={2}>
-            {[
-              { label: 'Level', name: 'level', items: levels },
-              { label: 'Class', name: 'class', items: classes, disabled: !selections.level },
-              { label: 'Subject', name: 'subject', items: subjects, disabled: !selections.class },
-              { label: 'Strand', name: 'strand', items: strands, disabled: !selections.subject },
-            ].map(({ label, name, items, disabled }) => (
-              <Grid item xs={12} sm={6} md={3} key={name}>
-                <FormControl fullWidth disabled={disabled || false}>
-                  <InputLabel>{label}</InputLabel>
-                  <Select name={name} value={selections[name]} label={label} onChange={handleSelectionChange}>
-                    {(items || []).map((i) => (
-                      <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            ))}
-            <Grid item xs={12}>
-              <FormControl fullWidth disabled={!selections.strand}>
-                <InputLabel>Sub-Strand</InputLabel>
-                <Select name="subStrand" value={selections.subStrand} label="Sub-Strand" onChange={handleSelectionChange}>
-                  {(subStrands || []).map((s) => (
-                    <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+            <Grid item xs={12} sm={6} md={3}>{renderDropdown('level', 'Level', selections.level, levels)}</Grid>
+            <Grid item xs={12} sm={6} md={3}>{renderDropdown('class', 'Class', selections.class, classes, !selections.level)}</Grid>
+            <Grid item xs={12} sm={6} md={3}>{renderDropdown('subject', 'Subject', selections.subject, subjects, !selections.class)}</Grid>
+            <Grid item xs={12} sm={6} md={3}>{renderDropdown('strand', 'Strand', selections.strand, strands, !selections.subject)}</Grid>
+            <Grid item xs={12}>{renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, !selections.strand)}</Grid>
           </Grid>
-          <Button variant="contained" onClick={handleOpenModal} disabled={!selections.subStrand || isLoading} sx={{ mt: 2 }}>
+          <Button variant="contained" onClick={() => setIsModalOpen(true)} disabled={!selections.subStrand || isLoading} sx={{ mt: 2 }}>
             Generate AI Lesson Note
           </Button>
         </Paper>
 
-        {/* Lesson Notes List */}
         <Paper elevation={3} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>My Generated Lesson Notes</Typography>
           {isLoading && lessonNotes.length === 0 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}><CircularProgress /></Box>
           ) : (
             <List>
-              {lessonNotes.map((note) => (
+              {lessonNotes.length > 0 ? lessonNotes.map((note) => (
                 <ListItem key={note._id} disablePadding secondaryAction={
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                      <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(note._id)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </Stack>
-                  }>
+                  <IconButton edge="end" aria-label="delete" onClick={() => setNoteToDelete(note._id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                }>
                   <ListItemButton component={RouterLink} to={`/teacher/notes/${note._id}`}>
                     <ArticleIcon sx={{ mr: 2, color: 'action.active' }} />
                     <ListItemText
                       primaryTypographyProps={{ noWrap: true, fontWeight: 500 }}
-                      primary={note.content.split('\n')[1] || `Note created on ${new Date(note.createdAt).toLocaleDateString()}`}
+                      primary={`Note from ${new Date(note.createdAt).toLocaleDateString()}`}
                       secondary={note.content.substring(0, 150) + '...'}
                     />
                   </ListItemButton>
                 </ListItem>
-              ))}
+              )) : (
+                <Typography color="text.secondary" sx={{ p: 2 }}>You haven't generated any lesson notes yet.</Typography>
+              )}
             </List>
           )}
         </Paper>
+        {/* --- 📍 END OF MISSING UI CODE --- */}
 
         <LessonNoteForm
           open={isModalOpen}
-          onClose={handleCloseModal}
+          onClose={() => setIsModalOpen(false)}
           onSubmit={handleGenerateNote}
           subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           isLoading={isLoading}
         />
 
-        <Dialog open={dialogOpen} onClose={handleDialogClose}>
-          <DialogTitle>{"Confirm Deletion"}</DialogTitle>
+        <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
+          <DialogTitle>Confirm Deletion</DialogTitle>
           <DialogContent>
             <DialogContentText>
               Are you sure you want to permanently delete this lesson note? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleDialogClose}>Cancel</Button>
+            <Button onClick={() => setNoteToDelete(null)}>Cancel</Button>
             <Button onClick={handleConfirmDelete} color="error" autoFocus>Delete</Button>
           </DialogActions>
         </Dialog>

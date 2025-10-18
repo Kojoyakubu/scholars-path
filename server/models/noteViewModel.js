@@ -6,20 +6,19 @@ const noteViewSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'LearnerNote',
-    index: true, // ADDED: Index
+    index: true,
   },
   student: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User',
-    index: true, // ADDED: Index
+    index: true,
   },
   teacher: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User', // The author of the note
   },
-  // ADDED: The school field for efficient analytics
   school: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',

@@ -1,6 +1,8 @@
+// server/routes/studentRoutes.js
+
 const express = require('express');
 const router = express.Router();
-const { check, body, validationResult } = require('express-validator');
+const { param, body } = require('express-validator');
 const {
   getLearnerNotes,
   getQuizzes,
@@ -11,37 +13,29 @@ const {
   logNoteView,
 } = require('../controllers/studentController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { handleValidationErrors } = require('../middleware/validatorMiddleware'); // <-- IMPORT
 
-// Middleware to handle validation errors
-const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  next();
-};
-
-// Protect all routes with Student (or admin) authorization
+// Protect all routes with Student authorization (admins can also access)
 router.use(protect, authorize('student', 'admin'));
 
-// Validation Chains
-const mongoIdParamValidator = (paramName) => check(paramName, 'Invalid URL parameter').isMongoId();
+// --- Reusable Validation Chains ---
+const mongoIdParam = (paramName) => param(paramName, `Invalid ID format in URL for '${paramName}'`).isMongoId();
 
 const submitQuizValidator = [
-    mongoIdParamValidator('id'),
-    body('answers', 'Answers must be an array').isArray(),
-    body('answers.*.questionId', 'Each answer must have a valid question ID').isMongoId(),
-    body('answers.*.selectedOptionId', 'Each answer must have a valid selected option ID').isMongoId(),
+  mongoIdParam('id'),
+  body('answers', 'Answers must be an array').isArray({ min: 1 }), // Ensure answers array is not empty
+  body('answers.*.questionId', 'Each answer must have a valid question ID').isMongoId(),
+  body('answers.*.selectedOptionId', 'Each answer must have a valid selected option ID').isMongoId(),
 ];
 
-// Route Definitions
-router.get('/notes/:subStrandId', mongoIdParamValidator('subStrandId'), handleValidationErrors, getLearnerNotes);
-router.get('/quizzes/:subStrandId', mongoIdParamValidator('subStrandId'), handleValidationErrors, getQuizzes);
-router.get('/resources/:subStrandId', mongoIdParamValidator('subStrandId'), handleValidationErrors, getResources);
-router.get('/quiz/:id', mongoIdParamValidator('id'), handleValidationErrors, getQuizDetails);
+// --- Route Definitions ---
+router.get('/notes/:subStrandId', mongoIdParam('subStrandId'), handleValidationErrors, getLearnerNotes);
+router.get('/quizzes/:subStrandId', mongoIdParam('subStrandId'), handleValidationErrors, getQuizzes);
+router.get('/resources/:subStrandId', mongoIdParam('subStrandId'), handleValidationErrors, getResources);
+router.get('/quiz/:id', mongoIdParam('id'), handleValidationErrors, getQuizDetails);
 router.get('/my-badges', getMyBadges);
 
 router.post('/quiz/:id/submit', submitQuizValidator, handleValidationErrors, submitQuiz);
-router.post('/notes/:id/view', mongoIdParamValidator('id'), handleValidationErrors, logNoteView);
+router.post('/notes/:id/view', mongoIdParam('id'), handleValidationErrors, logNoteView);
 
 module.exports = router;
