@@ -25,7 +25,7 @@ const generateContent = async (systemMessage, userPrompt) => {
   try {
     const response = await openai.chat.completions.create({
       // You can use "gpt-4o", "gpt-4-turbo", or "gpt-3.5-turbo"
-      model: 'gpt-4o',
+      model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: systemMessage },
         { role: 'user', content: userPrompt },
