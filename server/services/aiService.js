@@ -1,10 +1,5 @@
 // /server/services/aiService.js
 
-/**
- * AI Service for generating lesson notes and learner-friendly summaries
- * using Google's Gemini API.
- */
-
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 
 // --- Initialization ---
@@ -16,7 +11,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // --- Model Configuration ---
 const modelConfig = {
-  model: 'gemini-2.5-pro', // Use the correct, efficient Gemini model
+  model: 'gemini-2.5-pro',
   safetySettings: [
     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -87,37 +82,39 @@ Generate a **professionally formatted Markdown lesson note** following this exac
 
 Follow these rules:
 - Use the details provided below faithfully.
-- Generate a realistic **Performance Indicator** from the indicator code(s).
+- **Using the provided "Curriculum Context", accurately determine the meaning of the user's "Indicator Code(s)" and generate a relevant "Performance Indicator".**
 - Derive **Week Ending (Friday date)** from the given "Day/Date".
-- Use a Ghanaian classroom tone and simple, clear phrasing.
-- Do not include placeholders like [AI to ...]; replace them with real content.
-- Ensure correct use of Markdown formatting.
-**CRITICAL RULE: Do not add any introductory sentences or preambles. Start the response directly with the '### TEACHER INFORMATION' heading.**
+- **CRITICAL RULE: Do not add any introductory sentences. Start the response directly with the '### TEACHER INFORMATION' heading.**
 
+---
+### Curriculum Context (Examples from NaCCA Computing Syllabus)
+- **Code Structure:** B7.1.1.1.1 -> Basic 7, Strand 1, Sub-Strand 1, Content Standard 1, Indicator 1.
+- **Example 1:** Indicator Code 'B7.1.1.1.1' means "Recognize the role of computers in data processing".
+- **Example 2:** Indicator Code 'B7.3.1.1.1' means "Identify the various toolbars/ribbons and their functions".
+- **Example 3:** Indicator Code 'B7.4.2.1.2' means "Demonstrate the use of the internet to search for information".
 ---
 
 ### TEACHER INFORMATION
 
-**School:** ${school}  
-**Class:** ${className}  
-**Subject:** ${subjectName}  
-**Strand:** ${strandName}  
-**Sub-Strand:** ${subStrandName}  
-**Week:** ${week}  
-**Week Ending:** [AI to compute Friday date based on ${dayDate}]  
-**Day/Date:** ${dayDate}  
-**Term:** ${term}  
-**Class Size:** ${classSize}  
-**Time/Duration:** ${duration}  
-**Content Standard (Code):** ${contentStandardCode}  
-**Indicator Code(s):** ${codes}  
-**Performance Indicator:** [AI to generate from indicator code(s)]  
-**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).  
-**Teaching & Learning Materials:** Suggest realistic and accessible materials.  
+**School:** ${school}
+**Class:** ${className}
+**Subject:** ${subjectName}
+**Strand:** ${strandName}
+**Sub-Strand:** ${subStrandName}
+**Week:** ${week}
+**Week Ending:** [AI to compute Friday date based on ${dayDate}]
+**Day/Date:** ${dayDate}
+**Term:** ${term}
+**Class Size:** ${classSize}
+**Time/Duration:** ${duration}
+**Content Standard (Code):** ${contentStandardCode}
+**Indicator Code(s):** ${codes}
+**Performance Indicator:** [AI to generate from the indicator code(s) using the context above]
+**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).
+**Teaching & Learning Materials:** Suggest realistic and accessible materials.
 **Reference:** ${reference}
 
 ---
-
 
 | **PHASE 1: Starter (Preparing the Brain)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
 |---|---|---|
@@ -125,13 +122,12 @@ Follow these rules:
 
 ---
 
-**Facilitator:**  ..................................................
-**Vetted By:** ....................................................  
-**Signature:** ....................................................  
+**Facilitator:** ..................................................
+**Vetted By:** ....................................................
+**Signature:** ....................................................
 **Date:** ....................................................
 
 ---
-
 `;
 
   return generateContent(prompt);
@@ -152,18 +148,11 @@ Transform the following teacher's lesson note into a **learner-friendly summary*
 
 Guidelines:
 - Use simple Ghanaian English suitable for Basic school learners.
-- Write short, clear sentences.
-- Use bullet points and friendly tone.
-- Highlight only key learning points and definitions.
-- Keep it concise but engaging.
+- Use bullet points and a friendly tone.
+- Highlight only key learning points.
 
 **Teacher's Lesson Note:**
 ${teacherContent}
-
----
-
-[BEGIN LEARNER’S NOTE]
----
 `;
 
   return generateContent(prompt);
