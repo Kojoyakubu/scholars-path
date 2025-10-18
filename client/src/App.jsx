@@ -66,17 +66,13 @@ function App() {
                 </Route>
 
                 {/* Teacher Routes */}
+                // ... inside App.jsx
+
+                {/* Teacher Routes */}
                 <Route path='/teacher' element={<RoleRoute allowedRoles={['teacher', 'school_admin', 'admin']} />}>
-                  <Route path='dashboard' element={
-                    <SubscriptionGate>
-                      <TeacherDashboard />
-                    </SubscriptionGate>
-                  } />
-                  <Route path='notes/:noteId' element={
-                    <SubscriptionGate>
-                      <LessonNoteView />
-                    </SubscriptionGate>
-                  } />
+                  {/* The SubscriptionGate component has been removed */}
+                  <Route path='dashboard' element={<TeacherDashboard />} />
+                  <Route path='notes/:noteId' element={<LessonNoteView />} />
                 </Route>
               </Route>
               
