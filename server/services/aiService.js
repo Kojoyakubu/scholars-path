@@ -14,7 +14,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // Configuration for the generative model
 const modelConfig = {
   // Use a stable, recent model. Default to 'gemini-1.5-flash-latest' if not specified.
-  model: process.env.GEMINI_MODEL_NAME || 'gemini-1.5-flash-latest',
+  model: process.env.GEMINI_MODEL_NAME || 'gemini-2.5-pro',
   // Configuration to reduce the chances of the AI blocking legitimate educational content.
   // Adjust these settings based on observed API behavior.
   safetySettings: [
