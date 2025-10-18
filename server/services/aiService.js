@@ -1,61 +1,54 @@
-// /server/services/aiService.js
+// /server/services/aiService.js (OpenAI Version)
 
-/**
- * AI Service for generating lesson notes and learner-friendly summaries
- * using Google's Gemini API.
- */
-
-const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
+const OpenAI = require('openai');
 
 // --- Initialization ---
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error('❌ GEMINI_API_KEY is missing in environment variables.');
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error('❌ OPENAI_API_KEY is missing in environment variables.');
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// --- Model Configuration ---
-const modelConfig = {
-  model: 'gemini-2.5-pro', // Use the correct, efficient Gemini model
-  safetySettings: [
-    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-  ],
-};
-
-const model = genAI.getGenerativeModel(modelConfig);
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 /**
- * Generates AI content safely and handles all Gemini-related errors.
- * @param {string} prompt - The complete instruction for the AI.
- * @returns {Promise<string>} - Generated text output.
+ * A robust wrapper for the OpenAI API call.
+ * @param {string} systemMessage - The instruction that defines the AI's role and context.
+ * @param {string} userPrompt - The user's specific request or data.
+ * @returns {Promise<string>} The generated text content from the AI.
  */
-const generateContent = async (prompt) => {
-  if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Prompt must be a non-empty string.');
+const generateContent = async (systemMessage, userPrompt) => {
+  if (!userPrompt || typeof userPrompt !== 'string') {
+    throw new Error('User prompt must be a non-empty string.');
   }
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = await openai.chat.completions.create({
+      // You can use "gpt-4o", "gpt-4-turbo", or "gpt-3.5-turbo"
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.5, // Lower value = more predictable, less creative
+      max_tokens: 2048,
+    });
 
-    const text = response?.text?.();
-    if (!text) {
-      console.warn('⚠️ Gemini API returned no text or content was blocked.');
-      throw new Error('The AI failed to generate a response. Please try rephrasing or simplifying your input.');
+    const content = response.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('The AI failed to generate a response. The response was empty.');
     }
 
-    return text.trim();
+    return content.trim();
   } catch (error) {
-    console.error('❌ Gemini API Error:', error.message);
+    console.error('❌ OpenAI API Error:', error.message);
     throw new Error(error.message || 'Unknown error occurred while generating AI content.');
   }
 };
 
 /**
- * Generates a structured Ghanaian lesson note.
+ * Generates a structured Ghanaian lesson note using OpenAI.
  * @param {object} details - Lesson details provided by the teacher.
  * @returns {Promise<string>} - Generated Markdown lesson note.
  */
@@ -76,48 +69,42 @@ const generateGhanaianLessonNote = async (details = {}) => {
     dayDate = '[Day/Date]',
   } = details;
 
-  const codes = Array.isArray(indicatorCodes)
-    ? indicatorCodes.join(', ')
-    : indicatorCodes || '[Indicator Code]';
+  const codes = Array.isArray(indicatorCodes) ? indicatorCodes.join(', ') : indicatorCodes || '[Indicator Code]';
 
-  const prompt = `
-You are a Ghanaian master teacher and curriculum expert.
-
-Generate a **professionally formatted Markdown lesson note** following this exact structure and tone.
+  const systemMessage = `You are a Ghanaian master teacher and curriculum expert.
+Generate a **professionally formatted Markdown lesson note** following the exact structure and tone provided by the user.
 
 Follow these rules:
-- Use the details provided below faithfully.
+- Use the details provided faithfully.
 - Generate a realistic **Performance Indicator** from the indicator code(s).
 - Derive **Week Ending (Friday date)** from the given "Day/Date".
-- Use a Ghanaian classroom tone and simple, clear phrasing.
 - Do not include placeholders like [AI to ...]; replace them with real content.
-- Ensure correct use of Markdown formatting.
-**CRITICAL RULE: Do not add any introductory sentences or preambles. Start the response directly with the '### TEACHER INFORMATION' heading.**
+- **CRITICAL RULE: Do not add any introductory sentences or preambles. Start the response directly with the '### TEACHER INFORMATION' heading.**`;
 
+  const userPrompt = `
 ---
 
 ### TEACHER INFORMATION
 
-**School:** ${school}  
-**Class:** ${className}  
-**Subject:** ${subjectName}  
-**Strand:** ${strandName}  
-**Sub-Strand:** ${subStrandName}  
-**Week:** ${week}  
-**Week Ending:** [AI to compute Friday date based on ${dayDate}]  
-**Day/Date:** ${dayDate}  
-**Term:** ${term}  
-**Class Size:** ${classSize}  
-**Time/Duration:** ${duration}  
-**Content Standard (Code):** ${contentStandardCode}  
-**Indicator Code(s):** ${codes}  
-**Performance Indicator:** [AI to generate from indicator code(s)]  
-**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).  
-**Teaching & Learning Materials:** Suggest realistic and accessible materials.  
+**School:** ${school}
+**Class:** ${className}
+**Subject:** ${subjectName}
+**Strand:** ${strandName}
+**Sub-Strand:** ${subStrandName}
+**Week:** ${week}
+**Week Ending:** [AI to compute Friday date based on ${dayDate}]
+**Day/Date:** ${dayDate}
+**Term:** ${term}
+**Class Size:** ${classSize}
+**Time/Duration:** ${duration}
+**Content Standard (Code):** ${contentStandardCode}
+**Indicator Code(s):** ${codes}
+**Performance Indicator:** [AI to generate from indicator code(s)]
+**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).
+**Teaching & Learning Materials:** Suggest realistic and accessible materials.
 **Reference:** ${reference}
 
 ---
-
 
 | **PHASE 1: Starter (Preparing the Brain)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
 |---|---|---|
@@ -125,16 +112,15 @@ Follow these rules:
 
 ---
 
-**Facilitator:**  ..................................................
-**Vetted By:** ....................................................  
-**Signature:** ....................................................  
+**Facilitator:** ..................................................
+**Vetted By:** ....................................................
+**Signature:** ....................................................
 **Date:** ....................................................
 
 ---
-
 `;
 
-  return generateContent(prompt);
+  return generateContent(systemMessage, userPrompt);
 };
 
 /**
@@ -147,26 +133,19 @@ const generateLearnerFriendlyNote = async (teacherContent) => {
     throw new Error('Teacher content must be a non-empty string.');
   }
 
-  const prompt = `
-Transform the following teacher's lesson note into a **learner-friendly summary**.
+  const systemMessage = `Transform the following teacher's lesson note into a **learner-friendly summary**.
 
 Guidelines:
 - Use simple Ghanaian English suitable for Basic school learners.
-- Write short, clear sentences.
-- Use bullet points and friendly tone.
-- Highlight only key learning points and definitions.
-- Keep it concise but engaging.
+- Use short, clear sentences, bullet points, and a friendly tone.
+- Highlight only key learning points and definitions.`;
 
+  const userPrompt = `
 **Teacher's Lesson Note:**
 ${teacherContent}
-
----
-
-[BEGIN LEARNER’S NOTE]
----
 `;
 
-  return generateContent(prompt);
+  return generateContent(systemMessage, userPrompt);
 };
 
 module.exports = {
