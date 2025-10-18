@@ -129,11 +129,13 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading, sub
             />
             <TextField
               name="indicatorCodes"
-              label="Indicator Code(s)"
+              label="Official NaCCA Indicator(s)"
               value={formData.indicatorCodes}
               onChange={handleChange}
               required
-              helperText="Enter one or more indicator codes separated by commas."
+              multiline
+              rows={3}
+              helperText="Copy and paste the full indicator text from the curriculum here (e.g., 'Discuss the fourth-generation computers')."
             />
             <TextField
               name="reference"

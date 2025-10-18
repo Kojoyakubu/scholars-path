@@ -71,9 +71,8 @@ const generateGhanaianLessonNote = async (details = {}) => {
     dayDate = '[Day/Date]',
   } = details;
 
-  const codes = Array.isArray(indicatorCodes)
-    ? indicatorCodes.join(', ')
-    : indicatorCodes || '[Indicator Code]';
+ // The 'indicatorCodes' variable now contains the full text from the form
+  const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
 
   const prompt = `
 You are a Ghanaian master teacher and curriculum expert.
@@ -81,24 +80,19 @@ You are a Ghanaian master teacher and curriculum expert.
 Generate a **professionally formatted Markdown lesson note** following this exact structure and tone.
 
 Follow these rules:
-- Use the details provided below faithfully.
-- **Using the provided "Curriculum Context", accurately determine the meaning of the user's "Indicator Code(s)" and generate a relevant "Performance Indicator".**
+- **Use the "Transformation Logic" below to convert the "Official NaCCA Indicator" into a learner-centric "Performance Indicator".**
+- Fill in all other details faithfully from the information provided.
 - Derive **Week Ending (Friday date)** from the given "Day/Date".
 - **CRITICAL RULE: Do not add any introductory sentences. Start the response directly with the '### TEACHER INFORMATION' heading.**
 
 ---
-### Curriculum Context (Examples from NaCCA Computing Syllabus)
-- **Code Structure:** B7.1.1.1.1 -> Basic 7, Strand 1, Sub-Strand 1, Content Standard 1, Indicator 1.
-- **Example 1:** Indicator Code 'B7.1.1.1.1' means "Recognize the role of computers in data processing".
-- **Example 2:** Indicator Code 'B7.3.1.1.1' means "Identify the various toolbars/ribbons and their functions".
-- **Example 3:** Indicator Code 'B7.4.2.1.2' means "Demonstrate the use of the internet to search for information".
+### Transformation Logic (Example)
+- **IF the user provides this Official NaCCA Indicator:** "Discuss the fourth-generation computers"
+- **THEN you must generate this Performance Indicator:** "By the end of the lesson, the learner will be able to discuss the features of fourth-generation computers."
 ---
 
 ### TEACHER INFORMATION
 
-**School:** ${school}
-**Class:** ${className}
-**Subject:** ${subjectName}
 **Strand:** ${strandName}
 **Sub-Strand:** ${subStrandName}
 **Week:** ${week}
@@ -108,9 +102,9 @@ Follow these rules:
 **Class Size:** ${classSize}
 **Time/Duration:** ${duration}
 **Content Standard (Code):** ${contentStandardCode}
-**Indicator Code(s):** ${codes}
-**Performance Indicator:** [AI to generate from the indicator code(s) using the context above]
-**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking, Digital Literacy).
+**Official NaCCA Indicator(s):** ${officialIndicatorText}
+**Performance Indicator:** [AI to generate a new 2-3 indicator using the Transformation Logic above]
+**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking).
 **Teaching & Learning Materials:** Suggest realistic and accessible materials.
 **Reference:** ${reference}
 
