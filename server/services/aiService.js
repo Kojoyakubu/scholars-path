@@ -88,7 +88,7 @@ Follow these rules:
 ---
 ### Transformation Logic (Example)
 - **IF the user provides this Official NaCCA Indicator:** "Discuss the fourth-generation computers"
-- **THEN you must generate this Performance Indicator:** "By the end of the lesson, the learner will be able to discuss the features of fourth-generation computers."
+- **THEN you must generate this Performance Indicator:** "The learner can identify the features of fourth-generation computers."
 ---
 
 ### TEACHER INFORMATION
