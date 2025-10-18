@@ -102,7 +102,7 @@ Follow these rules:
 **Class Size:** ${classSize}
 **Time/Duration:** ${duration}
 **Content Standard (Code):** ${contentStandardCode}
-**Official NaCCA Indicator(s):** ${officialIndicatorText}
+**Indicator(s):** ${officialIndicatorText}
 **Performance Indicator:** [AI to generate a new 2-3 indicator using the Transformation Logic above]
 **Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking).
 **Teaching & Learning Materials:** Suggest realistic and accessible materials.
