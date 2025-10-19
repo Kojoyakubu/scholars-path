@@ -2,7 +2,7 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import HTMLtoDOCX from 'html-docx-js-typescript';
+import HTMLtoDOCX from 'html-docx-js-typescript/dist/html-docx';
 
 /**
  * ✅ SIMPLE PDF DOWNLOAD (for Students)
@@ -46,17 +46,29 @@ export const downloadAsWord = async (elementId, topic) => {
     return;
   }
 
-  const html = `<!DOCTYPE html>
+  const html = `
+  <!DOCTYPE html>
   <html>
-    <head><meta charset="UTF-8"></head>
-    <body style="font-size:10px; line-height:1.4;">${element.innerHTML}</body>
+    <head>
+      <meta charset="UTF-8" />
+      <style>
+        body { font-size: 10px; line-height: 1.4; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #000; padding: 4px; text-align: left; vertical-align: top; }
+        th { background: #f0f0f0; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      ${element.innerHTML}
+    </body>
   </html>`;
 
   try {
-    // ✅ Await the conversion Promise
-    const blob = await HTMLtoDOCX(html);
-    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+    // ✅ Proper usage of the library
+    const fileBuffer = await HTMLtoDOCX(html, null, { table: { row: { cantSplit: true } } });
+    const blob = new Blob([fileBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
+    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = safeFilename;
