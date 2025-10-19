@@ -1,4 +1,4 @@
-// /client/src/pages/LessonNoteView.jsx (Corrected)
+// /client/src/pages/LessonNoteView.jsx (Final Version)
 
 import { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw'; // <-- 1. IMPORT THE PLUGIN
+import rehypeRaw from 'rehype-raw';
 
 // --- Redux Imports ---
 import { getLessonNoteById, resetCurrentNote } from '../features/teacher/teacherSlice';
@@ -17,7 +17,8 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
 
 // --- Helper Import ---
-import { downloadLessonNoteAsPdf, downloadAsWord } from '../utils/downloadHelper';
+// We now only import the simple PDF and Word download functions
+import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -33,14 +34,17 @@ function LessonNoteView() {
     };
   }, [dispatch, noteId]);
 
+  // The download handler now calls the simple, reliable functions
   const handleDownload = useCallback((type) => {
-    if (!currentNote?.content) return;
+    const elementId = 'note-content-container'; // The ID of the div containing your note
+    const topic = 'lesson_note';
+
     if (type === 'pdf') {
-      downloadLessonNoteAsPdf('note-content-container', 'lesson_note'); // ✅ Passing the element ID
+      downloadAsPdf(elementId, topic); // ✅ Use the simple PDF function
     } else if (type === 'word') {
-      downloadAsWord('note-content-container', 'lesson_note');
+      downloadAsWord(elementId, topic);
     }
-}, [currentNote]);
+  }, []);
 
   if (isLoading || !currentNote) {
     return <Container sx={{ textAlign: 'center', mt: 10 }}><CircularProgress /></Container>;
@@ -62,21 +66,18 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
+          {/* This is the container that will be captured for the PDF */}
           <Box
             id="note-content-container"
             sx={{
               '& table': { width: '100%', borderCollapse: 'collapse', my: 2 },
               '& th, & td': { border: '1px solid', borderColor: 'divider', p: 1.5, textAlign: 'left', verticalAlign: 'top' },
               '& th': { backgroundColor: 'action.hover', fontWeight: 'bold' },
-              // Add styling for line breaks and paragraphs for better spacing
               '& p': { marginBottom: '0.5em' },
               '& br': { display: 'block', content: '""', marginTop: '0.5em' }
             }}
           >
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]} // <-- 2. ADD THE PLUGIN HERE
-            >
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
               {currentNote.content}
             </ReactMarkdown>
           </Box>
