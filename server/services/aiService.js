@@ -33,10 +33,17 @@ const generateContent = async (prompt) => {
   }
 
   try {
-    const result = await model.generateContent(prompt);
+    // ✅ FIX 1: Added generationConfig to lower the temperature for more consistent output.
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.2, // Lower value for less randomness and more predictability.
+      },
+    });
+    
     const response = await result.response;
-
     const text = response?.text?.();
+    
     if (!text) {
       console.warn('⚠️ Gemini API returned no text or content was blocked.');
       throw new Error('The AI failed to generate a response. Please try rephrasing or simplifying your input.');
@@ -64,7 +71,7 @@ const generateGhanaianLessonNote = async (details = {}) => {
     week = '[Week]',
     term = '[Term]',
     duration = '[Duration]',
-    classSize = 45,
+    classSize = '[Class size]',
     reference = '[Reference]',
     contentStandardCode = '[Content Standard Code]',
     indicatorCodes = [],
@@ -80,6 +87,7 @@ You are a Ghanaian master teacher and curriculum expert.
 Generate a **professionally formatted Markdown lesson note** following this exact structure and tone.
 
 Follow these rules:
+**NEW RULE: The 'TEACHER INFORMATION' section MUST be formatted as a two-column layout. Each item must be on a new line with the label in bold (e.g., "**School:** Apeade Presby Basic School").**
 - **Use the "Transformation Logic" below to convert the "Official NaCCA Indicator" into a learner-centric "Performance Indicator".**
 - Fill in all other details faithfully from the information provided.
 - Derive **Week Ending (Friday date)** from the given "Day/Date".
@@ -87,19 +95,21 @@ Follow these rules:
 
 ---
 ### Transformation Logic (Example)
-- **IF the user provides this Official NaCCA Indicator:** "Discuss the fourth-generation computers"
+- **IF the user provides this Indicator:** "Discuss the fourth-generation computers"
 - **THEN you must generate this Performance Indicator:** "The learner can identify the features of fourth-generation computers."
 ---
 
 ### TEACHER INFORMATION
 
-**Strand:** ${strandName}
-**Sub-Strand:** ${subStrandName}
+**School:** ${school}
+**Term:** ${term}
 **Week:** ${week}
 **Week Ending:** [AI to compute Friday date based on ${dayDate}]
-**Day/Date:** ${dayDate}
-**Term:** ${term}
+**Class:** ${className}
 **Class Size:** ${classSize}
+**Strand:** ${strandName}
+**Sub-Strand:** ${subStrandName}
+**Day/Date:** ${dayDate}
 **Time/Duration:** ${duration}
 **Content Standard (Code):** ${contentStandardCode}
 **Indicator(s):** ${officialIndicatorText}
