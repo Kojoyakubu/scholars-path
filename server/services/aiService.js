@@ -89,6 +89,7 @@ Follow these rules:
 - Use the "Transformation Logic" below to convert the "Official NaCCA Indicator" into a learner-centric "Performance Indicator".
 - ✅ **NEW RULE: For the 'LESSON PHASES' table, make the middle column (Phase 2) significantly wider than Phase 1 and Phase 3.**
 - Fill in all other details faithfully from the information provided.
+- Everything should left alligned
 - Derive **Week Ending (Friday date)** from the given "Day/Date".
 - **CRITICAL RULE: Do not add any introductory sentences. Start the response directly with the '### TEACHER INFORMATION' heading.**
 
