@@ -1,7 +1,7 @@
 // /client/src/utils/downloadHelper.js
-import HTMLtoDOCX from 'html-docx-js-typescript';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
  * Generates and downloads a PDF from an HTML element.
