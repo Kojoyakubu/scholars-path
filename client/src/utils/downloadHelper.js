@@ -38,7 +38,7 @@ export const downloadAsPdf = (elementId, topic) => {
 /**
  * Generates and downloads a Word (.docx) document from an HTML element.
  */
-export const downloadAsWord = (elementId, topic) => {
+export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
     console.error(`Element with ID "${elementId}" not found for Word download.`);
@@ -46,74 +46,25 @@ export const downloadAsWord = (elementId, topic) => {
     return;
   }
 
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${element.innerHTML}</body></html>`;
-  const blob = HTMLtoDOCX(html);
-  const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
-  
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = safeFilename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+  const html = `<!DOCTYPE html>
+  <html>
+    <head><meta charset="UTF-8"></head>
+    <body style="font-size:10px; line-height:1.4;">${element.innerHTML}</body>
+  </html>`;
 
-/**
- * ✅ ADVANCED PDF DOWNLOAD (for Teachers)
- * Generates a structured PDF for a teacher's lesson note by reading rendered HTML.
- */
-export const downloadLessonNoteAsPdf = (elementId, topic) => {
   try {
-    const mainElement = document.getElementById(elementId);
-    if (!mainElement) {
-        throw new Error(`Element with ID "${elementId}" not found.`);
-    }
+    // ✅ Await the conversion Promise
+    const blob = await HTMLtoDOCX(html);
+    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
 
-    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-
-    // Helper to extract header data from the rendered HTML
-    const extractHeaderData = (element) => {
-        const headerData = [];
-        const boldElements = element.querySelectorAll('strong');
-        boldElements.forEach(strong => {
-            const label = strong.innerText.replace(':', '').trim();
-            const parent = strong.parentElement;
-            const value = parent.innerText.replace(strong.innerText, '').trim();
-            if (label && value) {
-              headerData.push([label, value]);
-            }
-        });
-        return headerData;
-    };
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, 15, { align: 'center' });
-
-    autoTable(doc, {
-      startY: 20,
-      body: extractHeaderData(mainElement),
-      theme: 'plain',
-      styles: { fontSize: 9, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } },
-      columnStyles: { 0: { fontStyle: 'bold' } },
-    });
-
-    const tableElement = mainElement.querySelector('table');
-    
-    if (tableElement) {
-        autoTable(doc, {
-            html: tableElement,
-            startY: doc.lastAutoTable.finalY + 5,
-            theme: 'grid',
-            headStyles: { fontSize: 9, fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-            styles: { fontSize: 9 },
-        });
-    }
-    
-    doc.save(safeFilename);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = safeFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   } catch (error) {
-    console.error('PDF generation error:', error);
-    alert('An error occurred while generating the PDF. Check the console for details.');
+    console.error('Word generation failed:', error);
+    alert('An error occurred while generating the Word document.');
   }
 };
