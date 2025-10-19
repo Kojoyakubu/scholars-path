@@ -36,11 +36,11 @@ function LessonNoteView() {
   const handleDownload = useCallback((type) => {
     if (!currentNote?.content) return;
     if (type === 'pdf') {
-      downloadLessonNoteAsPdf(currentNote.content, 'lesson_note');
+      downloadLessonNoteAsPdf('note-content-container', 'lesson_note'); // ✅ Passing the element ID
     } else if (type === 'word') {
       downloadAsWord('note-content-container', 'lesson_note');
     }
-  }, [currentNote]);
+}, [currentNote]);
 
   if (isLoading || !currentNote) {
     return <Container sx={{ textAlign: 'center', mt: 10 }}><CircularProgress /></Container>;
