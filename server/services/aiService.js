@@ -107,6 +107,7 @@ Follow these rules:
 **Week Ending:** [AI to compute Friday date based on ${dayDate}]
 **Class:** ${className}
 **Class Size:** ${classSize}
+**Subject:** ${subjectName}
 **Strand:** ${strandName}
 **Sub-Strand:** ${subStrandName}
 **Day/Date:** ${dayDate}
