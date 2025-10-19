@@ -12,4 +12,8 @@ export default defineConfig({
       },
     },
   },
+
+  optimizeDeps: {
+    include: ['html-docx-js-typescript'], // ✅ ensures Vite pre-bundles it
+  },
 })

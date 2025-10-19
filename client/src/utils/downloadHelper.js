@@ -2,7 +2,7 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import HTMLtoDOCX from 'html-docx-js-typescript/dist/html-docx';
+import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
  * ✅ SIMPLE PDF DOWNLOAD (for Students)
@@ -64,9 +64,11 @@ export const downloadAsWord = async (elementId, topic) => {
   </html>`;
 
   try {
-    // ✅ Proper usage of the library
-    const fileBuffer = await HTMLtoDOCX(html, null, { table: { row: { cantSplit: true } } });
-    const blob = new Blob([fileBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    // ✅ Works correctly with Vite & CommonJS import
+    const fileBuffer = await HTMLtoDOCX(html);
+    const blob = new Blob([fileBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
 
     const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
     const link = document.createElement('a');
