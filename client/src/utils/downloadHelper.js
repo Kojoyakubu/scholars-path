@@ -5,6 +5,37 @@ import autoTable from 'jspdf-autotable';
 import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
+ * ✅ SIMPLE PDF DOWNLOAD (for Students)
+ * Generates a PDF from an HTML element using the html2pdf.js library.
+ * This is used on the student dashboard for learner notes.
+ */
+export const downloadAsPdf = (elementId, topic) => {
+  const element = document.getElementById(elementId);
+  if (!element) {
+    console.error(`Element with ID "${elementId}" not found for PDF download.`);
+    alert('PDF generation failed: Content to print was not found.');
+    return;
+  }
+  // This library must be loaded in your main index.html file
+  if (!window.html2pdf) {
+    console.error('html2pdf.js is not loaded.');
+    alert('PDF generation library is not available. Please ensure it is included in your index.html.');
+    return;
+  }
+  
+  const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const options = {
+    margin: 10,
+    filename: safeFilename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+  };
+
+  window.html2pdf().set(options).from(element).save();
+};
+
+/**
  * Generates and downloads a Word (.docx) document from an HTML element.
  */
 export const downloadAsWord = (elementId, topic) => {
@@ -28,6 +59,7 @@ export const downloadAsWord = (elementId, topic) => {
 };
 
 /**
+ * ✅ ADVANCED PDF DOWNLOAD (for Teachers)
  * Generates a structured PDF for a teacher's lesson note by reading rendered HTML.
  */
 export const downloadLessonNoteAsPdf = (elementId, topic) => {
@@ -48,7 +80,7 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
             const label = strong.innerText.replace(':', '').trim();
             const parent = strong.parentElement;
             const value = parent.innerText.replace(strong.innerText, '').trim();
-            if (label && value) { // Only add if both label and value exist
+            if (label && value) {
               headerData.push([label, value]);
             }
         });
@@ -56,14 +88,13 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
     };
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10); // ✅ CHANGED: Title font size from 12 to 10
+    doc.setFontSize(10);
     doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, 15, { align: 'center' });
 
     autoTable(doc, {
       startY: 20,
       body: extractHeaderData(mainElement),
       theme: 'plain',
-      // ✅ CHANGED: Table font size from 9 to 9 (already good, but confirming)
       styles: { fontSize: 9, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } },
       columnStyles: { 0: { fontStyle: 'bold' } },
     });
@@ -75,9 +106,7 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
             html: tableElement,
             startY: doc.lastAutoTable.finalY + 5,
             theme: 'grid',
-            // ✅ CHANGED: Main table head font size
             headStyles: { fontSize: 9, fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-            // ✅ CHANGED: Main table body font size
             styles: { fontSize: 9 },
         });
     }
