@@ -92,6 +92,10 @@ Follow these rules:
 - Everything should left alligned
 - Derive **Week Ending (Friday date)** from the given "Day/Date".
 - **CRITICAL RULE: Do not add any introductory sentences. Start the response directly with the '### TEACHER INFORMATION' heading.**
+- **Make sure the lesson phase has these proportions. columnStyles: {
+              0: { columnWidth: '25%' }, // Phase 1
+              1: { columnWidth: '50%' }, // Phase 2 (wider)
+              2: { columnWidth: '25%' }, // Phase 3
 
 ---
 ### Transformation Logic (Example)
@@ -124,10 +128,6 @@ Follow these rules:
 | **PHASE 1: Starter (Preparing the Brain)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
 |:---|:---:|---:|
 | **Recap of Previous Lesson:** Briefly review prior knowledge relevant to today's topic.<br><br>**Engaging Activity:** A short, interactive task or question to capture learners' interest.<br><br>**Introduction of Lesson:** Clearly state the objective for the lesson. | **Activity 1: Introduction of Concept:** Introduce the main topic using a suitable method (e.g., demonstration, discussion, storytelling).<br><br>**Activity 2: Learner-Centered Activity:** Design a practical task for learners to apply the new knowledge. **This can be individual work, pair work, or group work, whichever is most appropriate for the topic.**<br><br>**Evaluation:** Ask 2-3 short questions to check for understanding.<br><br>**Assignment:** Give a short, relevant take-home task. | **Recap of Key Points:** Briefly summarize the most important ideas from the lesson.<br><br>**Learner Reflection:** Ask questions to help learners reflect on what they learned.<br><br>**Real-Life Application:** Link the lesson to everyday life. |
-columnStyles: {
-              0: { cellWidth: '25%' }, // Phase 1
-              1: { cellWidth: '50%' }, // Phase 2 (wider)
-              2: { cellWidth: '25%' }, // Phase 3
 ---
 
 <h5>
