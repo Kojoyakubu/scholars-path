@@ -33,7 +33,6 @@ const generateContent = async (prompt) => {
   }
 
   try {
-    // ✅ FIX 1: Added generationConfig to lower the temperature for more consistent output.
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
@@ -78,7 +77,6 @@ const generateGhanaianLessonNote = async (details = {}) => {
     dayDate = '[Day/Date]',
   } = details;
 
- // The 'indicatorCodes' variable now contains the full text from the form
   const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
 
   const prompt = `
@@ -87,8 +85,9 @@ You are a Ghanaian master teacher and curriculum expert.
 Generate a **professionally formatted Markdown lesson note** following this exact structure and tone.
 
 Follow these rules:
-**NEW RULE: The 'TEACHER INFORMATION' section MUST be formatted as a two-column layout. Each item must be on a new line with the label in bold (e.g., "**School:** Apeade Presby Basic School").**
-- **Use the "Transformation Logic" below to convert the "Official NaCCA Indicator" into a learner-centric "Performance Indicator".**
+- The 'TEACHER INFORMATION' section MUST be formatted as a two-column layout, with each item on a new line.
+- Use the "Transformation Logic" below to convert the "Official NaCCA Indicator" into a learner-centric "Performance Indicator".
+- ✅ **NEW RULE: For the 'LESSON PHASES' table, make the middle column (Phase 2) significantly wider than Phase 1 and Phase 3.**
 - Fill in all other details faithfully from the information provided.
 - Derive **Week Ending (Friday date)** from the given "Day/Date".
 - **CRITICAL RULE: Do not add any introductory sentences. Start the response directly with the '### TEACHER INFORMATION' heading.**
@@ -121,7 +120,7 @@ Follow these rules:
 ---
 
 | **PHASE 1: Starter (Preparing the Brain)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
-|---|---|---|
+|:---|:---:|---:|
 | Start with recap or warm-up linked to prior learning.<br><br>Engage learners with short activities or questions.<br><br>Introduce today’s lesson clearly. | **Activity 1:** Introduce concept through discussion or demonstration.<br><br>**Activity 2:** Learners engage in group/practical tasks.<br><br>**Activity 3:** Discuss findings and summarize main points.<br><br>**Evaluation:**<br>1. [Short question 1]<br>2. [Short question 2]<br>3. [Short question 3]<br><br>**Assignment:** Short reflective task linking to real-life. | Recap key learning points.<br><br>Allow learners to share reflections.<br><br>Encourage real-life application and continuous practice. |
 
 ---
