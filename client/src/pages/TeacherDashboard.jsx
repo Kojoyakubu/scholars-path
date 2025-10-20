@@ -1,3 +1,5 @@
+// /client/src/pages/TeacherDashboard.jsx
+
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
@@ -5,35 +7,40 @@ import { motion } from 'framer-motion';
 
 // --- Redux Imports ---
 import { fetchItems, fetchChildren, clearChildren } from '../features/curriculum/curriculumSlice';
-import { generateLessonNote, getMyLessonNotes, deleteLessonNote, resetTeacherState } from '../features/teacher/teacherSlice';
+import {
+  generateLessonNote,
+  getMyLessonNotes,
+  deleteLessonNote,
+  generateLearnerNote, // ✅ Import the new action
+  resetTeacherState,
+} from '../features/teacher/teacherSlice';
 
 // --- Component & Helper Imports ---
 import LessonNoteForm from '../components/LessonNoteForm';
-// Make sure you have the download helper utility from the previous steps
-// import { downloadLessonNoteAsPdf, downloadAsWord } from '../utils/downloadHelper';
 
 // --- MUI Imports ---
 import {
   Box, Typography, Container, Button, Grid, Select, MenuItem, FormControl,
   InputLabel, Paper, List, ListItem, ListItemText, ListItemButton, CircularProgress,
   Stack, IconButton, Dialog, DialogActions, DialogContent, DialogContentText,
-  DialogTitle, Snackbar, Alert,
+  DialogTitle, Snackbar, Alert, Tooltip,
 } from '@mui/material';
 import ArticleIcon from '@mui/icons-material/Article';
 import DeleteIcon from '@mui/icons-material/Delete';
+import FaceRetouchingNaturalIcon from '@mui/icons-material/FaceRetouchingNatural'; // New Icon
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
   const { levels, classes, subjects, strands, subStrands } = useSelector((state) => state.curriculum);
   const { lessonNotes, isLoading, isError, message } = useSelector((state) => state.teacher);
 
-  // State management
   const [selections, setSelections] = useState({ level: '', class: '', subject: '', strand: '', subStrand: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [generatingNoteId, setGeneratingNoteId] = useState(null); // State to track which note is generating
 
-  // --- Effects for data fetching and state management ---
+  // Effects remain the same...
   useEffect(() => {
     dispatch(fetchItems({ entity: 'levels' }));
     dispatch(getMyLessonNotes());
@@ -46,22 +53,20 @@ function TeacherDashboard() {
     return () => { if (message) dispatch(resetTeacherState()); };
   }, [message, isError, dispatch]);
 
-  // Chained dropdown fetching effects
   useEffect(() => { if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); }, [selections.level, dispatch]);
   useEffect(() => { if (selections.class) dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class })); }, [selections.class, dispatch]);
   useEffect(() => { if (selections.subject) dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject })); }, [selections.subject, dispatch]);
   useEffect(() => { if (selections.strand) dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand })); }, [selections.strand, dispatch]);
 
-  // --- Handlers ---
+
+  // Handlers remain largely the same...
   const handleSelectionChange = useCallback((e) => {
     const { name, value } = e.target;
     setSelections((prev) => {
       const newSelections = { ...prev, [name]: value };
       const resetMap = {
-        level: ['class', 'subject', 'strand', 'subStrand'],
-        class: ['subject', 'strand', 'subStrand'],
-        subject: ['strand', 'subStrand'],
-        strand: ['subStrand'],
+        level: ['class', 'subject', 'strand', 'subStrand'], class: ['subject', 'strand', 'subStrand'],
+        subject: ['strand', 'subStrand'], strand: ['subStrand'],
       };
       if (resetMap[name]) {
         resetMap[name].forEach((key) => (newSelections[key] = ''));
@@ -73,9 +78,7 @@ function TeacherDashboard() {
 
   const handleGenerateNote = useCallback((formData) => {
     dispatch(generateLessonNote({ ...formData, subStrandId: selections.subStrand }))
-      .unwrap()
-      .then(() => setIsModalOpen(false))
-      .catch(() => {});
+      .unwrap().then(() => setIsModalOpen(false)).catch(() => {});
   }, [dispatch, selections.subStrand]);
 
   const handleConfirmDelete = useCallback(() => {
@@ -84,17 +87,24 @@ function TeacherDashboard() {
       setNoteToDelete(null);
     }
   }, [dispatch, noteToDelete]);
+  
+  // ✅ NEW HANDLER for generating the learner note
+  const handleGenerateLearnerNote = useCallback((lessonNoteId) => {
+    setGeneratingNoteId(lessonNoteId); // Set loading state for this specific button
+    dispatch(generateLearnerNote(lessonNoteId))
+      .unwrap()
+      .catch(() => {}) // Errors are handled by the message effect
+      .finally(() => setGeneratingNoteId(null)); // Clear loading state
+  }, [dispatch]);
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
-  
-  // Reusable dropdown component
+
+  // UI rendering functions...
   const renderDropdown = (name, label, value, items, disabled = false) => (
     <FormControl fullWidth disabled={disabled}>
       <InputLabel>{label}</InputLabel>
       <Select name={name} value={value} label={label} onChange={handleSelectionChange}>
-        {items.map((item) => (
-          <MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>
-        ))}
+        {items.map((item) => (<MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>))}
       </Select>
     </FormControl>
   );
@@ -102,13 +112,9 @@ function TeacherDashboard() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
-        <Box textAlign="center" my={5}>
-          <Typography variant="h4" component="h1">Teacher Dashboard</Typography>
-        </Box>
-
-        {/* --- 📍 START OF MISSING UI CODE --- */}
+        <Box textAlign="center" my={5}><Typography variant="h4" component="h1">Teacher Dashboard</Typography></Box>
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
-          <Typography variant="h6" gutterBottom>Select Topic to Generate Note</Typography>
+          {/* ... Dropdown selection UI remains the same ... */}
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={3}>{renderDropdown('level', 'Level', selections.level, levels)}</Grid>
             <Grid item xs={12} sm={6} md={3}>{renderDropdown('class', 'Class', selections.class, classes, !selections.level)}</Grid>
@@ -123,58 +129,55 @@ function TeacherDashboard() {
 
         <Paper elevation={3} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>My Generated Lesson Notes</Typography>
-          {isLoading && lessonNotes.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}><CircularProgress /></Box>
-          ) : (
+          {isLoading && lessonNotes.length === 0 ? (<Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}><CircularProgress /></Box>) : (
             <List>
-              {lessonNotes.length > 0 ? lessonNotes.map((note) => (
+              {lessonNotes.map((note) => (
                 <ListItem key={note._id} disablePadding secondaryAction={
-                  <IconButton edge="end" aria-label="delete" onClick={() => setNoteToDelete(note._id)}>
-                    <DeleteIcon />
-                  </IconButton>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {/* ✅ NEW BUTTON to generate the learner note */}
+                    <Tooltip title="Generate Learner's Version">
+                      <IconButton
+                        edge="end"
+                        aria-label="generate learner note"
+                        onClick={() => handleGenerateLearnerNote(note._id)}
+                        disabled={generatingNoteId === note._id}
+                      >
+                        {generatingNoteId === note._id ? <CircularProgress size={24} /> : <FaceRetouchingNaturalIcon color="primary" />}
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Note">
+                      <IconButton edge="end" aria-label="delete" onClick={() => setNoteToDelete(note._id)}>
+                        <DeleteIcon color="error" />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
                 }>
                   <ListItemButton component={RouterLink} to={`/teacher/notes/${note._id}`}>
                     <ArticleIcon sx={{ mr: 2, color: 'action.active' }} />
                     <ListItemText
                       primaryTypographyProps={{ noWrap: true, fontWeight: 500 }}
                       primary={`Note from ${new Date(note.createdAt).toLocaleDateString()}`}
-                      secondary={note.content.substring(0, 150) + '...'}
+                      secondary={note.content.substring(0, 100) + '...'}
                     />
                   </ListItemButton>
                 </ListItem>
-              )) : (
-                <Typography color="text.secondary" sx={{ p: 2 }}>You haven't generated any lesson notes yet.</Typography>
-              )}
+              ))}
             </List>
           )}
         </Paper>
-        {/* --- 📍 END OF MISSING UI CODE --- */}
-
-        <LessonNoteForm
-          open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSubmit={handleGenerateNote}
-          subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
-          isLoading={isLoading}
-        />
-
+        
+        {/* Modals and Snackbars */}
+        <LessonNoteForm open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleGenerateNote} subStrandName={subStrands.find(s => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
         <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
           <DialogTitle>Confirm Deletion</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to permanently delete this lesson note? This action cannot be undone.
-            </DialogContentText>
-          </DialogContent>
+          <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note?</DialogContentText></DialogContent>
           <DialogActions>
             <Button onClick={() => setNoteToDelete(null)}>Cancel</Button>
             <Button onClick={handleConfirmDelete} color="error" autoFocus>Delete</Button>
           </DialogActions>
         </Dialog>
-
-        <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-          <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
-            {snackbar.message}
-          </Alert>
+        <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
+          <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
         </Snackbar>
       </Container>
     </motion.div>

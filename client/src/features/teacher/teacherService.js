@@ -30,12 +30,19 @@ const getTeacherAnalytics = async () => {
   return response.data;
 };
 
+/** Generates a simplified, learner-friendly version of an existing lesson note. */
+const generateLearnerNote = async (lessonNoteId) => {
+  const response = await api.post('/teacher/generate-learner-note', { lessonNoteId });
+  return response.data;
+};
+
 const teacherService = {
   getMyLessonNotes,
   generateLessonNote,
   getLessonNoteById,
   deleteLessonNote,
   getTeacherAnalytics,
+  generateLearnerNote,
 };
 
 export default teacherService;

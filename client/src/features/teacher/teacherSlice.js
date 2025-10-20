@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import teacherService from './teacherService';
 
-// --- Initial State ---
 const initialState = {
   lessonNotes: [],
   currentNote: null,
@@ -12,7 +11,7 @@ const initialState = {
   message: '',
 };
 
-// --- Thunk Creator Helper ---
+// Helper to create async thunks and handle errors consistently
 const createTeacherThunk = (name, serviceCall) => {
   return createAsyncThunk(`teacher/${name}`, async (arg, thunkAPI) => {
     try {
@@ -29,15 +28,14 @@ export const getMyLessonNotes = createTeacherThunk('getMyLessonNotes', teacherSe
 export const generateLessonNote = createTeacherThunk('generateLessonNote', teacherService.generateLessonNote);
 export const getLessonNoteById = createTeacherThunk('getLessonNoteById', teacherService.getLessonNoteById);
 export const deleteLessonNote = createTeacherThunk('deleteLessonNote', teacherService.deleteLessonNote);
+export const generateLearnerNote = createTeacherThunk('generateLearnerNote', teacherService.generateLearnerNote);
 export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
-// Add other thunks like createQuiz if needed
 
-// --- Teacher Slice ---
+
 const teacherSlice = createSlice({
   name: 'teacher',
   initialState,
   reducers: {
-    // Resets flags for the next operation
     resetTeacherState: (state) => {
       state.isError = false;
       state.isSuccess = false;
@@ -50,16 +48,28 @@ const teacherSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Specific fulfilled cases for data handling
-      .addCase(getMyLessonNotes.fulfilled, (state, action) => { state.lessonNotes = action.payload; })
-      .addCase(getLessonNoteById.fulfilled, (state, action) => { state.currentNote = action.payload; })
-      .addCase(getTeacherAnalytics.fulfilled, (state, action) => { state.analytics = action.payload; })
+      .addCase(getMyLessonNotes.fulfilled, (state, action) => {
+        state.lessonNotes = action.payload;
+      })
+      .addCase(getLessonNoteById.fulfilled, (state, action) => {
+        state.currentNote = action.payload;
+      })
+      .addCase(getTeacherAnalytics.fulfilled, (state, action) => {
+        state.analytics = action.payload;
+      })
       .addCase(generateLessonNote.fulfilled, (state, action) => {
-        state.lessonNotes.unshift(action.payload); // Add to the top of the list
+        state.lessonNotes.unshift(action.payload);
         state.isSuccess = true;
         state.message = 'Lesson Note Generated Successfully!';
       })
       .addCase(deleteLessonNote.fulfilled, (state, action) => {
-        state.lessonNotes = state.lessonNotes.filter((note) => note._id !== action.payload.id);
+        state.lessonNotes = state.lessonNotes.filter(
+          (note) => note._id !== action.payload.id
+        );
+        state.isSuccess = true;
+        state.message = action.payload.message;
+      })
+      .addCase(generateLearnerNote.fulfilled, (state, action) => {
         state.isSuccess = true;
         state.message = action.payload.message;
       })
@@ -67,17 +77,16 @@ const teacherSlice = createSlice({
       // Generic matchers for handling loading and error states
       .addMatcher((action) => action.type.startsWith('teacher/') && action.type.endsWith('/pending'), (state) => {
         state.isLoading = true;
+        state.isSuccess = false;
+        state.isError = false;
       })
       .addMatcher((action) => action.type.startsWith('teacher/') && action.type.endsWith('/fulfilled'), (state) => {
         state.isLoading = false;
-        state.isError = false; // Always reset error on success
-        state.message = ''; // Clear old error messages
       })
       .addMatcher((action) => action.type.startsWith('teacher/') && action.type.endsWith('/rejected'), (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
-        state.isSuccess = false;
       });
   },
 });
