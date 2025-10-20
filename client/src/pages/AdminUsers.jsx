@@ -33,8 +33,8 @@ function AdminUsers() {
     dispatch(approveUser(userId));
   }, [dispatch]);
 
-  const openDeleteConfirmation = useCallback((userId) => {
-    setUserToDelete(userId);
+  const openDeleteConfirmation = useCallback((user) => {
+    setUserToDelete(user);
     setOpenDeleteDialog(true);
   }, []);
 
@@ -45,11 +45,12 @@ function AdminUsers() {
 
   const handleDelete = useCallback(() => {
     if (userToDelete) {
-      dispatch(deleteUser(userToDelete));
+      dispatch(deleteUser(userToDelete._id));
     }
     closeDeleteConfirmation();
   }, [dispatch, userToDelete, closeDeleteConfirmation]);
 
+  // ✅ THE FIX IS HERE: Pass both userId and schoolId as a single object.
   const handleSchoolChange = useCallback((userId, schoolId) => {
     if (schoolId) {
       dispatch(assignUserToSchool({ userId, schoolId }));
@@ -81,26 +82,26 @@ function AdminUsers() {
                 <TableRow><TableCell colSpan={6} align="center" sx={{ py: 5 }}><CircularProgress /></TableCell></TableRow>
               ) : (
                 users.map((user) => (
-                  <TableRow key={user._id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                  <TableRow key={user._id} hover>
                     <TableCell>{user.fullName}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell sx={{ textTransform: 'capitalize' }}>{user.role.replace('_', ' ')}</TableCell>
                     <TableCell sx={{ textTransform: 'capitalize' }}>{user.status}</TableCell>
-                    <TableCell>{schools.find(s => s._id === user.school)?.name || 'N/A'}</TableCell>
+                    <TableCell>{user.school?.name || 'N/A'}</TableCell>
                     <TableCell>
-                      <Box display="flex" gap={1} alignItems="center">
+                      <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
                         {user.status === 'pending' && (
                           <Button variant="contained" size="small" onClick={() => handleApprove(user._id)}>Approve</Button>
                         )}
                         {user.role !== 'admin' && (
-                          <Button variant="outlined" color="error" size="small" onClick={() => openDeleteConfirmation(user._id)}>Delete</Button>
+                          <Button variant="outlined" color="error" size="small" onClick={() => openDeleteConfirmation(user)}>Delete</Button>
                         )}
                         {user.role !== 'admin' && (
                           <FormControl size="small" sx={{ minWidth: 150 }}>
                             <InputLabel>Assign School</InputLabel>
                             <Select
                               label="Assign School"
-                              value={user.school || ''}
+                              value={user.school?._id || ''}
                               onChange={(e) => handleSchoolChange(user._id, e.target.value)}
                             >
                               {schools.map((school) => (
@@ -129,7 +130,7 @@ function AdminUsers() {
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this user? This action cannot be undone.
+            Are you sure you want to delete the user "<strong>{userToDelete?.fullName}</strong>"? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
