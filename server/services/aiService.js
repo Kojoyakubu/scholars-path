@@ -11,7 +11,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // --- Model Configuration ---
 const modelConfig = {
-  model: 'gemini-2.5-pro',
+  model: 'gemini-2.5-pro', // Using the model you confirmed works
   safetySettings: [
     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -62,45 +62,27 @@ const generateContent = async (prompt) => {
  */
 const generateGhanaianLessonNote = async (details = {}) => {
   const {
-    school = '[School Name]',
-    className = '[Class]',
-    subjectName = '[Subject]',
-    strandName = '[Strand]',
-    subStrandName = '[Sub-Strand]',
-    week = '[Week]',
-    term = '[Term]',
-    duration = '[Duration]',
-    classSize = '[Class size]',
-    reference = '[Reference]',
-    contentStandardCode = '[Content Standard Code]',
-    indicatorCodes = [],
-    dayDate = '[Day/Date]',
+    school, className, subjectName, strandName, subStrandName, week,
+    term, duration, classSize, reference, contentStandardCode,
+    indicatorCodes, dayDate
   } = details;
 
   const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
 
   const prompt = `
-You are a Ghanaian master teacher and curriculum expert.
+You are a Ghanaian master teacher and curriculum expert. Generate a professionally formatted Markdown lesson note.
 
-Generate a **professionally formatted Markdown lesson note** following this exact structure and tone.
-
-Follow these rules:
-- The 'TEACHER INFORMATION' section MUST be formatted as a two-column layout, with each item on a new line.
-- Use the "Transformation Logic" below to convert the "Official NaCCA Indicator" into a learner-centric "Performance Indicator".
-- ✅ **NEW RULE: For the 'LESSON PHASES' table, make the middle column (Phase 2) significantly wider than Phase 1 and Phase 3.**
-- Fill in all other details faithfully from the information provided.
-- Everything should left alligned
-- Derive **Week Ending (Friday date)** from the given "Day/Date".
-- **CRITICAL RULE: Do not add any introductory sentences. Start the response directly with the '### TEACHER INFORMATION' heading.**
-- **Make sure the lesson phase has these proportions. columnStyles: {
-              0: { columnWidth: '25%' }, // Phase 1
-              1: { columnWidth: '50%' }, // Phase 2 (wider)
-              2: { columnWidth: '25%' }, // Phase 3
+Follow these rules STRICTLY:
+1.  **Layout:** The 'TEACHER INFORMATION' section must be a two-column layout with left-aligned text.
+2.  **Transformation:** Use the "Transformation Logic" to convert the "Official NaCCA Indicator" into a learner-centric "Performance Indicator".
+3.  **Table Proportions:** For the 'LESSON PHASES' table, make the middle column (Phase 2) much wider than Phase 1 and Phase 3 (roughly 25% | 50% | 25%).
+4.  **Dates:** Derive the **Week Ending (Friday date)** from the user's "Day/Date".
+5.  **No Filler:** Do not add any introductory sentences. Start the response directly with the '### TEACHER INFORMATION' heading.
 
 ---
 ### Transformation Logic (Example)
-- **IF the user provides this Indicator:** "Discuss the fourth-generation computers"
-- **THEN you must generate this Performance Indicator:** "The learner can identify the features of fourth-generation computers."
+- **IF Official Indicator is:** "Discuss the fourth-generation computers"
+- **THEN Performance Indicator must be:** "The learner can identify the features of fourth-generation computers."
 ---
 
 ### TEACHER INFORMATION
@@ -118,39 +100,34 @@ Follow these rules:
 **Time/Duration:** ${duration}
 **Content Standard (Code):** ${contentStandardCode}
 **Indicator(s):** ${officialIndicatorText}
-**Performance Indicator:** [AI to generate a new 2-3 indicator using the Transformation Logic above]
-**Core Competencies:** Select 3–4 relevant ones (e.g., Communication, Collaboration, Critical Thinking).
-**Teaching & Learning Materials:** Suggest realistic and accessible materials.
+**Performance Indicator:** [AI to generate 2-3 new indicators using the Transformation Logic]
+**Core Competencies:** Select 3–4 relevant ones.
+**Teaching & Learning Materials:** Suggest realistic materials.
 **Reference:** ${reference}
 
 ---
 
 | **PHASE 1: Starter (Preparing the Brain)** | **PHASE 2: Main (New Learning & Assessment)** | **PHASE 3: Plenary/Reflection** |
 |:---|:---:|---:|
-| **Recap of Previous Lesson:** Briefly review prior knowledge relevant to today's topic.<br><br>**Engaging Activity:** A short, interactive task or question to capture learners' interest.<br><br>**Introduction of Lesson:** Clearly state the objective for the lesson. | **Activity 1: Introduction of Concept:** Introduce the main topic using a suitable method (e.g., demonstration, discussion, storytelling).<br><br>**Activity 2: Learner-Centered Activity:** Design a practical task for learners to apply the new knowledge. **This can be individual work, pair work, or group work, whichever is most appropriate for the topic.**<br><br>**Evaluation:** Ask 2-3 short questions to check for understanding.<br><br>**Assignment:** Give a short, relevant take-home task. | **Recap of Key Points:** Briefly summarize the most important ideas from the lesson.<br><br>**Learner Reflection:** Ask questions to help learners reflect on what they learned.<br><br>**Real-Life Application:** Link the lesson to everyday life. |
+| **Recap:** Review prior knowledge.<br><br>**Engaging Activity:** A short task to capture interest.<br><br>**Introduction:** State the lesson's objective. | **Activity 1:** Introduce the main topic.<br><br>**Activity 2:** Design a practical task (individual, pair, or group work).<br><br>**Evaluation:** Ask 2-3 short questions.<br><br>**Assignment:** Give a short take-home task. | **Recap:** Summarize key ideas.<br><br>**Learner Reflection:** Ask questions to help learners reflect.<br><br>**Real-Life Application:** Link the lesson to everyday life. |
+
 ---
 
-<h5>
-Facilitator: ..................................................
+**Facilitator:** ..................................................
 <br><br>
-Vetted By: ....................................................
+**Vetted By:** ....................................................
 <br><br>
-Signature: ....................................................
+**Signature:** ....................................................
 <br><br>
-Date: ....................................................
-</h5>
+**Date:** ....................................................
+
 ---
 `;
 
   return generateContent(prompt);
 };
 
-/**
- * ✅ NEW AND IMPROVED LEARNER NOTE FUNCTION
- * Converts a teacher's lesson note into a detailed study note for students.
- * @param {string} teacherContent - The full teacher's lesson note.
- * @returns {Promise<string>} - Simplified but detailed learner version.
- */
+
 const generateLearnerFriendlyNote = async (teacherContent) => {
   if (!teacherContent || typeof teacherContent !== 'string') {
     throw new Error('Teacher content must be a non-empty string.');
@@ -162,7 +139,7 @@ You are a friendly Ghanaian teacher creating a study note for a Junior High Scho
 **Guidelines:**
 1.  **Extract the Topic:** Identify the main Sub-Strand from the teacher's note and use it as the main heading (e.g., "## Components of Computers").
 2.  **Explain in Detail:** Do not just summarize. Read the 'Phase 2: Main Learning' section of the teacher's note and explain the key concepts in detail. Use simple language and provide clear definitions and examples.
-3.  **Structure:** Use Markdown for structure. Use subheadings (\###\), bullet points (`*`), and bold text (`**word**`) to organize the information.
+3.  **Structure:** Use Markdown for structure. Use subheadings (\`###\`), bullet points (\`*\`), and bold text (\`**word**\`) to organize the information.
 4.  **Engage the Learner:** At the end of the note, add a section called "✍️ **Check Your Understanding**" with one or two simple questions based on the note to help the student review.
 5.  **CRITICAL RULE:** Do not add any conversational introductions like "Hello!" or "Here is the note...". Start the note directly with the main heading.
 
