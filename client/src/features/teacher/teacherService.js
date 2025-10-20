@@ -1,48 +1,43 @@
 import api from '../../api/axios';
 
-/** Fetches all lesson notes for the currently logged-in teacher. */
 const getMyLessonNotes = async () => {
-  const response = await api.get('/teacher/lesson-notes'); // Corrected endpoint
-  return response.data;
+    const response = await api.get('/teacher/lesson-notes');
+    return response.data;
 };
 
-/** Sends data to the backend to generate a new lesson note using AI. */
 const generateLessonNote = async (noteData) => {
-  const response = await api.post('/teacher/generate-note', noteData);
-  return response.data;
+    const response = await api.post('/teacher/generate-note', noteData);
+    return response.data;
 };
 
-/** Fetches a single, specific lesson note by its ID. */
 const getLessonNoteById = async (noteId) => {
-  const response = await api.get(`/teacher/lesson-notes/${noteId}`); // Corrected endpoint
-  return response.data;
+    const response = await api.get(`/teacher/lesson-notes/${noteId}`);
+    return response.data;
 };
 
-/** Deletes a specific lesson note by its ID. */
 const deleteLessonNote = async (noteId) => {
-  const response = await api.delete(`/teacher/lesson-notes/${noteId}`); // Corrected endpoint
-  return response.data; // Returns { id, message }
+    const response = await api.delete(`/teacher/lesson-notes/${noteId}`);
+    return response.data;
 };
 
-/** Fetches analytics data for the teacher dashboard. */
-const getTeacherAnalytics = async () => {
-  const response = await api.get('/teacher/analytics');
-  return response.data;
-};
-
-/** Generates a simplified, learner-friendly version of an existing lesson note. */
+/** ✅ ADD THIS FUNCTION **/
 const generateLearnerNote = async (lessonNoteId) => {
   const response = await api.post('/teacher/generate-learner-note', { lessonNoteId });
   return response.data;
 };
 
+const getTeacherAnalytics = async () => {
+    const response = await api.get('/teacher/analytics');
+    return response.data;
+};
+
 const teacherService = {
-  getMyLessonNotes,
-  generateLessonNote,
-  getLessonNoteById,
-  deleteLessonNote,
-  getTeacherAnalytics,
-  generateLearnerNote,
+    getMyLessonNotes,
+    generateLessonNote,
+    getLessonNoteById,
+    deleteLessonNote,
+    generateLearnerNote, // ✅ EXPORT THE NEW FUNCTION
+    getTeacherAnalytics,
 };
 
 export default teacherService;

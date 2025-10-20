@@ -1,5 +1,3 @@
-// /client/src/pages/TeacherDashboard.jsx
-
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
@@ -11,7 +9,7 @@ import {
   generateLessonNote,
   getMyLessonNotes,
   deleteLessonNote,
-  generateLearnerNote, // ✅ Import the new action
+  generateLearnerNote, // Import the new action
   resetTeacherState,
 } from '../features/teacher/teacherSlice';
 
@@ -38,9 +36,8 @@ function TeacherDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [generatingNoteId, setGeneratingNoteId] = useState(null); // State to track which note is generating
+  const [generatingNoteId, setGeneratingNoteId] = useState(null);
 
-  // Effects remain the same...
   useEffect(() => {
     dispatch(fetchItems({ entity: 'levels' }));
     dispatch(getMyLessonNotes());
@@ -58,8 +55,6 @@ function TeacherDashboard() {
   useEffect(() => { if (selections.subject) dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject })); }, [selections.subject, dispatch]);
   useEffect(() => { if (selections.strand) dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand })); }, [selections.strand, dispatch]);
 
-
-  // Handlers remain largely the same...
   const handleSelectionChange = useCallback((e) => {
     const { name, value } = e.target;
     setSelections((prev) => {
@@ -88,18 +83,17 @@ function TeacherDashboard() {
     }
   }, [dispatch, noteToDelete]);
   
-  // ✅ NEW HANDLER for generating the learner note
+  // ✅ NEW HANDLER
   const handleGenerateLearnerNote = useCallback((lessonNoteId) => {
-    setGeneratingNoteId(lessonNoteId); // Set loading state for this specific button
+    setGeneratingNoteId(lessonNoteId);
     dispatch(generateLearnerNote(lessonNoteId))
       .unwrap()
-      .catch(() => {}) // Errors are handled by the message effect
-      .finally(() => setGeneratingNoteId(null)); // Clear loading state
+      .catch(() => {})
+      .finally(() => setGeneratingNoteId(null));
   }, [dispatch]);
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
 
-  // UI rendering functions...
   const renderDropdown = (name, label, value, items, disabled = false) => (
     <FormControl fullWidth disabled={disabled}>
       <InputLabel>{label}</InputLabel>
@@ -114,7 +108,6 @@ function TeacherDashboard() {
       <Container maxWidth="lg">
         <Box textAlign="center" my={5}><Typography variant="h4" component="h1">Teacher Dashboard</Typography></Box>
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
-          {/* ... Dropdown selection UI remains the same ... */}
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={3}>{renderDropdown('level', 'Level', selections.level, levels)}</Grid>
             <Grid item xs={12} sm={6} md={3}>{renderDropdown('class', 'Class', selections.class, classes, !selections.level)}</Grid>
@@ -134,7 +127,7 @@ function TeacherDashboard() {
               {lessonNotes.map((note) => (
                 <ListItem key={note._id} disablePadding secondaryAction={
                   <Stack direction="row" spacing={1} alignItems="center">
-                    {/* ✅ NEW BUTTON to generate the learner note */}
+                    {/* ✅ NEW BUTTON UI */}
                     <Tooltip title="Generate Learner's Version">
                       <IconButton
                         edge="end"
@@ -166,7 +159,6 @@ function TeacherDashboard() {
           )}
         </Paper>
         
-        {/* Modals and Snackbars */}
         <LessonNoteForm open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleGenerateNote} subStrandName={subStrands.find(s => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
         <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
           <DialogTitle>Confirm Deletion</DialogTitle>
