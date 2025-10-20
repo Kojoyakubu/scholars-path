@@ -146,9 +146,10 @@ Date: ....................................................
 };
 
 /**
- * Converts a teacher's lesson note into a learner-friendly summary.
+ * ✅ NEW AND IMPROVED LEARNER NOTE FUNCTION
+ * Converts a teacher's lesson note into a detailed study note for students.
  * @param {string} teacherContent - The full teacher's lesson note.
- * @returns {Promise<string>} - Simplified learner version.
+ * @returns {Promise<string>} - Simplified but detailed learner version.
  */
 const generateLearnerFriendlyNote = async (teacherContent) => {
   if (!teacherContent || typeof teacherContent !== 'string') {
@@ -156,15 +157,19 @@ const generateLearnerFriendlyNote = async (teacherContent) => {
   }
 
   const prompt = `
-Transform the following teacher's lesson note into a **learner-friendly summary**.
+You are a friendly Ghanaian teacher creating a study note for a Junior High School student. Your task is to transform the formal teacher's lesson note below into a detailed but easy-to-understand study guide.
 
-Guidelines:
-- Use simple Ghanaian English suitable for Basic school learners.
-- Use bullet points and a friendly tone.
-- Highlight only key learning points.
+**Guidelines:**
+1.  **Extract the Topic:** Identify the main Sub-Strand from the teacher's note and use it as the main heading (e.g., "## Components of Computers").
+2.  **Explain in Detail:** Do not just summarize. Read the 'Phase 2: Main Learning' section of the teacher's note and explain the key concepts in detail. Use simple language and provide clear definitions and examples.
+3.  **Structure:** Use Markdown for structure. Use subheadings (\###\), bullet points (`*`), and bold text (`**word**`) to organize the information.
+4.  **Engage the Learner:** At the end of the note, add a section called "✍️ **Check Your Understanding**" with one or two simple questions based on the note to help the student review.
+5.  **CRITICAL RULE:** Do not add any conversational introductions like "Hello!" or "Here is the note...". Start the note directly with the main heading.
 
-**Teacher's Lesson Note:**
+**Teacher's Lesson Note to Transform:**
+---
 ${teacherContent}
+---
 `;
 
   return generateContent(prompt);
