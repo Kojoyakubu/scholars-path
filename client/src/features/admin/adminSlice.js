@@ -1,5 +1,3 @@
-// src/features/admin/adminSlice.js (Revised)
-
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import adminService from './adminService';
 
@@ -12,20 +10,82 @@ const initialState = {
   schools: [],
   isLoading: false,
   isError: false,
+  isSuccess: false,
   message: '',
 };
 
-// --- Async Thunks (Simplified) ---
-// No more token logic needed here!
+// --- Async Thunks ---
+export const getUsers = createAsyncThunk('admin/getUsers', async (pageNumber, thunkAPI) => {
+  try {
+    return await adminService.getUsers(pageNumber);
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
 
-export const getUsers = createAsyncThunk('admin/getUsers', adminService.getUsers);
-export const approveUser = createAsyncThunk('admin/approveUser', adminService.approveUser);
-export const deleteUser = createAsyncThunk('admin/deleteUser', adminService.deleteUser);
-export const createSchool = createAsyncThunk('admin/createSchool', adminService.createSchool);
-export const deleteSchool = createAsyncThunk('admin/deleteSchool', adminService.deleteSchool);
-export const assignUserToSchool = createAsyncThunk('admin/assignUserToSchool', adminService.assignUserToSchool);
-export const getStats = createAsyncThunk('admin/getStats', adminService.getStats);
-export const getSchools = createAsyncThunk('admin/getSchools', adminService.getSchools);
+export const approveUser = createAsyncThunk('admin/approveUser', async (userId, thunkAPI) => {
+  try {
+    return await adminService.approveUser(userId);
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const deleteUser = createAsyncThunk('admin/deleteUser', async (userId, thunkAPI) => {
+  try {
+    return await adminService.deleteUser(userId);
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const assignUserToSchool = createAsyncThunk('admin/assignUserToSchool', async (data, thunkAPI) => {
+  try {
+    return await adminService.assignUserToSchool(data);
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const getStats = createAsyncThunk('admin/getStats', async (_, thunkAPI) => {
+  try {
+    return await adminService.getStats();
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const getSchools = createAsyncThunk('admin/getSchools', async (_, thunkAPI) => {
+  try {
+    return await adminService.getSchools();
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const createSchool = createAsyncThunk('admin/createSchool', async (schoolData, thunkAPI) => {
+  try {
+    return await adminService.createSchool(schoolData);
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const deleteSchool = createAsyncThunk('admin/deleteSchool', async (schoolId, thunkAPI) => {
+  try {
+    return await adminService.deleteSchool(schoolId);
+  } catch (error) {
+    const message = (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
 
 
 // --- Admin Slice ---
@@ -34,8 +94,8 @@ export const adminSlice = createSlice({
   initialState,
   reducers: {
     resetAdminState: (state) => {
-      state.isLoading = false;
       state.isError = false;
+      state.isSuccess = false;
       state.message = '';
     }
   },
@@ -43,21 +103,23 @@ export const adminSlice = createSlice({
     builder
       // getUsers
       .addCase(getUsers.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.users = action.payload.users;
         state.page = action.payload.page;
         state.pages = action.payload.pages;
       })
       
-      // approveUser & assignUserToSchool (they do the same thing: update a user)
+      // ✅ CORRECTED approveUser LOGIC
       .addCase(approveUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.users = state.users.map(user => 
-            user._id === action.payload._id ? action.payload : user
-        );
+        const index = state.users.findIndex(user => user._id === action.payload.id);
+        if (index !== -1) {
+          state.users[index].status = 'approved';
+        }
+        state.isSuccess = true;
+        state.message = action.payload.message;
       })
+      
+      // assignUserToSchool (returns the full user object)
       .addCase(assignUserToSchool.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.users = state.users.map(user => 
             user._id === action.payload._id ? action.payload : user
         );
@@ -65,50 +127,41 @@ export const adminSlice = createSlice({
 
       // deleteUser
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.users = state.users.filter((user) => user._id !== action.payload);
       })
       
       // getStats
       .addCase(getStats.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.stats = action.payload;
       })
       
       // getSchools
       .addCase(getSchools.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.schools = action.payload;
       })
       
       // createSchool
       .addCase(createSchool.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.schools.push(action.payload.school);
       })
       
       // deleteSchool
       .addCase(deleteSchool.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.schools = state.schools.filter((school) => school._id !== action.payload);
       })
 
-      // Use addMatcher for generic pending/rejected cases to reduce boilerplate
-      .addMatcher(
-        (action) => action.type.startsWith('admin/') && action.type.endsWith('/pending'),
-        (state) => {
-          state.isLoading = true;
-        }
-      )
-      .addMatcher(
-        (action) => action.type.startsWith('admin/') && action.type.endsWith('/rejected'),
-        (state, action) => {
-          state.isLoading = false;
-          state.isError = true;
-          const message = action.payload || (action.error ? action.error.message : 'An unknown error occurred');
-          state.message = message;
-        }
-      );
+      // Generic matchers for handling loading and error states
+      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/pending'), (state) => {
+        state.isLoading = true;
+      })
+      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/fulfilled'), (state) => {
+        state.isLoading = false;
+      })
+      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/rejected'), (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      });
   },
 });
 

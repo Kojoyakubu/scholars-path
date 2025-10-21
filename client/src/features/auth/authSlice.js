@@ -1,169 +1,125 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import adminService from './adminService';
+// src/features/auth/authSlice.js (Revised)
 
-// --- Initial State ---
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import authService from './authService';
+
+// Attempt to get user from localStorage on initial load
+const user = JSON.parse(localStorage.getItem('user'));
+
 const initialState = {
-  users: [],
-  pages: 1,
-  page: 1,
-  stats: {},
-  schools: [],
-  isLoading: false,
+  user: user ? user : null,
   isError: false,
   isSuccess: false,
+  isLoading: false, // This will track loading for any auth-related async action
   message: '',
 };
 
-// --- Async Thunks ---
-export const getUsers = createAsyncThunk('admin/getUsers', async (pageNumber, thunkAPI) => {
+// --- Async Thunks (Simplified) ---
+
+export const register = createAsyncThunk('auth/register', async (userData, thunkAPI) => {
   try {
-    return await adminService.getUsers(pageNumber);
+    return await authService.register(userData);
   } catch (error) {
     const message = (error.response?.data?.message) || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
-export const approveUser = createAsyncThunk('admin/approveUser', async (userId, thunkAPI) => {
+export const login = createAsyncThunk('auth/login', async (userData, thunkAPI) => {
   try {
-    return await adminService.approveUser(userId);
+    return await authService.login(userData);
   } catch (error) {
     const message = (error.response?.data?.message) || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
-export const deleteUser = createAsyncThunk('admin/deleteUser', async (userId, thunkAPI) => {
+// The getMe thunk is now simpler as it doesn't need to pass the token
+export const getMe = createAsyncThunk('auth/getMe', async (_, thunkAPI) => {
   try {
-    return await adminService.deleteUser(userId);
+    const freshUserData = await authService.getMe();
+    // Get the current user state to preserve the token
+    const currentUser = thunkAPI.getState().auth.user;
+    return { ...currentUser, ...freshUserData }; // Merge new data with existing, preserving token
   } catch (error) {
     const message = (error.response?.data?.message) || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
-export const assignUserToSchool = createAsyncThunk('admin/assignUserToSchool', async (data, thunkAPI) => {
-  try {
-    return await adminService.assignUserToSchool(data);
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const getStats = createAsyncThunk('admin/getStats', async (_, thunkAPI) => {
-  try {
-    return await adminService.getStats();
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const getSchools = createAsyncThunk('admin/getSchools', async (_, thunkAPI) => {
-  try {
-    return await adminService.getSchools();
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const createSchool = createAsyncThunk('admin/createSchool', async (schoolData, thunkAPI) => {
-  try {
-    return await adminService.createSchool(schoolData);
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-export const deleteSchool = createAsyncThunk('admin/deleteSchool', async (schoolId, thunkAPI) => {
-  try {
-    return await adminService.deleteSchool(schoolId);
-  } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
+// The logout action is now an async thunk to handle potential side effects cleanly
+export const logout = createAsyncThunk('auth/logout', async () => {
+    await authService.logout();
 });
 
 
-// --- Admin Slice ---
-export const adminSlice = createSlice({
-  name: 'admin',
+// --- Auth Slice ---
+
+export const authSlice = createSlice({
+  name: 'auth',
   initialState,
   reducers: {
-    resetAdminState: (state) => {
-      state.isError = false;
+    // A general reset action to clear status flags
+    reset: (state) => {
       state.isSuccess = false;
+      state.isError = false;
       state.message = '';
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
-      // getUsers
-      .addCase(getUsers.fulfilled, (state, action) => {
-        state.users = action.payload.users;
-        state.page = action.payload.page;
-        state.pages = action.payload.pages;
-      })
-      
-      // ✅ CORRECTED approveUser LOGIC
-      .addCase(approveUser.fulfilled, (state, action) => {
-        const index = state.users.findIndex(user => user._id === action.payload.id);
-        if (index !== -1) {
-          state.users[index].status = 'approved';
-        }
+      // Register
+      .addCase(register.fulfilled, (state, action) => {
         state.isSuccess = true;
-        state.message = action.payload.message;
-      })
-      
-      // assignUserToSchool (returns the full user object)
-      .addCase(assignUserToSchool.fulfilled, (state, action) => {
-        state.users = state.users.map(user => 
-            user._id === action.payload._id ? action.payload : user
-        );
+        state.message = action.payload.message; // API returns { message: '...' }
       })
 
-      // deleteUser
-      .addCase(deleteUser.fulfilled, (state, action) => {
-        state.users = state.users.filter((user) => user._id !== action.payload);
-      })
-      
-      // getStats
-      .addCase(getStats.fulfilled, (state, action) => {
-        state.stats = action.payload;
-      })
-      
-      // getSchools
-      .addCase(getSchools.fulfilled, (state, action) => {
-        state.schools = action.payload;
-      })
-      
-      // createSchool
-      .addCase(createSchool.fulfilled, (state, action) => {
-        state.schools.push(action.payload.school);
-      })
-      
-      // deleteSchool
-      .addCase(deleteSchool.fulfilled, (state, action) => {
-        state.schools = state.schools.filter((school) => school._id !== action.payload);
+      // Login
+      .addCase(login.fulfilled, (state, action) => {
+        state.isSuccess = true;
+        state.user = action.payload;
       })
 
-      // Generic matchers for handling loading and error states
-      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/pending'), (state) => {
-        state.isLoading = true;
+      // Logout
+      .addCase(logout.fulfilled, (state) => {
+        state.user = null;
       })
-      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/fulfilled'), (state) => {
-        state.isLoading = false;
+
+      // getMe (Fetch user profile)
+      .addCase(getMe.fulfilled, (state, action) => {
+        state.user = action.payload;
+        // Also update localStorage so the user stays logged in with the new info
+        localStorage.setItem('user', JSON.stringify(action.payload));
       })
-      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/rejected'), (state, action) => {
-        state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
-      });
+      .addCase(getMe.rejected, (state, action) => {
+        // If getMe fails (e.g., token expired), log the user out
+        state.user = null;
+        authService.logout();
+      })
+
+      // Use addMatcher for generic pending/rejected/fulfilled cases to reduce boilerplate
+      .addMatcher(
+        (action) => action.type.startsWith('auth/') && action.type.endsWith('/pending'),
+        (state) => {
+          state.isLoading = true;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('auth/') && action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.isLoading = false;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('auth/') && action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.isError = true;
+          state.message = action.payload;
+        }
+      );
   },
 });
 
-export const { resetAdminState } = adminSlice.actions;
-export default adminSlice.reducer;
+export const { reset } = authSlice.actions;
+export default authSlice.reducer;
