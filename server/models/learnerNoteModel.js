@@ -22,6 +22,11 @@ const learnerNoteSchema = new mongoose.Schema({
     ref: 'School',
     index: true, // Index for faster queries
   },
+  status: {
+    type: String,
+    enum: ['draft', 'published'],
+    default: 'draft', // New notes will be drafts by default
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('LearnerNote', learnerNoteSchema);

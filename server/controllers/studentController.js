@@ -41,7 +41,8 @@ const calculateQuizScore = (quiz, answers) => {
 const getLearnerNotes = asyncHandler(async (req, res) => {
   const notes = await LearnerNote.find({ 
     subStrand: req.params.subStrandId, 
-    school: req.user.school // Security: Ensure student only sees notes for their school
+    school: req.user.school, // Security: Ensure student only sees notes for their school
+    status: 'published'
   });
   res.json(notes);
 });

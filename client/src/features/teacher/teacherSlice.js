@@ -3,6 +3,7 @@ import teacherService from './teacherService';
 
 const initialState = {
   lessonNotes: [],
+  draftLearnerNotes: [],
   currentNote: null,
   analytics: {},
   isLoading: false,
@@ -30,7 +31,9 @@ export const getLessonNoteById = createTeacherThunk('getLessonNoteById', teacher
 export const deleteLessonNote = createTeacherThunk('deleteLessonNote', teacherService.deleteLessonNote);
 export const generateLearnerNote = createTeacherThunk('generateLearnerNote', teacherService.generateLearnerNote);
 export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
-
+export const getDraftLearnerNotes = createTeacherThunk('getDraftLearnerNotes', teacherService.getDraftLearnerNotes);
+export const publishLearnerNote = createTeacherThunk('publishLearnerNote', teacherService.publishLearnerNote);
+export const deleteLearnerNote = createTeacherThunk('deleteLearnerNote', teacherService.deleteLearnerNote);
 
 const teacherSlice = createSlice({
   name: 'teacher',
@@ -70,6 +73,21 @@ const teacherSlice = createSlice({
         state.message = action.payload.message;
       })
       .addCase(generateLearnerNote.fulfilled, (state, action) => {
+        state.draftLearnerNotes.unshift(action.payload.learnerNote);
+        state.isSuccess = true;
+        state.message = action.payload.message;
+      })
+      .addCase(getDraftLearnerNotes.fulfilled, (state, action) => {
+        state.draftLearnerNotes = action.payload;
+      })
+      .addCase(publishLearnerNote.fulfilled, (state, action) => {
+        // Remove the note from the drafts list once it's published
+        state.draftLearnerNotes = state.draftLearnerNotes.filter(note => note._id !== action.payload.id);
+        state.isSuccess = true;
+        state.message = action.payload.message;
+      })
+      .addCase(deleteLearnerNote.fulfilled, (state, action) => {
+        state.draftLearnerNotes = state.draftLearnerNotes.filter(note => note._id !== action.payload.id);
         state.isSuccess = true;
         state.message = action.payload.message;
       })

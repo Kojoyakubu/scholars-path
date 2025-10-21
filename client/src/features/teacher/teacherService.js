@@ -31,13 +31,31 @@ const getTeacherAnalytics = async () => {
     return response.data;
 };
 
+const getDraftLearnerNotes = async () => {
+  const response = await api.get('/teacher/learner-notes/drafts');
+  return response.data;
+};
+
+const publishLearnerNote = async (noteId) => {
+  const response = await api.put(`/teacher/learner-notes/${noteId}/publish`);
+  return response.data;
+};
+
+const deleteLearnerNote = async (noteId) => {
+  const response = await api.delete(`/teacher/learner-notes/${noteId}`);
+  return response.data;
+};
+
 const teacherService = {
     getMyLessonNotes,
     generateLessonNote,
     getLessonNoteById,
     deleteLessonNote,
-    generateLearnerNote, // ✅ EXPORT THE NEW FUNCTION
+    generateLearnerNote,
     getTeacherAnalytics,
+    getDraftLearnerNotes,
+    publishLearnerNote,
+    deleteLearnerNote,
 };
 
 export default teacherService;

@@ -214,6 +214,49 @@ const getTeacherAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get all draft learner notes for the logged-in teacher
+ * @route   GET /api/teacher/learner-notes/drafts
+ * @access  Private (Teacher)
+ */
+const getDraftLearnerNotes = asyncHandler(async (req, res) => {
+  const draftNotes = await LearnerNote.find({ author: req.user.id, status: 'draft' })
+    .populate('subStrand', 'name')
+    .sort({ createdAt: -1 });
+  res.json(draftNotes);
+});
+
+/**
+ * @desc    Publish a draft learner note
+ * @route   PUT /api/teacher/learner-notes/:id/publish
+ * @access  Private (Teacher)
+ */
+const publishLearnerNote = asyncHandler(async (req, res) => {
+  const note = await LearnerNote.findOne({ _id: req.params.id, author: req.user.id });
+  if (!note) {
+    res.status(404);
+    throw new Error('Draft note not found.');
+  }
+  note.status = 'published';
+  await note.save();
+  res.json({ message: 'Note published successfully!', id: note._id });
+});
+
+/**
+ * @desc    Delete a draft learner note
+ * @route   DELETE /api/teacher/learner-notes/:id
+ * @access  Private (Teacher)
+ */
+const deleteLearnerNote = asyncHandler(async (req, res) => {
+  const note = await LearnerNote.findOne({ _id: req.params.id, author: req.user.id });
+  if (!note) {
+    res.status(404);
+    throw new Error('Draft note not found.');
+  }
+  await note.deleteOne();
+  res.json({ message: 'Draft note deleted successfully!', id: note._id });
+});
+
 module.exports = {
   generateLessonNote,
   getMyLessonNotes,
@@ -223,4 +266,7 @@ module.exports = {
   createQuiz,
   uploadResource,
   getTeacherAnalytics,
+  getDraftLearnerNotes,
+  publishLearnerNote,
+  deleteLearnerNote,
 };

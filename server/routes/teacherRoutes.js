@@ -48,8 +48,14 @@ router.route('/lesson-notes/:id')
   .delete(mongoIdParam('id'), handleValidationErrors, deleteLessonNote);
 
 router.get('/analytics', getTeacherAnalytics);
+
 router.post('/generate-note', generateNoteValidator, handleValidationErrors, generateLessonNote);
 router.post('/generate-learner-note', mongoIdBody('lessonNoteId'), handleValidationErrors, generateLearnerNote);
+// ✅ ADD THESE ROUTES for managing learner notes
+router.get('/learner-notes/drafts', getDraftLearnerNotes);
+router.put('/learner-notes/:id/publish', mongoIdParam('id'), handleValidationErrors, publishLearnerNote);
+router.delete('/learner-notes/:id', mongoIdParam('id'), handleValidationErrors, deleteLearnerNote);
+
 router.post('/create-quiz', createQuizValidator, handleValidationErrors, createQuiz);
 
 // For file uploads, validation of body fields happens after the file is processed by `upload` middleware
