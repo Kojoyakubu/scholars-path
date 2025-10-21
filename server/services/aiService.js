@@ -36,7 +36,7 @@ const generateContent = async (prompt) => {
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.2, // Lower value for less randomness and more predictability.
+        temperature: 0.4, // Slightly higher temp for more creative visual suggestions
       },
     });
     
@@ -56,9 +56,8 @@ const generateContent = async (prompt) => {
 };
 
 /**
- * Generates a structured Ghanaian lesson note.
- * @param {object} details - Lesson details provided by the teacher.
- * @returns {Promise<string>} - Generated Markdown lesson note.
+ * Generates a structured Ghanaian lesson note for teachers.
+ * (This function remains unchanged)
  */
 const generateGhanaianLessonNote = async (details = {}) => {
   const {
@@ -127,21 +126,27 @@ Follow these rules STRICTLY:
   return generateContent(prompt);
 };
 
-
+/**
+ * ✅ NEW AND IMPROVED LEARNER NOTE FUNCTION
+ * Converts a teacher's lesson note into a detailed, visually-enhanced study note.
+ */
 const generateLearnerFriendlyNote = async (teacherContent) => {
   if (!teacherContent || typeof teacherContent !== 'string') {
     throw new Error('Teacher content must be a non-empty string.');
   }
 
   const prompt = `
-You are a friendly Ghanaian teacher creating a study note for a Junior High School student. Your task is to transform the formal teacher's lesson note below into a detailed but easy-to-understand study guide.
+You are a friendly Ghanaian teacher creating a rich, multimedia study note for a Junior High School student. Transform the formal teacher's lesson note below into a detailed and engaging study guide.
 
 **Guidelines:**
-1.  **Extract the Topic:** Identify the main Sub-Strand from the teacher's note and use it as the main heading (e.g., "## Components of Computers").
-2.  **Explain in Detail:** Do not just summarize. Read the 'Phase 2: Main Learning' section of the teacher's note and explain the key concepts in detail. Use simple language and provide clear definitions and examples.
-3.  **Structure:** Use Markdown for structure. Use subheadings (\`###\`), bullet points (\`*\`), and bold text (\`**word**\`) to organize the information.
-4.  **Engage the Learner:** At the end of the note, add a section called "✍️ **Check Your Understanding**" with one or two simple questions based on the note to help the student review.
-5.  **CRITICAL RULE:** Do not add any conversational introductions like "Hello!" or "Here is the note...". Start the note directly with the main heading.
+1.  **Topic:** Identify the main Sub-Strand and use it as the main heading.
+2.  **Detailed Explanations:** Do not just summarize. Read the 'Phase 2: Main Learning' section and explain the key concepts in detail with simple language, definitions, and examples.
+3.  **Visuals:**
+    * **Diagrams:** If a diagram would help explain a concept (e.g., parts of a computer, a food web), insert a placeholder in the text like this: **[Diagram of a computer system showing input, process, and output]**.
+    * **Videos:** Find and embed a link to one relevant, high-quality educational YouTube video that explains the main topic. Format it like this: **[Watch a Video: How Computers Work](https://www.youtube.com/watch?v=....)**.
+4.  **Structure:** Use Markdown for structure (subheadings, bullet points, bold text).
+5.  **Engagement:** At the end, add a section called "✍️ **Check Your Understanding**" with two simple questions.
+6.  **CRITICAL RULE:** Start the note directly with the main heading. Do not add any conversational introductions.
 
 **Teacher's Lesson Note to Transform:**
 ---
