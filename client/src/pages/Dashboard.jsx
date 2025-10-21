@@ -1,7 +1,12 @@
+// /client/src/pages/Dashboard.jsx (Corrected)
+
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
+import remarkGfm from 'remark-gfm';       // Import GFM plugin for tables, links, etc.
+import rehypeRaw from 'rehype-raw';       // Import plugin for raw HTML like <br>
 
 // --- Redux Imports ---
 import {
@@ -47,7 +52,7 @@ function Dashboard() {
     level: '', class: '', subject: '', strand: '', subStrand: '',
   });
 
-  // Effect to redirect non-students and fetch initial data
+  // All useEffects and handlers remain the same...
   useEffect(() => {
     if (!user) return;
     if (user.role === 'admin') navigate('/admin');
@@ -60,24 +65,11 @@ function Dashboard() {
     };
   }, [dispatch, user, navigate]);
 
-  // Effects to chain dropdown data fetching
-  useEffect(() => {
-    if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
-  }, [selections.level, dispatch]);
+  useEffect(() => { if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); }, [selections.level, dispatch]);
+  useEffect(() => { if (selections.class) dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class })); }, [selections.class, dispatch]);
+  useEffect(() => { if (selections.subject) dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject })); }, [selections.subject, dispatch]);
+  useEffect(() => { if (selections.strand) dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand })); }, [selections.strand, dispatch]);
 
-  useEffect(() => {
-    if (selections.class) dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
-  }, [selections.class, dispatch]);
-
-  useEffect(() => {
-    if (selections.subject) dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
-  }, [selections.subject, dispatch]);
-
-  useEffect(() => {
-    if (selections.strand) dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand }));
-  }, [selections.strand, dispatch]);
-
-  // Effect to fetch content when a sub-strand is selected
   useEffect(() => {
     if (selections.subStrand) {
       dispatch(getLearnerNotes(selections.subStrand));
@@ -104,9 +96,8 @@ function Dashboard() {
     });
   }, [dispatch]);
 
-  // Centralized download handler
   const handleDownload = useCallback((type, noteId, noteTopic) => {
-    dispatch(logNoteView(noteId)); // Log view on download
+    dispatch(logNoteView(noteId));
     const elementId = `note-content-${noteId}`;
     if (type === 'pdf') {
       downloadAsPdf(elementId, noteTopic);
@@ -150,13 +141,23 @@ function Dashboard() {
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                   <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
                     <Typography variant="h5" gutterBottom>Lesson Notes</Typography>
                     {notes.length > 0 ? (
                       notes.map((note) => (
                         <Paper key={note._id} variant="outlined" sx={{ mb: 2, p: 2 }}>
-                          <div id={`note-content-${note._id}`} dangerouslySetInnerHTML={{ __html: note.content }} />
+                          {/* ✅ THE FIX IS HERE */}
+                          <Box id={`note-content-${note._id}`} sx={{
+                              '& h1, & h2, & h3': { fontSize: '1.2em', fontWeight: 'bold', mb: 1 },
+                              '& p': { mb: 1 },
+                              '& a': { color: 'primary.main' }
+                            }}
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                              {note.content}
+                            </ReactMarkdown>
+                          </Box>
                           <Stack direction="row" spacing={1} sx={{ mt: 2, borderTop: 1, borderColor: 'divider', pt: 2 }}>
                             <Button startIcon={<PictureAsPdfIcon />} onClick={() => handleDownload('pdf', note._id, 'lesson_note')} size="small" variant="outlined">PDF</Button>
                             <Button startIcon={<DescriptionIcon />} onClick={() => handleDownload('word', note._id, 'lesson_note')} size="small" variant="outlined" color="secondary">Word</Button>
@@ -167,31 +168,31 @@ function Dashboard() {
                   </Paper>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Stack spacing={3}>
-                    <Paper elevation={2} sx={{ p: 3 }}>
-                      <Typography variant="h5" gutterBottom>Quizzes</Typography>
-                      {quizzes.length > 0 ? (
-                        <Box display="flex" gap={1.5} flexWrap="wrap">
-                          {quizzes.map((quiz) => (
-                            <Button key={quiz._id} component={RouterLink} to={`/quiz/${quiz._id}`} variant="contained" startIcon={<QuizIcon />}>{quiz.title}</Button>
-                          ))}
-                        </Box>
-                      ) : <Typography color="text.secondary">No quizzes found for this topic.</Typography>}
-                    </Paper>
-                    <Paper elevation={2} sx={{ p: 3 }}>
-                      <Typography variant="h5" gutterBottom>Resources</Typography>
-                      {resources.length > 0 ? (
-                        <List>
-                          {resources.map((res) => (
-                            <ListItem key={res._id} button component="a" href={`/${res.filePath.replace(/\\/g, '/')}`} target="_blank" rel="noopener noreferrer">
-                              <ListItemIcon><AttachFileIcon /></ListItemIcon>
-                              <ListItemText primary={res.fileName} />
-                            </ListItem>
-                          ))}
-                        </List>
-                      ) : <Typography color="text.secondary">No resources found for this topic.</Typography>}
-                    </Paper>
-                  </Stack>
+                  <Paper elevation={2} sx={{ p: 3 }}>
+                    <Typography variant="h5" gutterBottom>Quizzes</Typography>
+                    {quizzes.length > 0 ? (
+                      <Box display="flex" gap={1.5} flexWrap="wrap">
+                        {quizzes.map((quiz) => (
+                          <Button key={quiz._id} component={RouterLink} to={`/quiz/${quiz._id}`} variant="contained" startIcon={<QuizIcon />}>{quiz.title}</Button>
+                        ))}
+                      </Box>
+                    ) : <Typography color="text.secondary">No quizzes found for this topic.</Typography>}
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={2} sx={{ p: 3 }}>
+                    <Typography variant="h5" gutterBottom>Resources</Typography>
+                    {resources.length > 0 ? (
+                      <List>
+                        {resources.map((res) => (
+                          <ListItem key={res._id} button component="a" href={`/${res.filePath.replace(/\\/g, '/')}`} target="_blank" rel="noopener noreferrer">
+                            <ListItemIcon><AttachFileIcon /></ListItemIcon>
+                            <ListItemText primary={res.fileName} />
+                          </ListItem>
+                        ))}
+                      </List>
+                    ) : <Typography color="text.secondary">No resources found for this topic.</Typography>}
+                  </Paper>
                 </Grid>
               </Grid>
             </motion.div>
