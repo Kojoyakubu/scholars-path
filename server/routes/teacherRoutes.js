@@ -64,4 +64,6 @@ router.post('/create-quiz', createQuizValidator, handleValidationErrors, createQ
 // For file uploads, validation of body fields happens after the file is processed by `upload` middleware
 router.post('/upload-resource', upload, mongoIdBody('subStrandId'), handleValidationErrors, uploadResource);
 
+router.get('/search-image', searchImage);
+
 module.exports = router;

@@ -1,12 +1,10 @@
-// /client/src/pages/Dashboard.jsx (Corrected)
-
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
-import remarkGfm from 'remark-gfm';       // Import GFM plugin for tables, links, etc.
-import rehypeRaw from 'rehype-raw';       // Import plugin for raw HTML like <br>
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 // --- Redux Imports ---
 import {
@@ -33,8 +31,9 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 
-// --- Helper Import ---
+// --- Component & Helper Imports ---
 import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
+import AiImage from '../components/AiImage'; // Import the new image component
 
 function Dashboard() {
   const dispatch = useDispatch();
@@ -147,14 +146,25 @@ function Dashboard() {
                     {notes.length > 0 ? (
                       notes.map((note) => (
                         <Paper key={note._id} variant="outlined" sx={{ mb: 2, p: 2 }}>
-                          {/* ✅ THE FIX IS HERE */}
                           <Box id={`note-content-${note._id}`} sx={{
                               '& h1, & h2, & h3': { fontSize: '1.2em', fontWeight: 'bold', mb: 1 },
                               '& p': { mb: 1 },
                               '& a': { color: 'primary.main' }
                             }}
                           >
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeRaw]}
+                              components={{
+                                p: ({ node, ...props }) => {
+                                  const text = node?.children[0]?.value || '';
+                                  if (text.startsWith('[DIAGRAM:')) {
+                                    return <AiImage text={text} />;
+                                  }
+                                  return <p {...props} />;
+                                },
+                              }}
+                            >
                               {note.content}
                             </ReactMarkdown>
                           </Box>

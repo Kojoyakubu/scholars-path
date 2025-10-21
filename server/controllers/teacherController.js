@@ -257,6 +257,28 @@ const deleteLearnerNote = asyncHandler(async (req, res) => {
   res.json({ message: 'Draft note deleted successfully!', id: note._id });
 });
 
+/**
+ * @desc    Search for an image using the Pexels API
+ * @route   GET /api/teacher/search-image
+ * @access  Private
+ */
+const searchImage = asyncHandler(async (req, res) => {
+  const { query } = req.query;
+  if (!query) {
+    res.status(400);
+    throw new Error('Search query is required.');
+  }
+
+  const response = await axios.get(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1`, {
+    headers: {
+      Authorization: process.env.PEXELS_API_KEY,
+    },
+  });
+
+  const imageUrl = response.data.photos[0]?.src?.medium || null;
+  res.json({ imageUrl });
+});
+
 module.exports = {
   generateLessonNote,
   getMyLessonNotes,
@@ -269,4 +291,5 @@ module.exports = {
   getDraftLearnerNotes,
   publishLearnerNote,
   deleteLearnerNote,
+  searchImage,
 };
