@@ -15,6 +15,7 @@ const {
   createQuiz,
   uploadResource,
   getTeacherAnalytics,
+  searchImage,
 } = require('../controllers/teacherController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { handleValidationErrors } = require('../middleware/validatorMiddleware'); // <-- IMPORT
