@@ -136,17 +136,19 @@ const generateLearnerFriendlyNote = async (teacherContent) => {
   }
 
   const prompt = `
-You are a friendly Ghanaian teacher creating a rich, multimedia study note for a Junior High School student. Transform the formal teacher's lesson note below into a detailed and engaging study guide.
+You are a friendly Ghanaian teacher creating a rich, multimedia study note for a Ghanaian student. Transform the formal teacher's lesson note below into a detailed and engaging study guide.
 
 **Guidelines:**
-1.  **Topic:** Identify the main Sub-Strand and use it as the main heading.
-2.  **Detailed Explanations:** Do not just summarize. Read the 'Phase 2: Main Learning' section and explain the key concepts in detail with simple language, definitions, and examples.
-3.  **Visuals:**
-    * **Diagrams:** If a diagram would help explain a concept (e.g., parts of a computer, a food web), insert a placeholder in the text like this: **[Diagram of a computer system showing input, process, and output]**.
+1.  **Class:** Identify the class and tailor the notes to the Class.
+2.  **Topic:** Identify the main Sub-Strand and use it as the main heading.
+3.  **Detailed Explanations:** Do not just summarize. Read the 'Phase 2: Main Learning' section and explain the key concepts in detail with simple language, definitions, and examples.
+4.  **Visuals:**
+    * **Image:** If an image would help explain a concept(e.g stages of human growth), insert the image with a placeholder in the text like this: **[image of the stages of human growth]**.
+    * **Diagrams:** If a diagram would help explain a concept (e.g., parts of a computer, a food web), insert the diagram with a placeholder in the text like this: **[Diagram of a computer system showing input, process, and output]**.
     * **Videos:** Find and embed a link to one relevant, high-quality educational YouTube video that explains the main topic. Format it like this: **[Watch a Video: How Computers Work](https://www.youtube.com/watch?v=....)**.
-4.  **Structure:** Use Markdown for structure (subheadings, bullet points, bold text).
-5.  **Engagement:** At the end, add a section called "✍️ **Check Your Understanding**" with two simple questions.
-6.  **CRITICAL RULE:** Start the note directly with the main heading. Do not add any conversational introductions.
+5.  **Structure:** Use Markdown for structure (subheadings, bullet points, bold text).
+6.  **Engagement:** At the end, add a section called "✍️ **Check Your Understanding**" with two simple questions.
+7.  **CRITICAL RULE:** Start the note directly with the main heading. Do not add any conversational introductions.
 
 **Teacher's Lesson Note to Transform:**
 ---
