@@ -21,9 +21,14 @@ import {
   Stack, IconButton, Dialog, DialogActions, DialogContent, DialogContentText,
   DialogTitle, Snackbar, Alert, Tooltip, Card, CardHeader, CardContent
 } from '@mui/material';
+// ✅ THE FIX IS HERE: All icons, including 'Article', are imported correctly.
 import {
-  Article, // ✅ THE FIX IS HERE: 'Article' icon is now imported
-  Delete, FaceRetouchingNatural, CheckCircle, Visibility, AddCircle
+  Article,
+  Delete,
+  FaceRetouchingNatural,
+  CheckCircle,
+  Visibility,
+  AddCircle
 } from '@mui/icons-material';
 
 // --- Reusable Sub-Components ---
@@ -191,7 +196,7 @@ function TeacherDashboard() {
       <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note?</DialogContentText></DialogContent>
-        <DialogActions><Button onClick={() => setNoteToDelete(null)}>Cancel</Button><Button onClick={() => handleAction(deleteLessonNote, noteToDelete._id).then(() => setNoteToDelete(null))} color="error">Delete</Button></DialogActions>
+        <DialogActions><Button onClick={() => setNoteToDelete(null)}>Cancel</Button><Button onClick={() => { handleAction(deleteLessonNote, noteToDelete._id); setNoteToDelete(null); }} color="error">Delete</Button></DialogActions>
       </Dialog>
       <Dialog open={!!viewingNote} onClose={() => setViewingNote(null)} fullWidth maxWidth="md">
         <DialogTitle>Preview Learner Note</DialogTitle>
