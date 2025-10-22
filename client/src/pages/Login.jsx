@@ -6,7 +6,7 @@ import { login, reset } from '../features/auth/authSlice';
 // MUI Imports
 import {
   Button, TextField, Box, Typography, Container, Paper,
-  CircularProgress, Alert, Collapse, Link
+  CircularProgress, Alert, Collapse, Link, Grid // ✅ THE FIX IS HERE: Added 'Grid' to the import list
 } from '@mui/material';
 import { motion } from 'framer-motion';
 
@@ -17,10 +17,9 @@ function Login() {
 
   const { user, isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
 
-  // ✅ THE FIX IS HERE: Updated redirection logic
   useEffect(() => {
     if (isError) {
-      // Error is handled by the notification state below
+      // Error is handled by the notification state
     }
 
     if (isSuccess && user) {
