@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { Link as RouterLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -88,16 +89,24 @@ function TeacherDashboard() {
     });
   }, [dispatch]);
 
+  // ✅ CORRECTED ACTION HANDLER
   const handleAction = useCallback(async (action, payload, loadingSetter) => {
     if (loadingSetter) loadingSetter(payload);
     try {
       await dispatch(action(payload)).unwrap();
-      if (action.typePrefix.includes('generateLessonNote')) setIsModalOpen(false);
     } catch (e) {
       // Error is handled by the message effect
     } finally {
       if (loadingSetter) loadingSetter(null);
     }
+  }, [dispatch]);
+
+  // Specific handler for the form submission to close the modal
+  const handleGenerateNoteSubmit = useCallback((formData) => {
+      dispatch(generateLessonNote(formData))
+          .unwrap()
+          .then(() => setIsModalOpen(false)) // Close modal on success
+          .catch(() => {}); // Error is handled by the message effect
   }, [dispatch]);
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
@@ -179,11 +188,11 @@ function TeacherDashboard() {
       </Grid>
       
       {/* --- Modals & Snackbars --- */}
-      <LessonNoteForm open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={(data) => handleAction(generateLessonNote, data)} subStrandName={subStrands.find(s => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
+      <LessonNoteForm open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={(data) => handleGenerateNoteSubmit({ ...data, subStrandId: selections.subStrand })} subStrandName={subStrands.find(s => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
       <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note?</DialogContentText></DialogContent>
-        <DialogActions><Button onClick={() => setNoteToDelete(null)}>Cancel</Button><Button onClick={() => handleAction(deleteLessonNote, noteToDelete._id)} color="error">Delete</Button></DialogActions>
+        <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note for "{noteToDelete?.subStrand?.name}"?</DialogContentText></DialogContent>
+        <DialogActions><Button onClick={() => setNoteToDelete(null)}>Cancel</Button><Button onClick={() => handleAction(deleteLessonNote, noteToDelete._id).then(() => setNoteToDelete(null))} color="error">Delete</Button></DialogActions>
       </Dialog>
       <Dialog open={!!viewingNote} onClose={() => setViewingNote(null)} fullWidth maxWidth="md">
         <DialogTitle>Preview Learner Note</DialogTitle>
