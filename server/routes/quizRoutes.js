@@ -4,14 +4,14 @@ const { body, param } = require('express-validator');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { handleValidationErrors } = require('../middleware/validatorMiddleware');
 
-// ✅ THE FIX IS HERE: Add 'generateAiQuiz' to the import list.
+// ✅ THE FIX IS HERE: Ensure all required functions are imported.
 const {
   createQuiz,
   getTeacherQuizzes,
   getQuizForEditing,
   addQuestionToQuiz,
   deleteQuiz,
-  generateAiQuiz, // <-- This was missing
+  generateAiQuiz, // This was likely missing from your import list
 } = require('../controllers/quizController');
 
 // Protect all routes in this file
