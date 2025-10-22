@@ -22,7 +22,8 @@ import {
   DialogTitle, Snackbar, Alert, Tooltip, Card, CardHeader, CardContent
 } from '@mui/material';
 import {
-  Article, Delete, FaceRetouchingNatural, CheckCircle, Visibility, AddCircle
+  Article, // ✅ THE FIX IS HERE: 'Article' icon is now imported
+  Delete, FaceRetouchingNatural, CheckCircle, Visibility, AddCircle
 } from '@mui/icons-material';
 
 // --- Reusable Sub-Components ---
@@ -89,7 +90,6 @@ function TeacherDashboard() {
     });
   }, [dispatch]);
 
-  // ✅ CORRECTED ACTION HANDLER
   const handleAction = useCallback(async (action, payload, loadingSetter) => {
     if (loadingSetter) loadingSetter(payload);
     try {
@@ -101,12 +101,11 @@ function TeacherDashboard() {
     }
   }, [dispatch]);
 
-  // Specific handler for the form submission to close the modal
   const handleGenerateNoteSubmit = useCallback((formData) => {
       dispatch(generateLessonNote(formData))
           .unwrap()
-          .then(() => setIsModalOpen(false)) // Close modal on success
-          .catch(() => {}); // Error is handled by the message effect
+          .then(() => setIsModalOpen(false))
+          .catch(() => {});
   }, [dispatch]);
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
@@ -191,7 +190,7 @@ function TeacherDashboard() {
       <LessonNoteForm open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={(data) => handleGenerateNoteSubmit({ ...data, subStrandId: selections.subStrand })} subStrandName={subStrands.find(s => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
       <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note for "{noteToDelete?.subStrand?.name}"?</DialogContentText></DialogContent>
+        <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note?</DialogContentText></DialogContent>
         <DialogActions><Button onClick={() => setNoteToDelete(null)}>Cancel</Button><Button onClick={() => handleAction(deleteLessonNote, noteToDelete._id).then(() => setNoteToDelete(null))} color="error">Delete</Button></DialogActions>
       </Dialog>
       <Dialog open={!!viewingNote} onClose={() => setViewingNote(null)} fullWidth maxWidth="md">
