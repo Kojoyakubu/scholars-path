@@ -11,30 +11,30 @@ import {
   generateLessonNote, getMyLessonNotes, deleteLessonNote,
   generateLearnerNote, getDraftLearnerNotes, publishLearnerNote,
   deleteLearnerNote as deleteDraftLearnerNote, resetTeacherState,
+  generateAiQuiz,
 } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
+import AiQuizForm from '../components/AiQuizForm';
 
 // MUI Imports
 import {
   Box, Typography, Container, Button, Grid, Select, MenuItem, FormControl,
   InputLabel, Paper, List, ListItem, ListItemText, ListItemButton, CircularProgress,
   Stack, IconButton, Dialog, DialogActions, DialogContent, DialogContentText,
-  DialogTitle, Snackbar, Alert, Tooltip, Card, CardHeader, CardContent
+  DialogTitle, Snackbar, Alert, Tooltip, Card, CardHeader, CardContent, Divider
 } from '@mui/material';
-// All icons, including 'Article', are now imported.
 import {
-  Article,
-  Delete,
-  FaceRetouchingNatural,
-  CheckCircle,
-  Visibility,
-  AddCircle
+  Article, Delete, FaceRetouchingNatural, CheckCircle, Visibility, AddCircle, Quiz
 } from '@mui/icons-material';
 
 // --- Reusable Sub-Components ---
-const SectionCard = ({ title, children }) => (
-  <Card component={motion.div} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-    <CardHeader title={title} titleTypographyProps={{ variant: 'h6' }} />
+const SectionCard = ({ title, icon, children }) => (
+  <Card component={motion.div} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} sx={{ height: '100%' }}>
+    <CardHeader
+      avatar={icon}
+      title={title}
+      titleTypographyProps={{ variant: 'h6' }}
+    />
     <CardContent>{children}</CardContent>
   </Card>
 );
@@ -55,7 +55,8 @@ function TeacherDashboard() {
   const { lessonNotes, draftLearnerNotes, isLoading, isError, message } = useSelector((state) => state.teacher);
 
   const [selections, setSelections] = useState({ level: '', class: '', subject: '', strand: '', subStrand: '' });
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [isAiQuizModalOpen, setIsAiQuizModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [generatingNoteId, setGeneratingNoteId] = useState(null);
@@ -63,6 +64,8 @@ function TeacherDashboard() {
 
   useEffect(() => {
     dispatch(fetchItems({ entity: 'levels' }));
+    dispatch(fetchItems({ entity: 'subjects' }));
+    dispatch(fetchItems({ entity: 'classes' }));
     dispatch(getMyLessonNotes());
     dispatch(getDraftLearnerNotes());
   }, [dispatch]);
@@ -96,10 +99,11 @@ function TeacherDashboard() {
   }, [dispatch]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
-      dispatch(generateLessonNote(formData))
-          .unwrap()
-          .then(() => setIsModalOpen(false))
-          .catch(() => {});
+    dispatch(generateLessonNote(formData)).unwrap().then(() => setIsNoteModalOpen(false)).catch(() => {});
+  }, [dispatch]);
+
+  const handleGenerateAiQuizSubmit = useCallback((formData) => {
+    dispatch(generateAiQuiz(formData)).unwrap().then(() => setIsAiQuizModalOpen(false)).catch(() => {});
   }, [dispatch]);
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
@@ -108,83 +112,98 @@ function TeacherDashboard() {
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
         <Typography variant="h4" gutterBottom>Teacher Dashboard</Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          Welcome back! Here are your tools to create and manage educational content.
+        </Typography>
       </motion.div>
 
       <Grid container spacing={4}>
-        <Grid item xs={12}>
-          <SectionCard title="Lesson Note Generator">
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Select a topic from the curriculum to generate a new AI-powered lesson note.
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>{renderDropdown('level', 'Level', selections.level, levels, handleSelectionChange)}</Grid>
-              <Grid item xs={12} sm={6} md={3}>{renderDropdown('class', 'Class', selections.class, classes, handleSelectionChange, !selections.level)}</Grid>
-              <Grid item xs={12} sm={6} md={3}>{renderDropdown('subject', 'Subject', selections.subject, subjects, handleSelectionChange, !selections.class)}</Grid>
-              <Grid item xs={12} sm={6} md={3}>{renderDropdown('strand', 'Strand', selections.strand, strands, handleSelectionChange, !selections.subject)}</Grid>
-              <Grid item xs={12}>{renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, handleSelectionChange, !selections.strand)}</Grid>
-            </Grid>
-            <Button
-              variant="contained"
-              onClick={() => setIsModalOpen(true)}
-              disabled={!selections.subStrand || isLoading}
-              startIcon={<AddCircle />}
-              sx={{ mt: 2 }}
-            >
-              Generate AI Lesson Note
-            </Button>
+        <Grid item xs={12} lg={6}>
+          <SectionCard title="Content Generators" icon={<AddCircle color="primary" />}>
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="h6" component="h3">Lesson Note Generator</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Select a topic from the curriculum to generate a new AI-powered lesson note.
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>{renderDropdown('level', 'Level', selections.level, levels, handleSelectionChange)}</Grid>
+                  <Grid item xs={12} sm={6}>{renderDropdown('class', 'Class', selections.class, classes, handleSelectionChange, !selections.level)}</Grid>
+                  <Grid item xs={12} sm={6}>{renderDropdown('subject', 'Subject', selections.subject, subjects, handleSelectionChange, !selections.class)}</Grid>
+                  <Grid item xs={12} sm={6}>{renderDropdown('strand', 'Strand', selections.strand, strands, handleSelectionChange, !selections.subject)}</Grid>
+                  <Grid item xs={12}>{renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, handleSelectionChange, !selections.strand)}</Grid>
+                </Grid>
+                <Button variant="contained" onClick={() => setIsNoteModalOpen(true)} disabled={!selections.subStrand || isLoading} sx={{ mt: 2 }}>
+                  Generate Lesson Note
+                </Button>
+              </Box>
+              <Divider />
+              <Box>
+                <Typography variant="h6" component="h3">Quiz Generator</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Automatically create a WAEC-standard quiz on a subject of your choice.
+                </Typography>
+                <Stack spacing={2} direction="row">
+                  <Button variant="contained" onClick={() => setIsAiQuizModalOpen(true)} startIcon={<Quiz />}>
+                    Generate with AI
+                  </Button>
+                  <Button variant="outlined" disabled>Create Manually (Soon)</Button>
+                </Stack>
+              </Box>
+            </Stack>
           </SectionCard>
         </Grid>
 
         <Grid item xs={12} lg={6}>
-          <SectionCard title="My Generated Lesson Notes">
-            {isLoading && !lessonNotes.length ? <CircularProgress /> : (
-              <List disablePadding>
-                {lessonNotes.map(note => (
-                  <ListItem key={note._id} disablePadding secondaryAction={
-                    <Stack direction="row" spacing={0.5}>
-                      <Tooltip title="Generate Learner's Version"><IconButton onClick={() => {
-                          setGeneratingNoteId(note._id);
-                          dispatch(generateLearnerNote(note._id)).finally(() => setGeneratingNoteId(null));
-                      }} disabled={generatingNoteId === note._id}>
-                        {generatingNoteId === note._id ? <CircularProgress size={22} /> : <FaceRetouchingNatural color="primary" />}
-                      </IconButton></Tooltip>
-                      <Tooltip title="Delete Note"><IconButton onClick={() => setNoteToDelete(note)}><Delete color="error" /></IconButton></Tooltip>
-                    </Stack>
-                  }>
-                    <ListItemButton component={RouterLink} to={`/teacher/notes/${note._id}`}>
-                      <Article sx={{ mr: 2, color: 'text.secondary' }} />
-                      <ListItemText primary={`Note from ${new Date(note.createdAt).toLocaleDateString()}`} secondary={note.content.substring(0, 80) + '...'} />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </SectionCard>
-        </Grid>
+          <Stack spacing={4}>
+            <SectionCard title="My Generated Lesson Notes" icon={<Article color="action" />}>
+              {isLoading && !lessonNotes.length ? <CircularProgress /> : (
+                <List disablePadding>
+                  {lessonNotes.length > 0 ? lessonNotes.map(note => (
+                    <ListItem key={note._id} disablePadding secondaryAction={
+                      <Stack direction="row" spacing={0.5}>
+                        <Tooltip title="Generate Learner's Version"><IconButton onClick={() => {
+                            setGeneratingNoteId(note._id);
+                            dispatch(generateLearnerNote(note._id)).finally(() => setGeneratingNoteId(null));
+                        }} disabled={generatingNoteId === note._id}>
+                          {generatingNoteId === note._id ? <CircularProgress size={22} /> : <FaceRetouchingNatural color="primary" />}
+                        </IconButton></Tooltip>
+                        <Tooltip title="Delete Note"><IconButton onClick={() => setNoteToDelete(note)}><Delete color="error" /></IconButton></Tooltip>
+                      </Stack>
+                    }>
+                      <ListItemButton component={RouterLink} to={`/teacher/notes/${note._id}`}>
+                        <ListItemText primary={`Note for ${note.subStrand?.name || '...'}`} secondary={`Created on ${new Date(note.createdAt).toLocaleDateString()}`} />
+                      </ListItemButton>
+                    </ListItem>
+                  )) : <Typography color="text.secondary">You haven't generated any lesson notes yet.</Typography>}
+                </List>
+              )}
+            </SectionCard>
 
-        <Grid item xs={12} lg={6}>
-          <SectionCard title="Draft Learner Notes (For Review)">
-            {isLoading && !draftLearnerNotes.length ? <CircularProgress /> : (
-              <List disablePadding>
-                {draftLearnerNotes.map(note => (
-                  <ListItem key={note._id} disablePadding secondaryAction={
-                    <Stack direction="row" spacing={0.5}>
-                      <Tooltip title="Preview"><IconButton onClick={() => setViewingNote(note)}><Visibility color="action" /></IconButton></Tooltip>
-                      <Tooltip title="Publish to Students"><IconButton onClick={() => dispatch(publishLearnerNote(note._id))}><CheckCircle color="success" /></IconButton></Tooltip>
-                      <Tooltip title="Delete Draft"><IconButton onClick={() => dispatch(deleteDraftLearnerNote(note._id))}><Delete color="error" /></IconButton></Tooltip>
-                    </Stack>
-                  }>
-                    <ListItemText primary={`Draft for: ${note.subStrand?.name || 'N/A'}`} secondary={`Generated on ${new Date(note.createdAt).toLocaleDateString()}`} />
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </SectionCard>
+            <SectionCard title="Draft Learner Notes (For Review)" icon={<Visibility color="action" />}>
+              {isLoading && !draftLearnerNotes.length ? <CircularProgress /> : (
+                <List disablePadding>
+                  {draftLearnerNotes.length > 0 ? draftLearnerNotes.map(note => (
+                    <ListItem key={note._id} disablePadding secondaryAction={
+                      <Stack direction="row" spacing={0.5}>
+                        <Tooltip title="Preview"><IconButton onClick={() => setViewingNote(note)}><Visibility /></IconButton></Tooltip>
+                        <Tooltip title="Publish to Students"><IconButton onClick={() => dispatch(publishLearnerNote(note._id))}><CheckCircle color="success" /></IconButton></Tooltip>
+                        <Tooltip title="Delete Draft"><IconButton onClick={() => dispatch(deleteDraftLearnerNote(note._id))}><Delete color="error" /></IconButton></Tooltip>
+                      </Stack>
+                    }>
+                      <ListItemText primary={`Draft for: ${note.subStrand?.name || 'N/A'}`} secondary={`Generated on ${new Date(note.createdAt).toLocaleDateString()}`} />
+                    </ListItem>
+                  )) : <Typography color="text.secondary">No draft learner notes pending review.</Typography>}
+                </List>
+              )}
+            </SectionCard>
+          </Stack>
         </Grid>
       </Grid>
       
       {/* --- Modals & Snackbars --- */}
-      <LessonNoteForm open={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={(data) => handleGenerateNoteSubmit({ ...data, subStrandId: selections.subStrand })} subStrandName={subStrands.find(s => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
+      <LessonNoteForm open={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSubmit={(data) => handleGenerateNoteSubmit({ ...data, subStrandId: selections.subStrand })} subStrandName={subStrands.find(s => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
+      <AiQuizForm open={isAiQuizModalOpen} onClose={() => setIsAiQuizModalOpen(false)} onSubmit={handleGenerateAiQuizSubmit} isLoading={isLoading} curriculum={{ subjects, classes }} />
       <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note?</DialogContentText></DialogContent>
