@@ -21,7 +21,8 @@ import {
   Stack, IconButton, Dialog, DialogActions, DialogContent, DialogContentText,
   DialogTitle, Snackbar, Alert, Tooltip, Card, CardHeader, CardContent
 } from '@mui/material';
-// ✅ THE FIX IS HERE: All icons, including 'Article', are imported correctly.
+
+// ✅ ALL ICONS ARE HERE, INCLUDING 'Article'
 import {
   Article,
   Delete,
@@ -95,22 +96,11 @@ function TeacherDashboard() {
     });
   }, [dispatch]);
 
-  const handleAction = useCallback(async (action, payload, loadingSetter) => {
-    if (loadingSetter) loadingSetter(payload);
-    try {
-      await dispatch(action(payload)).unwrap();
-    } catch (e) {
-      // Error is handled by the message effect
-    } finally {
-      if (loadingSetter) loadingSetter(null);
-    }
-  }, [dispatch]);
-
   const handleGenerateNoteSubmit = useCallback((formData) => {
-      dispatch(generateLessonNote(formData))
-          .unwrap()
-          .then(() => setIsModalOpen(false))
-          .catch(() => {});
+    dispatch(generateLessonNote(formData))
+      .unwrap()
+      .then(() => setIsModalOpen(false))
+      .catch(() => {});
   }, [dispatch]);
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
@@ -148,12 +138,15 @@ function TeacherDashboard() {
 
         <Grid item xs={12} lg={6}>
           <SectionCard title="My Generated Lesson Notes">
-            {isLoading && lessonNotes.length === 0 ? <CircularProgress /> : (
+            {isLoading && !lessonNotes.length ? <CircularProgress /> : (
               <List disablePadding>
                 {lessonNotes.map(note => (
                   <ListItem key={note._id} disablePadding secondaryAction={
                     <Stack direction="row" spacing={0.5}>
-                      <Tooltip title="Generate Learner's Version"><IconButton onClick={() => handleAction(generateLearnerNote, note._id, setGeneratingNoteId)} disabled={generatingNoteId === note._id}>
+                      <Tooltip title="Generate Learner's Version"><IconButton onClick={() => {
+                          setGeneratingNoteId(note._id);
+                          dispatch(generateLearnerNote(note._id)).finally(() => setGeneratingNoteId(null));
+                      }} disabled={generatingNoteId === note._id}>
                         {generatingNoteId === note._id ? <CircularProgress size={22} /> : <FaceRetouchingNatural color="primary" />}
                       </IconButton></Tooltip>
                       <Tooltip title="Delete Note"><IconButton onClick={() => setNoteToDelete(note)}><Delete color="error" /></IconButton></Tooltip>
@@ -172,14 +165,14 @@ function TeacherDashboard() {
 
         <Grid item xs={12} lg={6}>
           <SectionCard title="Draft Learner Notes (For Review)">
-            {isLoading && draftLearnerNotes.length === 0 ? <CircularProgress /> : (
+            {isLoading && !draftLearnerNotes.length ? <CircularProgress /> : (
               <List disablePadding>
                 {draftLearnerNotes.map(note => (
                   <ListItem key={note._id} disablePadding secondaryAction={
                     <Stack direction="row" spacing={0.5}>
                       <Tooltip title="Preview"><IconButton onClick={() => setViewingNote(note)}><Visibility color="action" /></IconButton></Tooltip>
-                      <Tooltip title="Publish to Students"><IconButton onClick={() => handleAction(publishLearnerNote, note._id)}><CheckCircle color="success" /></IconButton></Tooltip>
-                      <Tooltip title="Delete Draft"><IconButton onClick={() => handleAction(deleteDraftLearnerNote, note._id)}><Delete color="error" /></IconButton></Tooltip>
+                      <Tooltip title="Publish to Students"><IconButton onClick={() => dispatch(publishLearnerNote(note._id))}><CheckCircle color="success" /></IconButton></Tooltip>
+                      <Tooltip title="Delete Draft"><IconButton onClick={() => dispatch(deleteDraftLearnerNote(note._id))}><Delete color="error" /></IconButton></Tooltip>
                     </Stack>
                   }>
                     <ListItemText primary={`Draft for: ${note.subStrand?.name || 'N/A'}`} secondary={`Generated on ${new Date(note.createdAt).toLocaleDateString()}`} />
@@ -196,7 +189,10 @@ function TeacherDashboard() {
       <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note?</DialogContentText></DialogContent>
-        <DialogActions><Button onClick={() => setNoteToDelete(null)}>Cancel</Button><Button onClick={() => { handleAction(deleteLessonNote, noteToDelete._id); setNoteToDelete(null); }} color="error">Delete</Button></DialogActions>
+        <DialogActions><Button onClick={() => setNoteToDelete(null)}>Cancel</Button><Button onClick={() => {
+            dispatch(deleteLessonNote(noteToDelete._id));
+            setNoteToDelete(null);
+        }} color="error">Delete</Button></DialogActions>
       </Dialog>
       <Dialog open={!!viewingNote} onClose={() => setViewingNote(null)} fullWidth maxWidth="md">
         <DialogTitle>Preview Learner Note</DialogTitle>
