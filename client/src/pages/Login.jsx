@@ -1,9 +1,13 @@
-// /client/src/pages/Login.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { login, reset } from '../features/auth/authSlice';
-import { Button, TextField, Box, Typography, Container, Alert, CircularProgress, Paper } from '@mui/material';
+
+// MUI Imports
+import {
+  Button, TextField, Box, Typography, Container, Paper,
+  CircularProgress, Alert, Collapse, Link
+} from '@mui/material';
 import { motion } from 'framer-motion';
 
 function Login() {
@@ -13,15 +17,35 @@ function Login() {
 
   const { user, isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
 
+  // ✅ THE FIX IS HERE: Updated redirection logic
   useEffect(() => {
-    if (isSuccess || user) {
-      navigate('/'); // Redirect to the main dashboard on successful login
+    if (isError) {
+      // Error is handled by the notification state below
     }
-    // The reset action should be dispatched when the component unmounts to clear the auth state.
+
+    if (isSuccess && user) {
+      // Check the user's role and navigate to the correct dashboard
+      switch (user.role) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'teacher':
+        case 'school_admin':
+          navigate('/teacher/dashboard');
+          break;
+        case 'student':
+          navigate('/dashboard');
+          break;
+        default:
+          navigate('/'); // Fallback to landing page if role is unknown
+      }
+    }
+
+    // Reset the auth state flags when the component unmounts
     return () => {
       dispatch(reset());
     };
-  }, [user, isSuccess, navigate, dispatch]);
+  }, [user, isError, isSuccess, message, navigate, dispatch]);
 
   const onChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -54,7 +78,11 @@ function Login() {
           </Typography>
 
           <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
-            {isError && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{message}</Alert>}
+            <Collapse in={isError}>
+              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+                {message}
+              </Alert>
+            </Collapse>
 
             <TextField margin="normal" required fullWidth id="email" label="Email Address" name="email" autoComplete="email" autoFocus value={formData.email} onChange={onChange} />
             <TextField margin="normal" required fullWidth name="password" label="Password" type="password" id="password" autoComplete="current-password" value={formData.password} onChange={onChange} />
@@ -62,6 +90,13 @@ function Login() {
             <Button type="submit" fullWidth variant="contained" disabled={isLoading} sx={{ mt: 3, mb: 2, py: 1.5 }}>
               {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
             </Button>
+            <Grid container justifyContent="flex-end">
+              <Grid item>
+                <Link component={RouterLink} to="/register" variant="body2">
+                  Don't have an account? Sign Up
+                </Link>
+              </Grid>
+            </Grid>
           </Box>
         </Paper>
       </Container>
