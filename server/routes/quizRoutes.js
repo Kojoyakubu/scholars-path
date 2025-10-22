@@ -3,12 +3,15 @@ const router = express.Router();
 const { body, param } = require('express-validator');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { handleValidationErrors } = require('../middleware/validatorMiddleware');
+
+// ✅ THE FIX IS HERE: Add 'generateAiQuiz' to the import list.
 const {
   createQuiz,
   getTeacherQuizzes,
   getQuizForEditing,
   addQuestionToQuiz,
   deleteQuiz,
+  generateAiQuiz, // <-- This was missing
 } = require('../controllers/quizController');
 
 // Protect all routes in this file
@@ -43,6 +46,9 @@ router.route('/')
   .get(getTeacherQuizzes)
   .post(createQuizValidator, handleValidationErrors, createQuiz);
 
+// Route for AI quiz generation
+router.post('/generate-ai', generateAiQuizValidator, handleValidationErrors, generateAiQuiz);
+
 // Route for a specific quiz
 router.route('/:quizId')
   .get(mongoIdParam('quizId'), handleValidationErrors, getQuizForEditing)
@@ -55,7 +61,5 @@ router.post(
   handleValidationErrors,
   addQuestionToQuiz
 );
-
-router.post('/generate-ai', generateAiQuizValidator, handleValidationErrors, generateAiQuiz);
 
 module.exports = router;
