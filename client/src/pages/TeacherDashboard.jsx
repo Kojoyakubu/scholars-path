@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 // ✅ THE FIX IS HERE: All icons, including 'Article', are now imported.
 import {
-  Article,
+  Description as Article,  // ✅ Use Description as a stand-in for Article
   Delete,
   FaceRetouchingNatural,
   CheckCircle,
