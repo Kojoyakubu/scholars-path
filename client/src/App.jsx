@@ -1,89 +1,66 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Box } from '@mui/material';
+// /client/src/App.jsx
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// --- Core Component Imports ---
-import Header from './components/Header';
-import Footer from './components/Footer';
+// Layout & Authentication
 import PrivateRoute from './components/PrivateRoute';
-import RoleRoute from './components/RoleRoute';
-import SubscriptionGate from './components/SubscriptionGate'; // Import the subscription gate
-
-// --- Page Imports ---
-// General Pages
-import Dashboard from './pages/Dashboard';
+import Layout from './components/Layout'; // ✅ Import the new Layout component
+import LandingPage from './pages/LandingPage'; // ✅ Will create this in next step
 import Login from './pages/Login';
 import Register from './pages/Register';
-import PricingPage from './pages/PricingPage';
-import PaymentSuccess from './pages/PaymentSuccess';
-import PaymentFailed from './pages/PaymentFailed';
-import MyBadges from './pages/MyBadges';
-import TakeQuiz from './pages/TakeQuiz';
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
-import AdminUsers from './pages/AdminUsers';
+import ManageUsers from './pages/ManageUsers';
+import ManageSchools from './pages/ManageSchools';
 import AdminCurriculum from './pages/AdminCurriculum';
-import AdminSchools from './pages/AdminSchools';
-import SchoolDashboard from './pages/SchoolDashboard';
 
 // Teacher Pages
 import TeacherDashboard from './pages/TeacherDashboard';
 import LessonNoteView from './pages/LessonNoteView';
 
+// Student Pages
+import Dashboard from './pages/Dashboard';
+import QuizPage from './pages/QuizPage';
+
 function App() {
   return (
     <>
       <Router>
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-          <Header />
-          <Box component="main" sx={{ flexGrow: 1, py: { xs: 2, md: 4 } }}>
-            <Routes>
-              {/* --- Public Routes --- */}
-              <Route path='/login' element={<Login />} />
-              <Route path='/register' element={<Register />} />
-              <Route path='/pricing' element={<PricingPage />} />
-              <Route path='/payment-success' element={<PaymentSuccess />} />
-              <Route path='/payment-failed' element={<PaymentFailed />} />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} /> {/* ✅ New Landing Page */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-              {/* --- Private Routes (All Logged-in Users) --- */}
-              <Route element={<PrivateRoute />}>
-                <Route path='/' element={<Dashboard />} />
-                <Route path='/my-badges' element={<MyBadges />} />
-                <Route path='/quiz/:id' element={<TakeQuiz />} />
-                <Route path='/school/dashboard/:schoolId' element={<SchoolDashboard />} />
-              </Route>
+          {/* Protected Routes - Wrapped by Layout */}
+          <Route element={<PrivateRoute />}> {/* PrivateRoute ensures user is logged in */}
+            <Route element={<Layout />}> {/* ✅ All these routes will use the new Layout */}
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/users" element={<ManageUsers />} />
+              <Route path="/admin/schools" element={<ManageSchools />} />
+              <Route path="/admin/curriculum" element={<AdminCurriculum />} />
 
-              {/* --- Role-Protected Routes (Wrapped in PrivateRoute) --- */}
-              <Route element={<PrivateRoute />}>
-                {/* Admin Routes */}
-                <Route path='/admin' element={<RoleRoute allowedRoles={['admin']} />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path='users' element={<AdminUsers />} />
-                  <Route path='curriculum' element={<AdminCurriculum />} />
-                  <Route path='schools' element={<AdminSchools />} />
-                </Route>
+              {/* Teacher/School Admin Routes */}
+              <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+              <Route path="/teacher/notes/:noteId" element={<LessonNoteView />} />
+              {/* Add /teacher/quizzes etc. as you create them */}
 
-                {/* Teacher Routes */}
-                // ... inside App.jsx
+              {/* Student Routes */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/quiz/:quizId" element={<QuizPage />} />
+              {/* Add /student/progress etc. as you create them */}
+            </Route>
+          </Route>
 
-                {/* Teacher Routes */}
-                <Route path='/teacher' element={<RoleRoute allowedRoles={['teacher', 'school_admin', 'admin']} />}>
-                  {/* The SubscriptionGate component has been removed */}
-                  <Route path='dashboard' element={<TeacherDashboard />} />
-                  <Route path='notes/:noteId' element={<LessonNoteView />} />
-                </Route>
-              </Route>
-              
-              {/* Fallback Route */}
-              <Route path='*' element={<Navigate to="/" replace />} />
-            </Routes>
-          </Box>
-          <Footer />
-        </Box>
+          {/* Fallback for unmatched routes */}
+          <Route path="*" element={<div>404 Not Found</div>} />
+        </Routes>
       </Router>
-      <ToastContainer position="bottom-center" theme="colored" />
+      <ToastContainer position="bottom-right" />
     </>
   );
 }
