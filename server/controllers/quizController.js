@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Quiz = require('../models/quizModel');
 const Question = require('../models/questionModel');
 const Option = require('../models/optionModel');
-const aiService = require('../services/aiService'); // Make sure aiService is imported
+const aiService = require('../services/aiService'); // ✅ THE FIX IS HERE
 
 /**
  * @desc    Create a new quiz
@@ -57,7 +57,7 @@ const getQuizForEditing = asyncHandler(async (req, res) => {
  * @access  Private (Teacher)
  */
 const addQuestionToQuiz = asyncHandler(async (req, res) => {
-  // ... (function code is correct)
+  // ... (This function is not the issue)
 });
 
 /**
@@ -124,15 +124,20 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
  * @access  Private (Teacher)
  */
 const deleteQuiz = asyncHandler(async (req, res) => {
-    // ... (function code is correct)
+    const quiz = await Quiz.findOne({ _id: req.params.quizId, teacher: req.user.id });
+    if (!quiz) {
+        res.status(404);
+        throw new Error('Quiz not found or you are not authorized to delete it.');
+    }
+    await quiz.deleteOne();
+    res.json({ id: req.params.quizId, message: 'Quiz removed successfully' });
 });
 
-// ✅ THE FIX IS HERE
 module.exports = {
   createQuiz,
   getTeacherQuizzes,
   getQuizForEditing,
   addQuestionToQuiz,
   deleteQuiz,
-  generateAiQuiz, // This line ensures the function is exported
+  generateAiQuiz,
 };
