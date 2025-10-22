@@ -21,8 +21,7 @@ import {
   Stack, IconButton, Dialog, DialogActions, DialogContent, DialogContentText,
   DialogTitle, Snackbar, Alert, Tooltip, Card, CardHeader, CardContent
 } from '@mui/material';
-
-// ✅ ALL ICONS ARE HERE, INCLUDING 'Article'
+// ✅ THE FIX IS HERE: All icons, including 'Article', are now imported.
 import {
   Article,
   Delete,
@@ -97,10 +96,10 @@ function TeacherDashboard() {
   }, [dispatch]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
-    dispatch(generateLessonNote(formData))
-      .unwrap()
-      .then(() => setIsModalOpen(false))
-      .catch(() => {});
+      dispatch(generateLessonNote(formData))
+          .unwrap()
+          .then(() => setIsModalOpen(false))
+          .catch(() => {});
   }, [dispatch]);
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
