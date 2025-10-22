@@ -72,6 +72,7 @@ app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/school', require('./routes/schoolRoutes'));
+app.use('/api/teacher/quizzes', require('./routes/quizRoutes'));
 
 
 // --- Health Check Route ---

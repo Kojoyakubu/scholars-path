@@ -46,6 +46,11 @@ const deleteLearnerNote = async (noteId) => {
   return response.data;
 };
 
+const generateAiQuiz = async (quizData) => {
+  const response = await api.post('/teacher/quizzes/generate-ai', quizData);
+  return response.data;
+};
+
 const teacherService = {
     getMyLessonNotes,
     generateLessonNote,
@@ -56,6 +61,7 @@ const teacherService = {
     getDraftLearnerNotes,
     publishLearnerNote,
     deleteLearnerNote,
+    generateAiQuiz,
 };
 
 export default teacherService;

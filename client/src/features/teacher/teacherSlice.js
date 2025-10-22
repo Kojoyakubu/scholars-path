@@ -4,6 +4,7 @@ import teacherService from './teacherService';
 const initialState = {
   lessonNotes: [],
   draftLearnerNotes: [],
+  quizzes: [],
   currentNote: null,
   analytics: {},
   isLoading: false,
@@ -34,6 +35,7 @@ export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', tea
 export const getDraftLearnerNotes = createTeacherThunk('getDraftLearnerNotes', teacherService.getDraftLearnerNotes);
 export const publishLearnerNote = createTeacherThunk('publishLearnerNote', teacherService.publishLearnerNote);
 export const deleteLearnerNote = createTeacherThunk('deleteLearnerNote', teacherService.deleteLearnerNote);
+export const generateAiQuiz = createTeacherThunk('generateAiQuiz', teacherService.generateAiQuiz);
 
 const teacherSlice = createSlice({
   name: 'teacher',
@@ -90,6 +92,11 @@ const teacherSlice = createSlice({
         state.draftLearnerNotes = state.draftLearnerNotes.filter(note => note._id !== action.payload.id);
         state.isSuccess = true;
         state.message = action.payload.message;
+      })
+      .addCase(generateAiQuiz.fulfilled, (state, action) => {
+        state.quizzes.unshift(action.payload); // Add the new quiz to the list
+        state.isSuccess = true;
+        state.message = "AI Quiz generated successfully!";
       })
 
       // Generic matchers for handling loading and error states

@@ -21,7 +21,7 @@ import {
   Stack, IconButton, Dialog, DialogActions, DialogContent, DialogContentText,
   DialogTitle, Snackbar, Alert, Tooltip, Card, CardHeader, CardContent
 } from '@mui/material';
-// ✅ THE FIX IS HERE: All icons, including 'Article', are now imported.
+// All icons, including 'Article', are now imported.
 import {
   Article,
   Delete,
@@ -207,4 +207,4 @@ function TeacherDashboard() {
   );
 }
 
-export default TeacherDashboard; 
+export default TeacherDashboard;

@@ -159,7 +159,52 @@ ${teacherContent}
   return generateContent(prompt);
 };
 
+/**
+ * Generates a quiz with multiple-choice questions based on a topic and WAEC standards.
+ * @param {object} details - Contains topic, number of questions, etc.
+ * @returns {Promise<string>} - A JSON string of the generated quiz questions.
+ */
+const generateWaecQuiz = async (details = {}) => {
+  const {
+    topic,
+    className,
+    subjectName,
+    numQuestions = 5, // Default to 5 questions
+  } = details;
+
+  const prompt = `
+You are an expert examiner for the West African Examinations Council (WAEC) in Ghana, specializing in the ${subjectName} curriculum for ${className}.
+
+Your task is to generate a set of multiple-choice questions based on the provided topic.
+
+**Instructions:**
+1.  **Topic:** ${topic}
+2.  **Number of Questions:** ${numQuestions}
+3.  **Standard:** The questions must be of a standard suitable for a ${className} student in Ghana, reflecting the style and difficulty of WAEC questions (both BECE and WASSCE).
+4.  **Structure:** For each question, provide four plausible options (A, B, C, D) and clearly indicate the correct answer.
+5.  **Format:** Return the output as a JSON array of objects. Each object must have a "text" field (the question), an "options" array, and a "correctAnswer" field. In the "options" array, each object should have "text" and "isCorrect" boolean properties.
+
+**CRITICAL RULE:** Do not add any introductory text or explanations. The response must be only the raw JSON array.
+
+**Example JSON format:**
+[
+  {
+    "text": "Which of these is an input device?",
+    "options": [
+      { "text": "Monitor", "isCorrect": false },
+      { "text": "Keyboard", "isCorrect": true },
+      { "text": "Printer", "isCorrect": false },
+      { "text": "Speaker", "isCorrect": false }
+    ]
+  }
+]
+`;
+
+  return generateContent(prompt);
+};
+
 module.exports = {
   generateGhanaianLessonNote,
   generateLearnerFriendlyNote,
+  generateWaecQuiz,
 };
