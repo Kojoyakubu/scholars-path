@@ -49,7 +49,7 @@ export const downloadAsPdf = (elementId, topic) => {
       background: #f2f2f2 !important;
       font-weight: bold !important;
     }
-    /* ✅ This CSS now correctly targets the table */
+    /* ✅ Learning Phases widths */
     #${elementId} table.learning-phases th:nth-of-type(1),
     #${elementId} table.learning-phases td:nth-of-type(1) {
       width: 25% !important;
@@ -65,6 +65,7 @@ export const downloadAsPdf = (elementId, topic) => {
   `;
   document.head.appendChild(style);
 
+  // ✅ Reliable settings (no extra scaling or offset)
   const options = {
     margin: [5, 5, 5, 5],
     filename: safeFilename,
