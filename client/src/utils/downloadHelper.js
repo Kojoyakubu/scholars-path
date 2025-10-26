@@ -85,14 +85,14 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
     };
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(10); // ✅ Title font size set to 10
     doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, 15, { align: 'center' });
 
     autoTable(doc, {
       startY: 20,
       body: extractHeaderData(mainElement),
       theme: 'plain',
-      styles: { fontSize: 9, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } },
+      styles: { fontSize: 9, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } }, // ✅ Body font size set to 9
       columnStyles: { 0: { fontStyle: 'bold' } },
     });
 
@@ -103,13 +103,12 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
             html: tableElement,
             startY: doc.lastAutoTable.finalY + 5,
             theme: 'grid',
-            headStyles: { fontSize: 9, fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-            styles: { fontSize: 9 },
-            // ✅ THE FIX IS HERE: Explicitly set the column widths.
+            headStyles: { fontSize: 9, fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' }, // ✅ Head font size set to 9
+            styles: { fontSize: 9 }, // ✅ Body font size set to 9
             columnStyles: {
-              0: { cellWidth: '25%' }, // Phase 1
-              1: { cellWidth: '50%' }, // Phase 2 (wider)
-              2: { cellWidth: '25%' }, // Phase 3
+              0: { cellWidth: '25%' },
+              1: { cellWidth: '50%' },
+              2: { cellWidth: '25%' },
             },
         });
     }

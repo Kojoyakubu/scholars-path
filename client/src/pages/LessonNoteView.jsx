@@ -15,8 +15,9 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
 
 // --- Component & Helper Imports ---
-import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
-import AiImage from '../components/AiImage'; // Import the new image component
+// ✅ FIX 1: Import the correct, advanced PDF function
+import { downloadLessonNoteAsPdf, downloadAsWord } from '../utils/downloadHelper';
+import AiImage from '../components/AiImage';
 
 function LessonNoteView() {
   const dispatch = useDispatch();
@@ -36,7 +37,8 @@ function LessonNoteView() {
     const elementId = 'note-content-container';
     const topic = 'lesson_note';
     if (type === 'pdf') {
-      downloadAsPdf(elementId, topic);
+      // ✅ FIX 2: Call the correct function
+      downloadLessonNoteAsPdf(elementId, topic);
     } else if (type === 'word') {
       downloadAsWord(elementId, topic);
     }
