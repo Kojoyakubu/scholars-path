@@ -5,27 +5,23 @@ import autoTable from 'jspdf-autotable';
 import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
- * ✅ SIMPLE PDF DOWNLOAD (for Teachers)
- * Generates a PDF from an HTML element using html2pdf.js with uniform 10px text,
- * left-aligned content, and landscape layout.
+ * ✅ SIMPLE PDF DOWNLOAD
+ * Landscape layout, 10px text, all left-aligned, phase 2 wider column.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
-    console.error(`Element with ID "${elementId}" not found for PDF download.`);
-    alert('PDF generation failed: Content to print was not found.');
+    alert('PDF generation failed: content not found.');
     return;
   }
-
   if (!window.html2pdf) {
-    console.error('html2pdf.js is not loaded.');
-    alert('PDF generation library is not available. Please ensure it is included in your index.html.');
+    alert('html2pdf.js is not loaded.');
     return;
   }
 
   const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-  // ✅ Inject temporary styling for uniform 10px, left-aligned text
+  // Temporary CSS for PDF rendering
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
@@ -43,8 +39,7 @@ export const downloadAsPdf = (elementId, topic) => {
       border-collapse: collapse;
       font-size: 10px !important;
     }
-    #${elementId} th,
-    #${elementId} td {
+    #${elementId} th, #${elementId} td {
       border: 1px solid #000;
       padding: 4px;
       text-align: left !important;
@@ -58,6 +53,24 @@ export const downloadAsPdf = (elementId, topic) => {
     #${elementId} p {
       margin-bottom: 0.5em;
     }
+
+    /* ✅ Learning Phases specific widths */
+    #${elementId} table.learning-phases {
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+    #${elementId} table.learning-phases th:nth-of-type(1),
+    #${elementId} table.learning-phases td:nth-of-type(1) {
+      width: 25% !important;
+    }
+    #${elementId} table.learning-phases th:nth-of-type(2),
+    #${elementId} table.learning-phases td:nth-of-type(2) {
+      width: 50% !important;
+    }
+    #${elementId} table.learning-phases th:nth-of-type(3),
+    #${elementId} table.learning-phases td:nth-of-type(3) {
+      width: 25% !important;
+    }
   `;
   document.head.appendChild(style);
 
@@ -66,7 +79,7 @@ export const downloadAsPdf = (elementId, topic) => {
     filename: safeFilename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, // 👈 landscape layout
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
   };
 
   window.html2pdf()
@@ -79,13 +92,11 @@ export const downloadAsPdf = (elementId, topic) => {
 
 /**
  * ✅ WORD DOWNLOAD
- * Generates and downloads a .docx document from an HTML element.
- * Font size 10px, left-aligned text, matching the PDF layout.
+ * Matches PDF styling — 10px font, left-aligned, learning phase widths.
  */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
-    console.error(`Element with ID "${elementId}" not found for Word download.`);
     alert('An error occurred while generating the Word document.');
     return;
   }
@@ -98,7 +109,12 @@ export const downloadAsWord = async (elementId, topic) => {
       <style>
         body { font-size: 10px; line-height: 1.4; text-align: left; }
         * { text-align: left; font-size: 10px; line-height: 1.4; }
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 10px 0;
+          font-size: 10px;
+        }
         th, td {
           border: 1px solid #000;
           padding: 4px;
@@ -108,6 +124,24 @@ export const downloadAsWord = async (elementId, topic) => {
         }
         th { background: #f0f0f0; font-weight: bold; }
         p { margin-bottom: 0.5em; }
+
+        /* ✅ Learning Phases column widths */
+        table.learning-phases {
+          width: 100%;
+          table-layout: fixed;
+        }
+        table.learning-phases th:nth-of-type(1),
+        table.learning-phases td:nth-of-type(1) {
+          width: 25%;
+        }
+        table.learning-phases th:nth-of-type(2),
+        table.learning-phases td:nth-of-type(2) {
+          width: 50%;
+        }
+        table.learning-phases th:nth-of-type(3),
+        table.learning-phases td:nth-of-type(3) {
+          width: 25%;
+        }
       </style>
     </head>
     <body>
@@ -135,8 +169,7 @@ export const downloadAsWord = async (elementId, topic) => {
 };
 
 /**
- * ✅ ADVANCED PDF DOWNLOAD (Structured layout, optional)
- * Uses jsPDF and autoTable for fine-grained teacher layouts.
+ * ✅ Optional advanced PDF generator (structured)
  */
 export const downloadLessonNoteAsPdf = (elementId, topic) => {
   try {
