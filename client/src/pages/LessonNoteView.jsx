@@ -1,3 +1,5 @@
+// /client/src/pages/LessonNoteView.jsx (Final Version)
+
 import { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
@@ -15,8 +17,8 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
 
 // --- Component & Helper Imports ---
-// ✅ FIX 1: Import the correct, advanced PDF function
-import { downloadLessonNoteAsPdf, downloadAsWord } from '../utils/downloadHelper';
+// ✅ We now only import the simple PDF and Word download functions
+import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
 import AiImage from '../components/AiImage';
 
 function LessonNoteView() {
@@ -37,8 +39,8 @@ function LessonNoteView() {
     const elementId = 'note-content-container';
     const topic = 'lesson_note';
     if (type === 'pdf') {
-      // ✅ FIX 2: Call the correct function
-      downloadLessonNoteAsPdf(elementId, topic);
+      // ✅ Use the simple, reliable PDF function
+      downloadAsPdf(elementId, topic);
     } else if (type === 'word') {
       downloadAsWord(elementId, topic);
     }
@@ -64,6 +66,7 @@ function LessonNoteView() {
             </Stack>
           </Box>
 
+          {/* This is the container that will be captured for the PDF */}
           <Box
             id="note-content-container"
             sx={{
