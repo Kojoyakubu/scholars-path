@@ -6,7 +6,8 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
  * ✅ SIMPLE PDF DOWNLOAD (for Teachers)
- * Generates a PDF from an HTML element using html2pdf.js with uniform 10px text.
+ * Generates a PDF from an HTML element using html2pdf.js with uniform 10px text,
+ * left-aligned content, and landscape layout.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -24,10 +25,16 @@ export const downloadAsPdf = (elementId, topic) => {
 
   const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-  // ✅ Inject temporary styling so everything is 10px in the PDF
+  // ✅ Inject temporary styling for uniform 10px, left-aligned text
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
+      font-size: 10px !important;
+      line-height: 1.4 !important;
+      text-align: left !important;
+    }
+    #${elementId} * {
+      text-align: left !important;
       font-size: 10px !important;
       line-height: 1.4 !important;
     }
@@ -40,7 +47,7 @@ export const downloadAsPdf = (elementId, topic) => {
     #${elementId} td {
       border: 1px solid #000;
       padding: 4px;
-      text-align: left;
+      text-align: left !important;
       vertical-align: top;
       font-size: 10px !important;
     }
@@ -59,7 +66,7 @@ export const downloadAsPdf = (elementId, topic) => {
     filename: safeFilename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, // 👈 landscape mode
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, // 👈 landscape layout
   };
 
   window.html2pdf()
@@ -72,7 +79,8 @@ export const downloadAsPdf = (elementId, topic) => {
 
 /**
  * ✅ WORD DOWNLOAD
- * Generates and downloads a .docx document from an HTML element (font size 10px).
+ * Generates and downloads a .docx document from an HTML element.
+ * Font size 10px, left-aligned text, matching the PDF layout.
  */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -88,10 +96,18 @@ export const downloadAsWord = async (elementId, topic) => {
     <head>
       <meta charset="UTF-8" />
       <style>
-        body { font-size: 10px; line-height: 1.4; }
+        body { font-size: 10px; line-height: 1.4; text-align: left; }
+        * { text-align: left; font-size: 10px; line-height: 1.4; }
         table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; }
-        th, td { border: 1px solid #000; padding: 4px; text-align: left; vertical-align: top; font-size: 10px; }
+        th, td {
+          border: 1px solid #000;
+          padding: 4px;
+          text-align: left;
+          vertical-align: top;
+          font-size: 10px;
+        }
         th { background: #f0f0f0; font-weight: bold; }
+        p { margin-bottom: 0.5em; }
       </style>
     </head>
     <body>
@@ -119,7 +135,8 @@ export const downloadAsWord = async (elementId, topic) => {
 };
 
 /**
- * ✅ ADVANCED PDF DOWNLOAD (Structured format, optional)
+ * ✅ ADVANCED PDF DOWNLOAD (Structured layout, optional)
+ * Uses jsPDF and autoTable for fine-grained teacher layouts.
  */
 export const downloadLessonNoteAsPdf = (elementId, topic) => {
   try {
@@ -166,7 +183,7 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
           fontStyle: 'bold',
           halign: 'center',
         },
-        styles: { fontSize: 9 },
+        styles: { fontSize: 9, halign: 'left' },
       });
     }
 
