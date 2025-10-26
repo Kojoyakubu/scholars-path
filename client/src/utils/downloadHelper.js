@@ -1,36 +1,45 @@
 // /client/src/utils/downloadHelper.js
 
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import HTMLtoDOCX from 'html-docx-js-typescript';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import HTMLtoDOCX from "html-docx-js-typescript";
 
 /**
- * ✅ SIMPLE PDF DOWNLOAD
+ * ✅ PDF DOWNLOAD
  * Landscape layout, 10px text, all left-aligned,
- * Learning Phases column widths fixed at 180 / 360 / 180 px.
+ * Phase 2 (middle) = 50% width (360px)
+ * Reduced top margin for perfect fit
+ *
+ * NOTE: This version fixes scaling issues by using html2canvas.width = element.offsetWidth
+ * and removing windowWidth which caused over-scaling.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
-    alert('PDF generation failed: content not found.');
+    alert("PDF generation failed: content not found.");
     return;
   }
   if (!window.html2pdf) {
-    alert('html2pdf.js is not loaded.');
+    alert("html2pdf.js is not loaded.");
     return;
   }
 
-  const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
 
-  // Inject temporary styling for uniform text and column widths
-  const style = document.createElement('style');
+  // Inject consistent styling and force element to behave as page-width for capture
+  const style = document.createElement("style");
   style.innerHTML = `
     #${elementId} {
+      box-sizing: border-box !important;
+      width: 100% !important;
       font-size: 10px !important;
       line-height: 1.4 !important;
       text-align: left !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
     #${elementId} * {
+      box-sizing: border-box !important;
       text-align: left !important;
       font-size: 10px !important;
       line-height: 1.4 !important;
@@ -55,7 +64,7 @@ export const downloadAsPdf = (elementId, topic) => {
       margin-bottom: 0.5em;
     }
 
-    /* ✅ Learning Phases explicit pixel widths */
+    /* Learning Phases explicit pixel widths */
     #${elementId} table.learning-phases {
       width: 100% !important;
       table-layout: fixed !important;
@@ -75,31 +84,44 @@ export const downloadAsPdf = (elementId, topic) => {
   `;
   document.head.appendChild(style);
 
+  // Calculate width to pass to html2canvas so it captures at the element's true width
+  const captureWidth = element.offsetWidth || element.scrollWidth || 1000;
+
   const options = {
-    margin: 10,
+    margin: [5, 8, 5, 8], // top, right, bottom, left (mm)
     filename: safeFilename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2, // keep high DPI for crisp text
+      useCORS: true,
+      scrollY: 0,
+      width: captureWidth, // <- important: capture at element's real width
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
   };
 
-  window.html2pdf()
+  // Run html2pdf
+  window
+    .html2pdf()
     .set(options)
     .from(element)
     .save()
     .then(() => document.head.removeChild(style))
-    .catch(() => document.head.removeChild(style));
+    .catch((err) => {
+      console.error("html2pdf error:", err);
+      document.head.removeChild(style);
+    });
 };
 
 /**
  * ✅ WORD DOWNLOAD
- * Matches PDF styling — 10px font, left-aligned,
- * Learning Phases column widths fixed at 180 / 360 / 180 px.
+ * Matches PDF layout & spacing exactly
  */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
-    alert('An error occurred while generating the Word document.');
+    alert("An error occurred while generating the Word document.");
     return;
   }
 
@@ -109,8 +131,8 @@ export const downloadAsWord = async (elementId, topic) => {
     <head>
       <meta charset="UTF-8" />
       <style>
-        body { font-size: 10px; line-height: 1.4; text-align: left; }
-        * { text-align: left; font-size: 10px; line-height: 1.4; }
+        body { box-sizing: border-box; margin: 0; padding: 0; font-size: 10px; line-height: 1.4; text-align: left; }
+        * { box-sizing: border-box; text-align: left; font-size: 10px; line-height: 1.4; }
         table {
           width: 100%;
           border-collapse: collapse;
@@ -127,7 +149,7 @@ export const downloadAsWord = async (elementId, topic) => {
         th { background: #f0f0f0; font-weight: bold; }
         p { margin-bottom: 0.5em; }
 
-        /* ✅ Learning Phases explicit pixel widths */
+        /* Learning Phases explicit pixel widths */
         table.learning-phases {
           width: 100%;
           table-layout: fixed;
@@ -154,77 +176,77 @@ export const downloadAsWord = async (elementId, topic) => {
   try {
     const fileBuffer = await HTMLtoDOCX(html);
     const blob = new Blob([fileBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     });
 
-    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
-    const link = document.createElement('a');
+    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, "_")}.docx`;
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = safeFilename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   } catch (error) {
-    console.error('Word generation failed:', error);
-    alert('An error occurred while generating the Word document.');
+    console.error("Word generation failed:", error);
+    alert("An error occurred while generating the Word document.");
   }
 };
 
 /**
- * ✅ ADVANCED PDF DOWNLOAD (Structured layout, optional)
+ * Optional: structured PDF builder (not used by default)
  */
 export const downloadLessonNoteAsPdf = (elementId, topic) => {
   try {
     const mainElement = document.getElementById(elementId);
     if (!mainElement) throw new Error(`Element with ID "${elementId}" not found.`);
 
-    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
 
     const extractHeaderData = (element) => {
       const headerData = [];
-      const boldElements = element.querySelectorAll('strong');
+      const boldElements = element.querySelectorAll("strong");
       boldElements.forEach((strong) => {
-        const label = strong.innerText.replace(':', '').trim();
+        const label = strong.innerText.replace(":", "").trim();
         const parent = strong.parentElement;
-        const value = parent.innerText.replace(strong.innerText, '').trim();
+        const value = parent.innerText.replace(strong.innerText, "").trim();
         if (label && value) headerData.push([label, value]);
       });
       return headerData;
     };
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    doc.text("TEACHER INFORMATION", doc.internal.pageSize.width / 2, 15, { align: "center" });
 
     autoTable(doc, {
       startY: 20,
       body: extractHeaderData(mainElement),
-      theme: 'plain',
+      theme: "plain",
       styles: { fontSize: 9, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } },
-      columnStyles: { 0: { fontStyle: 'bold' } },
+      columnStyles: { 0: { fontStyle: "bold" } },
     });
 
-    const tableElement = mainElement.querySelector('table');
+    const tableElement = mainElement.querySelector("table");
     if (tableElement) {
       autoTable(doc, {
         html: tableElement,
         startY: doc.lastAutoTable.finalY + 5,
-        theme: 'grid',
+        theme: "grid",
         headStyles: {
           fontSize: 9,
           fillColor: [220, 220, 220],
           textColor: [0, 0, 0],
-          fontStyle: 'bold',
-          halign: 'center',
+          fontStyle: "bold",
+          halign: "center",
         },
-        styles: { fontSize: 9, halign: 'left' },
+        styles: { fontSize: 9, halign: "left" },
       });
     }
 
     doc.save(safeFilename);
   } catch (error) {
-    console.error('PDF generation error:', error);
-    alert('An error occurred while generating the PDF.');
+    console.error("PDF generation error:", error);
+    alert("An error occurred while generating the PDF.");
   }
 };
