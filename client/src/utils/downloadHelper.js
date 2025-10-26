@@ -1,5 +1,4 @@
 // /client/src/utils/downloadHelper.js
-
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import HTMLtoDOCX from 'html-docx-js-typescript';
@@ -7,7 +6,7 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
 /**
  * ✅ SIMPLE PDF DOWNLOAD
  * Landscape layout, 10px text, all left-aligned,
- * Learning Phases column widths fixed at 180 / 360 / 180 px.
+ * Learning Phases column widths fixed at 150 / 450 / 150 px.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -55,22 +54,22 @@ export const downloadAsPdf = (elementId, topic) => {
       margin-bottom: 0.5em;
     }
 
-    /* ✅ Learning Phases explicit pixel widths */
+    /* ✅ Learning Phases explicit pixel widths (20% / 60% / 20%) */
     #${elementId} table.learning-phases {
       width: 100% !important;
       table-layout: fixed !important;
     }
     #${elementId} table.learning-phases th:nth-of-type(1),
     #${elementId} table.learning-phases td:nth-of-type(1) {
-      width: 180px !important;
+      width: 150px !important;
     }
     #${elementId} table.learning-phases th:nth-of-type(2),
     #${elementId} table.learning-phases td:nth-of-type(2) {
-      width: 360px !important;
+      width: 450px !important;
     }
     #${elementId} table.learning-phases th:nth-of-type(3),
     #${elementId} table.learning-phases td:nth-of-type(3) {
-      width: 180px !important;
+      width: 150px !important;
     }
   `;
   document.head.appendChild(style);
@@ -94,7 +93,7 @@ export const downloadAsPdf = (elementId, topic) => {
 /**
  * ✅ WORD DOWNLOAD
  * Matches PDF styling — 10px font, left-aligned,
- * Learning Phases column widths fixed at 180 / 360 / 180 px.
+ * Learning Phases column widths fixed at 150 / 450 / 150 px.
  */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -127,22 +126,22 @@ export const downloadAsWord = async (elementId, topic) => {
         th { background: #f0f0f0; font-weight: bold; }
         p { margin-bottom: 0.5em; }
 
-        /* ✅ Learning Phases explicit pixel widths */
+        /* ✅ Learning Phases explicit pixel widths (20% / 60% / 20%) */
         table.learning-phases {
           width: 100%;
           table-layout: fixed;
         }
         table.learning-phases th:nth-of-type(1),
         table.learning-phases td:nth-of-type(1) {
-          width: 180px;
+          width: 150px;
         }
         table.learning-phases th:nth-of-type(2),
         table.learning-phases td:nth-of-type(2) {
-          width: 360px;
+          width: 450px;
         }
         table.learning-phases th:nth-of-type(3),
         table.learning-phases td:nth-of-type(3) {
-          width: 180px;
+          width: 150px;
         }
       </style>
     </head>
