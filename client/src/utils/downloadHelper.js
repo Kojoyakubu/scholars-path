@@ -1,34 +1,37 @@
 // /client/src/utils/downloadHelper.js
 
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import HTMLtoDOCX from 'html-docx-js-typescript';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import HTMLtoDOCX from "html-docx-js-typescript";
 
 /**
- * ✅ SIMPLE PDF DOWNLOAD
+ * ✅ PDF DOWNLOAD
  * Landscape layout, 10px text, all left-aligned,
- * Learning Phases column widths fixed at 180 / 360 / 180 px.
+ * Phase 2 (middle) = 50% width (360px)
+ * Reduced top margin for perfect fit
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
-    alert('PDF generation failed: content not found.');
+    alert("PDF generation failed: content not found.");
     return;
   }
   if (!window.html2pdf) {
-    alert('html2pdf.js is not loaded.');
+    alert("html2pdf.js is not loaded.");
     return;
   }
 
-  const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
 
-  // Inject temporary styling for uniform text and column widths
-  const style = document.createElement('style');
+  // Inject consistent styling
+  const style = document.createElement("style");
   style.innerHTML = `
     #${elementId} {
       font-size: 10px !important;
       line-height: 1.4 !important;
       text-align: left !important;
+      margin-top: 0 !important;
+      padding-top: 0 !important;
     }
     #${elementId} * {
       text-align: left !important;
@@ -75,15 +78,23 @@ export const downloadAsPdf = (elementId, topic) => {
   `;
   document.head.appendChild(style);
 
+  // ✅ Options tuned for clean top fit
   const options = {
-    margin: 10,
+    margin: [5, 8, 5, 8], // top, right, bottom, left
     filename: safeFilename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollY: 0,
+      windowWidth: element.scrollWidth,
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
   };
 
-  window.html2pdf()
+  window
+    .html2pdf()
     .set(options)
     .from(element)
     .save()
@@ -93,13 +104,12 @@ export const downloadAsPdf = (elementId, topic) => {
 
 /**
  * ✅ WORD DOWNLOAD
- * Matches PDF styling — 10px font, left-aligned,
- * Learning Phases column widths fixed at 180 / 360 / 180 px.
+ * Matches PDF layout & spacing exactly
  */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
-    alert('An error occurred while generating the Word document.');
+    alert("An error occurred while generating the Word document.");
     return;
   }
 
@@ -109,7 +119,7 @@ export const downloadAsWord = async (elementId, topic) => {
     <head>
       <meta charset="UTF-8" />
       <style>
-        body { font-size: 10px; line-height: 1.4; text-align: left; }
+        body { font-size: 10px; line-height: 1.4; text-align: left; margin-top: 0; padding-top: 0; }
         * { text-align: left; font-size: 10px; line-height: 1.4; }
         table {
           width: 100%;
@@ -154,77 +164,83 @@ export const downloadAsWord = async (elementId, topic) => {
   try {
     const fileBuffer = await HTMLtoDOCX(html);
     const blob = new Blob([fileBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     });
 
-    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
-    const link = document.createElement('a');
+    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, "_")}.docx`;
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = safeFilename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   } catch (error) {
-    console.error('Word generation failed:', error);
-    alert('An error occurred while generating the Word document.');
+    console.error("Word generation failed:", error);
+    alert("An error occurred while generating the Word document.");
   }
 };
 
 /**
- * ✅ ADVANCED PDF DOWNLOAD (Structured layout, optional)
+ * Optional: structured PDF builder (not used by default)
  */
 export const downloadLessonNoteAsPdf = (elementId, topic) => {
   try {
     const mainElement = document.getElementById(elementId);
-    if (!mainElement) throw new Error(`Element with ID "${elementId}" not found.`);
+    if (!mainElement)
+      throw new Error(`Element with ID "${elementId}" not found.`);
 
-    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
 
     const extractHeaderData = (element) => {
       const headerData = [];
-      const boldElements = element.querySelectorAll('strong');
+      const boldElements = element.querySelectorAll("strong");
       boldElements.forEach((strong) => {
-        const label = strong.innerText.replace(':', '').trim();
+        const label = strong.innerText.replace(":", "").trim();
         const parent = strong.parentElement;
-        const value = parent.innerText.replace(strong.innerText, '').trim();
+        const value = parent.innerText.replace(strong.innerText, "").trim();
         if (label && value) headerData.push([label, value]);
       });
       return headerData;
     };
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    doc.text(
+      "TEACHER INFORMATION",
+      doc.internal.pageSize.width / 2,
+      15,
+      { align: "center" }
+    );
 
     autoTable(doc, {
       startY: 20,
       body: extractHeaderData(mainElement),
-      theme: 'plain',
+      theme: "plain",
       styles: { fontSize: 9, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } },
-      columnStyles: { 0: { fontStyle: 'bold' } },
+      columnStyles: { 0: { fontStyle: "bold" } },
     });
 
-    const tableElement = mainElement.querySelector('table');
+    const tableElement = mainElement.querySelector("table");
     if (tableElement) {
       autoTable(doc, {
         html: tableElement,
         startY: doc.lastAutoTable.finalY + 5,
-        theme: 'grid',
+        theme: "grid",
         headStyles: {
           fontSize: 9,
           fillColor: [220, 220, 220],
           textColor: [0, 0, 0],
-          fontStyle: 'bold',
-          halign: 'center',
+          fontStyle: "bold",
+          halign: "center",
         },
-        styles: { fontSize: 9, halign: 'left' },
+        styles: { fontSize: 9, halign: "left" },
       });
     }
 
     doc.save(safeFilename);
   } catch (error) {
-    console.error('PDF generation error:', error);
-    alert('An error occurred while generating the PDF.');
+    console.error("PDF generation error:", error);
+    alert("An error occurred while generating the PDF.");
   }
 };
