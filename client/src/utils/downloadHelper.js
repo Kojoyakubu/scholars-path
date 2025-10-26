@@ -6,7 +6,8 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
  * ✅ SIMPLE PDF DOWNLOAD
- * Landscape layout, 10px text, all left-aligned, phase 2 wider column.
+ * Landscape layout, 10px text, all left-aligned,
+ * Learning Phases column widths fixed at 180 / 360 / 180 px.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -21,7 +22,7 @@ export const downloadAsPdf = (elementId, topic) => {
 
   const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-  // Temporary CSS for PDF rendering
+  // Inject temporary styling for uniform text and column widths
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
@@ -54,22 +55,22 @@ export const downloadAsPdf = (elementId, topic) => {
       margin-bottom: 0.5em;
     }
 
-    /* ✅ Learning Phases specific widths */
+    /* ✅ Learning Phases explicit pixel widths */
     #${elementId} table.learning-phases {
       width: 100% !important;
       table-layout: fixed !important;
     }
     #${elementId} table.learning-phases th:nth-of-type(1),
     #${elementId} table.learning-phases td:nth-of-type(1) {
-      width: 25% !important;
+      width: 180px !important;
     }
     #${elementId} table.learning-phases th:nth-of-type(2),
     #${elementId} table.learning-phases td:nth-of-type(2) {
-      width: 50% !important;
+      width: 360px !important;
     }
     #${elementId} table.learning-phases th:nth-of-type(3),
     #${elementId} table.learning-phases td:nth-of-type(3) {
-      width: 25% !important;
+      width: 180px !important;
     }
   `;
   document.head.appendChild(style);
@@ -92,7 +93,8 @@ export const downloadAsPdf = (elementId, topic) => {
 
 /**
  * ✅ WORD DOWNLOAD
- * Matches PDF styling — 10px font, left-aligned, learning phase widths.
+ * Matches PDF styling — 10px font, left-aligned,
+ * Learning Phases column widths fixed at 180 / 360 / 180 px.
  */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -125,22 +127,22 @@ export const downloadAsWord = async (elementId, topic) => {
         th { background: #f0f0f0; font-weight: bold; }
         p { margin-bottom: 0.5em; }
 
-        /* ✅ Learning Phases column widths */
+        /* ✅ Learning Phases explicit pixel widths */
         table.learning-phases {
           width: 100%;
           table-layout: fixed;
         }
         table.learning-phases th:nth-of-type(1),
         table.learning-phases td:nth-of-type(1) {
-          width: 25%;
+          width: 180px;
         }
         table.learning-phases th:nth-of-type(2),
         table.learning-phases td:nth-of-type(2) {
-          width: 50%;
+          width: 360px;
         }
         table.learning-phases th:nth-of-type(3),
         table.learning-phases td:nth-of-type(3) {
-          width: 25%;
+          width: 180px;
         }
       </style>
     </head>
@@ -169,7 +171,7 @@ export const downloadAsWord = async (elementId, topic) => {
 };
 
 /**
- * ✅ Optional advanced PDF generator (structured)
+ * ✅ ADVANCED PDF DOWNLOAD (Structured layout, optional)
  */
 export const downloadLessonNoteAsPdf = (elementId, topic) => {
   try {
