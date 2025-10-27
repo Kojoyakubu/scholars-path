@@ -5,8 +5,9 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
  * ✅ SIMPLE PDF DOWNLOAD
- * Landscape layout, 12px text, all left-aligned,
+ * Landscape layout, 11px text, left-aligned,
  * Learning Phases column widths fixed at 150 / 450 / 150 px.
+ * Reduced page margins for better fit.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -25,33 +26,35 @@ export const downloadAsPdf = (elementId, topic) => {
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
-      font-size: 12px !important;
-      line-height: 1.5 !important;
+      font-size: 11px !important;
+      line-height: 1.45 !important;
       text-align: left !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
     #${elementId} * {
       text-align: left !important;
-      font-size: 12px !important;
-      line-height: 1.5 !important;
+      font-size: 11px !important;
+      line-height: 1.45 !important;
     }
     #${elementId} table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px !important;
+      font-size: 11px !important;
     }
     #${elementId} th, #${elementId} td {
       border: 1px solid #000;
-      padding: 4px;
+      padding: 3px;
       text-align: left !important;
       vertical-align: top;
-      font-size: 12px !important;
+      font-size: 11px !important;
     }
     #${elementId} th {
       background-color: #f2f2f2;
       font-weight: bold;
     }
     #${elementId} p {
-      margin-bottom: 0.6em;
+      margin-bottom: 0.5em;
     }
 
     /* ✅ Learning Phases explicit pixel widths (20% / 60% / 20%) */
@@ -74,8 +77,9 @@ export const downloadAsPdf = (elementId, topic) => {
   `;
   document.head.appendChild(style);
 
+  // ✅ Reduced margins (5mm)
   const options = {
-    margin: 10,
+    margin: 5,
     filename: safeFilename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
@@ -92,7 +96,7 @@ export const downloadAsPdf = (elementId, topic) => {
 
 /**
  * ✅ WORD DOWNLOAD
- * Matches PDF styling — 12px font, left-aligned,
+ * Matches PDF styling — 11px font, left-aligned,
  * Learning Phases column widths fixed at 150 / 450 / 150 px.
  */
 export const downloadAsWord = async (elementId, topic) => {
@@ -108,23 +112,23 @@ export const downloadAsWord = async (elementId, topic) => {
     <head>
       <meta charset="UTF-8" />
       <style>
-        body { font-size: 12px; line-height: 1.5; text-align: left; }
-        * { text-align: left; font-size: 12px; line-height: 1.5; }
+        body { font-size: 11px; line-height: 1.45; text-align: left; margin: 0; padding: 0; }
+        * { text-align: left; font-size: 11px; line-height: 1.45; }
         table {
           width: 100%;
           border-collapse: collapse;
-          margin: 10px 0;
-          font-size: 12px;
+          margin: 8px 0;
+          font-size: 11px;
         }
         th, td {
           border: 1px solid #000;
-          padding: 4px;
+          padding: 3px;
           text-align: left;
           vertical-align: top;
-          font-size: 12px;
+          font-size: 11px;
         }
         th { background: #f0f0f0; font-weight: bold; }
-        p { margin-bottom: 0.6em; }
+        p { margin-bottom: 0.5em; }
 
         /* ✅ Learning Phases explicit pixel widths (20% / 60% / 20%) */
         table.learning-phases {
@@ -193,14 +197,14 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
     };
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, 15, { align: 'center' });
 
     autoTable(doc, {
       startY: 20,
       body: extractHeaderData(mainElement),
       theme: 'plain',
-      styles: { fontSize: 11, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } },
+      styles: { fontSize: 10, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } },
       columnStyles: { 0: { fontStyle: 'bold' } },
     });
 
@@ -211,13 +215,13 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
         startY: doc.lastAutoTable.finalY + 5,
         theme: 'grid',
         headStyles: {
-          fontSize: 11,
+          fontSize: 10,
           fillColor: [220, 220, 220],
           textColor: [0, 0, 0],
           fontStyle: 'bold',
           halign: 'center',
         },
-        styles: { fontSize: 11, halign: 'left' },
+        styles: { fontSize: 10, halign: 'left' },
       });
     }
 
