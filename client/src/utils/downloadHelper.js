@@ -8,6 +8,7 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
  * Landscape layout, 11px text, left-aligned,
  * Learning Phases column widths fixed at 150 / 450 / 150 px.
  * Reduced page margins for better fit.
+ * Phase 1–3 row highlighted.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -53,6 +54,14 @@ export const downloadAsPdf = (elementId, topic) => {
       background-color: #f2f2f2;
       font-weight: bold;
     }
+
+    /* ✅ Highlight Phase Row */
+    #${elementId} table.learning-phases tr:first-child th,
+    #${elementId} table.learning-phases tr:first-child td {
+      background-color: #dbeafe !important;
+      font-weight: bold !important;
+    }
+
     #${elementId} p {
       margin-bottom: 0.5em;
     }
@@ -98,6 +107,7 @@ export const downloadAsPdf = (elementId, topic) => {
  * ✅ WORD DOWNLOAD
  * Matches PDF styling — 11px font, left-aligned,
  * Learning Phases column widths fixed at 150 / 450 / 150 px.
+ * Phase row highlighted.
  */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -129,6 +139,13 @@ export const downloadAsWord = async (elementId, topic) => {
         }
         th { background: #f0f0f0; font-weight: bold; }
         p { margin-bottom: 0.5em; }
+
+        /* ✅ Highlight Phase Row */
+        table.learning-phases tr:first-child th,
+        table.learning-phases tr:first-child td {
+          background-color: #dbeafe;
+          font-weight: bold;
+        }
 
         /* ✅ Learning Phases explicit pixel widths (20% / 60% / 20%) */
         table.learning-phases {
@@ -216,7 +233,7 @@ export const downloadLessonNoteAsPdf = (elementId, topic) => {
         theme: 'grid',
         headStyles: {
           fontSize: 10,
-          fillColor: [220, 220, 220],
+          fillColor: [219, 234, 254], // same highlight blue
           textColor: [0, 0, 0],
           fontStyle: 'bold',
           halign: 'center',
