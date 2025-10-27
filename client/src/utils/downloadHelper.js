@@ -8,7 +8,7 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
  * Landscape layout, 11px text, left-aligned,
  * Learning Phases column widths fixed at 150 / 450 / 150 px.
  * Reduced page margins for better fit.
- * Phase 1–3 row highlighted.
+ * Phase 1–3 row is force-highlighted before export.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -23,7 +23,19 @@ export const downloadAsPdf = (elementId, topic) => {
 
   const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-  // Inject temporary styling for uniform text and column widths
+  // ✅ Force highlight for first row in learning phases
+  const learningTable = element.querySelector('table.learning-phases');
+  if (learningTable) {
+    const firstRow = learningTable.querySelector('tr');
+    if (firstRow) {
+      firstRow.querySelectorAll('th, td').forEach((cell) => {
+        cell.style.backgroundColor = '#dbeafe';
+        cell.style.fontWeight = 'bold';
+      });
+    }
+  }
+
+  // Inject consistent styles
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
@@ -55,18 +67,11 @@ export const downloadAsPdf = (elementId, topic) => {
       font-weight: bold;
     }
 
-    /* ✅ Highlight Phase Row */
-    #${elementId} table.learning-phases tr:first-child th,
-    #${elementId} table.learning-phases tr:first-child td {
-      background-color: #dbeafe !important;
-      font-weight: bold !important;
-    }
-
     #${elementId} p {
       margin-bottom: 0.5em;
     }
 
-    /* ✅ Learning Phases explicit pixel widths (20% / 60% / 20%) */
+    /* ✅ Learning Phases explicit pixel widths */
     #${elementId} table.learning-phases {
       width: 100% !important;
       table-layout: fixed !important;
@@ -86,7 +91,7 @@ export const downloadAsPdf = (elementId, topic) => {
   `;
   document.head.appendChild(style);
 
-  // ✅ Reduced margins (5mm)
+  // Reduced margins
   const options = {
     margin: 5,
     filename: safeFilename,
@@ -107,13 +112,25 @@ export const downloadAsPdf = (elementId, topic) => {
  * ✅ WORD DOWNLOAD
  * Matches PDF styling — 11px font, left-aligned,
  * Learning Phases column widths fixed at 150 / 450 / 150 px.
- * Phase row highlighted.
+ * Phase 1–3 row highlighted (also forced inline).
  */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
     alert('An error occurred while generating the Word document.');
     return;
+  }
+
+  // ✅ Force highlight for first row in learning phases
+  const learningTable = element.querySelector('table.learning-phases');
+  if (learningTable) {
+    const firstRow = learningTable.querySelector('tr');
+    if (firstRow) {
+      firstRow.querySelectorAll('th, td').forEach((cell) => {
+        cell.style.backgroundColor = '#dbeafe';
+        cell.style.fontWeight = 'bold';
+      });
+    }
   }
 
   const html = `
@@ -140,14 +157,7 @@ export const downloadAsWord = async (elementId, topic) => {
         th { background: #f0f0f0; font-weight: bold; }
         p { margin-bottom: 0.5em; }
 
-        /* ✅ Highlight Phase Row */
-        table.learning-phases tr:first-child th,
-        table.learning-phases tr:first-child td {
-          background-color: #dbeafe;
-          font-weight: bold;
-        }
-
-        /* ✅ Learning Phases explicit pixel widths (20% / 60% / 20%) */
+        /* ✅ Learning Phases explicit pixel widths */
         table.learning-phases {
           width: 100%;
           table-layout: fixed;
@@ -187,64 +197,5 @@ export const downloadAsWord = async (elementId, topic) => {
   } catch (error) {
     console.error('Word generation failed:', error);
     alert('An error occurred while generating the Word document.');
-  }
-};
-
-/**
- * ✅ ADVANCED PDF DOWNLOAD (Structured layout, optional)
- */
-export const downloadLessonNoteAsPdf = (elementId, topic) => {
-  try {
-    const mainElement = document.getElementById(elementId);
-    if (!mainElement) throw new Error(`Element with ID "${elementId}" not found.`);
-
-    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-
-    const extractHeaderData = (element) => {
-      const headerData = [];
-      const boldElements = element.querySelectorAll('strong');
-      boldElements.forEach((strong) => {
-        const label = strong.innerText.replace(':', '').trim();
-        const parent = strong.parentElement;
-        const value = parent.innerText.replace(strong.innerText, '').trim();
-        if (label && value) headerData.push([label, value]);
-      });
-      return headerData;
-    };
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('TEACHER INFORMATION', doc.internal.pageSize.width / 2, 15, { align: 'center' });
-
-    autoTable(doc, {
-      startY: 20,
-      body: extractHeaderData(mainElement),
-      theme: 'plain',
-      styles: { fontSize: 10, cellPadding: { top: 1, right: 2, bottom: 1, left: 0 } },
-      columnStyles: { 0: { fontStyle: 'bold' } },
-    });
-
-    const tableElement = mainElement.querySelector('table');
-    if (tableElement) {
-      autoTable(doc, {
-        html: tableElement,
-        startY: doc.lastAutoTable.finalY + 5,
-        theme: 'grid',
-        headStyles: {
-          fontSize: 10,
-          fillColor: [219, 234, 254], // same highlight blue
-          textColor: [0, 0, 0],
-          fontStyle: 'bold',
-          halign: 'center',
-        },
-        styles: { fontSize: 10, halign: 'left' },
-      });
-    }
-
-    doc.save(safeFilename);
-  } catch (error) {
-    console.error('PDF generation error:', error);
-    alert('An error occurred while generating the PDF.');
   }
 };
