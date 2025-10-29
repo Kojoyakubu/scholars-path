@@ -1,3 +1,4 @@
+// /client/src/pages/Dashboard.jsx
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -29,6 +30,12 @@ import {
 import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
 import AiImage from '../components/AiImage';
 
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0, transition: { duration: 0.55, delay } },
+  viewport: { once: false, amount: 0.2 }, // ← replays on scroll
+});
+
 function Dashboard() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -43,7 +50,7 @@ function Dashboard() {
     level: '', class: '', subject: '', strand: '', subStrand: '',
   });
 
-  // --- Role-based redirects + data loading ---
+  // Role redirects + initial load
   useEffect(() => {
     if (!user) return;
     if (user.role === 'admin') navigate('/admin');
@@ -52,19 +59,22 @@ function Dashboard() {
     return () => dispatch(resetCurriculumState());
   }, [dispatch, user, navigate]);
 
-  // --- Cascading selections ---
+  // Cascading fetches
   useEffect(() => {
     if (selections.level)
       dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
   }, [selections.level, dispatch]);
+
   useEffect(() => {
     if (selections.class)
       dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
   }, [selections.class, dispatch]);
+
   useEffect(() => {
     if (selections.subject)
       dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
   }, [selections.subject, dispatch]);
+
   useEffect(() => {
     if (selections.strand)
       dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand }));
@@ -78,11 +88,11 @@ function Dashboard() {
     }
   }, [selections.subStrand, dispatch]);
 
-  // --- Handle dropdowns ---
+  // Selection handler
   const handleSelectionChange = useCallback((e) => {
     const { name, value } = e.target;
     setSelections((prev) => {
-      const newSel = { ...prev, [name]: value };
+      const next = { ...prev, [name]: value };
       const resetMap = {
         level: ['class', 'subject', 'strand', 'subStrand'],
         class: ['subject', 'strand', 'subStrand'],
@@ -90,14 +100,14 @@ function Dashboard() {
         strand: ['subStrand'],
       };
       if (resetMap[name]) {
-        resetMap[name].forEach((key) => (newSel[key] = ''));
+        resetMap[name].forEach((k) => (next[k] = ''));
         dispatch(clearChildren({ entities: resetMap[name] }));
       }
-      return newSel;
+      return next;
     });
   }, [dispatch]);
 
-  // --- Downloads ---
+  // Downloads
   const handleDownload = useCallback((type, noteId, noteTopic) => {
     dispatch(logNoteView(noteId));
     const elementId = `note-content-${noteId}`;
@@ -116,156 +126,180 @@ function Dashboard() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      <Container maxWidth="lg">
-        <Box
-          textAlign="center"
-          my={5}
-          sx={{
-            bgcolor: '#145A32',
-            py: 4,
-            borderRadius: 3,
-            color: '#E8F5E9',
-            boxShadow: '0 8px 20px rgba(20,90,50,0.4)',
-          }}
-        >
-          <Typography variant="h4" component="h1" gutterBottom fontWeight={700}>
-            Your Learning Journey, {user?.fullName?.split(' ')[0]} 🌿
-          </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.9 }}>
-            Choose a topic to explore AI-powered notes, quizzes, and resources.
-          </Typography>
-        </Box>
+    <Container maxWidth="lg">
+      {/* Header */}
+      <Box
+        textAlign="center"
+        my={5}
+        component={motion.div}
+        {...fadeUp(0)}
+        style={{
+          backgroundColor: '#145A32',
+          padding: '32px 16px',
+          borderRadius: 12,
+          color: '#E8F5E9',
+          boxShadow: '0 8px 20px rgba(20,90,50,0.4)',
+        }}
+      >
+        <Typography variant="h4" component="h1" gutterBottom fontWeight={700}>
+          Your Learning Journey, {user?.fullName?.split(' ')[0]} 🌿
+        </Typography>
+        <Typography variant="h6" sx={{ opacity: 0.9 }}>
+          Choose a topic to explore AI-powered notes, quizzes, and resources.
+        </Typography>
+      </Box>
 
-        {/* Curriculum Selection */}
-        <Paper elevation={4} sx={{ p: 3, mb: 5, borderLeft: '6px solid #1E8449', borderRadius: 3 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              {renderDropdown('level', 'Level', selections.level, levels)}
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              {renderDropdown('class', 'Class', selections.class, classes, !selections.level)}
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              {renderDropdown('subject', 'Subject', selections.subject, subjects, !selections.class)}
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              {renderDropdown('strand', 'Strand', selections.strand, strands, !selections.subject)}
-            </Grid>
-            <Grid item xs={12}>
-              {renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, !selections.strand)}
-            </Grid>
+      {/* Curriculum Selection */}
+      <Paper
+        elevation={4}
+        component={motion.div}
+        {...fadeUp(0.05)}
+        sx={{ p: 3, mb: 5, borderLeft: '6px solid #1E8449', borderRadius: 3 }}
+      >
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            {renderDropdown('level', 'Level', selections.level, levels)}
           </Grid>
-        </Paper>
+          <Grid item xs={12} sm={6} md={3}>
+            {renderDropdown('class', 'Class', selections.class, classes, !selections.level)}
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            {renderDropdown('subject', 'Subject', selections.subject, subjects, !selections.class)}
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            {renderDropdown('strand', 'Strand', selections.strand, strands, !selections.subject)}
+          </Grid>
+          <Grid item xs={12}>
+            {renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, !selections.strand)}
+          </Grid>
+        </Grid>
+      </Paper>
 
-        {/* Content Section */}
-        {selections.subStrand && (
-          isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <CircularProgress color="success" />
-            </Box>
-          ) : (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Grid container spacing={3}>
-                {/* Lesson Notes */}
-                <Grid item xs={12}>
+      {/* Content */}
+      {selections.subStrand && (
+        isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <CircularProgress color="success" />
+          </Box>
+        ) : (
+          <>
+            {/* Lesson Notes */}
+            <Paper
+              elevation={3}
+              component={motion.div}
+              {...fadeUp(0.1)}
+              sx={{
+                p: 3,
+                mb: 3,
+                borderLeft: '6px solid #1E8449',
+                borderRadius: 3,
+                bgcolor: '#F1F8E9',
+              }}
+            >
+              <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
+                Lesson Notes
+              </Typography>
+              {notes.length > 0 ? (
+                notes.map((note) => (
                   <Paper
-                    elevation={3}
+                    key={note._id}
+                    variant="outlined"
                     sx={{
-                      p: 3,
-                      borderLeft: '6px solid #1E8449',
-                      borderRadius: 3,
-                      bgcolor: '#F1F8E9',
+                      mb: 2,
+                      p: 2,
+                      borderColor: '#C8E6C9',
+                      backgroundColor: '#ffffff',
+                      borderRadius: 2,
                     }}
+                    component={motion.div}
+                    {...fadeUp(0.12)}
                   >
-                    <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
-                      Lesson Notes
-                    </Typography>
-                    {notes.length > 0 ? (
-                      notes.map((note) => (
-                        <Paper
-                          key={note._id}
-                          variant="outlined"
-                          sx={{
-                            mb: 2,
-                            p: 2,
-                            borderColor: '#C8E6C9',
-                            backgroundColor: '#ffffff',
-                            borderRadius: 2,
-                          }}
-                        >
-                          <Box
-                            id={`note-content-${note._id}`}
-                            sx={{
-                              '& h1, & h2, & h3': { fontSize: '1.2em', fontWeight: 'bold', mb: 1 },
-                              '& p': { mb: 1 },
-                              '& a': { color: '#1E8449' },
-                            }}
-                          >
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
-                              rehypePlugins={[rehypeRaw]}
-                              components={{
-                                p: ({ node, ...props }) => {
-                                  const text = node?.children?.[0]?.value || '';
-                                  if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
-                                    return <AiImage text={text} />;
-                                  }
-                                  return <p {...props} />;
-                                },
-                              }}
-                            >
-                              {note.content}
-                            </ReactMarkdown>
-                          </Box>
+                    <Box
+                      id={`note-content-${note._id}`}
+                      sx={{
+                        '& h1, & h2, & h3': { fontSize: '1.2em', fontWeight: 'bold', mb: 1 },
+                        '& p': { mb: 1 },
+                        '& a': { color: '#1E8449' },
+                      }}
+                    >
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        components={{
+                          p: ({ node, ...props }) => {
+                            const text = node?.children?.[0]?.value || '';
+                            if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
+                              return <AiImage text={text} />;
+                            }
+                            return <p {...props} />;
+                          },
+                        }}
+                      >
+                        {note.content}
+                      </ReactMarkdown>
+                    </Box>
 
-                          <Stack direction="row" spacing={1} sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: '#A9DFBF' }}>
-                            <Button
-                              startIcon={<PictureAsPdfIcon />}
-                              onClick={() => handleDownload('pdf', note._id, 'lesson_note')}
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                color: '#145A32',
-                                borderColor: '#28B463',
-                                '&:hover': { bgcolor: '#E8F5E9' },
-                              }}
-                            >
-                              PDF
-                            </Button>
-                            <Button
-                              startIcon={<DescriptionIcon />}
-                              onClick={() => handleDownload('word', note._id, 'lesson_note')}
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                color: '#1E8449',
-                                borderColor: '#1E8449',
-                                '&:hover': { bgcolor: '#E8F5E9' },
-                              }}
-                            >
-                              Word
-                            </Button>
-                          </Stack>
-                        </Paper>
-                      ))
-                    ) : (
-                      <Typography color="text.secondary">No notes found for this topic.</Typography>
-                    )}
+                    <Stack direction="row" spacing={1} sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: '#A9DFBF' }}>
+                      <Button
+                        startIcon={<PictureAsPdfIcon />}
+                        onClick={() => handleDownload('pdf', note._id, 'lesson_note')}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          color: '#145A32',
+                          borderColor: '#28B463',
+                          '&:hover': { bgcolor: '#E8F5E9' },
+                        }}
+                      >
+                        PDF
+                      </Button>
+                      <Button
+                        startIcon={<DescriptionIcon />}
+                        onClick={() => handleDownload('word', note._id, 'lesson_note')}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          color: '#1E8449',
+                          borderColor: '#1E8449',
+                          '&:hover': { bgcolor: '#E8F5E9' },
+                        }}
+                      >
+                        Word
+                      </Button>
+                    </Stack>
                   </Paper>
-                </Grid>
+                ))
+              ) : (
+                <Typography color="text.secondary">No notes found for this topic.</Typography>
+              )}
+            </Paper>
 
-                {/* Quizzes */}
-                <Grid item xs={12} md={6}>
-                  <Paper elevation={3} sx={{ p: 3, borderLeft: '6px solid #28B463', borderRadius: 3 }}>
-                    <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
-                      Quizzes
-                    </Typography>
-                    {quizzes.length > 0 ? (
-                      <Box display="flex" gap={1.5} flexWrap="wrap">
-                        {quizzes.map((quiz) => (
+            <Grid container spacing={3}>
+              {/* Quizzes */}
+              <Grid item xs={12} md={6}>
+                <Paper
+                  elevation={3}
+                  component={motion.div}
+                  {...fadeUp(0.25)}
+                  sx={{ p: 3, borderLeft: '6px solid #28B463', borderRadius: 3 }}
+                >
+                  <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
+                    Quizzes
+                  </Typography>
+                  {quizzes.length > 0 ? (
+                    <Box display="flex" gap={1.5} flexWrap="wrap">
+                      {quizzes.map((quiz, i) => (
+                        <motion.div
+                          key={quiz._id}
+                          initial={{ opacity: 0, y: 16 }}
+                          whileInView={{
+                            opacity: 1,
+                            y: 0,
+                            transition: { duration: 0.45, delay: 0.27 + i * 0.05 },
+                          }}
+                          viewport={{ once: false, amount: 0.2 }}
+                        >
                           <Button
-                            key={quiz._id}
                             component={RouterLink}
                             to={`/quiz/${quiz._id}`}
                             variant="contained"
@@ -277,25 +311,40 @@ function Dashboard() {
                           >
                             {quiz.title}
                           </Button>
-                        ))}
-                      </Box>
-                    ) : (
-                      <Typography color="text.secondary">No quizzes found for this topic.</Typography>
-                    )}
-                  </Paper>
-                </Grid>
+                        </motion.div>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography color="text.secondary">No quizzes found for this topic.</Typography>
+                  )}
+                </Paper>
+              </Grid>
 
-                {/* Resources */}
-                <Grid item xs={12} md={6}>
-                  <Paper elevation={3} sx={{ p: 3, borderLeft: '6px solid #1E8449', borderRadius: 3 }}>
-                    <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
-                      Resources
-                    </Typography>
-                    {resources.length > 0 ? (
-                      <List>
-                        {resources.map((res) => (
+              {/* Resources */}
+              <Grid item xs={12} md={6}>
+                <Paper
+                  elevation={3}
+                  component={motion.div}
+                  {...fadeUp(0.4)}
+                  sx={{ p: 3, borderLeft: '6px solid #1E8449', borderRadius: 3 }}
+                >
+                  <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
+                    Resources
+                  </Typography>
+                  {resources.length > 0 ? (
+                    <List>
+                      {resources.map((res, i) => (
+                        <motion.div
+                          key={res._id}
+                          initial={{ opacity: 0, y: 12 }}
+                          whileInView={{
+                            opacity: 1,
+                            y: 0,
+                            transition: { duration: 0.45, delay: 0.42 + i * 0.05 },
+                          }}
+                          viewport={{ once: false, amount: 0.2 }}
+                        >
                           <ListItem
-                            key={res._id}
                             button
                             component="a"
                             href={`/${res.filePath.replace(/\\/g, '/')}`}
@@ -305,45 +354,41 @@ function Dashboard() {
                             <ListItemIcon><AttachFileIcon sx={{ color: '#145A32' }} /></ListItemIcon>
                             <ListItemText primary={res.fileName} />
                           </ListItem>
-                        ))}
-                      </List>
-                    ) : (
-                      <Typography color="text.secondary">No resources found for this topic.</Typography>
-                    )}
-                  </Paper>
-                </Grid>
-
-                {/* AI Insights */}
-                {aiInsights && (
-                  <Grid item xs={12}>
-                    <Paper
-                      elevation={3}
-                      sx={{
-                        p: 3,
-                        borderLeft: '6px solid #145A32',
-                        borderRadius: 3,
-                        bgcolor: '#F1F8E9',
-                      }}
-                      component={motion.div}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6 }}
-                    >
-                      <Typography variant="h6" gutterBottom color="primary" fontWeight={700}>
-                        Personalized AI Insights
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary" whiteSpace="pre-line">
-                        {aiInsights}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                )}
+                        </motion.div>
+                      ))}
+                    </List>
+                  ) : (
+                    <Typography color="text.secondary">No resources found for this topic.</Typography>
+                  )}
+                </Paper>
               </Grid>
-            </motion.div>
-          )
-        )}
-      </Container>
-    </motion.div>
+            </Grid>
+
+            {/* AI Insights */}
+            {aiInsights && (
+              <Paper
+                elevation={3}
+                component={motion.div}
+                {...fadeUp(0.55)}
+                sx={{
+                  p: 3, mt: 3,
+                  borderLeft: '6px solid #145A32',
+                  borderRadius: 3,
+                  bgcolor: '#F1F8E9',
+                }}
+              >
+                <Typography variant="h6" gutterBottom color="primary" fontWeight={700}>
+                  Personalized AI Insights
+                </Typography>
+                <Typography variant="body1" color="text.secondary" whiteSpace="pre-line">
+                  {aiInsights}
+                </Typography>
+              </Paper>
+            )}
+          </>
+        )
+      )}
+    </Container>
   );
 }
 

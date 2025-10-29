@@ -2,47 +2,88 @@
 
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
-const Teacher = require('../models/teacherModel');
-const Student = require('../models/studentModel');
+const bcrypt = require('bcryptjs');
+
 const User = require('../models/userModel');
+const School = require('../models/schoolModel');
 const LessonNote = require('../models/lessonNoteModel');
 const LearnerNote = require('../models/learnerNoteModel');
 const Quiz = require('../models/quizModel');
 const QuizAttempt = require('../models/quizAttemptModel');
-const School = require('../models/schoolModel');
 const StudentBadge = require('../models/studentBadgeModel');
 const NoteView = require('../models/noteViewModel');
+const Subscription = require('../models/subscriptionModel');
 const aiService = require('../services/aiService');
 
-// ============================================================================
-// 👩‍🏫 TEACHER & STUDENT MANAGEMENT
-// ============================================================================
-
-/**
- * @desc   Get all teachers
- * @route  GET /api/admin/teachers
- * @access Private (Admin)
+/* ============================================================================
+ * USERS (generic)
+ * ============================================================================
  */
-const getAllTeachers = asyncHandler(async (req, res) => {
-  const teachers = await Teacher.find().sort({ createdAt: -1 });
+
+// GET /api/admin/users  ?pageNumber=1&status=pending
+const getUsers = asyncHandler(async (req, res) => {
+  const pageSize = 10;
+  const page = Number(req.query.pageNumber) || 1;
+  const filter = req.query.status ? { status: req.query.status } : {};
+
+  const count = await User.countDocuments(filter);
+  const users = await User.find(filter)
+    .populate('school', 'name')
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .select('-password');
+
+  res.json({ users, page, pages: Math.ceil(count / pageSize), total: count });
+});
+
+// PUT /api/admin/users/:id/approve
+const approveUser = asyncHandler(async (req, res) => {
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { status: 'approved' },
+    { new: true }
+  ).select('-password');
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+  res.json({ message: `User ${user.fullName} has been approved.`, user });
+});
+
+// DELETE /api/admin/users/:id
+const deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+  if (user.role === 'admin') {
+    res.status(400);
+    throw new Error('Cannot delete an admin user.');
+  }
+  await user.deleteOne();
+  res.json({ message: 'User removed successfully.' });
+});
+
+/* ============================================================================
+ * TEACHERS / STUDENTS via User model
+ * ============================================================================
+ */
+
+// GET /api/admin/teachers
+const getAllTeachers = asyncHandler(async (_req, res) => {
+  const teachers = await User.find({ role: 'teacher' }).sort({ createdAt: -1 }).select('-password');
   res.json(teachers);
 });
 
-/**
- * @desc   Get all students
- * @route  GET /api/admin/students
- * @access Private (Admin)
- */
-const getAllStudents = asyncHandler(async (req, res) => {
-  const students = await Student.find().sort({ createdAt: -1 });
+// GET /api/admin/students
+const getAllStudents = asyncHandler(async (_req, res) => {
+  const students = await User.find({ role: 'student' }).sort({ createdAt: -1 }).select('-password');
   res.json(students);
 });
 
-/**
- * @desc   Delete a teacher with cascade and AI audit
- * @route  DELETE /api/admin/teachers/:id
- * @access Private (Admin)
- */
+// DELETE /api/admin/teachers/:id  (cascade + AI audit)
 const deleteTeacher = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -50,13 +91,13 @@ const deleteTeacher = asyncHandler(async (req, res) => {
     throw new Error('Invalid teacher ID.');
   }
 
-  const teacher = await Teacher.findById(id);
+  const teacher = await User.findOne({ _id: id, role: 'teacher' });
   if (!teacher) {
     res.status(404);
     throw new Error('Teacher not found.');
   }
 
-  // Cascade delete related data
+  // Cascade removal of teacher-generated content
   const [lessonNotes, quizzes] = await Promise.all([
     LessonNote.deleteMany({ teacher: id }),
     Quiz.deleteMany({ teacher: id }),
@@ -64,7 +105,7 @@ const deleteTeacher = asyncHandler(async (req, res) => {
 
   await teacher.deleteOne();
 
-  // AI-generated audit summary
+  // AI audit
   let aiAudit = '';
   try {
     const prompt = `
@@ -72,7 +113,7 @@ You are a digital education auditor.
 Generate a one-line summary describing the deletion of a teacher account.
 
 Details:
-- Teacher Name: ${teacher.name || 'N/A'}
+- Teacher Name: ${teacher.fullName || 'N/A'}
 - Total Lesson Notes Deleted: ${lessonNotes.deletedCount}
 - Total Quizzes Deleted: ${quizzes.deletedCount}
 
@@ -83,22 +124,15 @@ Keep it concise and formal.
       task: 'deleteTeacherAudit',
       temperature: 0.4,
     });
-    aiAudit = text.trim();
-  } catch (err) {
+    aiAudit = (text || '').trim();
+  } catch (_e) {
     aiAudit = 'Teacher deleted successfully with associated records removed.';
   }
 
-  res.json({
-    message: 'Teacher deleted successfully.',
-    audit: aiAudit,
-  });
+  res.json({ message: 'Teacher deleted successfully.', audit: aiAudit });
 });
 
-/**
- * @desc   Delete a student with cascade and AI audit
- * @route  DELETE /api/admin/students/:id
- * @access Private (Admin)
- */
+// DELETE /api/admin/students/:id  (cascade + AI audit)
 const deleteStudent = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -106,7 +140,7 @@ const deleteStudent = asyncHandler(async (req, res) => {
     throw new Error('Invalid student ID.');
   }
 
-  const student = await Student.findById(id);
+  const student = await User.findOne({ _id: id, role: 'student' });
   if (!student) {
     res.status(404);
     throw new Error('Student not found.');
@@ -120,7 +154,6 @@ const deleteStudent = asyncHandler(async (req, res) => {
 
   await student.deleteOne();
 
-  // AI-generated audit summary
   let aiAudit = '';
   try {
     const prompt = `
@@ -128,7 +161,7 @@ You are a system audit assistant.
 Write a one-line report about a student account removal.
 
 Data:
-- Student Name: ${student.name || 'N/A'}
+- Student Name: ${student.fullName || 'N/A'}
 - Quiz Attempts Deleted: ${attempts.deletedCount}
 - Badges Removed: ${badges.deletedCount}
 - Note Views Removed: ${views.deletedCount}
@@ -140,27 +173,129 @@ Use a neutral professional tone.
       task: 'deleteStudentAudit',
       temperature: 0.4,
     });
-    aiAudit = text.trim();
-  } catch (err) {
+    aiAudit = (text || '').trim();
+  } catch (_e) {
     aiAudit = 'Student deleted successfully with related data removed.';
   }
 
-  res.json({
-    message: 'Student deleted successfully.',
-    audit: aiAudit,
-  });
+  res.json({ message: 'Student deleted successfully.', audit: aiAudit });
 });
 
-// ============================================================================
-// 📊 ANALYTICS & INSIGHTS
-// ============================================================================
-
-/**
- * @desc   Platform overview stats
- * @route  GET /api/admin/analytics/overview
- * @access Private (Admin)
+/* ============================================================================
+ * SCHOOLS & ASSIGNMENTS
+ * ============================================================================
  */
-const getAnalyticsOverview = asyncHandler(async (req, res) => {
+
+// POST /api/admin/schools  { name, adminName, adminEmail, adminPassword }
+const createSchool = asyncHandler(async (req, res) => {
+  const { name, adminName, adminEmail, adminPassword } = req.body;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const schoolExists = await School.findOne({ name }).session(session);
+    if (schoolExists) throw new Error('School with this name already exists.');
+
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(adminPassword, salt);
+
+    const school = await School.create([{ name }], { session });
+    const [createdSchool] = school;
+
+    const adminUser = await User.create(
+      [
+        {
+          fullName: adminName,
+          email: adminEmail,
+          password: hashed,
+          role: 'admin',
+          status: 'approved',
+          school: createdSchool._id,
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
+      message: 'School and admin user created successfully.',
+      school: createdSchool,
+      admin: adminUser[0],
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(400);
+    throw new Error(err.message || 'Failed to create school.');
+  }
+});
+
+// GET /api/admin/schools
+const getSchools = asyncHandler(async (_req, res) => {
+  const schools = await School.find().populate('admin', 'fullName email').lean();
+  res.json(schools);
+});
+
+// DELETE /api/admin/schools/:id
+const deleteSchool = asyncHandler(async (req, res) => {
+  const school = await School.findById(req.params.id);
+  if (!school) {
+    res.status(404);
+    throw new Error('School not found');
+  }
+
+  // Optional: orphan users policy — here we set their school to null
+  await User.updateMany({ school: school._id }, { $set: { school: null } });
+  await school.deleteOne();
+
+  res.json({ message: 'School deleted successfully.' });
+});
+
+// PUT /api/admin/users/:id/assign-school  { schoolId }
+const assignUserToSchool = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { schoolId } = req.body;
+
+  const [user, school] = await Promise.all([
+    User.findById(id),
+    School.findById(schoolId),
+  ]);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+  if (!school) {
+    res.status(404);
+    throw new Error('School not found');
+  }
+
+  user.school = school._id;
+  await user.save();
+
+  res.json({ message: `Assigned ${user.fullName} to ${school.name}.`, user });
+});
+
+/* ============================================================================
+ * ANALYTICS & INSIGHTS
+ * ============================================================================
+ */
+
+// GET /api/admin/stats
+const getUsageStats = asyncHandler(async (_req, res) => {
+  const [totalUsers, totalSchools, totalQuizAttempts, pendingUsers] = await Promise.all([
+    User.countDocuments({}),
+    School.countDocuments({}),
+    QuizAttempt.countDocuments({}),
+    User.countDocuments({ status: 'pending' }),
+  ]);
+  res.json({ totalUsers, totalSchools, totalQuizAttempts, pendingUsers });
+});
+
+// GET /api/admin/analytics/overview
+const getAnalyticsOverview = asyncHandler(async (_req, res) => {
   const [totalUsers, totalTeachers, totalStudents, totalSchools, totalNotes, totalQuizzes, totalAttempts] =
     await Promise.all([
       User.countDocuments(),
@@ -183,28 +318,19 @@ const getAnalyticsOverview = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * @desc   Top active teachers
- * @route  GET /api/admin/analytics/top-teachers
- * @access Private (Admin)
- */
-const getTopTeachers = asyncHandler(async (req, res) => {
+// GET /api/admin/analytics/top-teachers
+const getTopTeachers = asyncHandler(async (_req, res) => {
   const teachers = await LessonNote.aggregate([
     { $group: { _id: '$teacher', totalNotes: { $sum: 1 } } },
     { $sort: { totalNotes: -1 } },
     { $limit: 5 },
   ]);
-
   const populated = await User.populate(teachers, { path: '_id', select: 'fullName email role school' });
   res.json(populated);
 });
 
-/**
- * @desc   Top performing students
- * @route  GET /api/admin/analytics/top-students
- * @access Private (Admin)
- */
-const getTopStudents = asyncHandler(async (req, res) => {
+// GET /api/admin/analytics/top-students
+const getTopStudents = asyncHandler(async (_req, res) => {
   const students = await QuizAttempt.aggregate([
     {
       $group: {
@@ -216,17 +342,12 @@ const getTopStudents = asyncHandler(async (req, res) => {
     { $sort: { avgScore: -1 } },
     { $limit: 5 },
   ]);
-
   const populated = await User.populate(students, { path: '_id', select: 'fullName email role school' });
   res.json(populated);
 });
 
-/**
- * @desc   AI usage summary
- * @route  GET /api/admin/analytics/ai-usage
- * @access Private (Admin)
- */
-const getAiUsageSummary = asyncHandler(async (req, res) => {
+// GET /api/admin/analytics/ai-usage-summary
+const getAiUsageSummary = asyncHandler(async (_req, res) => {
   const aiSources = await Promise.all([
     LessonNote.aggregate([{ $group: { _id: '$aiProvider', count: { $sum: 1 } } }]),
     Quiz.aggregate([{ $group: { _id: '$aiProvider', count: { $sum: 1 } } }]),
@@ -245,12 +366,8 @@ const getAiUsageSummary = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * @desc   AI-generated admin insights report
- * @route  GET /api/admin/analytics/insights
- * @access Private (Admin)
- */
-const getAiAnalyticsInsights = asyncHandler(async (req, res) => {
+// GET /api/admin/analytics/insights
+const getAiAnalyticsInsights = asyncHandler(async (_req, res) => {
   const [teacherCount, studentCount, schoolCount, avgQuizScore, aiUsage] = await Promise.all([
     User.countDocuments({ role: 'teacher' }),
     User.countDocuments({ role: 'student' }),
@@ -298,7 +415,7 @@ Use a professional Ghanaian educational tone.
     });
 
     res.json({
-      summary: text.trim(),
+      summary: (text || '').trim(),
       provider,
       model,
       rawStats: stats,
@@ -315,13 +432,25 @@ Use a professional Ghanaian educational tone.
 });
 
 module.exports = {
-  // Management
+  // Users
+  getUsers,
+  approveUser,
+  deleteUser,
+  assignUserToSchool,
+
+  // Teacher/Student (role-filtered)
   getAllTeachers,
   getAllStudents,
   deleteTeacher,
   deleteStudent,
 
-  // Analytics
+  // Schools
+  createSchool,
+  getSchools,
+  deleteSchool,
+
+  // Stats & Analytics
+  getUsageStats,
   getAnalyticsOverview,
   getTopTeachers,
   getTopStudents,
