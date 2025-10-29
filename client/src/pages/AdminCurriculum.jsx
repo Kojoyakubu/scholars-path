@@ -29,7 +29,7 @@ import {
   createItem,
   deleteItem,
   clearChildren,
-} from '../../features/curriculum/curriculumSlice';
+} from '../features/curriculum/curriculumSlice';
 
 // AI insights
 import { getAiInsights } from '../features/admin/adminSlice';

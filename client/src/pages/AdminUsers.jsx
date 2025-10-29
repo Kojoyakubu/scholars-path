@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { motion } from 'framer-motion';
-import AIInsightsCard from '../../components/AIInsightsCard';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const AdminUsers = () => {
   const dispatch = useDispatch();

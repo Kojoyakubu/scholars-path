@@ -19,7 +19,7 @@ import { motion } from 'framer-motion';
 import { getMyBadges, getAiInsights } from '../features/student/studentSlice';
 
 // Shared AI card
-import AIInsightsCard from '../../components/AIInsightsCard';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const BadgeCard = ({ name, description, dateAwarded, icon }) => (
   <Card

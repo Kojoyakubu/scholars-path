@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getSchools, getAiInsights } from '../features/admin/adminSlice';
 import { Box, Grid, Paper, Typography, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
-import AIInsightsCard from '../../components/AIInsightsCard';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const SchoolCard = ({ name, students, teachers }) => (
   <Paper

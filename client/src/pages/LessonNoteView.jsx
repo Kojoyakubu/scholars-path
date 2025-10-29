@@ -28,10 +28,10 @@ import {
 } from '../features/teacher/teacherSlice';
 
 // export helpers
-import { downloadAsPdf, downloadAsWord } from '../../utils/downloadHelper';
+import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
 
 // optional: render generated diagram images if your notes contain markers like [DIAGRAM: ...]
-import AiImage from '../../components/AiImage';
+import AiImage from '../components/AiImage';
 
 const LessonNoteView = () => {
   const { id } = useParams();
