@@ -7,23 +7,24 @@ const initialState = {
   quizzes: [],
   currentNote: null,
   analytics: {},
+  aiInsights: null, // ✅ new
   isLoading: false,
   isError: false,
   isSuccess: false,
   message: '',
 };
 
-// Helper to create async thunks and handle errors consistently
-const createTeacherThunk = (name, serviceCall) => {
-  return createAsyncThunk(`teacher/${name}`, async (arg, thunkAPI) => {
+// Helper for consistent async thunks
+const createTeacherThunk = (name, serviceCall) =>
+  createAsyncThunk(`teacher/${name}`, async (arg, thunkAPI) => {
     try {
       return await serviceCall(arg);
     } catch (error) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
+      const message =
+        error.response?.data?.message || error.message || error.toString();
       return thunkAPI.rejectWithValue(message);
     }
   });
-};
 
 // --- Async Thunks ---
 export const getMyLessonNotes = createTeacherThunk('getMyLessonNotes', teacherService.getMyLessonNotes);
@@ -37,6 +38,9 @@ export const publishLearnerNote = createTeacherThunk('publishLearnerNote', teach
 export const deleteLearnerNote = createTeacherThunk('deleteLearnerNote', teacherService.deleteLearnerNote);
 export const generateAiQuiz = createTeacherThunk('generateAiQuiz', teacherService.generateAiQuiz);
 
+// 🧠 NEW: AI Insights thunk
+export const getAiInsights = createTeacherThunk('getAiInsights', teacherService.getAiInsights);
+
 const teacherSlice = createSlice({
   name: 'teacher',
   initialState,
@@ -48,11 +52,10 @@ const teacherSlice = createSlice({
     },
     resetCurrentNote: (state) => {
       state.currentNote = null;
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Specific fulfilled cases for data handling
       .addCase(getMyLessonNotes.fulfilled, (state, action) => {
         state.lessonNotes = action.payload;
       })
@@ -83,36 +86,53 @@ const teacherSlice = createSlice({
         state.draftLearnerNotes = action.payload;
       })
       .addCase(publishLearnerNote.fulfilled, (state, action) => {
-        // Remove the note from the drafts list once it's published
-        state.draftLearnerNotes = state.draftLearnerNotes.filter(note => note._id !== action.payload.id);
+        state.draftLearnerNotes = state.draftLearnerNotes.filter(
+          (note) => note._id !== action.payload.id
+        );
         state.isSuccess = true;
         state.message = action.payload.message;
       })
       .addCase(deleteLearnerNote.fulfilled, (state, action) => {
-        state.draftLearnerNotes = state.draftLearnerNotes.filter(note => note._id !== action.payload.id);
+        state.draftLearnerNotes = state.draftLearnerNotes.filter(
+          (note) => note._id !== action.payload.id
+        );
         state.isSuccess = true;
         state.message = action.payload.message;
       })
       .addCase(generateAiQuiz.fulfilled, (state, action) => {
-        state.quizzes.unshift(action.payload); // Add the new quiz to the list
+        state.quizzes.unshift(action.payload);
         state.isSuccess = true;
-        state.message = "AI Quiz generated successfully!";
+        state.message = 'AI Quiz generated successfully!';
       })
 
-      // Generic matchers for handling loading and error states
-      .addMatcher((action) => action.type.startsWith('teacher/') && action.type.endsWith('/pending'), (state) => {
-        state.isLoading = true;
-        state.isSuccess = false;
-        state.isError = false;
+      // 🧠 AI Insights fulfilled
+      .addCase(getAiInsights.fulfilled, (state, action) => {
+        state.aiInsights = action.payload;
       })
-      .addMatcher((action) => action.type.startsWith('teacher/') && action.type.endsWith('/fulfilled'), (state) => {
-        state.isLoading = false;
-      })
-      .addMatcher((action) => action.type.startsWith('teacher/') && action.type.endsWith('/rejected'), (state, action) => {
-        state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
-      });
+
+      // Generic loaders
+      .addMatcher(
+        (action) => action.type.startsWith('teacher/') && action.type.endsWith('/pending'),
+        (state) => {
+          state.isLoading = true;
+          state.isSuccess = false;
+          state.isError = false;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('teacher/') && action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.isLoading = false;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('teacher/') && action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.isError = true;
+          state.message = action.payload;
+        }
+      );
   },
 });
 
