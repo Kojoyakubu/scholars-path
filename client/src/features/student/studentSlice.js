@@ -6,6 +6,7 @@ const initialState = {
   notes: [],
   quizzes: [],
   resources: [],
+  aiInsights: null,
   currentQuiz: null,
   quizResult: null,
   badges: [],
