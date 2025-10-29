@@ -8,5 +8,9 @@ const getQuizDetails = async (quizId) => (await api.get(`/student/quiz/${quizId}
 const submitQuiz = async ({ quizId, answers }) => (await api.post(`/student/quiz/${quizId}/submit`, { answers })).data;
 const getMyBadges = async () => (await api.get('/student/my-badges')).data;
 const logNoteView = async (noteId) => (await api.post(`/student/notes/${noteId}/view`)).data;
+const getAiInsights = async () => {
+  const response = await api.get('/student/ai-insights');
+  return response.data;
+};
 
-export default { getLearnerNotes, getQuizzes, getResources, getQuizDetails, submitQuiz, getMyBadges, logNoteView };
+export default { getLearnerNotes, getQuizzes, getResources, getQuizDetails, submitQuiz, getMyBadges,getAiInsights, logNoteView };
