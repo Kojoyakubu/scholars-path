@@ -1,5 +1,4 @@
-// src/features/school/schoolSlice.js (Revised)
-
+// src/features/school/schoolSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import schoolService from './schoolService';
 
@@ -7,25 +6,19 @@ const initialState = {
   dashboardData: null,
   isLoading: false,
   isError: false,
-  isSuccess: false, // Added for consistency
+  isSuccess: false,
   message: '',
 };
 
-// --- Async Thunk (Simplified) ---
-export const getSchoolDashboard = createAsyncThunk(
-  'school/getDashboard',
-  async (schoolId, thunkAPI) => {
-    try {
-      // The service call is now much simpler
-      return await schoolService.getSchoolDashboard(schoolId);
-    } catch (error) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
-      return thunkAPI.rejectWithValue(message);
-    }
+export const getSchoolDashboard = createAsyncThunk('school/getDashboard', async (schoolId, thunkAPI) => {
+  try {
+    return await schoolService.getSchoolDashboard(schoolId);
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
   }
-);
+});
 
-// --- School Slice ---
 const schoolSlice = createSlice({
   name: 'school',
   initialState,
@@ -40,31 +33,17 @@ const schoolSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getSchoolDashboard.fulfilled, (state, action) => {
-        state.dashboardData = action.payload;
-        state.isSuccess = true;
+      .addCase(getSchoolDashboard.fulfilled, (s, a) => {
+        s.dashboardData = a.payload;
+        s.isSuccess = true;
       })
-      // Use addMatcher for generic cases
-      .addMatcher(
-        (action) => action.type.startsWith('school/') && action.type.endsWith('/pending'),
-        (state) => {
-          state.isLoading = true;
-        }
-      )
-      .addMatcher(
-        (action) => action.type.startsWith('school/') && action.type.endsWith('/fulfilled'),
-        (state) => {
-          state.isLoading = false;
-        }
-      )
-      .addMatcher(
-        (action) => action.type.startsWith('school/') && action.type.endsWith('/rejected'),
-        (state, action) => {
-          state.isLoading = false;
-          state.isError = true;
-          state.message = action.payload;
-        }
-      );
+      .addMatcher((a) => a.type.startsWith('school/') && a.type.endsWith('/pending'), (s) => (s.isLoading = true))
+      .addMatcher((a) => a.type.startsWith('school/') && a.type.endsWith('/fulfilled'), (s) => (s.isLoading = false))
+      .addMatcher((a) => a.type.startsWith('school/') && a.type.endsWith('/rejected'), (s, a) => {
+        s.isLoading = false;
+        s.isError = true;
+        s.message = a.payload;
+      });
   },
 });
 

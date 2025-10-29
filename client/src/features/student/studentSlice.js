@@ -1,5 +1,4 @@
-// src/features/student/studentSlice.js (Revised)
-
+// src/features/student/studentSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import studentService from './studentService';
 
@@ -15,17 +14,15 @@ const initialState = {
   message: '',
 };
 
-// Generic thunk creator - now even simpler as token is handled automatically
-const createStudentThunk = (name, serviceCall) => {
-  return createAsyncThunk(`student/${name}`, async (arg, thunkAPI) => {
+const createStudentThunk = (name, serviceCall) =>
+  createAsyncThunk(`student/${name}`, async (arg, thunkAPI) => {
     try {
       return await serviceCall(arg);
     } catch (error) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
+      const message = error.response?.data?.message || error.message || error.toString();
       return thunkAPI.rejectWithValue(message);
     }
   });
-};
 
 export const getLearnerNotes = createStudentThunk('getLearnerNotes', studentService.getLearnerNotes);
 export const getQuizzes = createStudentThunk('getQuizzes', studentService.getQuizzes);
@@ -35,56 +32,38 @@ export const submitQuiz = createStudentThunk('submitQuiz', studentService.submit
 export const getMyBadges = createStudentThunk('getMyBadges', studentService.getMyBadges);
 export const logNoteView = createStudentThunk('logNoteView', studentService.logNoteView);
 
-
 const studentSlice = createSlice({
   name: 'student',
   initialState,
   reducers: {
-    resetStudentState: (state) => {
-      // Return a copy of the initial state to reset everything
-      return initialState;
-    },
+    resetStudentState: () => initialState,
     resetQuiz: (state) => {
       state.currentQuiz = null;
       state.quizResult = null;
-      state.isLoading = false; // Also reset loading status
+      state.isLoading = false;
       state.isError = false;
       state.message = '';
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getLearnerNotes.fulfilled, (state, action) => { state.notes = action.payload; })
-      .addCase(getQuizzes.fulfilled, (state, action) => { state.quizzes = action.payload; })
-      .addCase(getResources.fulfilled, (state, action) => { state.resources = action.payload; })
-      .addCase(getQuizDetails.fulfilled, (state, action) => { state.currentQuiz = action.payload; })
-      .addCase(submitQuiz.fulfilled, (state, action) => { state.quizResult = action.payload; })
-      .addCase(getMyBadges.fulfilled, (state, action) => { state.badges = action.payload; })
-      // logNoteView doesn't need to modify state, so no case is needed
-      
-      // Generic matchers for pending, fulfilled, and rejected states
-      .addMatcher(
-        (action) => action.type.startsWith('student/') && action.type.endsWith('/pending'),
-        (state) => { 
-          state.isLoading = true; 
-        }
-      )
-      .addMatcher(
-        (action) => action.type.startsWith('student/') && action.type.endsWith('/fulfilled'),
-        (state) => { 
-          state.isLoading = false;
-          state.isError = false; // Clear any previous errors on success
-          state.message = '';
-        }
-      )
-      .addMatcher(
-        (action) => action.type.startsWith('student/') && action.type.endsWith('/rejected'),
-        (state, action) => {
-          state.isLoading = false;
-          state.isError = true;
-          state.message = action.payload;
-        }
-      );
+      .addCase(getLearnerNotes.fulfilled, (s, a) => (s.notes = a.payload))
+      .addCase(getQuizzes.fulfilled, (s, a) => (s.quizzes = a.payload))
+      .addCase(getResources.fulfilled, (s, a) => (s.resources = a.payload))
+      .addCase(getQuizDetails.fulfilled, (s, a) => (s.currentQuiz = a.payload))
+      .addCase(submitQuiz.fulfilled, (s, a) => (s.quizResult = a.payload))
+      .addCase(getMyBadges.fulfilled, (s, a) => (s.badges = a.payload))
+      .addMatcher((a) => a.type.startsWith('student/') && a.type.endsWith('/pending'), (s) => (s.isLoading = true))
+      .addMatcher((a) => a.type.startsWith('student/') && a.type.endsWith('/fulfilled'), (s) => {
+        s.isLoading = false;
+        s.isError = false;
+        s.message = '';
+      })
+      .addMatcher((a) => a.type.startsWith('student/') && a.type.endsWith('/rejected'), (s, a) => {
+        s.isLoading = false;
+        s.isError = true;
+        s.message = a.payload;
+      });
   },
 });
 
