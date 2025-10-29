@@ -33,7 +33,7 @@ import {
 
 // AI insights
 import { getAiInsights } from '../features/admin/adminSlice';
-import AIInsightsCard from '../../components/AIInsightsCard';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const Section = ({ title, onCreate, createLabel, items, onSelect, onDelete, selectedId, placeholder = 'Name' }) => {
   const [name, setName] = useState('');
