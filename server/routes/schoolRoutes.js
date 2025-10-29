@@ -1,23 +1,23 @@
-// server/routes/schoolRoutes.js
-
 const express = require('express');
 const router = express.Router();
-const { param } = require('express-validator');
-const { getSchoolDashboard } = require('../controllers/schoolController');
+
+const {
+  createSchool,
+  getAllSchools,
+  getSchoolDetails,
+  updateSchool,
+  deleteSchool,
+} = require('../controllers/schoolController');
+
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { handleValidationErrors } = require('../middleware/validatorMiddleware'); // <-- IMPORT
 
-// --- Validation Chains ---
-const mongoIdParamValidator = param('schoolId', 'Invalid School ID format in URL').isMongoId();
-
-// --- Route Definitions ---
-// Note: Authorization is handled inside the controller for this specific route
-router.get(
-  '/dashboard/:schoolId',
-  protect,
-  mongoIdParamValidator,
-  handleValidationErrors,
-  getSchoolDashboard
-);
+// ==============================
+// School Management
+// ==============================
+router.post('/', protect, authorize('admin'), createSchool);
+router.get('/', protect, authorize('admin', 'school_admin'), getAllSchools);
+router.get('/:id', protect, authorize('admin', 'school_admin', 'teacher'), getSchoolDetails);
+router.put('/:id', protect, authorize('admin'), updateSchool);
+router.delete('/:id', protect, authorize('admin'), deleteSchool);
 
 module.exports = router;

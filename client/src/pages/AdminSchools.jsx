@@ -1,102 +1,64 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { getSchools, createSchool, deleteSchool } from '../features/admin/adminSlice';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getSchools, getAiInsights } from '../../features/admin/adminSlice';
+import { Box, Grid, Paper, Typography, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
-import {
-  Box, Typography, Container, Button, TextField, Paper, List,
-  ListItem, ListItemText, IconButton, Dialog, DialogActions,
-  DialogContent, DialogContentText, DialogTitle, Stack
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { Link as RouterLink } from 'react-router-dom';
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import AIInsightsCard from '../../components/AIInsightsCard';
 
-function AdminSchools() {
+const SchoolCard = ({ name, students, teachers }) => (
+  <Paper
+    elevation={2}
+    sx={{ p: 3, textAlign: 'center', borderLeft: '6px solid #4caf50', borderRadius: 2 }}
+    component={motion.div}
+    whileHover={{ scale: 1.03 }}
+  >
+    <Typography variant="h6" fontWeight="bold">{name}</Typography>
+    <Typography variant="body2" color="text.secondary">Students: {students}</Typography>
+    <Typography variant="body2" color="text.secondary">Teachers: {teachers}</Typography>
+  </Paper>
+);
+
+const AdminSchools = () => {
   const dispatch = useDispatch();
-  const { schools, isLoading } = useSelector((state) => state.admin);
-
-  // State for the creation form
-  const [formData, setFormData] = useState({ name: '', adminName: '', adminEmail: '', adminPassword: '' });
-  // State for the deletion confirmation dialog
-  const [schoolToDelete, setSchoolToDelete] = useState(null);
+  const { schools, aiInsights, isLoading, error } = useSelector((state) => state.admin);
 
   useEffect(() => {
     dispatch(getSchools());
+    dispatch(getAiInsights({ endpoint: '/api/admin/schools/insights' }));
   }, [dispatch]);
 
-  const handleFormChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  }, []);
+  if (isLoading) {
+    return (
+      <Box textAlign="center" mt={10}>
+        <CircularProgress color="primary" />
+        <Typography mt={2}>Loading school data...</Typography>
+      </Box>
+    );
+  }
 
-  const handleAddSchool = useCallback((e) => {
-    e.preventDefault();
-    dispatch(createSchool(formData));
-    setFormData({ name: '', adminName: '', adminEmail: '', adminPassword: '' }); // Reset form
-  }, [dispatch, formData]);
-
-  const openDeleteDialog = (school) => setSchoolToDelete(school);
-  const closeDeleteDialog = () => setSchoolToDelete(null);
-
-  const confirmDelete = useCallback(() => {
-    if (schoolToDelete) {
-      dispatch(deleteSchool(schoolToDelete._id));
-      closeDeleteDialog();
-    }
-  }, [dispatch, schoolToDelete]);
+  if (error) {
+    return <Typography color="error" textAlign="center" mt={4}>{error}</Typography>;
+  }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <Container>
-        <Box textAlign="center" my={5}>
-          <Typography variant="h4" component="h1">School Management</Typography>
-        </Box>
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4" gutterBottom fontWeight="bold">Schools Overview</Typography>
 
-        <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>Add New School</Typography>
-          <Box component="form" onSubmit={handleAddSchool}>
-            <Stack spacing={2}>
-              <TextField name="name" label="New School Name" value={formData.name} onChange={handleFormChange} required />
-              <TextField name="adminName" label="Full Name of School Admin" value={formData.adminName} onChange={handleFormChange} required />
-              <TextField name="adminEmail" label="Email of School Admin" type="email" value={formData.adminEmail} onChange={handleFormChange} required />
-              <TextField name="adminPassword" label="Initial Password for Admin" type="password" value={formData.adminPassword} onChange={handleFormChange} required />
-              <Box><Button type="submit" variant="contained" sx={{ mt: 1 }} disabled={isLoading}>{isLoading ? 'Creating...' : 'Create School'}</Button></Box>
-            </Stack>
-          </Box>
-        </Paper>
+      <Grid container spacing={3}>
+        {schools?.map((school) => (
+          <Grid item xs={12} sm={6} md={4} key={school._id}>
+            <SchoolCard
+              name={school.name}
+              students={school.totalStudents}
+              teachers={school.totalTeachers}
+            />
+          </Grid>
+        ))}
+      </Grid>
 
-        <Paper elevation={3} sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>Existing Schools</Typography>
-          <List>
-            {schools.map((school) => (
-              <ListItem key={school._id} secondaryAction={
-                <>
-                  <IconButton component={RouterLink} to={`/school/dashboard/${school._id}`} aria-label="dashboard"><DashboardIcon /></IconButton>
-                  <IconButton edge="end" aria-label="delete" onClick={() => openDeleteDialog(school)}><DeleteIcon color="error" /></IconButton>
-                </>
-              }>
-                <ListItemText primary={school.name} secondary={`Admin: ${school.admin?.email || 'N/A'}`} />
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={!!schoolToDelete} onClose={closeDeleteDialog}>
-          <DialogTitle>Confirm Deletion</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete the school "<strong>{schoolToDelete?.name}</strong>"? This action will also delete all associated users and cannot be undone.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeDeleteDialog}>Cancel</Button>
-            <Button onClick={confirmDelete} color="error" autoFocus>Delete</Button>
-          </DialogActions>
-        </Dialog>
-      </Container>
-    </motion.div>
+      <AIInsightsCard title="AI Insights on Schools" content={aiInsights} />
+    </Box>
   );
-}
+};
 
 export default AdminSchools;

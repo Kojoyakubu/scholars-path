@@ -1,66 +1,109 @@
-import { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { getMyBadges } from '../features/student/studentSlice';
-import { Box, Typography, Container, Grid, Card, CardContent, CircularProgress } from '@mui/material';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  Box,
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  Avatar,
+  Typography,
+  CircularProgress,
+  Chip,
+} from '@mui/material';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { motion } from 'framer-motion';
 
-function MyBadges() {
+// Redux
+import { getMyBadges, getAiInsights } from '../../features/student/studentSlice';
+
+// Shared AI card
+import AIInsightsCard from '../../components/AIInsightsCard';
+
+const BadgeCard = ({ name, description, dateAwarded, icon }) => (
+  <Card
+    elevation={2}
+    component={motion.div}
+    whileHover={{ scale: 1.02 }}
+    sx={{ borderRadius: 2 }}
+  >
+    <CardHeader
+      avatar={
+        <Avatar sx={{ bgcolor: 'warning.main' }}>
+          {icon ? <img src={icon} alt="badge" style={{ width: 28, height: 28 }} /> : <EmojiEventsIcon />}
+        </Avatar>
+      }
+      title={<Typography variant="h6">{name}</Typography>}
+      subheader={
+        <Chip
+          label={new Date(dateAwarded).toLocaleDateString()}
+          size="small"
+          color="default"
+          variant="outlined"
+        />
+      }
+    />
+    <CardContent>
+      <Typography color="text.secondary">{description || '—'}</Typography>
+    </CardContent>
+  </Card>
+);
+
+const MyBadges = () => {
   const dispatch = useDispatch();
-  const { badges, isLoading } = useSelector((state) => state.student);
+  const { badges, isLoading, error, aiInsights } = useSelector((s) => s.student);
 
   useEffect(() => {
-    // Fetches badges when the component mounts
     dispatch(getMyBadges());
+    dispatch(getAiInsights({ endpoint: '/api/student/badges/insights' }));
   }, [dispatch]);
 
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <Container maxWidth="md">
-        <Box textAlign="center" my={5}>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
-            My Achievements
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
-            Here are the badges you've earned on your learning journey!
-          </Typography>
-        </Box>
+  if (isLoading) {
+    return (
+      <Box textAlign="center" mt={10}>
+        <CircularProgress />
+        <Typography mt={2}>Loading your badges…</Typography>
+      </Box>
+    );
+  }
 
-        {isLoading ? (
-          <Box display="flex" justifyContent="center"><CircularProgress /></Box>
-        ) : (
-          <Grid container spacing={3} justifyContent="center">
-            {badges.length > 0 ? (
-              badges.map(({ _id, badge }) => (
-                <Grid item key={_id} xs={12} sm={6} md={4}>
-                  <motion.div whileHover={{ scale: 1.05 }}>
-                    <Card sx={{ textAlign: 'center', p: 2, height: '100%' }}>
-                      <CardContent>
-                        <Typography component="div" sx={{ fontSize: '60px' }}>
-                          {badge.icon}
-                        </Typography>
-                        <Typography variant="h6" component="h3" sx={{ mt: 1, fontWeight: 'bold' }}>
-                          {badge.name}
-                        </Typography>
-                        <Typography color="text.secondary" sx={{ mt: 1 }}>
-                          {badge.description}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Grid>
-              ))
-            ) : (
-              <Box textAlign="center" width="100%" mt={5}>
-                <Typography>
-                  You haven't earned any badges yet. Complete a quiz to get started!
-                </Typography>
-              </Box>
-            )}
-          </Grid>
-        )}
-      </Container>
-    </motion.div>
+  if (error) {
+    return (
+      <Box textAlign="center" mt={10}>
+        <Typography color="error">Failed to load badges: {error}</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h4" fontWeight="bold" gutterBottom>
+        My Badges
+      </Typography>
+
+      {Array.isArray(badges) && badges.length > 0 ? (
+        <Grid container spacing={3}>
+          {badges.map((b) => (
+            <Grid item xs={12} sm={6} md={4} key={b._id}>
+              <BadgeCard
+                name={b.badge?.name || b.name}
+                description={b.badge?.description || b.description}
+                dateAwarded={b.dateAwarded || b.createdAt || Date.now()}
+                icon={b.badge?.icon}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Typography color="text.secondary">You haven’t earned any badges yet.</Typography>
+      )}
+
+      {aiInsights && (
+        <AIInsightsCard title="AI Insights on Your Achievements" content={aiInsights} />
+      )}
+    </Container>
   );
-}
+};
 
 export default MyBadges;

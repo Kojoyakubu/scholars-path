@@ -1,85 +1,153 @@
-// server/services/badgeService.js
+// /server/services/badgeService.js
+
+/**
+ * Scholars Path - Badge Service
+ * ---------------------------------
+ * Awards and manages learner badges.
+ * Now supports AI-based badge suggestions and a dynamic rule system.
+ */
 
 const Badge = require('../models/badgeModel');
 const StudentBadge = require('../models/studentBadgeModel');
 const QuizAttempt = require('../models/quizAttemptModel');
+const aiService = require('./aiService');
 
 /**
- * A list of rules that define the criteria for awarding quiz-related badges.
- * This data-driven approach makes it easy to add new badges.
- *
- * @property {string} name - The unique name of the badge in the database.
- * @property {function(object): boolean} condition - A function that returns true if the badge should be awarded.
+ * @desc    Core badge awarding logic
+ * @param   {ObjectId} studentId
+ * @param   {Object} attempt  - QuizAttempt object
  */
-const badgeRules = [
-  {
-    name: 'First Step',
-    condition: ({ attemptCount }) => attemptCount === 1,
-  },
-  {
-    name: 'Quiz Master',
-    condition: ({ attemptCount }) => attemptCount >= 5,
-  },
-  {
-    name: 'High Achiever',
-    condition: ({ latestAttempt }) =>
-      latestAttempt.score === latestAttempt.totalQuestions && latestAttempt.totalQuestions > 0,
-  },
-  // Add new badge rules here in the future!
-  // {
-  //   name: 'Speed Runner',
-  //   condition: ({ latestAttempt }) => latestAttempt.timeTakenInSeconds < 60,
-  // },
-];
+async function checkAndAwardQuizBadges(studentId, attempt) {
+  if (!attempt || !attempt.quiz || !attempt.score) return;
 
-/**
- * Checks a student's latest quiz attempt and overall progress to award badges.
- * This function is optimized to minimize database calls.
- * @param {string} studentId - The ID of the student who completed the quiz.
- * @param {object} latestAttempt - The mongoose document of the latest quiz attempt.
- */
-const checkAndAwardQuizBadges = async (studentId, latestAttempt) => {
-  try {
-    // 1. Fetch all necessary data in parallel for performance.
-    const [attemptCount, allBadges, studentBadgeDocs] = await Promise.all([
-      QuizAttempt.countDocuments({ student: studentId }),
-      Badge.find({}).lean(), // .lean() for a fast, plain JS object read-only query
-      StudentBadge.find({ student: studentId }).select('badge').lean(),
-    ]);
+  // Fetch all existing badges for student to prevent duplicates
+  const existingBadges = await StudentBadge.find({ student: studentId });
+  const earnedBadgeIds = new Set(existingBadges.map((b) => b.badge.toString()));
 
-    // 2. Create efficient lookups for in-memory processing.
-    const badgeMap = new Map(allBadges.map(b => [b.name, b._id]));
-    const ownedBadgeIds = new Set(studentBadgeDocs.map(sb => sb.badge.toString()));
+  // Dynamic badge rules
+  const badgeRules = [
+    {
+      name: 'Quiz Starter',
+      description: 'Completed your first quiz.',
+      condition: () => attempt.score >= 0,
+    },
+    {
+      name: 'High Flyer',
+      description: 'Scored 90% or above on a quiz.',
+      condition: () => (attempt.score / attempt.totalQuestions) * 100 >= 90,
+    },
+    {
+      name: 'Consistency Champ',
+      description: 'Attempted 5 or more quizzes.',
+      condition: async () => {
+        const attempts = await QuizAttempt.countDocuments({ student: studentId });
+        return attempts >= 5;
+      },
+    },
+    {
+      name: 'Quiz Master',
+      description: 'Attempted 10 or more quizzes.',
+      condition: async () => {
+        const attempts = await QuizAttempt.countDocuments({ student: studentId });
+        return attempts >= 10;
+      },
+    },
+  ];
 
-    // 3. Determine which new badges to award.
-    const badgesToAward = [];
-    const context = { attemptCount, latestAttempt };
+  // Evaluate each rule
+  for (const rule of badgeRules) {
+    const existingBadge = await Badge.findOne({ name: rule.name });
+    if (!existingBadge) continue;
 
-    for (const rule of badgeRules) {
-      const badgeId = badgeMap.get(rule.name);
-      // Check if:
-      // - The badge exists in the database
-      // - The student meets the condition
-      // - The student does not already own the badge
-      if (badgeId && rule.condition(context) && !ownedBadgeIds.has(badgeId.toString())) {
-        badgesToAward.push({
-          student: studentId,
-          badge: badgeId,
-        });
-        console.log(`Queueing badge '${rule.name}' for student ${studentId}`);
-      }
+    const conditionPassed = await rule.condition();
+    if (conditionPassed && !earnedBadgeIds.has(existingBadge._id.toString())) {
+      await StudentBadge.create({
+        student: studentId,
+        badge: existingBadge._id,
+        dateAwarded: new Date(),
+      });
+      earnedBadgeIds.add(existingBadge._id.toString());
     }
-
-    // 4. If there are new badges to award, insert them all in a single database operation.
-    if (badgesToAward.length > 0) {
-      await StudentBadge.insertMany(badgesToAward);
-      console.log(`Successfully awarded ${badgesToAward.length} new badge(s) to student ${studentId}`);
-    }
-  } catch (error) {
-    // The service should not crash the main request (e.g., quiz submission).
-    // It logs the error for later debugging.
-    console.error(`An error occurred in the badge awarding service for student ${studentId}:`, error);
   }
-};
+}
 
-module.exports = { checkAndAwardQuizBadges };
+/**
+ * @desc    Generate AI-based badge ideas
+ * @param   {String} learningArea - e.g. "Science", "Mathematics"
+ * @param   {String} context - e.g. "quiz performance" or "lesson engagement"
+ * @returns {Array} Array of suggested badge ideas
+ */
+async function generateAIBadgeSuggestions(learningArea = 'General', context = 'quiz performance') {
+  const prompt = `
+You are a creative educational designer for the Scholars Path app.
+Suggest 4 unique badge ideas related to **${learningArea}** learning and **${context}**.
+
+For each badge, include:
+- name
+- short description (max 15 words)
+- one-line earning criteria
+
+Return ONLY valid JSON array like:
+[
+  {
+    "name": "Curiosity Spark",
+    "description": "Started exploring Science topics actively.",
+    "criteria": "Viewed at least 3 Science lessons."
+  }
+]
+`;
+
+  try {
+    const { text } = await aiService.generateTextCore({
+      prompt,
+      task: 'badgeIdeas',
+      jsonNeeded: true,
+      temperature: 0.7,
+    });
+
+    const ideas = JSON.parse(text);
+    return Array.isArray(ideas) ? ideas : [];
+  } catch (err) {
+    console.error('AI badge suggestion failed:', err.message);
+    return [];
+  }
+}
+
+/**
+ * @desc    Add badges dynamically from AI suggestions or admin input
+ * @param   {Array} badgeList - [{ name, description, criteria }]
+ */
+async function addBadges(badgeList = []) {
+  const added = [];
+
+  for (const b of badgeList) {
+    const exists = await Badge.findOne({ name: b.name });
+    if (!exists) {
+      const badge = await Badge.create({
+        name: b.name,
+        description: b.description || '',
+        criteria: b.criteria || '',
+      });
+      added.push(badge);
+    }
+  }
+
+  return added;
+}
+
+/**
+ * @desc    Helper for Admin: Generate + add AI badges in one step
+ * @route   POST /api/admin/ai-badges
+ */
+async function generateAndAddAIBadges(area, context) {
+  const ideas = await generateAIBadgeSuggestions(area, context);
+  const added = await addBadges(ideas);
+  return { ideas, addedCount: added.length };
+}
+
+module.exports = {
+  checkAndAwardQuizBadges,
+  generateAIBadgeSuggestions,
+  addBadges,
+  generateAndAddAIBadges,
+};

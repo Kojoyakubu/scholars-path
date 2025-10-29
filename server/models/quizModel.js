@@ -1,51 +1,28 @@
-// server/models/quizModel.js
 const mongoose = require('mongoose');
 
-const quizSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, 'Quiz title is required.'],
-    trim: true,
+const quizSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true, trim: true },
+    subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
+    teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    school: { type: mongoose.Schema.Types.ObjectId, ref: 'School', index: true },
+    aiProvider: { type: String },
+    aiModel: { type: String },
+    aiGeneratedAt: { type: Date },
   },
-  subject: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'Subject',
-    index: true,
-  },
-  teacher: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User',
-    index: true,
-  },
-  school: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'School',
-    index: true,
-  },
-}, { 
-  timestamps: true,
-  // Enable virtuals for JSON output
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
-});
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+);
 
-// Virtual field to populate questions associated with this quiz.
-// This defines the relationship without storing an array of IDs here.
 quizSchema.virtual('questions', {
   ref: 'Question',
   localField: '_id',
-  foreignField: 'quiz'
+  foreignField: 'quiz',
 });
 
-// Middleware to remove child documents before deleting a quiz
-quizSchema.pre('deleteOne', { document: true, query: false }, async function(next) {
-  console.log(`Cascading delete: Removing questions & attempts for quiz: ${this.title}`);
-  // Using this._id is safe here. We can use Promise.all to run in parallel.
+quizSchema.pre('deleteOne', { document: true, query: false }, async function (next) {
   await Promise.all([
     mongoose.model('Question').deleteMany({ quiz: this._id }),
-    mongoose.model('QuizAttempt').deleteMany({ quiz: this._id })
+    mongoose.model('QuizAttempt').deleteMany({ quiz: this._id }),
   ]);
   next();
 });

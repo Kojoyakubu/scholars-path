@@ -5,8 +5,15 @@ import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-
-// --- Redux Imports ---
+import {
+  Box, Typography, Container, Button, Grid, Select, MenuItem,
+  FormControl, InputLabel, Paper, List, ListItem, ListItemIcon,
+  CircularProgress, Stack, ListItemText
+} from '@mui/material';
+import QuizIcon from '@mui/icons-material/Quiz';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import {
   fetchItems,
   fetchChildren,
@@ -19,55 +26,49 @@ import {
   getResources,
   logNoteView,
 } from '../features/student/studentSlice';
-
-// --- MUI Imports ---
-import {
-  Box, Typography, Container, Button, Grid, Select, MenuItem,
-  FormControl, InputLabel, Paper, List, ListItem, ListItemIcon,
-  CircularProgress, Stack, ListItemText
-} from '@mui/material';
-import QuizIcon from '@mui/icons-material/Quiz';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import DescriptionIcon from '@mui/icons-material/Description';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-
-// --- Component & Helper Imports ---
 import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
-import AiImage from '../components/AiImage'; // Import the new image component
+import AiImage from '../components/AiImage';
 
 function Dashboard() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const { user } = useSelector((state) => state.auth);
   const curriculumState = useSelector((state) => state.curriculum);
   const studentState = useSelector((state) => state.student);
-
-  const { levels, classes, subjects, strands, subStrands } = curriculumState;
-  const { notes, quizzes, resources } = studentState;
-  const isLoading = curriculumState.isLoading || studentState.isLoading;
+  const { levels, classes, subjects, strands, subStrands, isLoading: isCurriculumLoading } = curriculumState;
+  const { notes, quizzes, resources, isLoading: isStudentLoading, aiInsights } = studentState;
+  const isLoading = isCurriculumLoading || isStudentLoading;
 
   const [selections, setSelections] = useState({
     level: '', class: '', subject: '', strand: '', subStrand: '',
   });
 
-  // All useEffects and handlers remain the same...
+  // --- Role-based redirects + data loading ---
   useEffect(() => {
     if (!user) return;
     if (user.role === 'admin') navigate('/admin');
     if (user.role === 'teacher' || user.role === 'school_admin') navigate('/teacher/dashboard');
-    if (user.role === 'student') {
-      dispatch(fetchItems({ entity: 'levels' }));
-    }
-    return () => {
-      dispatch(resetCurriculumState());
-    };
+    if (user.role === 'student') dispatch(fetchItems({ entity: 'levels' }));
+    return () => dispatch(resetCurriculumState());
   }, [dispatch, user, navigate]);
 
-  useEffect(() => { if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); }, [selections.level, dispatch]);
-  useEffect(() => { if (selections.class) dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class })); }, [selections.class, dispatch]);
-  useEffect(() => { if (selections.subject) dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject })); }, [selections.subject, dispatch]);
-  useEffect(() => { if (selections.strand) dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand })); }, [selections.strand, dispatch]);
+  // --- Cascading selections ---
+  useEffect(() => {
+    if (selections.level)
+      dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
+  }, [selections.level, dispatch]);
+  useEffect(() => {
+    if (selections.class)
+      dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
+  }, [selections.class, dispatch]);
+  useEffect(() => {
+    if (selections.subject)
+      dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
+  }, [selections.subject, dispatch]);
+  useEffect(() => {
+    if (selections.strand)
+      dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand }));
+  }, [selections.strand, dispatch]);
 
   useEffect(() => {
     if (selections.subStrand) {
@@ -77,10 +78,11 @@ function Dashboard() {
     }
   }, [selections.subStrand, dispatch]);
 
+  // --- Handle dropdowns ---
   const handleSelectionChange = useCallback((e) => {
     const { name, value } = e.target;
     setSelections((prev) => {
-      const newSelections = { ...prev, [name]: value };
+      const newSel = { ...prev, [name]: value };
       const resetMap = {
         level: ['class', 'subject', 'strand', 'subStrand'],
         class: ['subject', 'strand', 'subStrand'],
@@ -88,21 +90,18 @@ function Dashboard() {
         strand: ['subStrand'],
       };
       if (resetMap[name]) {
-        resetMap[name].forEach((key) => (newSelections[key] = ''));
+        resetMap[name].forEach((key) => (newSel[key] = ''));
         dispatch(clearChildren({ entities: resetMap[name] }));
       }
-      return newSelections;
+      return newSel;
     });
   }, [dispatch]);
 
+  // --- Downloads ---
   const handleDownload = useCallback((type, noteId, noteTopic) => {
     dispatch(logNoteView(noteId));
     const elementId = `note-content-${noteId}`;
-    if (type === 'pdf') {
-      downloadAsPdf(elementId, noteTopic);
-    } else if (type === 'word') {
-      downloadAsWord(elementId, noteTopic);
-    }
+    type === 'pdf' ? downloadAsPdf(elementId, noteTopic) : downloadAsWord(elementId, noteTopic);
   }, [dispatch]);
 
   const renderDropdown = (name, label, value, items, disabled = false) => (
@@ -119,37 +118,88 @@ function Dashboard() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Container maxWidth="lg">
-        <Box textAlign="center" my={5}>
-          <Typography variant="h4" component="h1" gutterBottom>Welcome, {user?.fullName}!</Typography>
-          <Typography variant="h6" color="text.secondary">Select your topics to find learning materials.</Typography>
+        <Box
+          textAlign="center"
+          my={5}
+          sx={{
+            bgcolor: '#145A32',
+            py: 4,
+            borderRadius: 3,
+            color: '#E8F5E9',
+            boxShadow: '0 8px 20px rgba(20,90,50,0.4)',
+          }}
+        >
+          <Typography variant="h4" component="h1" gutterBottom fontWeight={700}>
+            Your Learning Journey, {user?.fullName?.split(' ')[0]} 🌿
+          </Typography>
+          <Typography variant="h6" sx={{ opacity: 0.9 }}>
+            Choose a topic to explore AI-powered notes, quizzes, and resources.
+          </Typography>
         </Box>
 
-        <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
+        {/* Curriculum Selection */}
+        <Paper elevation={4} sx={{ p: 3, mb: 5, borderLeft: '6px solid #1E8449', borderRadius: 3 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>{renderDropdown('level', 'Level', selections.level, levels)}</Grid>
-            <Grid item xs={12} sm={6} md={3}>{renderDropdown('class', 'Class', selections.class, classes, !selections.level)}</Grid>
-            <Grid item xs={12} sm={6} md={3}>{renderDropdown('subject', 'Subject', selections.subject, subjects, !selections.class)}</Grid>
-            <Grid item xs={12} sm={6} md={3}>{renderDropdown('strand', 'Strand', selections.strand, strands, !selections.subject)}</Grid>
-            <Grid item xs={12}>{renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, !selections.strand)}</Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              {renderDropdown('level', 'Level', selections.level, levels)}
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              {renderDropdown('class', 'Class', selections.class, classes, !selections.level)}
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              {renderDropdown('subject', 'Subject', selections.subject, subjects, !selections.class)}
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              {renderDropdown('strand', 'Strand', selections.strand, strands, !selections.subject)}
+            </Grid>
+            <Grid item xs={12}>
+              {renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, !selections.strand)}
+            </Grid>
           </Grid>
         </Paper>
 
+        {/* Content Section */}
         {selections.subStrand && (
           isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <CircularProgress color="success" />
+            </Box>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Grid container spacing={3}>
+                {/* Lesson Notes */}
                 <Grid item xs={12}>
-                  <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
-                    <Typography variant="h5" gutterBottom>Lesson Notes</Typography>
+                  <Paper
+                    elevation={3}
+                    sx={{
+                      p: 3,
+                      borderLeft: '6px solid #1E8449',
+                      borderRadius: 3,
+                      bgcolor: '#F1F8E9',
+                    }}
+                  >
+                    <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
+                      Lesson Notes
+                    </Typography>
                     {notes.length > 0 ? (
                       notes.map((note) => (
-                        <Paper key={note._id} variant="outlined" sx={{ mb: 2, p: 2 }}>
-                          <Box id={`note-content-${note._id}`} sx={{
+                        <Paper
+                          key={note._id}
+                          variant="outlined"
+                          sx={{
+                            mb: 2,
+                            p: 2,
+                            borderColor: '#C8E6C9',
+                            backgroundColor: '#ffffff',
+                            borderRadius: 2,
+                          }}
+                        >
+                          <Box
+                            id={`note-content-${note._id}`}
+                            sx={{
                               '& h1, & h2, & h3': { fontSize: '1.2em', fontWeight: 'bold', mb: 1 },
                               '& p': { mb: 1 },
-                              '& a': { color: 'primary.main' }
+                              '& a': { color: '#1E8449' },
                             }}
                           >
                             <ReactMarkdown
@@ -157,8 +207,8 @@ function Dashboard() {
                               rehypePlugins={[rehypeRaw]}
                               components={{
                                 p: ({ node, ...props }) => {
-                                  const text = node?.children[0]?.value || '';
-                                  if (text.startsWith('[DIAGRAM:')) {
+                                  const text = node?.children?.[0]?.value || '';
+                                  if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
                                     return <AiImage text={text} />;
                                   }
                                   return <p {...props} />;
@@ -168,45 +218,130 @@ function Dashboard() {
                               {note.content}
                             </ReactMarkdown>
                           </Box>
-                          <Stack direction="row" spacing={1} sx={{ mt: 2, borderTop: 1, borderColor: 'divider', pt: 2 }}>
-                            <Button startIcon={<PictureAsPdfIcon />} onClick={() => handleDownload('pdf', note._id, 'lesson_note')} size="small" variant="outlined">PDF</Button>
-                            <Button startIcon={<DescriptionIcon />} onClick={() => handleDownload('word', note._id, 'lesson_note')} size="small" variant="outlined" color="secondary">Word</Button>
+
+                          <Stack direction="row" spacing={1} sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: '#A9DFBF' }}>
+                            <Button
+                              startIcon={<PictureAsPdfIcon />}
+                              onClick={() => handleDownload('pdf', note._id, 'lesson_note')}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                color: '#145A32',
+                                borderColor: '#28B463',
+                                '&:hover': { bgcolor: '#E8F5E9' },
+                              }}
+                            >
+                              PDF
+                            </Button>
+                            <Button
+                              startIcon={<DescriptionIcon />}
+                              onClick={() => handleDownload('word', note._id, 'lesson_note')}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                color: '#1E8449',
+                                borderColor: '#1E8449',
+                                '&:hover': { bgcolor: '#E8F5E9' },
+                              }}
+                            >
+                              Word
+                            </Button>
                           </Stack>
                         </Paper>
                       ))
-                    ) : <Typography color="text.secondary">No notes found for this topic.</Typography>}
+                    ) : (
+                      <Typography color="text.secondary">No notes found for this topic.</Typography>
+                    )}
                   </Paper>
                 </Grid>
+
+                {/* Quizzes */}
                 <Grid item xs={12} md={6}>
-                  <Paper elevation={2} sx={{ p: 3 }}>
-                    <Typography variant="h5" gutterBottom>Quizzes</Typography>
+                  <Paper elevation={3} sx={{ p: 3, borderLeft: '6px solid #28B463', borderRadius: 3 }}>
+                    <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
+                      Quizzes
+                    </Typography>
                     {quizzes.length > 0 ? (
                       <Box display="flex" gap={1.5} flexWrap="wrap">
                         {quizzes.map((quiz) => (
-                          <Button key={quiz._id} component={RouterLink} to={`/quiz/${quiz._id}`} variant="contained" startIcon={<QuizIcon />}>{quiz.title}</Button>
+                          <Button
+                            key={quiz._id}
+                            component={RouterLink}
+                            to={`/quiz/${quiz._id}`}
+                            variant="contained"
+                            startIcon={<QuizIcon />}
+                            sx={{
+                              bgcolor: '#28B463',
+                              '&:hover': { bgcolor: '#1D8348' },
+                            }}
+                          >
+                            {quiz.title}
+                          </Button>
                         ))}
                       </Box>
-                    ) : <Typography color="text.secondary">No quizzes found for this topic.</Typography>}
+                    ) : (
+                      <Typography color="text.secondary">No quizzes found for this topic.</Typography>
+                    )}
                   </Paper>
                 </Grid>
+
+                {/* Resources */}
                 <Grid item xs={12} md={6}>
-                  <Paper elevation={2} sx={{ p: 3 }}>
-                    <Typography variant="h5" gutterBottom>Resources</Typography>
+                  <Paper elevation={3} sx={{ p: 3, borderLeft: '6px solid #1E8449', borderRadius: 3 }}>
+                    <Typography variant="h5" gutterBottom color="primary" fontWeight={600}>
+                      Resources
+                    </Typography>
                     {resources.length > 0 ? (
                       <List>
                         {resources.map((res) => (
-                          <ListItem key={res._id} button component="a" href={`/${res.filePath.replace(/\\/g, '/')}`} target="_blank" rel="noopener noreferrer">
-                            <ListItemIcon><AttachFileIcon /></ListItemIcon>
+                          <ListItem
+                            key={res._id}
+                            button
+                            component="a"
+                            href={`/${res.filePath.replace(/\\/g, '/')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ListItemIcon><AttachFileIcon sx={{ color: '#145A32' }} /></ListItemIcon>
                             <ListItemText primary={res.fileName} />
                           </ListItem>
                         ))}
                       </List>
-                    ) : <Typography color="text.secondary">No resources found for this topic.</Typography>}
+                    ) : (
+                      <Typography color="text.secondary">No resources found for this topic.</Typography>
+                    )}
                   </Paper>
                 </Grid>
+
+                {/* AI Insights */}
+                {aiInsights && (
+                  <Grid item xs={12}>
+                    <Paper
+                      elevation={3}
+                      sx={{
+                        p: 3,
+                        borderLeft: '6px solid #145A32',
+                        borderRadius: 3,
+                        bgcolor: '#F1F8E9',
+                      }}
+                      component={motion.div}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <Typography variant="h6" gutterBottom color="primary" fontWeight={700}>
+                        Personalized AI Insights
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary" whiteSpace="pre-line">
+                        {aiInsights}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                )}
               </Grid>
             </motion.div>
-          ))}
+          )
+        )}
       </Container>
     </motion.div>
   );

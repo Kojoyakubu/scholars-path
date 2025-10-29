@@ -1,65 +1,61 @@
 // /client/src/App.jsx
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-
-// Layout & Authentication
-import PrivateRoute from './components/PrivateRoute';
-import Layout from './components/Layout';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
-import Register from './pages/Register';
-
-// Admin Pages
-import AdminDashboard from './pages/AdminDashboard';
-import AdminUsers from './pages/AdminUsers';         // Corrected from ManageUsers
-import AdminSchools from './pages/AdminSchools';       // Corrected from ManageSchools
-import AdminCurriculum from './pages/AdminCurriculum';
-
-// Teacher Pages
+import Dashboard from './pages/Dashboard';
+import SchoolDashboard from './pages/SchoolDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import LessonNoteView from './pages/LessonNoteView';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminCurriculum from './pages/AdminCurriculum';
+import AdminSchools from './pages/AdminSchools';
+import AdminUsers from './pages/AdminUsers';
+import MyBadges from './pages/MyBadges';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
+import PricingPage from './pages/PricingPage';
+import TakeQuiz from './pages/TakeQuiz';
 
-// Student Pages
-import Dashboard from './pages/Dashboard';
-import TakeQuiz from './pages/TakeQuiz';           // Corrected from QuizPage
+// 🆕 New unified authentication page
+import AuthPortal from './pages/AuthPortal';
 
 function App() {
   return (
-    <>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/auth" element={<AuthPortal />} />
+        <Route path="/pricing" element={<PricingPage />} />
 
-          {/* Protected Routes - Wrapped by Layout */}
-          <Route element={<PrivateRoute />}>
-            <Route element={<Layout />}>
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/schools" element={<AdminSchools />} />
-              <Route path="/admin/curriculum" element={<AdminCurriculum />} />
+        {/* Redirect old login/register links to AuthPortal */}
+        <Route path="/login" element={<Navigate to="/auth" replace />} />
+        <Route path="/register" element={<Navigate to="/auth" replace />} />
 
-              {/* Teacher/School Admin Routes */}
-              <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-              <Route path="/teacher/notes/:noteId" element={<LessonNoteView />} />
+        {/* Student routes */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/my-badges" element={<MyBadges />} />
+        <Route path="/take-quiz" element={<TakeQuiz />} />
 
-              {/* Student Routes */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/quiz/:id" element={<TakeQuiz />} />
-            </Route>
-          </Route>
+        {/* Teacher & School routes */}
+        <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+        <Route path="/school/dashboard" element={<SchoolDashboard />} />
+        <Route path="/lesson-note/:id" element={<LessonNoteView />} />
 
-          {/* Fallback for unmatched routes */}
-          <Route path="*" element={<div>404 Not Found</div>} />
-        </Routes>
-      </Router>
-      <ToastContainer position="bottom-right" />
-    </>
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/curriculum" element={<AdminCurriculum />} />
+        <Route path="/admin/schools" element={<AdminSchools />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+
+        {/* Payment feedback */}
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/failed" element={<PaymentFailed />} />
+
+        {/* Catch-all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
 }
 

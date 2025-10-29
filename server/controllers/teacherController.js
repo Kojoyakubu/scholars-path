@@ -1,5 +1,9 @@
+// /server/controllers/teacherController.js
+
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
+const axios = require('axios'); // ✅ BUG FIX: needed by searchImage
+
 const LessonNote = require('../models/lessonNoteModel');
 const LearnerNote = require('../models/learnerNoteModel');
 const Quiz = require('../models/quizModel');
@@ -7,6 +11,7 @@ const Resource = require('../models/resourceModel');
 const NoteView = require('../models/noteViewModel');
 const QuizAttempt = require('../models/quizAttemptModel');
 const SubStrand = require('../models/subStrandModel');
+
 const aiService = require('../services/aiService');
 
 /**
@@ -36,30 +41,32 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // --- ✅ THE FIX IS HERE ---
-  // Safely access each piece of data and provide fallbacks to prevent server crashes.
+  // Assemble safe AI details (with fallbacks)
   const aiDetails = {
     ...noteDetails,
-    // Use optional chaining (?.) and nullish coalescing (??)
     subStrandName: subStrand?.name ?? 'N/A',
     strandName: subStrand?.strand?.name ?? 'N/A',
     subjectName: subStrand?.strand?.subject?.name ?? 'N/A',
-    // If the form provided a class name, use it. Otherwise, try to get it from the database.
     className: noteDetails.class || subStrand?.strand?.subject?.class?.name || 'N/A',
   };
 
-  const aiContent = await aiService.generateGhanaianLessonNote(aiDetails);
+  // 🔗 New aiService returns { text, provider, model, ... }
+  const { text: aiText, provider, model, timestamp } =
+    await aiService.generateGhanaianLessonNote(aiDetails);
 
   const lessonNote = await LessonNote.create({
-    teacher: req.user.id,      // Get user ID from the JWT payload
-    school: req.user.school,  // Get school from the JWT payload
+    teacher: req.user.id,
+    school: req.user.school,
     subStrand: subStrandId,
-    content: aiContent,
+    content: aiText,
+    // Optionally store metadata if your schema supports it:
+    // aiProvider: provider,
+    // aiModel: model,
+    // aiGeneratedAt: new Date(timestamp),
   });
 
   res.status(201).json(lessonNote);
 });
-
 
 /**
  * @desc    Get all lesson notes for the logged-in teacher
@@ -80,7 +87,7 @@ const getMyLessonNotes = asyncHandler(async (req, res) => {
  */
 const getLessonNoteById = asyncHandler(async (req, res) => {
   const note = await LessonNote.findById(req.params.id);
-  
+
   if (!note) {
     res.status(404);
     throw new Error('Lesson note not found');
@@ -102,13 +109,13 @@ const getLessonNoteById = asyncHandler(async (req, res) => {
  */
 const deleteLessonNote = asyncHandler(async (req, res) => {
   const note = await LessonNote.findById(req.params.id);
-  
+
   if (!note) {
     res.status(404);
     throw new Error('Lesson note not found');
   }
 
-  // Stricter Authorization: Only the teacher who created it can delete it.
+  // Only the author can delete
   if (note.teacher.toString() !== req.user.id.toString()) {
     res.status(403);
     throw new Error('Not authorized to delete this note');
@@ -124,7 +131,7 @@ const deleteLessonNote = asyncHandler(async (req, res) => {
  * @access  Private (Teacher)
  */
 const generateLearnerNote = asyncHandler(async (req, res) => {
-  const { lessonNoteId } = req.body;
+  const { lessonNoteId, preferredProvider, preferredModel } = req.body;
   const lessonNote = await LessonNote.findById(lessonNoteId);
 
   if (!lessonNote || lessonNote.teacher.toString() !== req.user.id.toString()) {
@@ -132,20 +139,29 @@ const generateLearnerNote = asyncHandler(async (req, res) => {
     throw new Error('Lesson note not found or you are not the author.');
   }
 
-  const learnerContent = await aiService.generateLearnerFriendlyNote(lessonNote.content);
+  // 🔗 New aiService returns { text, provider, model, ... }
+  const { text: learnerText, provider, model, timestamp } =
+    await aiService.generateLearnerFriendlyNote(lessonNote.content, {
+      preferredProvider,
+      preferredModel,
+    });
 
   const learnerNote = await LearnerNote.create({
     author: req.user.id,
     school: req.user.school,
     subStrand: lessonNote.subStrand,
-    content: learnerContent,
+    content: learnerText,
+    // Optionally store metadata if schema supports:
+    // aiProvider: provider,
+    // aiModel: model,
+    // aiGeneratedAt: new Date(timestamp),
   });
 
   res.status(201).json(learnerNote);
 });
 
 /**
- * @desc    Create a new quiz
+ * @desc    Create a new quiz (manual create; AI generation lives in quizController)
  * @route   POST /api/teacher/create-quiz
  * @access  Private (Teacher)
  */
@@ -195,22 +211,28 @@ const getTeacherAnalytics = asyncHandler(async (req, res) => {
   const [totalNoteViews, totalQuizAttempts, averageScoreResult] = await Promise.all([
     NoteView.countDocuments({ teacher: teacherId }),
     QuizAttempt.countDocuments({ quiz: { $in: quizIds } }),
-    quizIds.length === 0 ? null : QuizAttempt.aggregate([
-        { $match: { quiz: { $in: quizIds } } },
-        { $group: {
-            _id: null,
-            averagePercentage: { $avg: { $multiply: [{ $divide: ['$score', '$totalQuestions'] }, 100] } }
-          }
-        }
-      ]),
+    quizIds.length === 0
+      ? null
+      : QuizAttempt.aggregate([
+          { $match: { quiz: { $in: quizIds } } },
+          {
+            $group: {
+              _id: null,
+              averagePercentage: {
+                $avg: { $multiply: [{ $divide: ['$score', '$totalQuestions'] }, 100] },
+              },
+            },
+          },
+        ]),
   ]);
 
-  const averageScore = (averageScoreResult && averageScoreResult[0]) ? averageScoreResult[0].averagePercentage : 0;
+  const averageScore =
+    averageScoreResult && averageScoreResult[0] ? averageScoreResult[0].averagePercentage : 0;
 
   res.json({
     totalNoteViews,
     totalQuizAttempts,
-    averageScore: averageScore.toFixed(2),
+    averageScore: Number(averageScore.toFixed(2)),
   });
 });
 
@@ -269,13 +291,15 @@ const searchImage = asyncHandler(async (req, res) => {
     throw new Error('Search query is required.');
   }
 
-  const response = await axios.get(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1`, {
-    headers: {
-      Authorization: process.env.PEXELS_API_KEY,
-    },
-  });
+  const response = await axios.get(
+    `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1`,
+    {
+      headers: { Authorization: process.env.PEXELS_API_KEY },
+      timeout: 8000,
+    }
+  );
 
-  const imageUrl = response.data.photos[0]?.src?.medium || null;
+  const imageUrl = response.data?.photos?.[0]?.src?.medium || null;
   res.json({ imageUrl });
 });
 

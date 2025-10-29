@@ -1,145 +1,82 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { getUsers, approveUser, deleteUser, getSchools, assignUserToSchool } from '../features/admin/adminSlice';
-import { motion } from 'framer-motion';
-
-// --- MUI Imports ---
-import { 
-  Box, Typography, Container, Button, Select, MenuItem, FormControl, InputLabel,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Pagination, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getUsers, getAiInsights, deleteUser } from '../../features/admin/adminSlice';
+import {
+  Box, Typography, CircularProgress, IconButton, Paper, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, Tooltip
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { motion } from 'framer-motion';
+import AIInsightsCard from '../../components/AIInsightsCard';
 
-function AdminUsers() {
+const AdminUsers = () => {
   const dispatch = useDispatch();
-  const { users, schools, isLoading, page, pages } = useSelector((state) => state.admin);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
+  const { users, aiInsights, isLoading, error } = useSelector((state) => state.admin);
 
   useEffect(() => {
-    dispatch(getUsers(currentPage));
-    if (schools.length === 0) {
-      dispatch(getSchools());
-    }
-  }, [dispatch, currentPage, schools.length]);
+    dispatch(getUsers());
+    dispatch(getAiInsights({ endpoint: '/api/admin/users/insights' }));
+  }, [dispatch]);
 
-  const handlePageChange = (event, value) => {
-    setCurrentPage(value);
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      dispatch(deleteUser(id));
+    }
   };
-  
-  const handleApprove = useCallback((userId) => {
-    dispatch(approveUser(userId));
-  }, [dispatch]);
 
-  const openDeleteConfirmation = useCallback((user) => {
-    setUserToDelete(user);
-    setOpenDeleteDialog(true);
-  }, []);
+  if (isLoading) {
+    return (
+      <Box textAlign="center" mt={10}>
+        <CircularProgress color="primary" />
+        <Typography mt={2}>Loading users...</Typography>
+      </Box>
+    );
+  }
 
-  const closeDeleteConfirmation = useCallback(() => {
-    setUserToDelete(null);
-    setOpenDeleteDialog(false);
-  }, []);
-
-  const handleDelete = useCallback(() => {
-    if (userToDelete) {
-      dispatch(deleteUser(userToDelete._id));
-    }
-    closeDeleteConfirmation();
-  }, [dispatch, userToDelete, closeDeleteConfirmation]);
-
-  // ✅ THE FIX IS HERE: Pass both userId and schoolId as a single object.
-  const handleSchoolChange = useCallback((userId, schoolId) => {
-    if (schoolId) {
-      dispatch(assignUserToSchool({ userId, schoolId }));
-    }
-  }, [dispatch]);
+  if (error) {
+    return <Typography color="error" textAlign="center" mt={4}>{error}</Typography>;
+  }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      <Container maxWidth="lg">
-        <Box textAlign="center" my={5}>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>User Management</Typography>
-          <Typography variant="h6" color="text.secondary">Approve pending accounts and assign users to schools.</Typography>
-        </Box>
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4" gutterBottom fontWeight="bold">User Management</Typography>
 
-        <TableContainer component={Paper} elevation={3}>
-          <Table sx={{ minWidth: 650 }} aria-label="user management table">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'action.hover' }}>
-                <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>School</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+      <TableContainer component={Paper} sx={{ mt: 2 }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>Name</strong></TableCell>
+              <TableCell><strong>Email</strong></TableCell>
+              <TableCell><strong>Role</strong></TableCell>
+              <TableCell align="center"><strong>Actions</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {users?.map((user) => (
+              <TableRow
+                key={user._id}
+                component={motion.tr}
+                whileHover={{ backgroundColor: '#f9f9f9' }}
+              >
+                <TableCell>{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.role}</TableCell>
+                <TableCell align="center">
+                  <Tooltip title="Delete User">
+                    <IconButton color="error" onClick={() => handleDelete(user._id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {isLoading && users.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 5 }}><CircularProgress /></TableCell></TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow key={user._id} hover>
-                    <TableCell>{user.fullName}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell sx={{ textTransform: 'capitalize' }}>{user.role.replace('_', ' ')}</TableCell>
-                    <TableCell sx={{ textTransform: 'capitalize' }}>{user.status}</TableCell>
-                    <TableCell>{user.school?.name || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
-                        {user.status === 'pending' && (
-                          <Button variant="contained" size="small" onClick={() => handleApprove(user._id)}>Approve</Button>
-                        )}
-                        {user.role !== 'admin' && (
-                          <Button variant="outlined" color="error" size="small" onClick={() => openDeleteConfirmation(user)}>Delete</Button>
-                        )}
-                        {user.role !== 'admin' && (
-                          <FormControl size="small" sx={{ minWidth: 150 }}>
-                            <InputLabel>Assign School</InputLabel>
-                            <Select
-                              label="Assign School"
-                              value={user.school?._id || ''}
-                              onChange={(e) => handleSchoolChange(user._id, e.target.value)}
-                            >
-                              {schools.map((school) => (
-                                <MenuItem key={school._id} value={school._id}>{school.name}</MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          {pages > 1 && (
-            <Pagination count={pages} page={currentPage} onChange={handlePageChange} color="primary" />
-          )}
-        </Box>
-      </Container>
-
-      <Dialog open={openDeleteDialog} onClose={closeDeleteConfirmation}>
-        <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete the user "<strong>{userToDelete?.fullName}</strong>"? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteConfirmation}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" autoFocus>Delete</Button>
-        </DialogActions>
-      </Dialog>
-    </motion.div>
+      <AIInsightsCard title="AI Insights on Users" content={aiInsights} />
+    </Box>
   );
-}
+};
 
 export default AdminUsers;

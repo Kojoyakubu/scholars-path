@@ -1,49 +1,63 @@
-// server/routes/adminRoutes.js
+// /server/routes/adminRoutes.js
 
 const express = require('express');
 const router = express.Router();
-const { param, body } = require('express-validator');
-const { protect, authorize } = require('../middleware/authMiddleware');
-const { handleValidationErrors } = require('../middleware/validatorMiddleware'); // <-- IMPORT
 const {
-  getUsers,
-  approveUser,
-  deleteUser,
-  getUsageStats,
-  createSchool,
-  getSchools,
-  deleteSchool,
-  assignUserToSchool,
+  getAllTeachers,
+  getAllStudents,
+  deleteTeacher,
+  deleteStudent,
+  getAnalyticsOverview,
+  getTopTeachers,
+  getTopStudents,
+  getAiUsageSummary,
+  getAiAnalyticsInsights,
 } = require('../controllers/adminController');
 
-// Protect all routes in this file with Admin authorization
-router.use(protect, authorize('admin'));
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-// --- Validation Chains ---
-const mongoIdValidator = (paramName) => param(paramName, 'Invalid ID format in URL').isMongoId();
+// ============================================================================
+// 🧑‍💼 ADMIN MANAGEMENT ROUTES
+// ============================================================================
 
-const createSchoolValidator = [
-  body('name', 'School name is required').not().isEmpty().trim(),
-  body('adminName', 'Admin name is required').not().isEmpty().trim(),
-  body('adminEmail', 'A valid admin email is required').isEmail().normalizeEmail(),
-  body('adminPassword', 'Admin password must be at least 6 characters').isLength({ min: 6 }),
-];
+// Get all teachers
+// GET /api/admin/teachers
+router.get('/teachers', protect, authorize('admin', 'school_admin'), getAllTeachers);
 
-const assignSchoolValidator = [
-  mongoIdValidator('id'),
-  body('schoolId', 'A valid school ID is required in the request body').isMongoId(),
-];
+// Get all students
+// GET /api/admin/students
+router.get('/students', protect, authorize('admin', 'school_admin'), getAllStudents);
 
-// --- Route Definitions ---
-router.get('/users', getUsers);
-router.put('/users/:id/approve', mongoIdValidator('id'), handleValidationErrors, approveUser);
-router.delete('/users/:id', mongoIdValidator('id'), handleValidationErrors, deleteUser);
-router.put('/users/:id/assign-school', assignSchoolValidator, handleValidationErrors, assignUserToSchool);
+// Delete a teacher
+// DELETE /api/admin/teachers/:id
+router.delete('/teachers/:id', protect, authorize('admin', 'school_admin'), deleteTeacher);
 
-router.get('/stats', getUsageStats);
+// Delete a student
+// DELETE /api/admin/students/:id
+router.delete('/students/:id', protect, authorize('admin', 'school_admin'), deleteStudent);
 
-router.post('/schools', createSchoolValidator, handleValidationErrors, createSchool);
-router.get('/schools', getSchools);
-router.delete('/schools/:id', mongoIdValidator('id'), handleValidationErrors, deleteSchool);
+// ============================================================================
+// 📊 ANALYTICS ROUTES
+// ============================================================================
+
+// Platform overview
+// GET /api/admin/analytics/overview
+router.get('/analytics/overview', protect, authorize('admin', 'school_admin'), getAnalyticsOverview);
+
+// Top performing teachers
+// GET /api/admin/analytics/top-teachers
+router.get('/analytics/top-teachers', protect, authorize('admin', 'school_admin'), getTopTeachers);
+
+// Top performing students
+// GET /api/admin/analytics/top-students
+router.get('/analytics/top-students', protect, authorize('admin', 'school_admin'), getTopStudents);
+
+// AI usage breakdown
+// GET /api/admin/analytics/ai-usage
+router.get('/analytics/ai-usage', protect, authorize('admin', 'school_admin'), getAiUsageSummary);
+
+// AI-generated platform insights
+// GET /api/admin/analytics/insights
+router.get('/analytics/insights', protect, authorize('admin', 'school_admin'), getAiAnalyticsInsights);
 
 module.exports = router;

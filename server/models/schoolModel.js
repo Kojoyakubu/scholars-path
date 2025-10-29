@@ -1,18 +1,16 @@
-// server/models/schoolModel.js
 const mongoose = require('mongoose');
 
-const schoolSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'School name is required.'],
-    unique: true,
-    trim: true,
+const schoolSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, unique: true, trim: true },
+    admin: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    location: { type: String },
+    contactEmail: { type: String },
+    description: { type: String },
+    aiGeneratedAt: { type: Date },
+    aiProvider: { type: String },
   },
-  admin: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User',
-  },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('School', schoolSchema);

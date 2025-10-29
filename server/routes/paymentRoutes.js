@@ -1,25 +1,23 @@
-// server/routes/paymentRoutes.js
-
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
-const { initializePayment, handlePaystackWebhook } = require('../controllers/paymentController');
-const { protect } = require('../middleware/authMiddleware');
-const { handleValidationErrors } = require('../middleware/validatorMiddleware'); // <-- IMPORT
 
-// --- Validation Chains ---
-const initializePaymentValidator = [
-  body('amount', 'Amount must be a numeric value and greater than 0').isFloat({ gt: 0 }),
-  body('plan', 'Subscription plan must be either "monthly" or "yearly"').isIn(['monthly', 'yearly']),
-];
+const {
+  createPayment,
+  getAllPayments,
+  getUserPayments,
+  getPaymentSummary,
+  deletePayment,
+} = require('../controllers/paymentController');
 
-// --- Route Definitions ---
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-// User initiates a payment. This is protected.
-router.post('/initialize', protect, initializePaymentValidator, handleValidationErrors, initializePayment);
-
-// Paystack sends a POST request to this endpoint after a transaction. This is a public webhook.
-// The security is handled inside the controller by verifying the Paystack signature.
-router.post('/webhook', handlePaystackWebhook);
+// ==============================
+// Payments & Summaries
+// ==============================
+router.post('/', protect, authorize('admin', 'school_admin'), createPayment);
+router.get('/', protect, authorize('admin', 'school_admin'), getAllPayments);
+router.get('/user/:id', protect, authorize('admin', 'school_admin'), getUserPayments);
+router.get('/:id/summary', protect, authorize('admin', 'school_admin', 'teacher'), getPaymentSummary);
+router.delete('/:id', protect, authorize('admin'), deletePayment);
 
 module.exports = router;

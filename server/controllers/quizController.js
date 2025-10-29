@@ -1,143 +1,193 @@
+// /server/controllers/quizController.js
+
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const Quiz = require('../models/quizModel');
 const Question = require('../models/questionModel');
 const Option = require('../models/optionModel');
-const aiService = require('../services/aiService'); // ✅ THE FIX IS HERE
+const aiService = require('../services/aiService');
 
 /**
- * @desc    Create a new quiz
- * @route   POST /api/teacher/quizzes
+ * @desc    Generate a WAEC-style quiz using AI
+ * @route   POST /api/teacher/generate-quiz
  * @access  Private (Teacher)
  */
-const createQuiz = asyncHandler(async (req, res) => {
-  const { title, subjectId } = req.body;
-  const quiz = await Quiz.create({
-    title,
-    subject: subjectId,
+const generateAiQuiz = asyncHandler(async (req, res) => {
+  const { topic, subjectName, className, numQuestions = 5, subStrandId } = req.body;
+
+  if (!topic || !subjectName || !className) {
+    res.status(400);
+    throw new Error('Topic, subject name, and class name are required.');
+  }
+
+  // 🧠 Generate AI-powered quiz (strict JSON from aiService)
+  const { quiz, provider, model, timestamp } = await aiService.generateWaecQuiz({
+    topic,
+    subjectName,
+    className,
+    numQuestions,
+  });
+
+  // ✅ Store quiz + questions in DB
+  const createdQuestions = [];
+
+  for (const q of quiz) {
+    const questionDoc = new Question({
+      text: q.text,
+    });
+
+    const savedQuestion = await questionDoc.save();
+
+    // Create 4 options per question
+    for (const opt of q.options) {
+      const optionDoc = new Option({
+        question: savedQuestion._id,
+        text: opt.text,
+        isCorrect: !!opt.isCorrect,
+      });
+      await optionDoc.save();
+    }
+
+    createdQuestions.push(savedQuestion._id);
+  }
+
+  const quizDoc = await Quiz.create({
+    title: `${topic} - ${className}`,
+    subject: subjectName,
     teacher: req.user.id,
     school: req.user.school,
+    questions: createdQuestions,
+    subStrand: subStrandId || null,
+    // Optional AI metadata
+    aiProvider: provider,
+    aiModel: model,
+    aiGeneratedAt: new Date(timestamp),
   });
-  res.status(201).json(quiz);
+
+  res.status(201).json({
+    message: 'Quiz generated successfully!',
+    quizId: quizDoc._id,
+    totalQuestions: createdQuestions.length,
+    provider,
+    model,
+  });
 });
 
 /**
- * @desc    Get all quizzes created by the logged-in teacher
+ * @desc    Get all quizzes for the logged-in teacher
  * @route   GET /api/teacher/quizzes
  * @access  Private (Teacher)
  */
-const getTeacherQuizzes = asyncHandler(async (req, res) => {
+const getMyQuizzes = asyncHandler(async (req, res) => {
   const quizzes = await Quiz.find({ teacher: req.user.id })
-    .populate('subject', 'name')
+    .populate('questions')
     .sort({ createdAt: -1 });
   res.json(quizzes);
 });
 
 /**
- * @desc    Get a single quiz with all its questions and options for editing
- * @route   GET /api/teacher/quizzes/:quizId
+ * @desc    Delete a quiz and its questions
+ * @route   DELETE /api/teacher/quizzes/:id
  * @access  Private (Teacher)
  */
-const getQuizForEditing = asyncHandler(async (req, res) => {
-  const quiz = await Quiz.findOne({ _id: req.params.quizId, teacher: req.user.id })
-    .populate({
-      path: 'questions',
-      populate: { path: 'options' }
-    });
+const deleteQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+
   if (!quiz) {
     res.status(404);
-    throw new Error('Quiz not found or you are not authorized to view it.');
+    throw new Error('Quiz not found.');
   }
+
+  if (quiz.teacher.toString() !== req.user.id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to delete this quiz.');
+  }
+
+  // Delete questions and options related to this quiz
+  const questionIds = quiz.questions || [];
+  await Option.deleteMany({ question: { $in: questionIds } });
+  await Question.deleteMany({ _id: { $in: questionIds } });
+  await quiz.deleteOne();
+
+  res.json({ message: 'Quiz deleted successfully.', id: req.params.id });
+});
+
+/**
+ * @desc    Get details of a specific quiz (teacher view)
+ * @route   GET /api/teacher/quizzes/:id
+ * @access  Private (Teacher)
+ */
+const getQuizDetails = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findOne({
+    _id: req.params.id,
+    teacher: req.user.id,
+  }).populate({
+    path: 'questions',
+    populate: {
+      path: 'options',
+      model: 'Option',
+    },
+  });
+
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found.');
+  }
+
   res.json(quiz);
 });
 
 /**
- * @desc    Add a new question with options to a quiz
- * @route   POST /api/teacher/quizzes/:quizId/questions
+ * @desc    Duplicate an existing quiz
+ * @route   POST /api/teacher/quizzes/:id/duplicate
  * @access  Private (Teacher)
  */
-const addQuestionToQuiz = asyncHandler(async (req, res) => {
-  // ... (This function is not the issue)
-});
-
-/**
- * @desc    Generate a new quiz with questions using AI
- * @route   POST /api/teacher/quizzes/generate-ai
- * @access  Private (Teacher)
- */
-const generateAiQuiz = asyncHandler(async (req, res) => {
-  const { title, subjectId, numQuestions, topic, className, subjectName } = req.body;
-  const aiResultString = await aiService.generateWaecQuiz({
-    topic: topic || title,
-    className,
-    subjectName,
-    numQuestions,
+const duplicateQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id).populate({
+    path: 'questions',
+    populate: { path: 'options' },
   });
-  let questionsFromAI;
-  try {
-    questionsFromAI = JSON.parse(aiResultString);
-  } catch (error) {
-    console.error("Failed to parse JSON from AI:", aiResultString);
-    throw new Error("The AI returned an invalid format. Please try again.");
-  }
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  try {
-    const quiz = await Quiz.create([{
-      title,
-      subject: subjectId,
-      teacher: req.user.id,
-      school: req.user.school,
-    }], { session });
-    const quizId = quiz[0]._id;
-    for (const q of questionsFromAI) {
-      const question = await Question.create([{
-        quiz: quizId,
-        text: q.text,
-        questionType: 'MCQ',
-      }], { session });
-      const questionId = question[0]._id;
-      const optionsToCreate = q.options.map(opt => ({
-        ...opt,
-        question: questionId,
-      }));
-      await Option.create(optionsToCreate, { session });
-    }
-    await session.commitTransaction();
-    const newQuiz = await Quiz.findById(quizId).populate({
-      path: 'questions',
-      populate: { path: 'options' }
-    });
-    res.status(201).json(newQuiz);
-  } catch (error) {
-    await session.abortTransaction();
-    console.error("AI Quiz Generation Error:", error);
-    throw new Error('Failed to save the AI-generated quiz. Please try again.');
-  } finally {
-    session.endSession();
-  }
-});
 
-/**
- * @desc    Delete a quiz
- * @route   DELETE /api/teacher/quizzes/:quizId
- * @access  Private (Teacher)
- */
-const deleteQuiz = asyncHandler(async (req, res) => {
-    const quiz = await Quiz.findOne({ _id: req.params.quizId, teacher: req.user.id });
-    if (!quiz) {
-        res.status(404);
-        throw new Error('Quiz not found or you are not authorized to delete it.');
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found.');
+  }
+
+  const newQuestionIds = [];
+
+  for (const question of quiz.questions) {
+    const newQuestion = new Question({
+      text: question.text,
+    });
+    await newQuestion.save();
+
+    for (const option of question.options) {
+      const newOption = new Option({
+        question: newQuestion._id,
+        text: option.text,
+        isCorrect: option.isCorrect,
+      });
+      await newOption.save();
     }
-    await quiz.deleteOne();
-    res.json({ id: req.params.quizId, message: 'Quiz removed successfully' });
+
+    newQuestionIds.push(newQuestion._id);
+  }
+
+  const duplicatedQuiz = await Quiz.create({
+    title: `${quiz.title} (Copy)`,
+    subject: quiz.subject,
+    teacher: req.user.id,
+    school: req.user.school,
+    questions: newQuestionIds,
+  });
+
+  res.status(201).json({ message: 'Quiz duplicated successfully!', duplicatedQuiz });
 });
 
 module.exports = {
-  createQuiz,
-  getTeacherQuizzes,
-  getQuizForEditing,
-  addQuestionToQuiz,
-  deleteQuiz,
   generateAiQuiz,
+  getMyQuizzes,
+  deleteQuiz,
+  getQuizDetails,
+  duplicateQuiz,
 };

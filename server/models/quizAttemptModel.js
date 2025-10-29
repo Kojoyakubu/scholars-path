@@ -1,41 +1,23 @@
-// server/models/quizAttemptModel.js
 const mongoose = require('mongoose');
 
-const quizAttemptSchema = new mongoose.Schema({
-  quiz: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'Quiz',
-    index: true,
+const quizAttemptSchema = new mongoose.Schema(
+  {
+    quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true, index: true },
+    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    score: { type: Number, required: true, min: 0 },
+    totalQuestions: { type: Number, required: true, min: 1 },
+    school: { type: mongoose.Schema.Types.ObjectId, ref: 'School', index: true },
+    aiFeedback: { type: String },
+    aiProvider: { type: String },
+    aiModel: { type: String },
+    answers: [
+      {
+        questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
+        selectedOptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Option' },
+      },
+    ],
   },
-  student: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User',
-    index: true,
-  },
-  score: {
-    type: Number,
-    required: true,
-    min: [0, 'Score cannot be negative.'], // Added validation
-  },
-  totalQuestions: {
-    type: Number,
-    required: true,
-    min: [0, 'Total questions cannot be negative.'], // Added validation
-  },
-  school: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'School',
-    index: true,
-  },
-  answers: [
-    {
-      _id: false, // Don't create a separate _id for each answer subdocument
-      questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
-      selectedOptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Option' },
-    }
-  ]
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('QuizAttempt', quizAttemptSchema);

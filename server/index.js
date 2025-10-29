@@ -1,4 +1,4 @@
-// server/index.js
+// /server/index.js
 
 const path = require('path');
 const express = require('express');
@@ -19,52 +19,56 @@ connectDB();
 // --- Initialize Express App ---
 const app = express();
 
-// --- Core Middleware ---
+// ============================================================================
+// 🌐 GLOBAL MIDDLEWARE
+// ============================================================================
 
-// Set 'trust proxy' to 1 to trust the first proxy in front of the app (e.g., Render's load balancer).
-// This is crucial for rate limiting and getting the correct client IP address.
+// Trust first proxy (needed for rate limiting and Render)
 app.set('trust proxy', 1);
 
-// Apply a baseline of security headers to prevent common attacks.
+// Apply security headers
 app.use(helmet());
 
-// Configure Cross-Origin Resource Sharing (CORS) to allow requests only from approved frontend URLs.
-const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like server-to-server or REST clients)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error(`The origin '${origin}' is not allowed by CORS.`));
-    }
-  }
-}));
+// Configure allowed origins
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['http://localhost:3000']; // Default fallback for local dev
 
-// --- Request Body Parsers & Static File Serving ---
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin '${origin}' not allowed by CORS.`));
+      }
+    },
+    credentials: true,
+  })
+);
 
-// Parse incoming JSON payloads. Added a limit to prevent large, malicious payloads.
+// Parse request bodies
 app.use(express.json({ limit: '500kb' }));
-// Parse URL-encoded payloads.
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files statically from the 'uploads' directory.
+// Serve static files (uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// --- Rate Limiting Middleware ---
-
-// Protect API routes from brute-force or denial-of-service attacks.
+// ============================================================================
+// ⚙️ RATE LIMITING (Anti-DDoS)
+// ============================================================================
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per window
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: 'Too many API requests from this IP. Please try again after 15 minutes.',
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many API requests. Please try again later.',
 });
 app.use('/api', apiLimiter);
 
-
-// --- API Route Mounting ---
+// ============================================================================
+// 🧭 API ROUTE MOUNTING
+// ============================================================================
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/curriculum', require('./routes/curriculumRoutes'));
 app.use('/api/teacher', require('./routes/teacherRoutes'));
@@ -72,31 +76,41 @@ app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/school', require('./routes/schoolRoutes'));
-app.use('/api/teacher/quizzes', require('./routes/quizRoutes'));
+app.use('/api/quizzes', require('./routes/quizRoutes'));
 
-
-// --- Health Check Route ---
-// A simple route to verify that the server is alive and running.
+// ============================================================================
+// 🩺 HEALTH CHECK
+// ============================================================================
 app.get('/', (req, res) => {
-  res.send(`Scholars-Path API is running in ${process.env.NODE_ENV} mode.`);
+  res.status(200).send({
+    message: `✅ Scholars Path API is live in ${process.env.NODE_ENV} mode.`,
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// --- Centralized Error Handling Middleware (MUST be last) ---
+// ============================================================================
+// 🧩 CENTRALIZED ERROR HANDLING
+// ============================================================================
 app.use(notFound);
 app.use(errorHandler);
 
-
-// --- Server Initialization ---
+// ============================================================================
+// 🚀 SERVER STARTUP
+// ============================================================================
 const PORT = process.env.PORT || 5000;
-const server = app.listen(
-  PORT,
-  '0.0.0.0', // Listen on all network interfaces, important for containerized environments
-  () => console.log(`✅ Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold)
-);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold);
+});
 
-// --- Graceful Shutdown for Unhandled Promise Rejections ---
-process.on('unhandledRejection', (err, promise) => {
+// ============================================================================
+// 🧠 AI SERVICE STATUS LOG (Optional Debug Info)
+// ============================================================================
+console.log('🤖 AI services active: Gemini, ChatGPT, Claude, Perplexity.'.green.bold);
+
+// ============================================================================
+// 💣 GRACEFUL SHUTDOWN HANDLER
+// ============================================================================
+process.on('unhandledRejection', (err) => {
   console.error(`❌ Unhandled Rejection: ${err.message}`.red.bold);
-  // Close server & exit process
   server.close(() => process.exit(1));
 });

@@ -1,81 +1,96 @@
-import { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Link as RouterLink } from 'react-router-dom';
-import { getStats } from '../features/admin/adminSlice';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getStats, getAiInsights } from '../../features/admin/adminSlice';
+import { Box, Grid, Paper, Typography, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 
-// --- MUI Imports ---
-import { Box, Typography, Container, Button, Grid, Card, CardContent, CircularProgress, Paper } from '@mui/material';
-
-// Reusable component for displaying a statistic
-const StatCard = ({ value, title, color = 'primary.main' }) => (
-  <Grid item xs={12} sm={6} md={3}>
-    <Card elevation={3} sx={{ height: '100%' }}>
-      <CardContent sx={{ textAlign: 'center', p: 3 }}>
-        <Typography variant="h3" component="p" sx={{ color, fontWeight: 700 }}>
-          {value || 0}
-        </Typography>
-        <Typography color="text.secondary" sx={{ mt: 1 }}>
-          {title}
-        </Typography>
-      </CardContent>
-    </Card>
-  </Grid>
+const StatCard = ({ title, value, color }) => (
+  <Paper
+    elevation={2}
+    sx={{
+      p: 3,
+      textAlign: 'center',
+      borderLeft: `6px solid ${color}`,
+      borderRadius: 2,
+    }}
+    component={motion.div}
+    whileHover={{ scale: 1.03 }}
+  >
+    <Typography variant="h6" color="text.secondary">
+      {title}
+    </Typography>
+    <Typography variant="h4" fontWeight="bold">
+      {value ?? 0}
+    </Typography>
+  </Paper>
 );
 
-function AdminDashboard() {
+const AdminDashboard = () => {
   const dispatch = useDispatch();
-  const { stats, isLoading } = useSelector((state) => state.admin);
+  const { stats, aiInsights, isLoading, error } = useSelector((state) => state.admin);
 
   useEffect(() => {
     dispatch(getStats());
+    dispatch(getAiInsights());
   }, [dispatch]);
 
+  if (isLoading) {
+    return (
+      <Box textAlign="center" mt={10}>
+        <CircularProgress color="primary" />
+        <Typography mt={2}>Loading analytics...</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Typography color="error" textAlign="center" mt={4}>
+        Failed to load analytics: {error}
+      </Typography>
+    );
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Container maxWidth="lg">
-        <Box textAlign="center" my={5}>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
-            Admin Dashboard
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
-            Platform-wide overview and management tools.
-          </Typography>
-        </Box>
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4" gutterBottom fontWeight="bold">
+        Admin Dashboard
+      </Typography>
 
-        {isLoading ? (
-          <Box display="flex" justifyContent="center"><CircularProgress /></Box>
-        ) : (
-          <Grid container spacing={3} sx={{ mb: 4 }} justifyContent="center">
-            <StatCard value={stats?.totalUsers} title="Total Users" />
-            <StatCard value={stats?.totalSchools} title="Total Schools" />
-            <StatCard value={stats?.totalQuizAttempts} title="Total Quizzes Taken" />
-            <StatCard value={stats?.pendingUsers} title="Pending Approvals" color="warning.main" />
-          </Grid>
-        )}
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard title="Total Users" value={stats?.totalUsers} color="primary.main" />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard title="Total Schools" value={stats?.totalSchools} color="success.main" />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard title="Quizzes Taken" value={stats?.totalAttempts} color="info.main" />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard title="Pending Approvals" value={stats?.pendingUsers || 0} color="warning.main" />
+        </Grid>
+      </Grid>
 
-        <Box
-          component={Paper}
-          elevation={3}
-          sx={{
-            p: 3,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-            justifyContent: 'center',
-          }}
+      {/* 🧠 AI Insights Section */}
+      {aiInsights && (
+        <Paper
+          sx={{ p: 3, mt: 5, borderLeft: '6px solid #6c63ff', borderRadius: 2 }}
+          component={motion.div}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <Button component={RouterLink} to="/admin/users" variant="contained">Manage Users</Button>
-          <Button component={RouterLink} to="/admin/curriculum" variant="contained">Manage Curriculum</Button>
-          <Button component={RouterLink} to="/admin/schools" variant="contained">Manage Schools</Button>
-        </Box>
-      </Container>
-    </motion.div>
+          <Typography variant="h6" gutterBottom>
+            AI Insights
+          </Typography>
+          <Typography variant="body1" color="text.secondary" whiteSpace="pre-line">
+            {aiInsights}
+          </Typography>
+        </Paper>
+      )}
+    </Box>
   );
-}
+};
 
 export default AdminDashboard;

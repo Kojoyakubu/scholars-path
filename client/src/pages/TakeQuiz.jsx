@@ -1,92 +1,232 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useParams, Link as RouterLink } from 'react-router-dom';
-import { getQuizDetails, submitQuiz, resetQuiz } from '../features/student/studentSlice';
-import { motion } from 'framer-motion';
-
-// --- MUI Imports ---
+// /client/src/pages/TakeQuiz.jsx
+import React, { useEffect, useState } from 'react';
 import {
-  Box, Typography, Container, Button, Paper, CircularProgress,
-  Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Alert
+  Box,
+  Container,
+  Typography,
+  Button,
+  Paper,
+  Stack,
+  CircularProgress,
+  useTheme,
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { motion } from 'framer-motion';
+import { useSelector } from 'react-redux';
+import api from '../api/axios';
 
-function TakeQuiz() {
-  const { id } = useParams();
-  const dispatch = useDispatch();
-  const { currentQuiz, quizResult, isLoading, isError, message } = useSelector((state) => state.student);
-  const [answers, setAnswers] = useState({}); // { [questionId]: selectedOptionId }
+// Utility to color-highlight AI feedback dynamically
+const highlightKeywords = (text) => {
+  if (!text) return '';
+  const patterns = [
+    { regex: /\b(excellent|great|strong|amazing|outstanding|well done)\b/gi, color: '#2E7D32' }, // earthy green
+    { regex: /\b(improve|could|needs|attention|try|focus)\b/gi, color: '#CDAA00' }, // deep gold
+    { regex: /\b(recommended|suggests?|next step|consider)\b/gi, color: '#003366' }, // dark blue
+  ];
+  let result = text;
+  patterns.forEach(({ regex, color }) => {
+    result = result.replace(
+      regex,
+      (match) => `<span style="color:${color};font-weight:600">${match}</span>`
+    );
+  });
+  return result;
+};
 
+// Inline AI card
+const AIInsightsCard = ({ title, content }) => {
+  if (!content) return null;
+  return (
+    <Paper
+      sx={{ p: 3, mt: 4, borderLeft: '6px solid #2E7D32', borderRadius: 2, bgcolor: '#f9faf8' }}
+      component={motion.div}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <Typography variant="h6" sx={{ color: '#003366', fontWeight: 700 }} gutterBottom>
+        {title}
+      </Typography>
+      <Typography
+        variant="body1"
+        color="text.secondary"
+        dangerouslySetInnerHTML={{ __html: highlightKeywords(content) }}
+      />
+    </Paper>
+  );
+};
+
+const TakeQuiz = () => {
+  const theme = useTheme();
+  const { user } = useSelector((state) => state.auth || {});
+  const [questions, setQuestions] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [score, setScore] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [aiInsights, setAiInsights] = useState('');
+  const [aiError, setAiError] = useState('');
+
+  // Load quiz questions
   useEffect(() => {
-    dispatch(getQuizDetails(id));
-    // Cleanup function to reset the specific quiz state when leaving the page
-    return () => {
-      dispatch(resetQuiz());
+    const fetchQuiz = async () => {
+      try {
+        const res = await api.get('/api/student/quiz/current');
+        setQuestions(res.data.questions || []);
+      } catch (err) {
+        console.error('Failed to load quiz', err);
+      }
     };
-  }, [dispatch, id]);
-
-  const handleOptionChange = useCallback((questionId, optionId) => {
-    setAnswers(prev => ({ ...prev, [questionId]: optionId }));
+    fetchQuiz();
   }, []);
 
-  const handleSubmit = useCallback((e) => {
-    e.preventDefault();
-    const formattedAnswers = Object.keys(answers).map(questionId => ({
-      questionId,
-      selectedOptionId: answers[questionId],
-    }));
-    dispatch(submitQuiz({ quizId: id, answers: formattedAnswers }));
-  }, [dispatch, id, answers]);
+  const handleAnswer = (questionId, option) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: option }));
+  };
 
-  // --- Render States ---
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      // Evaluate
+      let correct = 0;
+      questions.forEach((q) => {
+        if (answers[q._id] === q.correctAnswer) correct++;
+      });
+      const total = questions.length;
+      const wrong = total - correct;
+      const scorePercent = Math.round((correct / total) * 100);
+      setCorrectCount(correct);
+      setWrongCount(wrong);
+      setScore(scorePercent);
+      setShowResult(true);
 
-  if (isLoading || !currentQuiz) {
-    return <Container sx={{ textAlign: 'center', mt: 10 }}><CircularProgress /></Container>;
-  }
+      // Fetch AI feedback based on performance
+      try {
+        const res = await api.post('/api/student/quiz/insights', {
+          name: user?.fullName,
+          score: scorePercent,
+          totalQuestions: total,
+          correctCount: correct,
+          wrongCount: wrong,
+        });
+        setAiInsights(res?.data?.insight || res?.data?.message || '');
+      } catch (aiErr) {
+        console.error('AI feedback error', aiErr);
+        setAiError(aiErr?.response?.data?.message || aiErr?.message);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  if (isError) {
-    return <Container sx={{ mt: 5 }}><Alert severity="error">{message}</Alert></Container>;
-  }
-
-  // View 1: Quiz has been submitted, show result
-  if (quizResult) {
+  if (!questions.length) {
     return (
-      <Container maxWidth="sm">
-        <Paper elevation={4} sx={{ my: 10, p: 4, textAlign: 'center' }}>
-          <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }}>
-            <CheckCircleOutlineIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
-          </motion.div>
-          <Typography variant="h4" gutterBottom>Quiz Complete!</Typography>
-          <Typography variant="h5">Your Score: {quizResult.score} / {quizResult.totalQuestions}</Typography>
-          <Button component={RouterLink} to="/" variant="contained" sx={{ mt: 4 }}>Back to Dashboard</Button>
-        </Paper>
-      </Container>
+      <Box textAlign="center" mt={10}>
+        <CircularProgress />
+        <Typography mt={2}>Loading quiz questions…</Typography>
+      </Box>
     );
   }
 
-  // View 2: Show the quiz questions
+  const currentQ = questions[current];
+  const isLast = current === questions.length - 1;
+
   return (
-    <Container maxWidth="md">
-      <Paper elevation={4} sx={{ my: 5, p: { xs: 2, md: 4 } }}>
-        <Typography variant="h4" component="h1" align="center" gutterBottom>{currentQuiz.title}</Typography>
-        <Box component="form" onSubmit={handleSubmit}>
-          {currentQuiz.questions.map((q, index) => (
-            <FormControl key={q._id} component="fieldset" margin="normal" fullWidth>
-              <FormLabel component="legend" sx={{ fontWeight: 'bold', mb: 1 }}>{index + 1}. {q.text}</FormLabel>
-              <RadioGroup name={q._id} value={answers[q._id] || ''} onChange={(e) => handleOptionChange(q._id, e.target.value)}>
-                {q.options.map(opt => (
-                  <FormControlLabel key={opt._id} value={opt._id} control={<Radio />} label={opt.text} />
-                ))}
-              </RadioGroup>
-            </FormControl>
-          ))}
-          <Button type="submit" variant="contained" size="large" fullWidth sx={{ mt: 3 }} disabled={Object.keys(answers).length !== currentQuiz.questions.length}>
-            Submit Quiz
-          </Button>
-        </Box>
-      </Paper>
-    </Container>
+    <Box sx={{ py: 8, bgcolor: theme.palette.background.default }}>
+      <Container maxWidth="md">
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Take Quiz
+        </Typography>
+
+        {!showResult ? (
+          <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Question {current + 1} of {questions.length}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              {currentQ?.question}
+            </Typography>
+            <Stack spacing={1}>
+              {currentQ?.options?.map((opt, i) => (
+                <Button
+                  key={i}
+                  variant={answers[currentQ._id] === opt ? 'contained' : 'outlined'}
+                  color="primary"
+                  onClick={() => handleAnswer(currentQ._id, opt)}
+                >
+                  {opt}
+                </Button>
+              ))}
+            </Stack>
+
+            <Stack direction="row" justifyContent="space-between" sx={{ mt: 3 }}>
+              <Button
+                disabled={current === 0}
+                onClick={() => setCurrent((c) => c - 1)}
+                variant="outlined"
+              >
+                Previous
+              </Button>
+              {!isLast ? (
+                <Button onClick={() => setCurrent((c) => c + 1)} variant="contained">
+                  Next
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  variant="contained"
+                  color="success"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting…' : 'Submit'}
+                </Button>
+              )}
+            </Stack>
+          </Paper>
+        ) : (
+          <Paper
+            elevation={3}
+            sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}
+            component={motion.div}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Typography variant="h5" fontWeight={700} gutterBottom>
+              Quiz Results
+            </Typography>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Score: {score}%
+            </Typography>
+            <Typography color="text.secondary">
+              Correct: {correctCount} / {questions.length} &nbsp;|&nbsp; Wrong: {wrongCount}
+            </Typography>
+
+            {/* AI Feedback appears only after results */}
+            {user && (
+              <>
+                {aiError ? (
+                  <Typography color="error" sx={{ mt: 3 }}>
+                    {aiError}
+                  </Typography>
+                ) : (
+                  <AIInsightsCard
+                    title={`Your Quiz Insights, ${user.fullName || 'Student'}`}
+                    content={
+                      aiInsights ||
+                      'Analyzing your performance and generating personalized feedback...'
+                    }
+                  />
+                )}
+              </>
+            )}
+          </Paper>
+        )}
+      </Container>
+    </Box>
   );
-}
+};
 
 export default TakeQuiz;

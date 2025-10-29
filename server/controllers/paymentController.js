@@ -1,114 +1,158 @@
-// server/controllers/paymentController.js
+// /server/controllers/paymentController.js
 
 const asyncHandler = require('express-async-handler');
-const axios = require('axios');
-const crypto = require('crypto'); // Needed for webhook verification
-const Subscription = require('../models/subscriptionModel');
-
-// --- Service function (Ideally, move this to a separate file e.g., /services/subscriptionService.js) ---
+const Payment = require('../models/paymentModel');
+const User = require('../models/userModel');
+const aiService = require('../services/aiService');
+const mongoose = require('mongoose');
 
 /**
- * Creates or updates a user's subscription record.
- * @param {string} userId - The user's ID.
- * @param {string} plan - The subscription plan ('monthly' or 'yearly').
- * @param {string} reference - The Paystack transaction reference.
- * @returns {Promise<object>} The created or updated subscription document.
+ * @desc   Create a new payment record
+ * @route  POST /api/payments
+ * @access Private (Admin/System)
  */
-const activateSubscription = async (userId, plan, reference) => {
-  const expiresAt = new Date();
-  const subscriptionDays = plan === 'yearly' ? 365 : 30;
-  expiresAt.setDate(expiresAt.getDate() + subscriptionDays);
+const createPayment = asyncHandler(async (req, res) => {
+  const { userId, amount, method, reference, description } = req.body;
 
-  return Subscription.findOneAndUpdate(
-    { user: userId },
-    {
-      plan,
-      status: 'active',
-      paystackReference: reference,
-      expiresAt,
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true } // `setDefaultsOnInsert` is good practice
-  );
-};
-
-// --- Controller Functions ---
-
-// @desc    Initialize a payment with Paystack
-// @route   POST /api/payments/initialize
-// @access  Private
-const initializePayment = asyncHandler(async (req, res) => {
-  const { amount, plan } = req.body; // Email is taken from the authenticated user
-  const email = req.user.email;
-
-  // Validate required environment variables
-  if (!process.env.PAYSTACK_SECRET_KEY) {
-      throw new Error('Paystack secret key is not configured.');
+  if (!userId || !amount || !method || !reference) {
+    res.status(400);
+    throw new Error('Missing required payment fields.');
   }
 
-  // Input validation
-  if (!amount || !plan || !['monthly', 'yearly'].includes(plan)) {
-      res.status(400);
-      throw new Error('Invalid request. Amount and a valid plan (monthly/yearly) are required.');
+  const user = await User.findById(userId);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found.');
   }
 
-  const response = await axios.post('https://api.paystack.co/transaction/initialize', {
-    email,
-    amount: amount * 100, // Paystack expects amount in kobo
-    metadata: {
-      userId: req.user._id.toString(), // Ensure it's a string
-      plan,
-    }
-  }, {
-    headers: {
-      Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-      'Content-Type': 'application/json'
-    }
+  const payment = await Payment.create({
+    user: userId,
+    amount,
+    method,
+    reference,
+    description,
+    status: 'completed',
   });
 
-  res.json(response.data);
+  res.status(201).json({
+    message: 'Payment recorded successfully.',
+    payment,
+  });
 });
 
-
-// @desc    Handle Paystack webhook for payment verification
-// @route   POST /api/payments/webhook
-// @access  Public (Webhook from Paystack)
-const handlePaystackWebhook = asyncHandler(async (req, res) => {
-    // --- SECURITY: Verify the webhook signature ---
-    // This ensures the request is genuinely from Paystack.
-    const hash = crypto.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
-                       .update(JSON.stringify(req.body))
-                       .digest('hex');
-
-    if (hash !== req.headers['x-paystack-signature']) {
-        // Signature is invalid, ignore the request
-        return res.sendStatus(401);
-    }
-
-    const event = req.body;
-
-    // Process only successful charge events
-    if (event.event === 'charge.success') {
-        const { status, reference, metadata } = event.data;
-        
-        if (status === 'success') {
-            const { userId, plan } = metadata;
-            
-            // Check if userId and plan exist in metadata
-            if (userId && plan) {
-                await activateSubscription(userId, plan, reference);
-                console.log(`Subscription activated for user: ${userId}`);
-            } else {
-                console.error('Webhook received with missing userId or plan in metadata.', metadata);
-            }
-        }
-    }
-
-    // Acknowledge receipt of the event to Paystack
-    res.sendStatus(200);
+/**
+ * @desc   Get all payments (admin)
+ * @route  GET /api/payments
+ * @access Private (Admin)
+ */
+const getAllPayments = asyncHandler(async (req, res) => {
+  const payments = await Payment.find()
+    .populate('user', 'name email role')
+    .sort({ createdAt: -1 });
+  res.json(payments);
 });
 
+/**
+ * @desc   Get payments for a specific user
+ * @route  GET /api/payments/user/:id
+ * @access Private
+ */
+const getUserPayments = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400);
+    throw new Error('Invalid user ID.');
+  }
+
+  const payments = await Payment.find({ user: id }).sort({ createdAt: -1 });
+  res.json(payments);
+});
+
+/**
+ * @desc   Generate AI invoice/payment summary
+ * @route  GET /api/payments/:id/summary
+ * @access Private (Admin/Teacher)
+ */
+const getPaymentSummary = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400);
+    throw new Error('Invalid payment ID.');
+  }
+
+  const payment = await Payment.findById(id).populate('user', 'name email role');
+  if (!payment) {
+    res.status(404);
+    throw new Error('Payment not found.');
+  }
+
+  const prompt = `
+You are a financial assistant for an educational institution.
+Generate a short invoice explanation for this payment record:
+
+Payment Details:
+- Name: ${payment.user?.name || 'N/A'}
+- Role: ${payment.user?.role || 'N/A'}
+- Amount: GHS ${payment.amount}
+- Method: ${payment.method}
+- Reference: ${payment.reference}
+- Description: ${payment.description || 'No description'}
+- Date: ${payment.createdAt.toDateString()}
+- Status: ${payment.status}
+
+Instructions:
+1. Write in clear, simple English (max 4 sentences).
+2. State what the payment likely represents (e.g., subscription, renewal, or purchase).
+3. Mention if it was successful and which method was used.
+4. Be formal and concise.
+`;
+
+  try {
+    const { text, provider, model } = await aiService.generateTextCore({
+      prompt,
+      task: 'paymentSummary',
+      temperature: 0.4,
+      preferredProvider: 'chatgpt', // ChatGPT or Gemini works best for structured summaries
+    });
+
+    res.json({
+      payment,
+      aiSummary: text.trim(),
+      provider,
+      model,
+    });
+  } catch (err) {
+    console.error('AI payment summary failed:', err.message);
+    res.json({
+      payment,
+      aiSummary: `Payment of GHS ${payment.amount} was recorded successfully for ${payment.user?.name}.`,
+      provider: 'fallback',
+    });
+  }
+});
+
+/**
+ * @desc   Delete a payment (admin only)
+ * @route  DELETE /api/payments/:id
+ * @access Private (Admin)
+ */
+const deletePayment = asyncHandler(async (req, res) => {
+  const payment = await Payment.findById(req.params.id);
+  if (!payment) {
+    res.status(404);
+    throw new Error('Payment not found.');
+  }
+
+  await payment.deleteOne();
+  res.json({ message: 'Payment deleted successfully.' });
+});
 
 module.exports = {
-  initializePayment,
-  handlePaystackWebhook, // Changed from verifyPayment to reflect webhook pattern
+  createPayment,
+  getAllPayments,
+  getUserPayments,
+  getPaymentSummary,
+  deletePayment,
 };

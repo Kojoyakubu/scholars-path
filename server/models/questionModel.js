@@ -1,47 +1,23 @@
-// server/models/questionModel.js
 const mongoose = require('mongoose');
 
-const questionSchema = new mongoose.Schema({
-  quiz: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'Quiz',
-    index: true,
+const questionSchema = new mongoose.Schema(
+  {
+    text: { type: String, required: true },
+    difficultyLevel: {
+      type: String,
+      enum: ['Easy', 'Medium', 'Hard'],
+      default: 'Medium',
+    },
+    topicTags: [{ type: String }],
   },
-  section: {
-    type: String,
-    required: true,
-    default: 'Section A',
-    trim: true,
-  },
-  text: {
-    type: String,
-    required: [true, 'Question text cannot be empty.'],
-    trim: true,
-  },
-  questionType: {
-    type: String,
-    enum: ['MCQ', 'SHORT_ANSWER', 'ESSAY', 'TRUE_FALSE', 'FILL_IN_THE_BLANK'],
-    default: 'MCQ',
-  },
-}, { 
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
-});
+  { timestamps: true }
+);
 
-// Virtual field to populate options associated with this question
+// Virtual link to options
 questionSchema.virtual('options', {
   ref: 'Option',
   localField: '_id',
-  foreignField: 'question'
-});
-
-// Middleware to remove options before deleting a question
-questionSchema.pre('deleteOne', { document: true, query: false }, async function(next) {
-  console.log(`Cascading delete: Removing options for question: ${this._id}`);
-  await mongoose.model('Option').deleteMany({ question: this._id });
-  next();
+  foreignField: 'question',
 });
 
 module.exports = mongoose.model('Question', questionSchema);

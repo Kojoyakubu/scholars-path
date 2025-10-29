@@ -1,115 +1,59 @@
 // /client/src/theme.js
+import { createTheme } from '@mui/material/styles';
 
-import { createTheme, responsiveFontSizes } from '@mui/material/styles';
-
-let theme = createTheme({
+const theme = createTheme({
   palette: {
+    mode: 'light', // or 'dark' if you want deep contrast
     primary: {
-      main: '#3F51B5', // A strong, academic blue
-      light: '#757de8',
-      dark: '#002984',
+      main: '#1E8449',   // Rich forest green
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#00BCD4', // A vibrant, engaging teal/cyan
-      light: '#5edbe6',
-      dark: '#008ba3',
+      main: '#145A32',   // Deeper earthy tone
       contrastText: '#ffffff',
     },
     background: {
-      default: '#F8F9FA', // Very light grey, almost white for the main app background
-      paper: '#FFFFFF',   // Pure white for cards, modals, etc.
-    },
-    text: {
-      primary: '#212121', // Dark grey for primary text, good readability
-      secondary: '#757575', // Lighter grey for secondary text
+      default: '#F9FBE7', // Soft natural background
+      paper: '#F1F8E9',
     },
     success: {
-      main: '#4CAF50',
+      main: '#28B463',   // Consistent with AuthPortal button
     },
     error: {
-      main: '#F44336',
+      main: '#C0392B',
     },
-    warning: {
-      main: '#FFC107',
-    },
-    info: {
-      main: '#2196F3',
+    text: {
+      primary: '#1B2631',  // Deep ink color
+      secondary: '#2E4053',
     },
   },
   typography: {
-    fontFamily: '"Poppins", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontWeight: 700,
-      fontSize: '3rem',
-      '@media (min-width:600px)': {
-        fontSize: '4.5rem',
-      },
-      lineHeight: 1.2,
-    },
-    h2: {
-      fontWeight: 600,
-      fontSize: '2.5rem',
-      '@media (min-width:600px)': {
-        fontSize: '3.5rem',
-      },
-    },
-    h3: {
-      fontWeight: 600,
-      fontSize: '2rem',
-      '@media (min-width:600px)': {
-        fontSize: '2.8rem',
-      },
-    },
+    fontFamily: '"Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h4: {
-      fontWeight: 600,
-      fontSize: '1.8rem',
-      '@media (min-width:600px)': {
-        fontSize: '2.2rem',
-      },
+      fontWeight: 700,
+      color: '#145A32',
     },
     h5: {
       fontWeight: 600,
-      fontSize: '1.4rem',
-    },
-    h6: {
-      fontWeight: 600,
-      fontSize: '1.2rem',
+      color: '#1E8449',
     },
     body1: {
-      fontSize: '1rem',
-    },
-    body2: {
-      fontSize: '0.875rem',
+      color: '#2E4053',
     },
     button: {
+      textTransform: 'none',
       fontWeight: 600,
-      textTransform: 'none', // Keep button text natural
     },
-  },
-  shape: {
-    borderRadius: 12, // Slightly more rounded for a friendly, modern look
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
-          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', // Subtle shadow for depth
+          borderRadius: 8,
+          padding: '10px 18px',
+          boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-          },
-        },
-        containedPrimary: {
-          backgroundColor: '#3F51B5',
-          '&:hover': {
-            backgroundColor: '#303f9f',
-          },
-        },
-        containedSecondary: {
-          backgroundColor: '#00BCD4',
-          '&:hover': {
-            backgroundColor: '#0097a7',
+            boxShadow: '0 4px 10px rgba(20,90,50,0.3)',
           },
         },
       },
@@ -117,46 +61,11 @@ let theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.08)', // More pronounced shadow for cards
           borderRadius: 12,
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.08)',
-          borderRadius: 12,
-        },
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          boxShadow: 'none', // Often good for AppBars within a dashboard layout
-          borderBottom: '1px solid #e0e0e0',
-        },
-      },
-    },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
-          borderRadius: '0 12px 12px 0', // Rounded only on the visible edge
-        },
-      },
-    },
-    MuiTooltip: {
-      styleOverrides: {
-        tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          fontSize: '0.8rem',
         },
       },
     },
   },
 });
 
-theme = responsiveFontSizes(theme); // Make font sizes responsive
-
-export { theme };
+export default theme;
