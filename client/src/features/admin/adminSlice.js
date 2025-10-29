@@ -8,6 +8,7 @@ const initialState = {
   page: 1,
   stats: {},
   schools: [],
+  aiInsights: null, // ✅ Added for AI Insights
   isLoading: false,
   isError: false,
   isSuccess: false,
@@ -19,7 +20,7 @@ export const getUsers = createAsyncThunk('admin/getUsers', async (pageNumber, th
   try {
     return await adminService.getUsers(pageNumber);
   } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
+    const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -28,7 +29,7 @@ export const approveUser = createAsyncThunk('admin/approveUser', async (userId, 
   try {
     return await adminService.approveUser(userId);
   } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
+    const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -37,7 +38,7 @@ export const deleteUser = createAsyncThunk('admin/deleteUser', async (userId, th
   try {
     return await adminService.deleteUser(userId);
   } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
+    const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -46,7 +47,7 @@ export const assignUserToSchool = createAsyncThunk('admin/assignUserToSchool', a
   try {
     return await adminService.assignUserToSchool(data);
   } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
+    const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -55,7 +56,7 @@ export const getStats = createAsyncThunk('admin/getStats', async (_, thunkAPI) =
   try {
     return await adminService.getStats();
   } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
+    const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -64,7 +65,7 @@ export const getSchools = createAsyncThunk('admin/getSchools', async (_, thunkAP
   try {
     return await adminService.getSchools();
   } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
+    const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -73,7 +74,7 @@ export const createSchool = createAsyncThunk('admin/createSchool', async (school
   try {
     return await adminService.createSchool(schoolData);
   } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
+    const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -82,11 +83,20 @@ export const deleteSchool = createAsyncThunk('admin/deleteSchool', async (school
   try {
     return await adminService.deleteSchool(schoolId);
   } catch (error) {
-    const message = (error.response?.data?.message) || error.message || error.toString();
+    const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
+// 🧠 NEW: AI Insights
+export const getAiInsights = createAsyncThunk('admin/getAiInsights', async (_, thunkAPI) => {
+  try {
+    return await adminService.getAiInsights();
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
 
 // --- Admin Slice ---
 export const adminSlice = createSlice({
@@ -97,7 +107,7 @@ export const adminSlice = createSlice({
       state.isError = false;
       state.isSuccess = false;
       state.message = '';
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -107,21 +117,21 @@ export const adminSlice = createSlice({
         state.page = action.payload.page;
         state.pages = action.payload.pages;
       })
-      
-      // ✅ CORRECTED approveUser LOGIC
+
+      // approveUser
       .addCase(approveUser.fulfilled, (state, action) => {
-        const index = state.users.findIndex(user => user._id === action.payload.id);
+        const index = state.users.findIndex((user) => user._id === action.payload.id);
         if (index !== -1) {
           state.users[index].status = 'approved';
         }
         state.isSuccess = true;
         state.message = action.payload.message;
       })
-      
-      // assignUserToSchool (returns the full user object)
+
+      // assignUserToSchool
       .addCase(assignUserToSchool.fulfilled, (state, action) => {
-        state.users = state.users.map(user => 
-            user._id === action.payload._id ? action.payload : user
+        state.users = state.users.map((user) =>
+          user._id === action.payload._id ? action.payload : user
         );
       })
 
@@ -129,38 +139,44 @@ export const adminSlice = createSlice({
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.users = state.users.filter((user) => user._id !== action.payload);
       })
-      
+
       // getStats
       .addCase(getStats.fulfilled, (state, action) => {
         state.stats = action.payload;
       })
-      
+
       // getSchools
       .addCase(getSchools.fulfilled, (state, action) => {
         state.schools = action.payload;
       })
-      
+
       // createSchool
       .addCase(createSchool.fulfilled, (state, action) => {
         state.schools.push(action.payload.school);
       })
-      
+
       // deleteSchool
       .addCase(deleteSchool.fulfilled, (state, action) => {
         state.schools = state.schools.filter((school) => school._id !== action.payload);
       })
 
-      // Generic matchers for handling loading and error states
-      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/pending'), (state) => {
-        state.isLoading = true;
+      // 🧠 getAiInsights
+      .addCase(getAiInsights.fulfilled, (state, action) => {
+        state.aiInsights = action.payload;
+        state.isSuccess = true;
       })
-      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/fulfilled'), (state) => {
-        state.isLoading = false;
+
+      // Matchers (loading + error)
+      .addMatcher((a) => a.type.startsWith('admin/') && a.type.endsWith('/pending'), (s) => {
+        s.isLoading = true;
       })
-      .addMatcher((action) => action.type.startsWith('admin/') && action.type.endsWith('/rejected'), (state, action) => {
-        state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+      .addMatcher((a) => a.type.startsWith('admin/') && a.type.endsWith('/fulfilled'), (s) => {
+        s.isLoading = false;
+      })
+      .addMatcher((a) => a.type.startsWith('admin/') && a.type.endsWith('/rejected'), (s, a) => {
+        s.isLoading = false;
+        s.isError = true;
+        s.message = a.payload;
       });
   },
 });
