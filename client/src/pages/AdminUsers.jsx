@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getUsers, getAiInsights, deleteUser } from '../../features/admin/adminSlice';
+import { getUsers, getAiInsights, deleteUser } from '../features/admin/adminSlice';
 import {
   Box, Typography, CircularProgress, IconButton, Paper, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Tooltip

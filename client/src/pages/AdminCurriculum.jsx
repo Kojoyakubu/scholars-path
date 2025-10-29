@@ -32,7 +32,7 @@ import {
 } from '../../features/curriculum/curriculumSlice';
 
 // AI insights
-import { getAiInsights } from '../../features/admin/adminSlice';
+import { getAiInsights } from '../features/admin/adminSlice';
 import AIInsightsCard from '../../components/AIInsightsCard';
 
 const Section = ({ title, onCreate, createLabel, items, onSelect, onDelete, selectedId, placeholder = 'Name' }) => {
