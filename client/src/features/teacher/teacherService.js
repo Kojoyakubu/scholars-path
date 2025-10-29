@@ -1,4 +1,4 @@
-import api from './api/axios';
+import api from '../../api/axios';
 
 const getMyLessonNotes = async () => {
   const response = await api.get('/teacher/lesson-notes');
