@@ -25,7 +25,7 @@ import {
   getLessonNoteById,
   deleteLessonNote,
   getAiInsights,
-} from '../../features/teacher/teacherSlice';
+} from '../features/teacher/teacherSlice';
 
 // export helpers
 import { downloadAsPdf, downloadAsWord } from '../../utils/downloadHelper';

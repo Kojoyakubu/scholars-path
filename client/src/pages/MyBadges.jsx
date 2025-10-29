@@ -16,7 +16,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { motion } from 'framer-motion';
 
 // Redux
-import { getMyBadges, getAiInsights } from '../../features/student/studentSlice';
+import { getMyBadges, getAiInsights } from '../features/student/studentSlice';
 
 // Shared AI card
 import AIInsightsCard from '../../components/AIInsightsCard';
