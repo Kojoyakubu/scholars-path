@@ -1,10 +1,17 @@
 import axios from 'axios';
 
-// ✅ Always use environment variable; fallback only for local dev
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+let baseURL = import.meta.env.VITE_API_URL;
+
+// ✅ If env not loaded in build, use a dynamic fallback
+if (!baseURL) {
+  const origin = window.location.origin;
+  baseURL = origin.includes('render.com')
+    ? 'https://scholars-path-backend.onrender.com/api'
+    : 'http://localhost:5000/api';
+}
 
 const API = axios.create({
-  baseURL: API_URL,
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
