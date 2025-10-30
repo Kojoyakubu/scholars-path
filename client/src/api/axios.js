@@ -4,7 +4,7 @@ import axios from 'axios';
 // This is the CORRECT way for a Vite project.
 // In development, it defaults to '/api' to use the Vite proxy.
 // In production, it uses the environment variable you set on Render.
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
