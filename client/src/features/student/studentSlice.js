@@ -3,11 +3,12 @@ import studentService from './studentService';
 
 // --- Initial State ---
 const initialState = {
-  badges: [],
   learnerNotes: [],
   quizzes: [],
   resources: [],
+  badges: [],
   aiInsights: null,
+  noteViews: [], // ✅ added for logNoteView tracking
   isLoading: false,
   isError: false,
   isSuccess: false,
@@ -20,26 +21,6 @@ const initialState = {
 export const getLearnerNotes = createAsyncThunk('student/getLearnerNotes', async (_, thunkAPI) => {
   try {
     return await studentService.getLearnerNotes();
-  } catch (error) {
-    const message = error.response?.data?.message || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-// 🧠 Fetch AI Insights
-export const getAiInsights = createAsyncThunk('student/getAiInsights', async (_, thunkAPI) => {
-  try {
-    return await studentService.getAiInsights();
-  } catch (error) {
-    const message = error.response?.data?.message || error.message || error.toString();
-    return thunkAPI.rejectWithValue(message);
-  }
-});
-
-// 🏅 Fetch badges
-export const getMyBadges = createAsyncThunk('student/getMyBadges', async (_, thunkAPI) => {
-  try {
-    return await studentService.getMyBadges();
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
@@ -66,6 +47,36 @@ export const getResources = createAsyncThunk('student/getResources', async (_, t
   }
 });
 
+// 🧠 Fetch AI Insights
+export const getAiInsights = createAsyncThunk('student/getAiInsights', async (_, thunkAPI) => {
+  try {
+    return await studentService.getAiInsights();
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+// 🏅 Fetch badges
+export const getMyBadges = createAsyncThunk('student/getMyBadges', async (_, thunkAPI) => {
+  try {
+    return await studentService.getMyBadges();
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+// 📝 Log when student views a note
+export const logNoteView = createAsyncThunk('student/logNoteView', async (noteId, thunkAPI) => {
+  try {
+    return await studentService.logNoteView(noteId);
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 // --- Slice ---
 export const studentSlice = createSlice({
   name: 'student',
@@ -80,23 +91,8 @@ export const studentSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // getLearnerNotes
-      .addCase(getLearnerNotes.pending, (state) => {
-        state.isLoading = true;
-      })
       .addCase(getLearnerNotes.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.isSuccess = true;
         state.learnerNotes = action.payload;
-      })
-      .addCase(getLearnerNotes.rejected, (state, action) => {
-        state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
-      })
-
-      // getMyBadges
-      .addCase(getMyBadges.fulfilled, (state, action) => {
-        state.badges = action.payload;
         state.isSuccess = true;
       })
 
@@ -110,12 +106,22 @@ export const studentSlice = createSlice({
         state.resources = action.payload;
       })
 
+      // getMyBadges
+      .addCase(getMyBadges.fulfilled, (state, action) => {
+        state.badges = action.payload;
+      })
+
       // getAiInsights
       .addCase(getAiInsights.fulfilled, (state, action) => {
         state.aiInsights = action.payload;
       })
 
-      // Generic pending/rejected matchers
+      // logNoteView
+      .addCase(logNoteView.fulfilled, (state, action) => {
+        state.noteViews.push(action.payload);
+      })
+
+      // Global matchers
       .addMatcher((a) => a.type.startsWith('student/') && a.type.endsWith('/pending'), (s) => {
         s.isLoading = true;
       })
