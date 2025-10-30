@@ -10,11 +10,11 @@ const {
   deleteUser,
 } = require('../controllers/userController');
 
-// Public routes
+// --- PUBLIC ROUTES ---
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 
-// Private/Admin routes
+// --- PROTECTED ROUTES ---
 router.get('/', getAllUsers);
 router.get('/:id', getUserProfile);
 router.get('/:id/summary', getUserSummary);
