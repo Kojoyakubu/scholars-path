@@ -1,111 +1,121 @@
-// /server/controllers/userController.js
-
 const asyncHandler = require('express-async-handler');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
-const School = require('../models/schoolModel');
-const aiService = require('../services/aiService');
-const mongoose = require('mongoose');
 
 /**
- * @desc    Register a new user (teacher, student, or admin)
+ * @desc    Register a new user
  * @route   POST /api/users/register
  * @access  Public
  */
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role, schoolId, aiWelcome } = req.body;
+  const { name, email, password, role, school } = req.body;
 
   if (!name || !email || !password) {
     res.status(400);
-    throw new Error('Name, email, and password are required.');
+    throw new Error('Please provide name, email, and password');
   }
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
+  const userExists = await User.findOne({ email });
+  if (userExists) {
     res.status(400);
-    throw new Error('User already exists with this email.');
+    throw new Error('User already exists');
   }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await User.create({
     name,
     email,
-    password,
+    password: hashedPassword,
     role: role || 'student',
-    school: schoolId || null,
+    school: school || null,
   });
 
-  // 🧠 Generate a custom AI onboarding message if requested
-  let aiWelcomeMessage = '';
-  if (aiWelcome) {
-    try {
-      const prompt = `
-You are a friendly Ghanaian school assistant.
-Write a short welcome message (2–4 sentences) for a new user on the Scholars Path platform.
-
-User Info:
-- Name: ${name}
-- Role: ${role}
-- School: ${(await School.findById(schoolId))?.name || 'Independent User'}
-
-Tone:
-- Friendly, warm, and motivational.
-- Encourage engagement with the learning tools available.
-`;
-
-      const { text } = await aiService.generateTextCore({
-        prompt,
-        task: 'userOnboarding',
-        temperature: 0.65,
-        preferredProvider: 'chatgpt',
-      });
-
-      aiWelcomeMessage = text.trim();
-    } catch (err) {
-      console.error('AI onboarding failed:', err.message);
-    }
+  if (user) {
+    res.status(201).json({
+      message: 'User registered successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } else {
+    res.status(400);
+    throw new Error('Invalid user data');
   }
-
-  res.status(201).json({
-    message: 'User registered successfully.',
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
-    aiWelcomeMessage,
-  });
 });
 
 /**
- * @desc    Get all users (admin only)
+ * @desc    Authenticate user & get token
+ * @route   POST /api/users/login
+ * @access  Public
+ */
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (user && (await bcrypt.compare(password, user.password))) {
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } else {
+    res.status(401);
+    throw new Error('Invalid email or password');
+  }
+});
+
+/**
+ * @desc    Get all users
  * @route   GET /api/users
  * @access  Private (Admin)
  */
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find()
-    .populate('school', 'name')
-    .select('-password')
-    .sort({ createdAt: -1 });
+  const users = await User.find().select('-password');
   res.json(users);
 });
 
 /**
- * @desc    Get a single user profile
+ * @desc    Get user profile
  * @route   GET /api/users/:id
  * @access  Private
  */
 const getUserProfile = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400);
-    throw new Error('Invalid user ID.');
+  const user = await User.findById(req.params.id).select('-password');
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(404);
+    throw new Error('User not found');
   }
+});
 
-  const user = await User.findById(id).populate('school', 'name location');
+/**
+ * @desc    Get user summary (for dashboard)
+ * @route   GET /api/users/:id/summary
+ * @access  Private
+ */
+const getUserSummary = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select('-password');
   if (!user) {
     res.status(404);
-    throw new Error('User not found.');
+    throw new Error('User not found');
   }
 
   res.json({
@@ -113,124 +123,62 @@ const getUserProfile = asyncHandler(async (req, res) => {
     name: user.name,
     email: user.email,
     role: user.role,
-    school: user.school,
+    school: user.school || 'Not assigned',
   });
 });
 
 /**
- * @desc    Generate AI user summary (for admin insights)
- * @route   GET /api/users/:id/summary
- * @access  Private (Admin)
- */
-const getUserSummary = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400);
-    throw new Error('Invalid user ID.');
-  }
-
-  const user = await User.findById(id).populate('school', 'name location');
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found.');
-  }
-
-  const prompt = `
-You are an AI assistant for Scholars Path.
-Generate a short summary (3–5 sentences) about this user's profile.
-
-User Information:
-- Name: ${user.name}
-- Role: ${user.role}
-- Email: ${user.email}
-- School: ${user.school?.name || 'Independent User'}
-- Location: ${user.school?.location || 'Not specified'}
-
-Guidelines:
-- Keep tone respectful and professional.
-- Highlight what this role means within the platform (e.g., teacher uploads notes, student takes quizzes, admin manages users).
-- Mention one area of engagement or improvement based on the role type.
-`;
-
-  try {
-    const { text, provider, model } = await aiService.generateTextCore({
-      prompt,
-      task: 'userSummary',
-      temperature: 0.55,
-      preferredProvider: 'gemini',
-    });
-
-    res.json({
-      user,
-      aiSummary: text.trim(),
-      provider,
-      model,
-    });
-  } catch (err) {
-    console.error('AI user summary failed:', err.message);
-    res.json({
-      user,
-      aiSummary: `User ${user.name} is a valued ${user.role} on Scholars Path, contributing actively to the school learning ecosystem.`,
-      provider: 'fallback',
-    });
-  }
-});
-
-/**
- * @desc    Update user profile (Admin or self)
+ * @desc    Update user profile
  * @route   PUT /api/users/:id
  * @access  Private
  */
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { name, email, role, schoolId } = req.body;
+  const user = await User.findById(req.params.id);
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400);
-    throw new Error('Invalid user ID.');
-  }
-
-  const user = await User.findById(id);
   if (!user) {
     res.status(404);
-    throw new Error('User not found.');
+    throw new Error('User not found');
   }
 
-  user.name = name || user.name;
-  user.email = email || user.email;
-  user.role = role || user.role;
-  user.school = schoolId || user.school;
+  user.name = req.body.name || user.name;
+  user.email = req.body.email || user.email;
+  if (req.body.password) {
+    user.password = await bcrypt.hash(req.body.password, 10);
+  }
 
-  await user.save();
-  res.json({ message: 'User updated successfully.', user });
+  const updatedUser = await user.save();
+
+  res.json({
+    message: 'Profile updated successfully',
+    user: {
+      id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+    },
+  });
 });
 
 /**
- * @desc    Delete a user (admin)
+ * @desc    Delete user
  * @route   DELETE /api/users/:id
  * @access  Private (Admin)
  */
 const deleteUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const user = await User.findById(req.params.id);
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400);
-    throw new Error('Invalid user ID.');
-  }
-
-  const user = await User.findById(id);
   if (!user) {
     res.status(404);
-    throw new Error('User not found.');
+    throw new Error('User not found');
   }
 
   await user.deleteOne();
-  res.json({ message: 'User deleted successfully.' });
+  res.json({ message: 'User deleted successfully' });
 });
 
 module.exports = {
   registerUser,
+  loginUser,
   getAllUsers,
   getUserProfile,
   getUserSummary,

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-
 const {
   registerUser,
+  loginUser,
   getAllUsers,
   getUserProfile,
   getUserSummary,
@@ -10,20 +10,15 @@ const {
   deleteUser,
 } = require('../controllers/userController');
 
-const { protect, authorize } = require('../middleware/authMiddleware');
-
-// ==============================
-// Public: Registration
-// ==============================
+// Public routes
 router.post('/register', registerUser);
+router.post('/login', loginUser);
 
-// ==============================
-// Admin: User Management
-// ==============================
-router.get('/', protect, authorize('admin', 'school_admin'), getAllUsers);
-router.get('/:id', protect, authorize('admin', 'school_admin'), getUserProfile);
-router.get('/:id/summary', protect, authorize('admin', 'school_admin'), getUserSummary);
-router.put('/:id', protect, authorize('admin', 'school_admin'), updateUserProfile);
-router.delete('/:id', protect, authorize('admin', 'school_admin'), deleteUser);
+// Private/Admin routes
+router.get('/', getAllUsers);
+router.get('/:id', getUserProfile);
+router.get('/:id/summary', getUserSummary);
+router.put('/:id', updateUserProfile);
+router.delete('/:id', deleteUser);
 
 module.exports = router;
