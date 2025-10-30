@@ -1,10 +1,7 @@
-// /server/controllers/schoolController.js
-
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const School = require('../models/schoolModel');
-const Teacher = require('../models/teacherModel');
-const Student = require('../models/studentModel');
+const User = require('../models/userModel'); // ✅ replaced Teacher import
 const aiService = require('../services/aiService');
 
 /**
@@ -101,9 +98,10 @@ const getSchoolDetails = asyncHandler(async (req, res) => {
     throw new Error('School not found.');
   }
 
+  // ✅ Updated to count users by role instead of using missing Teacher model
   const [teacherCount, studentCount] = await Promise.all([
-    Teacher.countDocuments({ school: id }),
-    Student.countDocuments({ school: id }),
+    User.countDocuments({ school: id, role: 'teacher' }),
+    User.countDocuments({ school: id, role: 'student' }),
   ]);
 
   res.json({
