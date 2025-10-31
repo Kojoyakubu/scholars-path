@@ -14,10 +14,10 @@ if (!baseURL) {
 
   if (hostname.includes('onrender.com')) {
     // Production (Render frontend)
-    baseURL = 'https://scholars-path-backend.onrender.com/api';
+    baseURL = 'https://scholars-path-backend.onrender.com'; // 🟩 Removed the extra /api
   } else {
     // Local dev
-    baseURL = 'http://localhost:5000/api';
+    baseURL = 'http://localhost:5000'; // 🟩 Removed the extra /api
   }
 }
 
