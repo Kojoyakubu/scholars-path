@@ -11,20 +11,16 @@ const {
   deleteUser,
 } = require('../controllers/userController');
 
-// ================================
-// 📂 PUBLIC ROUTES (no token needed)
-// ================================
-router.post('/register', registerUser); // Create new user
-router.post('/login', loginUser);       // Authenticate user (Login)
+// --- PUBLIC ROUTES ---
+// must be declared FIRST
+router.post('/register', registerUser);
+router.post('/login', loginUser);
 
-// ================================
-// 🔒 PROTECTED / ADMIN ROUTES
-// ================================
-// (You can add authentication middleware later if needed)
-router.get('/', getAllUsers);            // Get all users (Admin)
-router.get('/:id', getUserProfile);      // Get specific user
-router.get('/:id/summary', getUserSummary); // Get user dashboard summary
-router.put('/:id', updateUserProfile);   // Update user
-router.delete('/:id', deleteUser);       // Delete user
+// --- PROTECTED ROUTES (require authentication later) ---
+router.get('/', getAllUsers);
+router.get('/:id', getUserProfile);
+router.get('/:id/summary', getUserSummary);
+router.put('/:id', updateUserProfile);
+router.delete('/:id', deleteUser);
 
 module.exports = router;
