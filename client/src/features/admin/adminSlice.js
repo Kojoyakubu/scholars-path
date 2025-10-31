@@ -8,7 +8,7 @@ const initialState = {
   page: 1,
   stats: {},
   schools: [],
-  aiInsights: null, // ✅ Added for AI Insights
+  aiInsights: null, // For AI feedback
   isLoading: false,
   isError: false,
   isSuccess: false,
@@ -88,7 +88,6 @@ export const deleteSchool = createAsyncThunk('admin/deleteSchool', async (school
   }
 });
 
-// 🧠 NEW: AI Insights
 export const getAiInsights = createAsyncThunk('admin/getAiInsights', async (_, thunkAPI) => {
   try {
     return await adminService.getAiInsights();
@@ -98,7 +97,7 @@ export const getAiInsights = createAsyncThunk('admin/getAiInsights', async (_, t
   }
 });
 
-// --- Admin Slice ---
+// --- Slice ---
 export const adminSlice = createSlice({
   name: 'admin',
   initialState,
@@ -111,62 +110,47 @@ export const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // getUsers
+      // Users
       .addCase(getUsers.fulfilled, (state, action) => {
-        state.users = action.payload.users;
-        state.page = action.payload.page;
-        state.pages = action.payload.pages;
+        state.users = action.payload.users || [];
+        state.page = action.payload.page || 1;
+        state.pages = action.payload.pages || 1;
       })
-
-      // approveUser
       .addCase(approveUser.fulfilled, (state, action) => {
-        const index = state.users.findIndex((user) => user._id === action.payload.id);
+        const updatedId = action.payload.id || action.payload._id;
+        const index = state.users.findIndex((user) => user._id === updatedId);
         if (index !== -1) {
           state.users[index].status = 'approved';
         }
         state.isSuccess = true;
-        state.message = action.payload.message;
+        state.message = action.payload.message || 'User approved successfully';
       })
-
-      // assignUserToSchool
-      .addCase(assignUserToSchool.fulfilled, (state, action) => {
-        state.users = state.users.map((user) =>
-          user._id === action.payload._id ? action.payload : user
-        );
-      })
-
-      // deleteUser
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.users = state.users.filter((user) => user._id !== action.payload);
+        state.users = state.users.filter((u) => u._id !== action.payload);
       })
 
-      // getStats
+      // Schools
+      .addCase(getSchools.fulfilled, (state, action) => {
+        state.schools = action.payload;
+      })
+      .addCase(createSchool.fulfilled, (state, action) => {
+        state.schools.push(action.payload.school);
+      })
+      .addCase(deleteSchool.fulfilled, (state, action) => {
+        state.schools = state.schools.filter((s) => s._id !== action.payload);
+      })
+
+      // Stats
       .addCase(getStats.fulfilled, (state, action) => {
         state.stats = action.payload;
       })
 
-      // getSchools
-      .addCase(getSchools.fulfilled, (state, action) => {
-        state.schools = action.payload;
-      })
-
-      // createSchool
-      .addCase(createSchool.fulfilled, (state, action) => {
-        state.schools.push(action.payload.school);
-      })
-
-      // deleteSchool
-      .addCase(deleteSchool.fulfilled, (state, action) => {
-        state.schools = state.schools.filter((school) => school._id !== action.payload);
-      })
-
-      // 🧠 getAiInsights
+      // AI Insights
       .addCase(getAiInsights.fulfilled, (state, action) => {
         state.aiInsights = action.payload;
-        state.isSuccess = true;
       })
 
-      // Matchers (loading + error)
+      // Global state matchers
       .addMatcher((a) => a.type.startsWith('admin/') && a.type.endsWith('/pending'), (s) => {
         s.isLoading = true;
       })
