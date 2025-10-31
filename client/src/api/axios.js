@@ -1,20 +1,30 @@
 import axios from 'axios';
 
-// Try to read from Vite environment (during build)
-let baseURL = import.meta?.env?.VITE_API_URL;
+// --- Determine Base URL ---
+let baseURL;
 
-// ✅ If that fails (e.g., Render didn’t embed it), choose dynamically:
+// ✅ 1. Try from environment variable first
+if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+  baseURL = import.meta.env.VITE_API_URL;
+}
+
+// ✅ 2. Fallback: Auto-detect environment
 if (!baseURL) {
-  if (window.location.hostname.includes('onrender.com')) {
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+
+  if (hostname.includes('onrender.com')) {
+    // Production (Render frontend)
     baseURL = 'https://scholars-path-backend.onrender.com/api';
   } else {
+    // Local dev
     baseURL = 'http://localhost:5000/api';
   }
 }
 
-// 🔍 Debug log to confirm what URL it’s using
-console.log("✅ Scholars Path using API baseURL:", baseURL);
+// --- Debug Log ---
+console.log('🌍 Scholars Path using API baseURL:', baseURL);
 
+// --- Axios Instance ---
 const API = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
