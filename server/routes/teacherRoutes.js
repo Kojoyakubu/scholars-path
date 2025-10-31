@@ -1,3 +1,4 @@
+// /server/routes/teacherRoutes.js
 const express = require('express');
 const router = express.Router();
 
@@ -18,41 +19,32 @@ const {
 
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// ==============================
-// Teacher: Lesson Notes (AI)
-// ==============================
+// --- Lesson Notes ---
 router.post('/ai/generate-note', protect, authorize('teacher'), generateLessonNote);
 router.get('/lesson-notes', protect, authorize('teacher'), getMyLessonNotes);
 router.get('/lesson-notes/:id', protect, authorize('teacher', 'admin', 'school_admin'), getLessonNoteById);
 router.delete('/lesson-notes/:id', protect, authorize('teacher'), deleteLessonNote);
 
-// ==============================
-// Teacher: Learner Notes (AI)
-// ==============================
+// --- Learner Notes ---
 router.post('/ai/generate-learner-note', protect, authorize('teacher'), generateLearnerNote);
 router.get('/learner-notes/drafts', protect, authorize('teacher'), getDraftLearnerNotes);
 router.put('/learner-notes/:id/publish', protect, authorize('teacher'), publishLearnerNote);
 router.delete('/learner-notes/:id', protect, authorize('teacher'), deleteLearnerNote);
 
-// ==============================
-// Teacher: Quizzes
-// ==============================
+// --- Quizzes ---
 router.post('/quizzes', protect, authorize('teacher'), createQuiz);
 
-// ==============================
-// Teacher: Resources
-// (ensure your upload middleware like multer is applied where you configure it)
-// ==============================
+// --- Resources ---
 router.post('/resources/upload', protect, authorize('teacher'), uploadResource);
 
-// ==============================
-// Teacher: Analytics
-// ==============================
+// --- Analytics ---
 router.get('/analytics', protect, authorize('teacher'), getTeacherAnalytics);
 
-// ==============================
-// Teacher: Utility (Pexels Search)
-// ==============================
+// ✅ NEW ALIASES — these fix your 404s
+router.get('/insights', protect, authorize('teacher'), getTeacherAnalytics);
+router.get('/dashboard', protect, authorize('teacher'), getTeacherAnalytics);
+
+// --- Utility ---
 router.get('/search-image', protect, authorize('teacher'), searchImage);
 
 module.exports = router;
