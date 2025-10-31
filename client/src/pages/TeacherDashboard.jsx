@@ -7,7 +7,6 @@ import {
   Typography,
   Grid,
   Paper,
-  Stack,
   CircularProgress,
   Divider,
   useTheme,
@@ -16,22 +15,25 @@ import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import api from '../api/axios';
 
-// Utility to color keywords dynamically
+// Utility to highlight keywords
 const highlightKeywords = (text) => {
   if (!text) return '';
   const patterns = [
-    { regex: /\b(excellent|great|outstanding|improved?)\b/gi, color: '#2E7D32' }, // earthy green
-    { regex: /\b(needs improvement|consider|could|attention)\b/gi, color: '#CDAA00' }, // deep gold
-    { regex: /\b(recommended|suggests?|next step|ai)\b/gi, color: '#003366' }, // dark blue
+    { regex: /\b(excellent|great|outstanding|improved?)\b/gi, color: '#2E7D32' },
+    { regex: /\b(needs improvement|consider|could|attention)\b/gi, color: '#CDAA00' },
+    { regex: /\b(recommended|suggests?|next step|ai)\b/gi, color: '#003366' },
   ];
   let result = text;
   patterns.forEach(({ regex, color }) => {
-    result = result.replace(regex, (match) => `<span style="color:${color};font-weight:600">${match}</span>`);
+    result = result.replace(
+      regex,
+      (match) => `<span style="color:${color};font-weight:600">${match}</span>`
+    );
   });
   return result;
 };
 
-// Inline AI Insights card with animated reveal
+// AI Insights card
 const AIInsightsCard = ({ title, content }) => {
   if (!content) return null;
   return (
@@ -63,41 +65,40 @@ const TeacherDashboard = () => {
   const [aiInsights, setAiInsights] = useState('');
   const [aiError, setAiError] = useState('');
 
-  // Fetch dashboard metrics
+  // ✅ Fetch dashboard + insights from same analytics endpoint
   useEffect(() => {
     let isMounted = true;
-    const fetchDashboardData = async () => {
+    const fetchAnalytics = async () => {
       try {
-        const res = await api.get('/api/teacher/dashboard');
-        if (isMounted) setDashboardData(res.data);
+        const res = await api.get('/api/teacher/analytics', {
+          params: { role: user?.role, name: user?.fullName },
+        });
+        if (!isMounted) return;
+
+        // Safely extract response data
+        setDashboardData({
+          lessonNotes: res.data?.lessonNotes ?? 0,
+          quizzes: res.data?.quizzes ?? 0,
+          engagementRate: res.data?.engagementRate ?? '0%',
+          aiLessons: res.data?.aiLessons ?? 0,
+        });
+
+        // Extract any AI insights message
+        const text = res?.data?.insight || res?.data?.message || '';
+        setAiInsights(text);
       } catch (err) {
-        console.error('Failed to load teacher dashboard', err);
+        console.error('Failed to load teacher analytics', err);
+        if (isMounted)
+          setAiError(err?.response?.data?.message || 'Failed to load teacher analytics.');
       } finally {
         if (isMounted) setLoading(false);
       }
     };
-    fetchDashboardData();
-    return () => { isMounted = false; };
-  }, []);
 
-  // Fetch AI insights
-  useEffect(() => {
-    let isMounted = true;
-    const fetchInsights = async () => {
-      try {
-        const res = await api.get('/api/teacher/insights', {
-          params: { role: user?.role, name: user?.fullName },
-        });
-        if (!isMounted) return;
-        const text = res?.data?.insight || res?.data?.message || '';
-        setAiInsights(text);
-      } catch (err) {
-        if (!isMounted) return;
-        setAiError(err?.response?.data?.message || err?.message || 'Failed to load AI insights.');
-      }
+    if (user) fetchAnalytics();
+    return () => {
+      isMounted = false;
     };
-    if (user) fetchInsights();
-    return () => { isMounted = false; };
   }, [user]);
 
   if (loading) {
@@ -160,7 +161,7 @@ const TeacherDashboard = () => {
 
         <Divider sx={{ my: 4 }} />
 
-        {/* AI Insights Section */}
+        {/* AI Insights */}
         {user && (
           <>
             {aiError ? (
