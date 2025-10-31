@@ -2,88 +2,130 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from './authService';
 
+// Get user from localStorage
 const user = JSON.parse(localStorage.getItem('user'));
+
 const initialState = {
-  user: user ? user : null,
+  user: user || null,
   isError: false,
   isSuccess: false,
   isLoading: false,
   message: '',
 };
 
-// Async thunks
+// ======================
+// 🔐 REGISTER
+// ======================
 export const register = createAsyncThunk('auth/register', async (userData, thunkAPI) => {
   try {
-    return await authService.register(userData);
+    const response = await authService.register(userData);
+    return response;
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
+// ======================
+// 🔑 LOGIN
+// ======================
 export const login = createAsyncThunk('auth/login', async (userData, thunkAPI) => {
   try {
-    return await authService.login(userData);
+    const response = await authService.login(userData);
+
+    // Save token and user data in localStorage
+    if (response?.token) {
+      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('token', response.token);
+    }
+
+    return response.user;
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
-export const getMe = createAsyncThunk('auth/getMe', async (_, thunkAPI) => {
+// ======================
+// 👤 GET PROFILE
+// ======================
+export const getProfile = createAsyncThunk('auth/getProfile', async (_, thunkAPI) => {
   try {
-    const freshUserData = await authService.getMe();
-    const currentUser = thunkAPI.getState().auth.user;
-    return { ...currentUser, ...freshUserData };
+    const response = await authService.getProfile();
+    return response;
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
+// ======================
+// 🚪 LOGOUT
+// ======================
 export const logout = createAsyncThunk('auth/logout', async () => {
-  await authService.logout();
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  return null;
 });
 
-// Slice
+// ======================
+// ⚙️ SLICE
+// ======================
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     reset: (state) => {
-      state.isSuccess = false;
       state.isError = false;
+      state.isSuccess = false;
       state.message = '';
     },
   },
   extraReducers: (builder) => {
     builder
+      // Register
       .addCase(register.fulfilled, (state, action) => {
         state.isSuccess = true;
-        state.message = action.payload.message;
+        state.message = action.payload?.message || 'Registration successful';
       })
+
+      // Login
       .addCase(login.fulfilled, (state, action) => {
         state.user = action.payload;
         state.isSuccess = true;
       })
+
+      // Profile
+      .addCase(getProfile.fulfilled, (state, action) => {
+        state.user = { ...state.user, ...action.payload };
+      })
+
+      // Logout
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
       })
-      .addCase(getMe.fulfilled, (state, action) => {
-        state.user = action.payload;
-        localStorage.setItem('user', JSON.stringify(action.payload));
-      })
-      .addCase(getMe.rejected, (state) => {
-        state.user = null;
-        authService.logout();
-      })
-      .addMatcher((a) => a.type.startsWith('auth/') && a.type.endsWith('/pending'), (s) => (s.isLoading = true))
-      .addMatcher((a) => a.type.startsWith('auth/') && a.type.endsWith('/fulfilled'), (s) => (s.isLoading = false))
-      .addMatcher((a) => a.type.startsWith('auth/') && a.type.endsWith('/rejected'), (s, a) => {
-        s.isLoading = false;
-        s.isError = true;
-        s.message = a.payload;
-      });
+
+      // Loading/Error states
+      .addMatcher(
+        (a) => a.type.startsWith('auth/') && a.type.endsWith('/pending'),
+        (state) => {
+          state.isLoading = true;
+        }
+      )
+      .addMatcher(
+        (a) => a.type.startsWith('auth/') && a.type.endsWith('/fulfilled'),
+        (state) => {
+          state.isLoading = false;
+        }
+      )
+      .addMatcher(
+        (a) => a.type.startsWith('auth/') && a.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.isError = true;
+          state.message = action.payload;
+        }
+      );
   },
 });
 
