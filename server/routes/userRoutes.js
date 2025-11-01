@@ -1,26 +1,32 @@
 const express = require('express');
 const router = express.Router();
 
+// ✅ THE FIX: Remove getUserSummary from the import list
 const {
   registerUser,
   loginUser,
   getAllUsers,
   getUserProfile,
-  getUserSummary,
   updateUserProfile,
   deleteUser,
 } = require('../controllers/userController');
+const { protect, admin } = require('../middleware/authMiddleware'); // Assuming you have this middleware
 
 // --- PUBLIC ROUTES ---
-// must be declared FIRST
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 
-// --- PROTECTED ROUTES (require authentication later) ---
-router.get('/', getAllUsers);
-router.get('/:id', getUserProfile);
-router.get('/:id/summary', getUserSummary);
-router.put('/:id', updateUserProfile);
-router.delete('/:id', deleteUser);
+// --- PROTECTED ROUTES ---
+// We add the 'protect' and 'admin' middleware here for security
+router.get('/', protect, admin, getAllUsers);
+
+router
+  .route('/:id')
+  .get(protect, getUserProfile)
+  .put(protect, updateUserProfile)
+  .delete(protect, admin, deleteUser);
+
+// ✅ THE FIX: Delete the entire line that uses the non-existent function
+// router.get('/:id/summary', getUserSummary); // <-- DELETE THIS LINE
 
 module.exports = router;
