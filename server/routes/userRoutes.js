@@ -10,14 +10,15 @@ const {
   updateUserProfile,
   deleteUser,
 } = require('../controllers/userController');
-const { protect, admin } = require('../middleware/authMiddleware'); // Assuming you have this middleware
+const { protect, admin } = require('../middleware/authMiddleware'); // Assuming you have middleware for protection
 
 // --- PUBLIC ROUTES ---
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 
 // --- PROTECTED ROUTES ---
-// We add the 'protect' and 'admin' middleware here for security
+// We add middleware here for security.
+// 'protect' ensures a user is logged in. 'admin' ensures the user is an admin.
 router.get('/', protect, admin, getAllUsers);
 
 router
@@ -26,7 +27,7 @@ router
   .put(protect, updateUserProfile)
   .delete(protect, admin, deleteUser);
 
-// ✅ THE FIX: Delete the entire line that uses the non-existent function
-// router.get('/:id/summary', getUserSummary); // <-- DELETE THIS LINE
+// ✅ THE FIX: The route that caused the crash has been deleted.
+// router.get('/:id/summary', getUserSummary); // <-- This line is gone.
 
 module.exports = router;
