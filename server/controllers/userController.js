@@ -9,11 +9,13 @@ const User = require('../models/userModel');
  * @access  Public
  */
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role, school } = req.body;
+  // Frontend sends 'fullName', but your DB schema likely uses 'name'.
+  // We'll use 'fullName' from the request body to create the user.
+  const { fullName, email, password, role, school } = req.body;
 
-  if (!name || !email || !password) {
+  if (!fullName || !email || !password) {
     res.status(400);
-    throw new Error('Please provide name, email, and password');
+    throw new Error('Please provide full name, email, and password');
   }
 
   const userExists = await User.findOne({ email });
@@ -25,7 +27,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await User.create({
-    name,
+    name: fullName, // Save to the 'name' field in the database
     email,
     password: hashedPassword,
     role: role || 'student',
@@ -37,7 +39,7 @@ const registerUser = asyncHandler(async (req, res) => {
       message: 'User registered successfully',
       user: {
         id: user._id,
-        name: user.name,
+        fullName: user.name, // ✅ Send back 'fullName'
         email: user.email,
         role: user.role,
       },
@@ -70,7 +72,7 @@ const loginUser = asyncHandler(async (req, res) => {
       token,
       user: {
         id: user._id,
-        name: user.name,
+        fullName: user.name, // ✅ THE FIX: Changed 'name' to 'fullName'
         email: user.email,
         role: user.role,
       },
@@ -88,7 +90,16 @@ const loginUser = asyncHandler(async (req, res) => {
  */
 const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find().select('-password');
-  res.json(users);
+  // To be consistent, we can map the response
+  const formattedUsers = users.map(user => ({
+    id: user._id,
+    fullName: user.name,
+    email: user.email,
+    role: user.role,
+    school: user.school,
+    createdAt: user.createdAt,
+  }));
+  res.json(formattedUsers);
 });
 
 /**
@@ -99,32 +110,16 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const getUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id).select('-password');
   if (user) {
-    res.json(user);
+    res.json({
+        id: user._id,
+        fullName: user.name,
+        email: user.email,
+        role: user.role,
+    });
   } else {
     res.status(404);
     throw new Error('User not found');
   }
-});
-
-/**
- * @desc    Get user summary (for dashboard)
- * @route   GET /api/users/:id/summary
- * @access  Private
- */
-const getUserSummary = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id).select('-password');
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
-  }
-
-  res.json({
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    school: user.school || 'Not assigned',
-  });
 });
 
 /**
@@ -133,31 +128,32 @@ const getUserSummary = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id);
 
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
-  }
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
 
-  user.name = req.body.name || user.name;
-  user.email = req.body.email || user.email;
-  if (req.body.password) {
-    user.password = await bcrypt.hash(req.body.password, 10);
-  }
+    user.name = req.body.fullName || user.name; // Expect fullName from frontend
+    user.email = req.body.email || user.email;
+    if (req.body.password) {
+        user.password = await bcrypt.hash(req.body.password, 10);
+    }
 
-  const updatedUser = await user.save();
+    const updatedUser = await user.save();
 
-  res.json({
-    message: 'Profile updated successfully',
-    user: {
-      id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      role: updatedUser.role,
-    },
-  });
+    res.json({
+        message: 'Profile updated successfully',
+        user: {
+            id: updatedUser._id,
+            fullName: updatedUser.name,
+            email: updatedUser.email,
+            role: updatedUser.role,
+        },
+    });
 });
+
 
 /**
  * @desc    Delete user
@@ -176,12 +172,12 @@ const deleteUser = asyncHandler(async (req, res) => {
   res.json({ message: 'User deleted successfully' });
 });
 
+// Remove getUserSummary as getUserProfile serves a similar, now corrected, purpose.
 module.exports = {
   registerUser,
   loginUser,
   getAllUsers,
   getUserProfile,
-  getUserSummary,
   updateUserProfile,
   deleteUser,
 };
