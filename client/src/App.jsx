@@ -15,9 +15,10 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
 import PricingPage from './pages/PricingPage';
 import TakeQuiz from './pages/TakeQuiz';
-
-// 🆕 New unified authentication page
 import AuthPortal from './pages/AuthPortal';
+
+// ✅ IMPORT the RoleRoute component
+import RoleRoute from './components/RoleRoute'; 
 
 function App() {
   return (
@@ -31,23 +32,33 @@ function App() {
         {/* Redirect old login/register links to AuthPortal */}
         <Route path="/login" element={<Navigate to="/auth" replace />} />
         <Route path="/register" element={<Navigate to="/auth" replace />} />
+        
+        {/* ======================================================= */}
+        {/* ✅ PROTECTED ROUTES - Grouped by Role (Using RoleRoute) */}
+        {/* ======================================================= */}
+        
+        {/* Student Routes */}
+        <Route element={<RoleRoute allowedRoles={['student']} />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/my-badges" element={<MyBadges />} />
+          <Route path="/take-quiz" element={<TakeQuiz />} />
+        </Route>
 
-        {/* Student routes */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/my-badges" element={<MyBadges />} />
-        <Route path="/take-quiz" element={<TakeQuiz />} />
+        {/* Teacher & School Admin Routes */}
+        <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin']} />}>
+          <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+          <Route path="/school/dashboard" element={<SchoolDashboard />} />
+          <Route path="/lesson-note/:id" element={<LessonNoteView />} />
+        </Route>
 
-        {/* Teacher & School routes */}
-        <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-        <Route path="/school/dashboard" element={<SchoolDashboard />} />
-        <Route path="/lesson-note/:id" element={<LessonNoteView />} />
-
-        {/* Admin routes */}
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/curriculum" element={<AdminCurriculum />} />
-        <Route path="/admin/schools" element={<AdminSchools />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-
+        {/* Admin Routes */}
+        <Route element={<RoleRoute allowedRoles={['admin']} />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/curriculum" element={<AdminCurriculum />} />
+          <Route path="/admin/schools" element={<AdminSchools />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+        </Route>
+        
         {/* Payment feedback */}
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/failed" element={<PaymentFailed />} />

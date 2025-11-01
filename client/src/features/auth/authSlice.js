@@ -31,15 +31,17 @@ export const register = createAsyncThunk('auth/register', async (userData, thunk
 // ======================
 export const login = createAsyncThunk('auth/login', async (userData, thunkAPI) => {
   try {
-    const response = await authService.login(userData);
+    const response = await authService.login(userData); // authService handles localStorage save
 
-    // Save token and user data in localStorage
+    // ❌ REMOVED REDUNDANT localStorage.setItem BLOCK HERE:
+    /*
     if (response?.token) {
       localStorage.setItem('user', JSON.stringify(response.user));
       localStorage.setItem('token', response.token);
     }
+    */
 
-    return response.user;
+    return response.user; // Return only the user object for the Redux store
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
