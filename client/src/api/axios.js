@@ -1,9 +1,8 @@
 // /client/api/axios.js
 import axios from 'axios';
 
-// ✅ Always include `/api` at the end of the backend base URL
-const baseURL =
-  import.meta.env.VITE_API_URL || 'https://scholars-path-backend.onrender.com/api';
+// ✅ Set the base URL directly to the root of your backend server.
+const baseURL = 'https://scholars-path-backend.onrender.com';
 
 console.log('Scholars Path using API baseURL:', baseURL);
 

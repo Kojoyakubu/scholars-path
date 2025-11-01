@@ -1,23 +1,23 @@
-// src/features/auth/authService.js
+// /client/src/features/auth/authService.js
 import api from '../../api/axios';
 
 // ======================
 // 🔐 REGISTER USER
-// POST /api/users/register
 // ======================
 const register = async (userData) => {
-  const response = await api.post('/users/register', userData);
+  // ✅ Use the full, explicit path from the server root
+  const response = await api.post('/api/users/register', userData);
   return response.data;
 };
 
 // ======================
 // 🔑 LOGIN USER
-// POST /api/users/login
 // ======================
 const login = async (userData) => {
-  const response = await api.post('/users/login', userData);
+  // ✅ Use the full, explicit path from the server root
+  const response = await api.post('/api/users/login', userData);
 
-  // Save user & token to localStorage if successful
+  // This logic is correct for saving to localStorage
   if (response.data?.token) {
     localStorage.setItem('user', JSON.stringify(response.data.user));
     localStorage.setItem('token', response.data.token);
@@ -27,12 +27,10 @@ const login = async (userData) => {
 };
 
 // ======================
-// 👤 GET USER PROFILE (Protected)
-// GET /api/users/profile
+// 👤 GET USER PROFILE
 // ======================
 const getProfile = async () => {
   const token = localStorage.getItem('token');
-
   if (!token) throw new Error('No token found. Please login again.');
 
   const config = {
@@ -41,7 +39,8 @@ const getProfile = async () => {
     },
   };
 
-  const response = await api.get('/users/profile', config);
+  // ✅ Use the full, explicit path from the server root
+  const response = await api.get('/api/users/profile', config);
   return response.data;
 };
 
@@ -49,15 +48,18 @@ const getProfile = async () => {
 // 🚪 LOGOUT USER
 // ======================
 const logout = () => {
+  // ✅ This function simply removes user data from local storage.
+  // The corresponding Redux thunk in authSlice.js handles clearing the Redux state.
   localStorage.removeItem('user');
   localStorage.removeItem('token');
 };
+
 
 const authService = {
   register,
   login,
   getProfile,
-  logout,
+  logout, // ✅ Now included
 };
 
 export default authService;
