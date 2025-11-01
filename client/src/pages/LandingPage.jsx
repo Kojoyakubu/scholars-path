@@ -46,7 +46,8 @@ const LandingPage = () => {
     const fetchInsights = async () => {
       try {
         // Backend can personalize using req.user (JWT). We also pass hints.
-        const res = await api.get('/api/ai/landing/insights', {
+        // ✅ CORRECTED URL
+        const res = await api.get('/api/ai/onboarding/insights', {
           params: { role: user?.role, name: user?.fullName },
         });
         if (!isMounted) return;
