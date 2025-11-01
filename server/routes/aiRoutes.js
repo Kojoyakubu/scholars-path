@@ -1,26 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const aiService = require('../services/aiService');
+const aiController = require('../controllers/aiController'); // Best practice: use a controller
 
-// GET /api/ai/landing/insights
-router.get('/landing/insights', protect, async (req, res, next) => {
-  try {
-    const role = req.user?.role || req.query.role;
-    const name = req.user?.fullName || req.query.name || 'User';
-    const text = await aiService.getLandingInsights({ role, name });
-    res.json({ insight: text, provider: 'AI' });
-  } catch (err) { next(err); }
-});
+// ✅ ADD THIS NEW ROUTE
+// GET /api/ai/onboarding/insights
+router.get('/onboarding/insights', protect, aiController.getOnboardingInsights);
 
-// GET /api/ai/pricing/insights
-router.get('/pricing/insights', protect, async (req, res, next) => {
-  try {
-    const role = req.user?.role || req.query.role;
-    const name = req.user?.fullName || req.query.name || 'User';
-    const text = await aiService.getPricingInsights({ role, name });
-    res.json({ insight: text, provider: 'AI' });
-  } catch (err) { next(err); }
-});
+// You can either remove or keep the old routes depending on your needs.
+// To avoid confusion, it's often best to consolidate.
+// router.get('/landing/insights', protect, aiController.getLandingInsights); 
+// router.get('/pricing/insights', protect, aiController.getPricingInsights);
 
 module.exports = router;
