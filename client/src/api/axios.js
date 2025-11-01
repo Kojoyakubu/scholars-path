@@ -1,20 +1,18 @@
 // /client/api/axios.js
 import axios from 'axios';
 
-// ✅ Always points to Render backend (or local if available)
+// ✅ Always include `/api` at the end of the backend base URL
 const baseURL =
-  import.meta.env.VITE_API_URL ||
-  'https://scholars-path-backend.onrender.com/api';
+  import.meta.env.VITE_API_URL || 'https://scholars-path-backend.onrender.com/api';
 
 console.log('Scholars Path using API baseURL:', baseURL);
 
-// Create axios instance
 const API = axios.create({
   baseURL,
-  withCredentials: true, // allow cookies and auth headers
+  withCredentials: true,
 });
 
-// ✅ Auto attach JWT token
+// ✅ Attach auth token automatically
 API.interceptors.request.use((config) => {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user?.token) {
