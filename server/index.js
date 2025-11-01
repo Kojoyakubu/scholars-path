@@ -1,35 +1,31 @@
 // /server/index.js
-
 const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
-const colors = require('colors');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const colors = require('colors');
 const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
-// --- Load Environment Variables ---
+// -----------------------------------------------------------------------------
+// 🧠 Load environment + connect DB
+// -----------------------------------------------------------------------------
 dotenv.config();
-
-// --- Establish Database Connection ---
 connectDB();
 
-// --- Initialize Express App ---
 const app = express();
+app.set('trust proxy', 1); // Required for Render rate limits
 
-// ============================================================================
-// 🌐 GLOBAL MIDDLEWARE
-// ============================================================================
-
-// Trust first proxy (needed for rate limiting and Render)
-app.set('trust proxy', 1);
-
-// Apply security headers
+// -----------------------------------------------------------------------------
+// 🧱 Middleware
+// -----------------------------------------------------------------------------
 app.use(helmet());
+app.use(express.json({ limit: '500kb' }));
+app.use(express.urlencoded({ extended: true }));
 
-// ✅ Configure allowed origins (Frontend + Localhost)
+// ✅ FIXED CORS CONFIGURATION
 const allowedOrigins = [
   'https://scholars-path-frontend.onrender.com',
   'http://localhost:5173',
@@ -37,70 +33,67 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
+    origin: function (origin, callback) {
+      // Allow Postman or curl requests (no origin)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       } else {
-        callback(new Error(`Origin '${origin}' not allowed by CORS.`));
+        console.log(`❌ CORS blocked: ${origin}`);
+        return callback(new Error('CORS not allowed'), false);
       }
     },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   })
 );
 
-// Parse request bodies
-app.use(express.json({ limit: '500kb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Serve static files (uploads)
+// Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ============================================================================
-// ⚙️ RATE LIMITING (Anti-DDoS)
-// ============================================================================
+// -----------------------------------------------------------------------------
+// ⏳ Rate limiting
+// -----------------------------------------------------------------------------
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: 'Too many API requests. Please try again later.',
+  max: 300,
+  message: 'Too many requests, please try again later.',
 });
 app.use('/api', apiLimiter);
 
-// ============================================================================
-// 🧭 API ROUTE MOUNTING
-// ============================================================================
+// -----------------------------------------------------------------------------
+// 📦 Routes
+// -----------------------------------------------------------------------------
 app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/curriculum', require('./routes/curriculumRoutes'));
 app.use('/api/teacher', require('./routes/teacherRoutes'));
 app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/school', require('./routes/schoolRoutes'));
+app.use('/api/curriculum', require('./routes/curriculumRoutes'));
 app.use('/api/quizzes', require('./routes/quizRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes')); // ✅ Include AI routes
 
-// ✅ NEW — AI Routes
-app.use('/api/ai', require('./routes/aiRoutes'));
-
-// ============================================================================
-// 🩺 HEALTH CHECK
-// ============================================================================
+// -----------------------------------------------------------------------------
+// 🩺 Health Check
+// -----------------------------------------------------------------------------
 app.get('/', (req, res) => {
-  res.status(200).send({
+  res.status(200).json({
     message: `✅ Scholars Path API is live in ${process.env.NODE_ENV} mode.`,
-    timestamp: new Date().toISOString(),
+    time: new Date().toISOString(),
   });
 });
 
-// ============================================================================
-// 🧩 CENTRALIZED ERROR HANDLING
-// ============================================================================
+// -----------------------------------------------------------------------------
+// 🧩 Error Handling
+// -----------------------------------------------------------------------------
 app.use(notFound);
 app.use(errorHandler);
 
-// ============================================================================
-// 🚀 SERVER STARTUP
-// ============================================================================
+// -----------------------------------------------------------------------------
+// 🚀 Start Server
+// -----------------------------------------------------------------------------
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(
@@ -108,14 +101,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   );
 });
 
-// ============================================================================
-// 🧠 AI SERVICE STATUS LOG (Optional Debug Info)
-// ============================================================================
-console.log('🤖 AI services active: Gemini, ChatGPT, Claude, Perplexity.'.green.bold);
-
-// ============================================================================
-// 💣 GRACEFUL SHUTDOWN HANDLER
-// ============================================================================
 process.on('unhandledRejection', (err) => {
   console.error(`❌ Unhandled Rejection: ${err.message}`.red.bold);
   server.close(() => process.exit(1));

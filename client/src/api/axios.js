@@ -1,33 +1,26 @@
+// /client/api/axios.js
 import axios from 'axios';
 
-// --- Determine Base URL ---
-let baseURL;
+// ✅ Always points to Render backend (or local if available)
+const baseURL =
+  import.meta.env.VITE_API_URL ||
+  'https://scholars-path-backend.onrender.com/api';
 
-// ✅ 1. Try from environment variable first
-if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
-  baseURL = import.meta.env.VITE_API_URL;
-}
+console.log('Scholars Path using API baseURL:', baseURL);
 
-// ✅ 2. Fallback: Auto-detect environment
-if (!baseURL) {
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-
-  if (hostname.includes('onrender.com')) {
-    // Production (Render frontend)
-    baseURL = 'https://scholars-path-backend.onrender.com'; // 🟩 Removed the extra /api
-  } else {
-    // Local dev
-    baseURL = 'http://localhost:5000'; // 🟩 Removed the extra /api
-  }
-}
-
-// --- Debug Log ---
-console.log('🌍 Scholars Path using API baseURL:', baseURL);
-
-// --- Axios Instance ---
+// Create axios instance
 const API = axios.create({
   baseURL,
-  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // allow cookies and auth headers
+});
+
+// ✅ Auto attach JWT token
+API.interceptors.request.use((config) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user?.token) {
+    config.headers.Authorization = `Bearer ${user.token}`;
+  }
+  return config;
 });
 
 export default API;
