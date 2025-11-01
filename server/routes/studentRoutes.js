@@ -1,35 +1,26 @@
+// /server/routes/studentRoutes.js
 const express = require('express');
 const router = express.Router();
 
 const {
-  getLearnerNotes,
-  getQuizzes,
-  getResources,
-  getQuizDetails,
-  submitQuiz,
+  getCurrentQuiz,
+  getQuizInsights,
   getMyBadges,
+  getResources,
+  getLearnerNotes,
   logNoteView,
 } = require('../controllers/studentController');
 
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// ==============================
-// Student: Content Access
-// ==============================
-router.get('/notes/:subStrandId', protect, authorize('student'), getLearnerNotes);
-router.get('/quizzes/:subStrandId', protect, authorize('student'), getQuizzes);
-router.get('/resources/:subStrandId', protect, authorize('student'), getResources);
+// Quizzes
+router.get('/quiz/current', protect, authorize('student'), getCurrentQuiz);
+router.post('/quiz/insights', protect, authorize('student'), getQuizInsights);
 
-// ==============================
-// Student: Quiz Flow
-// ==============================
-router.get('/quiz/:id', protect, authorize('student'), getQuizDetails);
-router.post('/quiz/:id/submit', protect, authorize('student'), submitQuiz);
-
-// ==============================
-// Student: Badges & Engagement
-// ==============================
+// Learning data
 router.get('/badges', protect, authorize('student'), getMyBadges);
-router.post('/notes/:id/view', protect, authorize('student'), logNoteView);
+router.get('/resources', protect, authorize('student'), getResources);
+router.get('/learner-notes', protect, authorize('student'), getLearnerNotes);
+router.post('/note-views/:noteId', protect, authorize('student'), logNoteView);
 
 module.exports = router;

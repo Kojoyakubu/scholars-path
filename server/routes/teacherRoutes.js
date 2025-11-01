@@ -8,12 +8,12 @@ const {
   getLessonNoteById,
   deleteLessonNote,
   generateLearnerNote,
-  createQuiz,
-  uploadResource,
-  getTeacherAnalytics,
   getDraftLearnerNotes,
   publishLearnerNote,
   deleteLearnerNote,
+  createQuiz,
+  uploadResource,
+  getTeacherAnalytics,
   searchImage,
 } = require('../controllers/teacherController');
 
@@ -37,11 +37,11 @@ router.post('/quizzes', protect, authorize('teacher'), createQuiz);
 // --- Resources ---
 router.post('/resources/upload', protect, authorize('teacher'), uploadResource);
 
-// --- Analytics ---
+// --- Analytics (primary) ---
 router.get('/analytics', protect, authorize('teacher'), getTeacherAnalytics);
 
-// ✅ NEW ALIASES — these fix your 404s
-router.get('/insights', protect, authorize('teacher'), getTeacherAnalytics);
+// ✅ Aliases (fixes /api/teacher/insights and /api/teacher/dashboard 404s)
+router.get('/insights',  protect, authorize('teacher'), getTeacherAnalytics);
 router.get('/dashboard', protect, authorize('teacher'), getTeacherAnalytics);
 
 // --- Utility ---

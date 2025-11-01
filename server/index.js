@@ -29,10 +29,11 @@ app.set('trust proxy', 1);
 // Apply security headers
 app.use(helmet());
 
-// Configure allowed origins
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',')
-  : ['http://localhost:3000']; // Default fallback for local dev
+// ✅ Configure allowed origins (Frontend + Localhost)
+const allowedOrigins = [
+  'https://scholars-path-frontend.onrender.com',
+  'http://localhost:5173',
+];
 
 app.use(
   cors({
@@ -78,6 +79,9 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/school', require('./routes/schoolRoutes'));
 app.use('/api/quizzes', require('./routes/quizRoutes'));
 
+// ✅ NEW — AI Routes
+app.use('/api/ai', require('./routes/aiRoutes'));
+
 // ============================================================================
 // 🩺 HEALTH CHECK
 // ============================================================================
@@ -99,7 +103,9 @@ app.use(errorHandler);
 // ============================================================================
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold);
+  console.log(
+    `✅ Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold
+  );
 });
 
 // ============================================================================
