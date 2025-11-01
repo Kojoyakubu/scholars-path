@@ -9,11 +9,13 @@ const SubStrand = require('../models/subStrandModel');
 const StudentBadge = require('../models/studentBadgeModel');
 const NoteView = require('../models/noteViewModel');
 const { checkAndAwardQuizBadges } = require('../services/badgeService');
-const aiService = require('../services/aiService'); // ✅ For AI feedback generation
+const aiService = require('../services/aiService');
 
 // --- Helper Function: Score Calculation ---
 const calculateQuizScore = (quiz, answers) => {
-  const answerMap = new Map(answers.map(a => [a.questionId.toString(), a.selectedOptionId.toString()]));
+  const answerMap = new Map(
+    answers.map(a => [a.questionId.toString(), a.selectedOptionId.toString()])
+  );
   let score = 0;
 
   for (const question of quiz.questions) {
@@ -23,25 +25,25 @@ const calculateQuizScore = (quiz, answers) => {
       score++;
     }
   }
-
   return score;
 };
 
-// --- Controller Functions ---
+// ============================================================================
+// 🎓 Student Controllers
+// ============================================================================
 
-// @desc    Get learner notes for a sub-strand
-// @route   GET /api/student/notes/:subStrandId
+// @desc  Get learner notes for a sub-strand
+// @route GET /api/student/learner-notes
 const getLearnerNotes = asyncHandler(async (req, res) => {
   const notes = await LearnerNote.find({
-    subStrand: req.params.subStrandId,
     school: req.user.school,
     status: 'published',
   });
   res.json(notes);
 });
 
-// @desc    Get quizzes for a sub-strand
-// @route   GET /api/student/quizzes/:subStrandId
+// @desc  Get quizzes for a sub-strand
+// @route GET /api/student/quizzes/:subStrandId
 const getQuizzes = asyncHandler(async (req, res) => {
   const subStrand = await SubStrand.findById(req.params.subStrandId).populate({
     path: 'strand',
@@ -59,24 +61,19 @@ const getQuizzes = asyncHandler(async (req, res) => {
   res.json(quizzes);
 });
 
-// @desc    Get resources for a sub-strand
-// @route   GET /api/student/resources/:subStrandId
+// @desc  Get resources for a sub-strand
+// @route GET /api/student/resources
 const getResources = asyncHandler(async (req, res) => {
-  const resources = await Resource.find({
-    subStrand: req.params.subStrandId,
-    school: req.user.school,
-  });
+  const resources = await Resource.find({ school: req.user.school });
   res.json(resources);
 });
 
-// @desc    Get details of a single quiz (hide correct answers)
-// @route   GET /api/student/quizzes/:id
+// @desc  Get details of a single quiz (hide correct answers)
 const getQuizDetails = asyncHandler(async (req, res) => {
-  const quiz = await Quiz.findOne({ _id: req.params.id, school: req.user.school })
-    .populate({
-      path: 'questions',
-      populate: { path: 'options', model: 'Option', select: '-isCorrect' },
-    });
+  const quiz = await Quiz.findOne({ _id: req.params.id, school: req.user.school }).populate({
+    path: 'questions',
+    populate: { path: 'options', model: 'Option', select: '-isCorrect' },
+  });
 
   if (!quiz) {
     res.status(404);
@@ -86,9 +83,7 @@ const getQuizDetails = asyncHandler(async (req, res) => {
   res.json(quiz);
 });
 
-// @desc    Submit a quiz and get AI-powered feedback
-// @route   POST /api/student/quizzes/:id/submit
-// @access  Private (Student)
+// @desc  Submit a quiz and get AI-powered feedback
 const submitQuiz = asyncHandler(async (req, res) => {
   const { answers } = req.body;
 
@@ -121,40 +116,32 @@ const submitQuiz = asyncHandler(async (req, res) => {
   // Asynchronously award badges
   checkAndAwardQuizBadges(req.user._id, attempt);
 
-  // 🧠 Generate personalized AI feedback (Claude preferred; fallback ChatGPT)
+  // 🧠 Generate personalized AI feedback
   let feedback = '';
   try {
     const prompt = `
 You are a Ghanaian educational coach.
-Provide **constructive and motivational feedback** for a student who just completed a quiz.
+Provide short motivational feedback for a student after a quiz.
 
-Details:
-- Subject: ${quiz.subject || 'N/A'}
-- Quiz Title: ${quiz.title || 'Untitled Quiz'}
-- Total Questions: ${quiz.questions.length}
-- Score: ${score}
-- Performance Percentage: ${((score / quiz.questions.length) * 100).toFixed(1)}%
+Subject: ${quiz.subject || 'N/A'}
+Quiz Title: ${quiz.title || 'Untitled'}
+Total Questions: ${quiz.questions.length}
+Score: ${score}
+Performance: ${((score / quiz.questions.length) * 100).toFixed(1)}%
 
-Guidelines:
-1. Start with a short encouraging statement.
-2. Highlight strengths (topics or question types the student likely understood).
-3. Gently mention areas to improve, but stay positive.
-4. Suggest one or two learning strategies or study habits.
-5. End with a brief motivational line.
-
-Keep it short (max 6 sentences).`;
+Keep it under 6 sentences, positive and constructive.`;
 
     const result = await aiService.generateTextCore({
       prompt,
       task: 'quizFeedback',
       temperature: 0.6,
-      preferredProvider: 'claude', // Prefer Claude for empathetic tone
+      preferredProvider: 'claude',
     });
 
     feedback = result.text;
   } catch (err) {
-    console.error('AI feedback generation failed:', err.message);
-    feedback = 'Great effort! Keep practicing to strengthen your understanding.';
+    console.error('AI feedback failed:', err.message);
+    feedback = 'Good effort! Keep practicing to improve.';
   }
 
   res.status(200).json({
@@ -162,12 +149,11 @@ Keep it short (max 6 sentences).`;
     score: attempt.score,
     totalQuestions: attempt.totalQuestions,
     percentage: ((score / quiz.questions.length) * 100).toFixed(1),
-    feedback, // 💬 AI-generated feedback
+    feedback,
   });
 });
 
-// @desc    Get badges earned by the logged-in student
-// @route   GET /api/student/badges
+// @desc  Get badges earned by logged-in student
 const getMyBadges = asyncHandler(async (req, res) => {
   const myBadges = await StudentBadge.find({ student: req.user._id }).populate(
     'badge',
@@ -176,8 +162,7 @@ const getMyBadges = asyncHandler(async (req, res) => {
   res.json(myBadges);
 });
 
-// @desc    Log that a student has viewed a note
-// @route   POST /api/student/notes/:id/view
+// @desc  Log that a student viewed a note
 const logNoteView = asyncHandler(async (req, res) => {
   const note = await LearnerNote.findById(req.params.id);
   if (!note) {
@@ -190,7 +175,7 @@ const logNoteView = asyncHandler(async (req, res) => {
     student: req.user._id,
   }).sort({ createdAt: -1 });
 
-  const VIEW_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown
+  const VIEW_COOLDOWN_MS = 60 * 1000;
   if (!existingView || new Date() - existingView.createdAt > VIEW_COOLDOWN_MS) {
     await NoteView.create({
       note: note._id,
@@ -204,6 +189,47 @@ const logNoteView = asyncHandler(async (req, res) => {
   }
 });
 
+// ============================================================================
+// ✅ NEW ROUTES TO FIX YOUR ERROR
+// ============================================================================
+
+// @desc  Get the most recent quiz assigned to a student
+// @route GET /api/student/quiz/current
+const getCurrentQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findOne({ school: req.user.school })
+    .sort({ createdAt: -1 })
+    .limit(1);
+
+  if (!quiz) {
+    res.status(404);
+    throw new Error('No quiz available currently.');
+  }
+
+  res.json(quiz);
+});
+
+// @desc  Generate AI insights after a quiz submission
+// @route POST /api/student/quiz/insights
+const getQuizInsights = asyncHandler(async (req, res) => {
+  const { score, totalQuestions, subject, title } = req.body;
+  const prompt = `
+Generate a short motivational insight for a student who just completed a ${subject} quiz titled "${title}".
+They scored ${score}/${totalQuestions}.
+Focus on encouragement and next steps in learning.`;
+
+  try {
+    const result = await aiService.generateTextCore({
+      prompt,
+      task: 'quizInsight',
+      temperature: 0.7,
+      preferredProvider: 'claude',
+    });
+    res.json({ insight: result.text });
+  } catch (err) {
+    res.json({ insight: 'Keep studying and you’ll improve with each quiz!' });
+  }
+});
+
 module.exports = {
   getLearnerNotes,
   getQuizzes,
@@ -212,4 +238,6 @@ module.exports = {
   submitQuiz,
   getMyBadges,
   logNoteView,
+  getCurrentQuiz,
+  getQuizInsights,
 };
