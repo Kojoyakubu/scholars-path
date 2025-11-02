@@ -14,18 +14,11 @@ const register = async (userData) => {
 // ======================
 const login = async (userData) => {
   const response = await api.post('/api/users/login', userData);
-
-  // Normalize the returned data
-  const data = response.data;
-  const user = data.user || data; // defensive fallback
-
-  // ✅ Ensure token is saved for axios interceptor
-  if (user?.token) {
-    localStorage.setItem('user', JSON.stringify(user));
-  }
-
-  return user; // Return clean user object to Redux
+  const user = response.data.user;
+  if (user?.token) localStorage.setItem('user', JSON.stringify(user));
+  return user;
 };
+
 
 // ======================
 // 👤 GET USER PROFILE

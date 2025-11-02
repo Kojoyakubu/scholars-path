@@ -25,10 +25,13 @@ app.use(helmet());
 app.use(express.json({ limit: '500kb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// -----------------------------------------------------------------------------
 // ✅ FIXED CORS CONFIGURATION
+// -----------------------------------------------------------------------------
 const allowedOrigins = [
-  'https://scholars-path-frontend.onrender.com',
-  'http://localhost:5173',
+  'https://scholars-path-frontend.onrender.com', // deployed frontend
+  'http://localhost:5173',                      // local dev (vite)
+  'http://127.0.0.1:5173',                      // local alternative
 ];
 
 app.use(
@@ -49,14 +52,16 @@ app.use(
   })
 );
 
-// Static uploads
+// -----------------------------------------------------------------------------
+// 🗂 Static uploads
+// -----------------------------------------------------------------------------
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // -----------------------------------------------------------------------------
 // ⏳ Rate limiting
 // -----------------------------------------------------------------------------
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 300,
   message: 'Too many requests, please try again later.',
 });
@@ -73,7 +78,7 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/school', require('./routes/schoolRoutes'));
 app.use('/api/curriculum', require('./routes/curriculumRoutes'));
 app.use('/api/quizzes', require('./routes/quizRoutes'));
-app.use('/api/ai', require('./routes/aiRoutes')); // ✅ Include AI routes
+app.use('/api/ai', require('./routes/aiRoutes')); // ✅ AI routes
 
 // -----------------------------------------------------------------------------
 // 🩺 Health Check
@@ -101,6 +106,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   );
 });
 
+// -----------------------------------------------------------------------------
+// 🧯 Handle Unhandled Rejections
+// -----------------------------------------------------------------------------
 process.on('unhandledRejection', (err) => {
   console.error(`❌ Unhandled Rejection: ${err.message}`.red.bold);
   server.close(() => process.exit(1));

@@ -1,27 +1,16 @@
-// /client/api/axios.js
 import axios from 'axios';
-
-// ✅ Backend root
-const baseURL = import.meta.env.VITE_API_URL || 'https://scholars-path-backend.onrender.com';
-
-console.log('✅ Scholars Path using API baseURL:', baseURL);
+const baseURL = 'https://scholars-path-backend.onrender.com';
 
 const API = axios.create({
   baseURL,
-  withCredentials: true,
+  withCredentials: false,
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// ✅ Attach token automatically if present
 API.interceptors.request.use((config) => {
-  try {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      const token = user?.token;
-      if (token) config.headers.Authorization = `Bearer ${token}`;
-    }
-  } catch (err) {
-    console.warn('⚠️ Token parse error:', err);
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user?.token) {
+    config.headers.Authorization = `Bearer ${user.token}`;
   }
   return config;
 });
