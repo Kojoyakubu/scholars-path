@@ -6,7 +6,7 @@ import { login, reset } from '../features/auth/authSlice';
 // MUI Imports
 import {
   Button, TextField, Box, Typography, Container, Paper,
-  CircularProgress, Alert, Collapse, Link, Grid // ✅ THE FIX IS HERE: Added 'Grid' to the import list
+  CircularProgress, Alert, Collapse, Link, Grid
 } from '@mui/material';
 import { motion } from 'framer-motion';
 
@@ -19,30 +19,41 @@ function Login() {
 
   useEffect(() => {
     if (isError) {
-      // Error is handled by the notification state
+      console.log('❌ Login error:', message);
     }
 
     if (isSuccess && user) {
-      // Check the user's role and navigate to the correct dashboard
+      console.log('✅ Login successful, user:', user);
+      
+      // Determine target route based on role
+      let targetRoute;
       switch (user.role) {
         case 'admin':
-          navigate('/admin');
+          targetRoute = '/admin';
           break;
         case 'teacher':
         case 'school_admin':
-          navigate('/teacher/dashboard');
+          targetRoute = '/teacher/dashboard';
           break;
         case 'student':
-          navigate('/dashboard');
+          targetRoute = '/dashboard';
           break;
         default:
-          navigate('/'); // Fallback to landing page if role is unknown
+          targetRoute = '/dashboard';
+          console.warn('⚠️ Unknown role, defaulting to /dashboard');
       }
+      
+      console.log('🚀 Redirecting to:', targetRoute);
+      
+      // Use replace instead of push to avoid going back to login
+      navigate(targetRoute, { replace: true });
     }
 
-    // Reset the auth state flags when the component unmounts
+    // Cleanup function
     return () => {
-      dispatch(reset());
+      if (isSuccess) {
+        dispatch(reset());
+      }
     };
   }, [user, isError, isSuccess, message, navigate, dispatch]);
 
@@ -53,8 +64,18 @@ function Login() {
 
   const onSubmit = useCallback((e) => {
     e.preventDefault();
+    console.log('📤 Submitting login...');
     dispatch(login(formData));
   }, [dispatch, formData]);
+
+  // Don't render anything if we're successfully logged in and redirecting
+  if (isSuccess && user) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7 }}>
@@ -83,10 +104,38 @@ function Login() {
               </Alert>
             </Collapse>
 
-            <TextField margin="normal" required fullWidth id="email" label="Email Address" name="email" autoComplete="email" autoFocus value={formData.email} onChange={onChange} />
-            <TextField margin="normal" required fullWidth name="password" label="Password" type="password" id="password" autoComplete="current-password" value={formData.password} onChange={onChange} />
+            <TextField 
+              margin="normal" 
+              required 
+              fullWidth 
+              id="email" 
+              label="Email Address" 
+              name="email" 
+              autoComplete="email" 
+              autoFocus 
+              value={formData.email} 
+              onChange={onChange} 
+            />
+            <TextField 
+              margin="normal" 
+              required 
+              fullWidth 
+              name="password" 
+              label="Password" 
+              type="password" 
+              id="password" 
+              autoComplete="current-password" 
+              value={formData.password} 
+              onChange={onChange} 
+            />
             
-            <Button type="submit" fullWidth variant="contained" disabled={isLoading} sx={{ mt: 3, mb: 2, py: 1.5 }}>
+            <Button 
+              type="submit" 
+              fullWidth 
+              variant="contained" 
+              disabled={isLoading} 
+              sx={{ mt: 3, mb: 2, py: 1.5 }}
+            >
               {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
             </Button>
             <Grid container justifyContent="flex-end">
