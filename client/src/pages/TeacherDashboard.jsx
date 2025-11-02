@@ -1,21 +1,12 @@
-// /client/src/pages/TeacherDashboard.jsx
-
 import React, { useEffect, useState } from 'react';
 import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
-  CircularProgress,
-  Divider,
-  useTheme,
+  Box, Container, Typography, Grid, Paper,
+  CircularProgress, Divider, useTheme
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import api from '../api/axios';
 
-// Utility to highlight keywords
 const highlightKeywords = (text) => {
   if (!text) return '';
   const patterns = [
@@ -33,7 +24,6 @@ const highlightKeywords = (text) => {
   return result;
 };
 
-// AI Insights card
 const AIInsightsCard = ({ title, content }) => {
   if (!content) return null;
   return (
@@ -65,17 +55,15 @@ const TeacherDashboard = () => {
   const [aiInsights, setAiInsights] = useState('');
   const [aiError, setAiError] = useState('');
 
-  // ✅ Fetch dashboard + insights from same analytics endpoint
   useEffect(() => {
     let isMounted = true;
     const fetchAnalytics = async () => {
       try {
         const res = await api.get('/api/teacher/analytics', {
-          params: { role: user?.role, name: user?.fullName },
+          params: { role: user?.role, name: user?.name || user?.fullName },
         });
         if (!isMounted) return;
 
-        // Safely extract response data
         setDashboardData({
           lessonNotes: res.data?.lessonNotes ?? 0,
           quizzes: res.data?.quizzes ?? 0,
@@ -83,7 +71,6 @@ const TeacherDashboard = () => {
           aiLessons: res.data?.aiLessons ?? 0,
         });
 
-        // Extract any AI insights message
         const text = res?.data?.insight || res?.data?.message || '';
         setAiInsights(text);
       } catch (err) {
@@ -117,51 +104,29 @@ const TeacherDashboard = () => {
           Teacher Dashboard
         </Typography>
         <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-          Welcome back, {user?.fullName || 'Teacher'} — here’s a quick look at your teaching stats.
+          Welcome back, {user?.name || user?.fullName || 'Teacher'} — here’s a quick look at your teaching stats.
         </Typography>
 
-        {/* Dashboard Cards */}
         <Grid container spacing={3} sx={{ mt: 2 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
-              <Typography variant="h6">Lesson Notes</Typography>
-              <Typography variant="h4" color="primary" fontWeight={700}>
-                {dashboardData?.lessonNotes ?? 0}
-              </Typography>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
-              <Typography variant="h6">Quizzes Created</Typography>
-              <Typography variant="h4" color="primary" fontWeight={700}>
-                {dashboardData?.quizzes ?? 0}
-              </Typography>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
-              <Typography variant="h6">Student Engagement</Typography>
-              <Typography variant="h4" color="primary" fontWeight={700}>
-                {dashboardData?.engagementRate ?? '0%'}
-              </Typography>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
-              <Typography variant="h6">AI Lessons Generated</Typography>
-              <Typography variant="h4" color="primary" fontWeight={700}>
-                {dashboardData?.aiLessons ?? 0}
-              </Typography>
-            </Paper>
-          </Grid>
+          {[
+            { label: 'Lesson Notes', value: dashboardData?.lessonNotes ?? 0 },
+            { label: 'Quizzes Created', value: dashboardData?.quizzes ?? 0 },
+            { label: 'Student Engagement', value: dashboardData?.engagementRate ?? '0%' },
+            { label: 'AI Lessons Generated', value: dashboardData?.aiLessons ?? 0 },
+          ].map((item, i) => (
+            <Grid item xs={12} sm={6} md={3} key={i}>
+              <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
+                <Typography variant="h6">{item.label}</Typography>
+                <Typography variant="h4" color="primary" fontWeight={700}>
+                  {item.value}
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
         </Grid>
 
         <Divider sx={{ my: 4 }} />
 
-        {/* AI Insights */}
         {user && (
           <>
             {aiError ? (
@@ -170,7 +135,7 @@ const TeacherDashboard = () => {
               </Typography>
             ) : (
               <AIInsightsCard
-                title={`Your Teaching Highlights, ${user.fullName || 'Teacher'}`}
+                title={`Your Teaching Highlights, ${user.name || user.fullName || 'Teacher'}`}
                 content={
                   aiInsights ||
                   `Analyzing your recent activities and engagement data...`

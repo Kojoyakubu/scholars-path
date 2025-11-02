@@ -142,7 +142,8 @@ function Dashboard() {
         }}
       >
         <Typography variant="h4" component="h1" gutterBottom fontWeight={700}>
-          Your Learning Journey, {user?.fullName?.split(' ')[0]} 🌿
+          {/* 🔒 Safe fallback to support either `name` or `fullName` */}
+          Your Learning Journey, {(user?.name || user?.fullName || '').split(' ')[0]} 🌿
         </Typography>
         <Typography variant="h6" sx={{ opacity: 0.9 }}>
           Choose a topic to explore AI-powered notes, quizzes, and resources.

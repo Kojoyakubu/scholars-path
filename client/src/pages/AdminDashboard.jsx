@@ -1,9 +1,8 @@
-// /client/src/pages/AdminDashboard.jsx
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, Grid, Paper, Typography, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
-import { getStats, getAiInsights } from '../features/admin/adminSlice'; // ✅ Fixed path
+import { getStats, getAiInsights } from '../features/admin/adminSlice';
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
@@ -37,7 +36,7 @@ const AdminDashboard = () => {
         }}
       >
         <Typography variant="h4" fontWeight={700}>
-          Welcome Back, {user?.fullName?.split(' ')[0]} 🌿
+          Welcome Back, {(user?.name || user?.fullName || '').split(' ')[0]} 🌿
         </Typography>
         <Typography variant="h6" sx={{ opacity: 0.9 }}>
           Administrative Overview & AI-Powered Insights
@@ -50,96 +49,38 @@ const AdminDashboard = () => {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {/* STATS CARDS */}
           {stats && (
             <>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper
-                  component={motion.div}
-                  {...fadeUp(0.1)}
-                  sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    borderLeft: '6px solid #1E8449',
-                    borderRadius: 3,
-                    boxShadow: '0 4px 15px rgba(20,90,50,0.2)',
-                  }}
-                >
-                  <Typography variant="h6" color="text.secondary">
-                    Total Users
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700} color="primary">
-                    {stats.totalUsers ?? 0}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper
-                  component={motion.div}
-                  {...fadeUp(0.2)}
-                  sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    borderLeft: '6px solid #28B463',
-                    borderRadius: 3,
-                    boxShadow: '0 4px 15px rgba(20,90,50,0.2)',
-                  }}
-                >
-                  <Typography variant="h6" color="text.secondary">
-                    Total Schools
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700} color="primary">
-                    {stats.totalSchools ?? 0}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper
-                  component={motion.div}
-                  {...fadeUp(0.3)}
-                  sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    borderLeft: '6px solid #1D8348',
-                    borderRadius: 3,
-                    boxShadow: '0 4px 15px rgba(20,90,50,0.2)',
-                  }}
-                >
-                  <Typography variant="h6" color="text.secondary">
-                    Total Quizzes
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700} color="primary">
-                    {stats.totalQuizzes ?? 0}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper
-                  component={motion.div}
-                  {...fadeUp(0.4)}
-                  sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    borderLeft: '6px solid #145A32',
-                    borderRadius: 3,
-                    boxShadow: '0 4px 15px rgba(20,90,50,0.2)',
-                  }}
-                >
-                  <Typography variant="h6" color="text.secondary">
-                    Pending Users
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700} color="primary">
-                    {stats.pendingUsers ?? 0}
-                  </Typography>
-                </Paper>
-              </Grid>
+              {[
+                { label: 'Total Users', value: stats.totalUsers ?? 0, color: '#1E8449' },
+                { label: 'Total Schools', value: stats.totalSchools ?? 0, color: '#28B463' },
+                { label: 'Total Quizzes', value: stats.totalQuizzes ?? 0, color: '#1D8348' },
+                { label: 'Pending Users', value: stats.pendingUsers ?? 0, color: '#145A32' },
+              ].map((item, i) => (
+                <Grid item xs={12} sm={6} md={3} key={i}>
+                  <Paper
+                    component={motion.div}
+                    {...fadeUp(0.1 * (i + 1))}
+                    sx={{
+                      p: 3,
+                      textAlign: 'center',
+                      borderLeft: `6px solid ${item.color}`,
+                      borderRadius: 3,
+                      boxShadow: '0 4px 15px rgba(20,90,50,0.2)',
+                    }}
+                  >
+                    <Typography variant="h6" color="text.secondary">
+                      {item.label}
+                    </Typography>
+                    <Typography variant="h4" fontWeight={700} color="primary">
+                      {item.value}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
             </>
           )}
 
-          {/* AI INSIGHTS CARD */}
           <Grid item xs={12}>
             <Paper
               component={motion.div}
