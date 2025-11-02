@@ -2,28 +2,30 @@
 import api from '../../api/axios';
 
 // -----------------------------------------------------------------------------
-// 🔐 REGISTER USER
+// 📝 REGISTER USER
 // -----------------------------------------------------------------------------
 const register = async (userData) => {
   const response = await api.post('/api/users/register', userData);
-  return response.data; // backend already returns { message, user }
+  return response.data;
 };
 
 // -----------------------------------------------------------------------------
-// 🔑 LOGIN USER
+// 🔐 LOGIN USER
 // -----------------------------------------------------------------------------
 const login = async (userData) => {
   const response = await api.post('/api/users/login', userData);
 
-  // ✅ Normalize backend response
-  // backend returns { message: 'Login successful', user: { ...userFields, token } }
-  const user = response.data.user || response.data;
+  // ✅ Extract user from response (backend structure: { message, user })
+  const user = response.data.user;
 
-  if (user?.token) {
-    localStorage.setItem('user', JSON.stringify(user)); // persist login
+  // ✅ Validate user data before storing
+  if (user && user.token) {
+    // Store the complete user object in localStorage
+    localStorage.setItem('user', JSON.stringify(user));
+    return user;
   }
 
-  return user;
+  throw new Error('Invalid login response from server');
 };
 
 // -----------------------------------------------------------------------------
@@ -31,7 +33,9 @@ const login = async (userData) => {
 // -----------------------------------------------------------------------------
 const getProfile = async () => {
   const storedUser = JSON.parse(localStorage.getItem('user'));
-  if (!storedUser?.token) throw new Error('No token found. Please log in again.');
+  if (!storedUser?.token) {
+    throw new Error('No token found. Please log in again.');
+  }
 
   const config = {
     headers: {
@@ -40,7 +44,12 @@ const getProfile = async () => {
   };
 
   const response = await api.get('/api/users/profile', config);
-  return response.data;
+  
+  // ✅ Merge profile data with existing user data
+  const updatedUser = { ...storedUser, ...response.data };
+  localStorage.setItem('user', JSON.stringify(updatedUser));
+  
+  return updatedUser;
 };
 
 // -----------------------------------------------------------------------------
