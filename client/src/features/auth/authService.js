@@ -13,17 +13,14 @@ const register = async (userData) => {
 // 🔑 LOGIN USER
 // -----------------------------------------------------------------------------
 const login = async (userData) => {
-  const response = await api.post('/api/users/login', userData);
+  const response = await API.post('/users/login', userData);
 
-  // ✅ Normalize backend response
-  // backend returns { message: 'Login successful', user: { ...userFields, token } }
-  const user = response.data.user || response.data;
-
-  if (user?.token) {
-    localStorage.setItem('user', JSON.stringify(user)); // persist login
+  if (response.data && response.data.user) {
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+    return response.data.user; // return only the user
   }
 
-  return user;
+  return null;
 };
 
 // -----------------------------------------------------------------------------
