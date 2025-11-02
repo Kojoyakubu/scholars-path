@@ -1,6 +1,6 @@
 // /client/src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Pages
 import AuthPortal from './pages/AuthPortal';
@@ -25,18 +25,24 @@ const App = () => {
 
         {/* Protected routes */}
         <Route element={<PrivateRoute />}>
-          <Route element={<RoleRoute allowedRoles={['teacher']} />}>
+          {/* Teacher & School Admin Dashboard */}
+          <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin']} />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
           </Route>
 
+          {/* Admin Dashboard */}
           <Route element={<RoleRoute allowedRoles={['admin']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
           </Route>
 
+          {/* Student Dashboard */}
           <Route element={<RoleRoute allowedRoles={['student']} />}>
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
         </Route>
+
+        {/* Catch all - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

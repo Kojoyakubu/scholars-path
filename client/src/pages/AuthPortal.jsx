@@ -87,8 +87,12 @@ const AuthPortal = () => {
   };
 
   useEffect(() => {
+    console.log('🔍 AuthPortal useEffect - isSuccess:', isSuccess, 'user:', user);
+    
     if (isSuccess && user) {
       const displayName = getUserDisplayName();
+      console.log('✅ User logged in:', user);
+      console.log('👤 User role:', user.role);
 
       // Set welcome message
       setAiTitle(
@@ -97,29 +101,33 @@ const AuthPortal = () => {
       setAiGreeting('Redirecting you to your dashboard now...');
 
       const timer = setTimeout(() => {
+        let targetRoute = '/';
+        
         switch (user.role) {
           case 'admin':
-            navigate('/admin', { replace: true });
+            targetRoute = '/admin';
             break;
           case 'teacher':
           case 'school_admin':
-            navigate('/teacher/dashboard', { replace: true });
+            targetRoute = '/teacher/dashboard';
             break;
           case 'student':
-            navigate('/dashboard', { replace: true });
+            targetRoute = '/dashboard';
             break;
           default:
-            navigate('/dashboard', { replace: true });
+            targetRoute = '/dashboard';
         }
+        
+        console.log('🚀 Navigating to:', targetRoute);
+        navigate(targetRoute, { replace: true });
       }, 1200);
 
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('🧹 Cleaning up timer');
+        clearTimeout(timer);
+      };
     }
-
-    return () => {
-      dispatch(reset());
-    };
-  }, [user, isSuccess, isSignUp, navigate, dispatch]);
+  }, [user, isSuccess, isSignUp, navigate, dispatch, getUserDisplayName]);
 
   const onRegister = (e) => {
     e.preventDefault();
