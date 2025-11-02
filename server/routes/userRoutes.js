@@ -1,7 +1,5 @@
 const express = require('express');
 const router = express.Router();
-
-// ✅ FIX: Remove getUserSummary from the import list
 const {
   registerUser,
   loginUser,
@@ -10,23 +8,36 @@ const {
   updateUserProfile,
   deleteUser,
 } = require('../controllers/userController');
-const { protect, admin } = require('../middleware/authMiddleware'); // For security
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-// --- PUBLIC ROUTES ---
+// @route   POST /api/users/register
+// @desc    Register a new user
+// @access  Public
 router.post('/register', registerUser);
+
+// @route   POST /api/users/login
+// @desc    Login user and get token
+// @access  Public
 router.post('/login', loginUser);
 
-// --- PROTECTED ROUTES ---
-// 'protect' ensures a user is logged in. 'admin' ensures they are an admin.
-router.get('/', protect, admin, getAllUsers);
+// @route   GET /api/users
+// @desc    Get all users (Admin only)
+// @access  Private/Admin
+router.get('/', protect, authorize('admin'), getAllUsers);
 
-router
-  .route('/:id')
-  .get(protect, getUserProfile)
-  .put(protect, updateUserProfile)
-  .delete(protect, admin, deleteUser);
+// @route   GET /api/users/profile
+// @desc    Get logged-in user profile
+// @access  Private
+router.get('/profile', protect, getUserProfile);
 
-// ✅ FIX: The route that caused the server to crash has been deleted.
-// router.get('/:id/summary', getUserSummary); // <-- This line must be removed.
+// @route   PUT /api/users/profile
+// @desc    Update logged-in user profile
+// @access  Private
+router.put('/profile', protect, updateUserProfile);
+
+// @route   DELETE /api/users/:id
+// @desc    Delete a user (Admin only)
+// @access  Private/Admin
+router.delete('/:id', protect, authorize('admin'), deleteUser);
 
 module.exports = router;
