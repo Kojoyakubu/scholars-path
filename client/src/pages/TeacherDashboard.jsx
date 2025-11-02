@@ -4,7 +4,8 @@ import {
   CircularProgress, Divider, useTheme
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { syncUserFromStorage } from '../features/auth/authSlice';
 import api from '../api/axios';
 
 const highlightKeywords = (text) => {
@@ -49,15 +50,34 @@ const AIInsightsCard = ({ title, content }) => {
 
 const TeacherDashboard = () => {
   const theme = useTheme();
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth || {});
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [aiInsights, setAiInsights] = useState('');
   const [aiError, setAiError] = useState('');
 
+  // 🆕 Sync user from localStorage on component mount
+  useEffect(() => {
+    dispatch(syncUserFromStorage());
+  }, [dispatch]);
+
+  // 🐛 Debug: Log user object
+  useEffect(() => {
+    console.log('👤 TeacherDashboard - Current user:', user);
+    console.log('📛 User name:', user?.name);
+    console.log('📛 User fullName:', user?.fullName);
+  }, [user]);
+
   useEffect(() => {
     let isMounted = true;
     const fetchAnalytics = async () => {
+      if (!user) {
+        console.log('⚠️ No user found, skipping analytics fetch');
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await api.get('/api/teacher/analytics', {
           params: { role: user?.role, name: user?.name || user?.fullName },
@@ -88,6 +108,13 @@ const TeacherDashboard = () => {
     };
   }, [user]);
 
+  // 🆕 Get display name with proper fallback
+  const getDisplayName = () => {
+    if (!user) return 'Teacher';
+    const name = user.name || user.fullName || 'Teacher';
+    return name.split(' ')[0]; // Get first name
+  };
+
   if (loading) {
     return (
       <Box textAlign="center" mt={10}>
@@ -104,7 +131,7 @@ const TeacherDashboard = () => {
           Teacher Dashboard
         </Typography>
         <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-          Welcome back, {user?.name || user?.fullName || 'Teacher'} — here’s a quick look at your teaching stats.
+          Welcome back, {getDisplayName()} — here's a quick look at your teaching stats.
         </Typography>
 
         <Grid container spacing={3} sx={{ mt: 2 }}>
@@ -135,7 +162,7 @@ const TeacherDashboard = () => {
               </Typography>
             ) : (
               <AIInsightsCard
-                title={`Your Teaching Highlights, ${user.name || user.fullName || 'Teacher'}`}
+                title={`Your Teaching Highlights, ${getDisplayName()}`}
                 content={
                   aiInsights ||
                   `Analyzing your recent activities and engagement data...`

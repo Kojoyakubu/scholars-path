@@ -3,12 +3,20 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from './authService';
 
 // -----------------------------------------------------------------------------
-// 🧩 INITIAL STATE
+// 🧩 INITIAL STATE - Get user from localStorage on app load
 // -----------------------------------------------------------------------------
-const user = JSON.parse(localStorage.getItem('user'));
+const getUserFromStorage = () => {
+  try {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+  } catch (error) {
+    console.error('Error parsing user from localStorage:', error);
+    return null;
+  }
+};
 
 const initialState = {
-  user: user || null,
+  user: getUserFromStorage(),
   isLoading: false,
   isSuccess: false,
   isError: false,
@@ -40,7 +48,8 @@ export const login = createAsyncThunk(
   async (userData, thunkAPI) => {
     try {
       const user = await authService.login(userData);
-      return user; // Returns complete user object with token
+      console.log('✅ Login service returned user:', user);
+      return user;
     } catch (error) {
       const message =
         error.response?.data?.message || error.message || error.toString();
@@ -86,12 +95,18 @@ const authSlice = createSlice({
       state.isError = false;
       state.message = '';
     },
+    // 🆕 Add action to sync user from localStorage
+    syncUserFromStorage: (state) => {
+      state.user = getUserFromStorage();
+    },
   },
   extraReducers: (builder) => {
     builder
       // REGISTER
       .addCase(register.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.message = '';
       })
       .addCase(register.fulfilled, (state) => {
         state.isLoading = false;
@@ -107,11 +122,13 @@ const authSlice = createSlice({
       .addCase(login.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
+        state.message = '';
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload; // Complete user object from service
+        state.user = action.payload;
+        console.log('✅ Redux state updated with user:', action.payload);
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -139,6 +156,8 @@ const authSlice = createSlice({
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.isSuccess = false;
+        state.isError = false;
+        state.message = '';
       });
   },
 });
@@ -146,5 +165,5 @@ const authSlice = createSlice({
 // -----------------------------------------------------------------------------
 // 🚀 EXPORTS
 // -----------------------------------------------------------------------------
-export const { reset } = authSlice.actions;
+export const { reset, syncUserFromStorage } = authSlice.actions;
 export default authSlice.reducer;

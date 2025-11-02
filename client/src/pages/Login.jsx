@@ -6,7 +6,7 @@ import { login, reset } from '../features/auth/authSlice';
 // MUI Imports
 import {
   Button, TextField, Box, Typography, Container, Paper,
-  CircularProgress, Alert, Collapse, Link, Grid
+  CircularProgress, Alert, Collapse, Link, Grid // ✅ THE FIX IS HERE: Added 'Grid' to the import list
 } from '@mui/material';
 import { motion } from 'framer-motion';
 
@@ -18,44 +18,26 @@ function Login() {
   const { user, isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // 🐛 DEBUG: Log the user object to see what we're getting
-    console.log('🔍 Login useEffect triggered');
-    console.log('👤 User object:', user);
-    console.log('✅ isSuccess:', isSuccess);
-    console.log('❌ isError:', isError);
-    console.log('📝 message:', message);
-
     if (isError) {
-      console.log('❌ Login error occurred:', message);
+      // Error is handled by the notification state
     }
 
     if (isSuccess && user) {
-      console.log('✅ Login successful!');
-      console.log('👤 User role:', user.role);
-      console.log('📛 User name:', user.name);
-      console.log('📧 User email:', user.email);
-      
       // Check the user's role and navigate to the correct dashboard
-      let targetRoute = '/';
-      
       switch (user.role) {
         case 'admin':
-          targetRoute = '/admin';
+          navigate('/admin');
           break;
         case 'teacher':
         case 'school_admin':
-          targetRoute = '/teacher/dashboard';
+          navigate('/teacher/dashboard');
           break;
         case 'student':
-          targetRoute = '/dashboard';
+          navigate('/dashboard');
           break;
         default:
-          targetRoute = '/';
-          console.warn('⚠️ Unknown role:', user.role);
+          navigate('/'); // Fallback to landing page if role is unknown
       }
-      
-      console.log('🚀 Navigating to:', targetRoute);
-      navigate(targetRoute);
     }
 
     // Reset the auth state flags when the component unmounts
@@ -71,7 +53,6 @@ function Login() {
 
   const onSubmit = useCallback((e) => {
     e.preventDefault();
-    console.log('📤 Submitting login with:', { email: formData.email });
     dispatch(login(formData));
   }, [dispatch, formData]);
 
@@ -102,38 +83,10 @@ function Login() {
               </Alert>
             </Collapse>
 
-            <TextField 
-              margin="normal" 
-              required 
-              fullWidth 
-              id="email" 
-              label="Email Address" 
-              name="email" 
-              autoComplete="email" 
-              autoFocus 
-              value={formData.email} 
-              onChange={onChange} 
-            />
-            <TextField 
-              margin="normal" 
-              required 
-              fullWidth 
-              name="password" 
-              label="Password" 
-              type="password" 
-              id="password" 
-              autoComplete="current-password" 
-              value={formData.password} 
-              onChange={onChange} 
-            />
+            <TextField margin="normal" required fullWidth id="email" label="Email Address" name="email" autoComplete="email" autoFocus value={formData.email} onChange={onChange} />
+            <TextField margin="normal" required fullWidth name="password" label="Password" type="password" id="password" autoComplete="current-password" value={formData.password} onChange={onChange} />
             
-            <Button 
-              type="submit" 
-              fullWidth 
-              variant="contained" 
-              disabled={isLoading} 
-              sx={{ mt: 3, mb: 2, py: 1.5 }}
-            >
+            <Button type="submit" fullWidth variant="contained" disabled={isLoading} sx={{ mt: 3, mb: 2, py: 1.5 }}>
               {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
             </Button>
             <Grid container justifyContent="flex-end">
