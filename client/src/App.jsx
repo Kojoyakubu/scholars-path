@@ -1,73 +1,75 @@
 // /client/src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
-import Dashboard from './pages/Dashboard';
-import SchoolDashboard from './pages/SchoolDashboard';
-import TeacherDashboard from './pages/TeacherDashboard';
-import LessonNoteView from './pages/LessonNoteView';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminCurriculum from './pages/AdminCurriculum';
-import AdminSchools from './pages/AdminSchools';
-import AdminUsers from './pages/AdminUsers';
-import MyBadges from './pages/MyBadges';
-import PaymentSuccess from './pages/PaymentSuccess';
-import PaymentFailed from './pages/PaymentFailed';
-import PricingPage from './pages/PricingPage';
-import TakeQuiz from './pages/TakeQuiz';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { Toaster } from 'react-hot-toast';
+
+// Pages & Components
 import AuthPortal from './pages/AuthPortal';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import TeacherDashboard from './pages/TeacherDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import SchoolDashboard from './pages/SchoolDashboard';
+import LessonNoteView from './pages/LessonNoteView';
+import NotFound from './pages/NotFound';
 
-// ✅ IMPORT the RoleRoute component
-import RoleRoute from './components/RoleRoute'; 
+// Route guards
+import PrivateRoute from './components/PrivateRoute';
+import RoleRoute from './components/RoleRoute';
 
-function App() {
+// Optional layouts (if any)
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+
+const App = () => {
+  const { user } = useSelector((state) => state.auth);
+
   return (
     <Router>
+      <Toaster position="top-center" reverseOrder={false} />
+
+      {/* Optional global navbar */}
+      {user && <Navbar />}
+
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth" element={<AuthPortal />} />
-        <Route path="/pricing" element={<PricingPage />} />
+        {/* 🧭 Public routes */}
+        <Route path="/" element={<AuthPortal />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-        {/* Redirect old login/register links to AuthPortal */}
-        <Route path="/login" element={<Navigate to="/auth" replace />} />
-        <Route path="/register" element={<Navigate to="/auth" replace />} />
-        
-        {/* ======================================================= */}
-        {/* ✅ PROTECTED ROUTES - Grouped by Role (Using RoleRoute) */}
-        {/* ======================================================= */}
-        
-        {/* Student Routes */}
-        <Route element={<RoleRoute allowedRoles={['student']} />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/my-badges" element={<MyBadges />} />
-          <Route path="/take-quiz" element={<TakeQuiz />} />
-        </Route>
+        {/* ================================
+            🧱 Protected Routes
+        ================================= */}
 
-        {/* Teacher & School Admin Routes */}
-        <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin']} />}>
-          <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-          <Route path="/school/dashboard" element={<SchoolDashboard />} />
-          <Route path="/lesson-note/:id" element={<LessonNoteView />} />
-        </Route>
+        {/* Wrap everything in PrivateRoute to check authentication */}
+        <Route element={<PrivateRoute />}>
+          {/* 🔹 Teacher & School Admin */}
+          <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin']} />}>
+            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/school/dashboard" element={<SchoolDashboard />} />
+            <Route path="/lesson-note/:id" element={<LessonNoteView />} />
+          </Route>
 
-        {/* Admin Routes */}
-        <Route element={<RoleRoute allowedRoles={['admin']} />}>
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/curriculum" element={<AdminCurriculum />} />
-          <Route path="/admin/schools" element={<AdminSchools />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
+          {/* 🔹 Admin */}
+          <Route element={<RoleRoute allowedRoles={['admin']} />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+
+          {/* 🔹 Student */}
+          <Route element={<RoleRoute allowedRoles={['student']} />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
         </Route>
-        
-        {/* Payment feedback */}
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/failed" element={<PaymentFailed />} />
 
         {/* Catch-all route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
+
+      {user && <Footer />}
     </Router>
   );
-}
+};
 
 export default App;
