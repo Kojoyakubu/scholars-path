@@ -3,14 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Container, Typography, Button, Stack, useTheme, Paper } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import api from '../api/axios'; // axios instance
+import api from '../api/axios';
 
 // Placeholder for a hero image or illustration
-import heroImage from '/hero-illustration.svg'; // You'll need an SVG or PNG here
+import heroImage from '/hero-illustration.svg';
 
-// Lightweight local AI Insights card (kept inline so this file is self-contained)
+// Lightweight local AI Insights card
 const AIInsightsCard = ({ title = 'AI Insights', content }) => {
   if (!content) return null;
   return (
@@ -31,6 +31,7 @@ const AIInsightsCard = ({ title = 'AI Insights', content }) => {
 
 const LandingPage = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth || {});
   const [aiInsights, setAiInsights] = useState('');
   const [aiError, setAiError] = useState('');
@@ -40,15 +41,43 @@ const LandingPage = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
   };
 
+  // 🆕 Helper function to get user's display name
+  const getUserDisplayName = () => {
+    if (!user) return '';
+    return user.name || user.fullName || 'there';
+  };
+
+  // 🆕 Redirect logged-in users to their dashboards
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        switch (user.role) {
+          case 'admin':
+            navigate('/admin');
+            break;
+          case 'teacher':
+          case 'school_admin':
+            navigate('/teacher/dashboard');
+            break;
+          case 'student':
+            navigate('/dashboard');
+            break;
+          default:
+            break;
+        }
+      }, 2000); // Show welcome message for 2 seconds before redirecting
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, navigate]);
+
   // Fetch role-aware, personalized AI message if a user is logged in
   useEffect(() => {
     let isMounted = true;
     const fetchInsights = async () => {
       try {
-        // Backend can personalize using req.user (JWT). We also pass hints.
-        // ✅ CORRECTED URL
         const res = await api.get('/api/ai/onboarding/insights', {
-          params: { role: user?.role, name: user?.fullName },
+          params: { role: user?.role, name: getUserDisplayName() },
         });
         if (!isMounted) return;
         const text = res?.data?.insight || res?.data?.message || '';
@@ -78,7 +107,7 @@ const LandingPage = () => {
       <Container maxWidth="md">
         <motion.div initial="hidden" animate="visible" variants={fadeIn}>
           <img
-            src={heroImage} // Ensure you have a hero-illustration.svg in your public folder
+            src={heroImage}
             alt="Learning Illustration"
             style={{ maxWidth: '80%', height: 'auto', marginBottom: theme.spacing(4) }}
           />
@@ -101,32 +130,35 @@ const LandingPage = () => {
           </Typography>
         </motion.div>
 
-        <motion.div initial="hidden" animate="visible" variants={fadeIn} transition={{ delay: 0.6 }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              component={RouterLink}
-              to="/register"
-            >
-              Get Started
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              size="large"
-              component={RouterLink}
-              to="/login"
-            >
-              Login
-            </Button>
-          </Stack>
-        </motion.div>
+        {/* Show buttons only if user is NOT logged in */}
+        {!user && (
+          <motion.div initial="hidden" animate="visible" variants={fadeIn} transition={{ delay: 0.6 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                component={RouterLink}
+                to="/register"
+              >
+                Get Started
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="large"
+                component={RouterLink}
+                to="/login"
+              >
+                Login
+              </Button>
+            </Stack>
+          </motion.div>
+        )}
 
         {/* Personalized AI block shows only when logged-in */}
         {user && (
-          <>
+          <motion.div initial="hidden" animate="visible" variants={fadeIn} transition={{ delay: 0.6 }}>
             {aiError ? (
               <Typography color="error" sx={{ mt: 3 }}>
                 {aiError}
@@ -135,17 +167,17 @@ const LandingPage = () => {
               <AIInsightsCard
                 title={
                   user.role === 'teacher'
-                    ? `Welcome back, ${user.fullName}!`
+                    ? `Welcome Back, ${getUserDisplayName()}!`
                     : user.role === 'admin'
-                    ? `Hello Admin ${user.fullName}`
+                    ? `Hello Admin ${getUserDisplayName()}`
                     : user.role === 'school_admin'
-                    ? `Hello ${user.fullName} (School Admin)`
-                    : `Hi ${user.fullName}`
+                    ? `Hello ${getUserDisplayName()} (School Admin)`
+                    : `Welcome Back, ${getUserDisplayName()}!`
                 }
-                content={aiInsights}
+                content={aiInsights || 'Redirecting you to your dashboard now...'}
               />
             )}
-          </>
+          </motion.div>
         )}
       </Container>
     </Box>
