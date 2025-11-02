@@ -1,31 +1,37 @@
 // /client/src/features/auth/authService.js
 import api from '../../api/axios';
 
-// ======================
+// -----------------------------------------------------------------------------
 // 🔐 REGISTER USER
-// ======================
+// -----------------------------------------------------------------------------
 const register = async (userData) => {
   const response = await api.post('/api/users/register', userData);
-  return response.data;
+  return response.data; // backend already returns { message, user }
 };
 
-// ======================
+// -----------------------------------------------------------------------------
 // 🔑 LOGIN USER
-// ======================
+// -----------------------------------------------------------------------------
 const login = async (userData) => {
   const response = await api.post('/api/users/login', userData);
-  const user = response.data.user;
-  if (user?.token) localStorage.setItem('user', JSON.stringify(user));
+
+  // ✅ Normalize backend response
+  // backend returns { message: 'Login successful', user: { ...userFields, token } }
+  const user = response.data.user || response.data;
+
+  if (user?.token) {
+    localStorage.setItem('user', JSON.stringify(user)); // persist login
+  }
+
   return user;
 };
 
-
-// ======================
+// -----------------------------------------------------------------------------
 // 👤 GET USER PROFILE
-// ======================
+// -----------------------------------------------------------------------------
 const getProfile = async () => {
   const storedUser = JSON.parse(localStorage.getItem('user'));
-  if (!storedUser?.token) throw new Error('No token found. Please login again.');
+  if (!storedUser?.token) throw new Error('No token found. Please log in again.');
 
   const config = {
     headers: {
@@ -37,16 +43,16 @@ const getProfile = async () => {
   return response.data;
 };
 
-// ======================
+// -----------------------------------------------------------------------------
 // 🚪 LOGOUT USER
-// ======================
+// -----------------------------------------------------------------------------
 const logout = () => {
   localStorage.removeItem('user');
 };
 
-// ======================
-// EXPORT
-// ======================
+// -----------------------------------------------------------------------------
+// 📦 EXPORT SERVICE
+// -----------------------------------------------------------------------------
 const authService = {
   register,
   login,
