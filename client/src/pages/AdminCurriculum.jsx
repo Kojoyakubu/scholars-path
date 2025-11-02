@@ -1,332 +1,330 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-
+// /client/src/pages/AdminCurriculum.jsx
+import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Container,
-  Grid,
   Paper,
   Typography,
-  Stack,
-  TextField,
   Button,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
   IconButton,
-  Divider,
+  Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import DeleteIcon from '@mui/icons-material/Delete';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { motion } from 'framer-motion';
-
-// Redux (curriculum slice is assumed to expose these)
-import {
-  fetchItems,
-  fetchChildren,
-  createItem,
-  deleteItem,
-  clearChildren,
-} from '../features/curriculum/curriculumSlice';
-
-// AI insights
-import { getAiInsights } from '../features/admin/adminSlice';
-import AIInsightsCard from '../components/AIInsightsCard';
-
-const Section = ({ title, onCreate, createLabel, items, onSelect, onDelete, selectedId, placeholder = 'Name' }) => {
-  const [name, setName] = useState('');
-
-  return (
-    <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">{title}</Typography>
-        <Stack direction="row" spacing={1}>
-          <TextField
-            size="small"
-            placeholder={placeholder}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              if (!name.trim()) return;
-              onCreate(name.trim());
-              setName('');
-            }}
-          >
-            {createLabel}
-          </Button>
-        </Stack>
-      </Stack>
-
-      <Divider sx={{ mb: 1 }} />
-
-      {Array.isArray(items) && items.length > 0 ? (
-        <List dense sx={{ maxHeight: 360, overflowY: 'auto' }}>
-          {items.map((it) => {
-            const isSelected = it._id === selectedId;
-            return (
-              <ListItem
-                key={it._id}
-                secondaryAction={
-                  <IconButton edge="end" color="error" onClick={() => onDelete(it._id)}>
-                    <DeleteOutlineIcon />
-                  </IconButton>
-                }
-                sx={{
-                  borderLeft: `6px solid ${isSelected ? '#1976d2' : 'transparent'}`,
-                  borderRadius: 1,
-                  mb: 1,
-                }}
-              >
-                <ListItemText
-                  primary={
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Button
-                        size="small"
-                        variant={isSelected ? 'contained' : 'outlined'}
-                        endIcon={<ArrowForwardIcon />}
-                        onClick={() => onSelect(it._id)}
-                      >
-                        Select
-                      </Button>
-                      <Typography fontWeight={600}>{it.name}</Typography>
-                    </Stack>
-                  }
-                  secondary={it.description}
-                />
-              </ListItem>
-            );
-          })}
-        </List>
-      ) : (
-        <Typography color="text.secondary">No items yet.</Typography>
-      )}
-    </Paper>
-  );
-};
+import curriculumService from '../features/curriculum/curriculumService';
 
 const AdminCurriculum = () => {
-  const dispatch = useDispatch();
-  const {
-    levels = [],
-    classes = [],
-    subjects = [],
-    strands = [],
-    subStrands = [],
-    isLoading,
-    error,
-  } = useSelector((s) => s.curriculum);
+  const [levels, setLevels] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [strands, setStrands] = useState([]);
+  const [subStrands, setSubStrands] = useState([]);
 
-  const { aiInsights } = useSelector((s) => s.admin);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState('');
+  const [parentId, setParentId] = useState('');
+  const [newName, setNewName] = useState('');
 
-  const [selected, setSelected] = useState({
-    levelId: '',
-    classId: '',
-    subjectId: '',
-    strandId: '',
-  });
+  const [loading, setLoading] = useState(false);
 
-  // initial load
+  // 🔄 Fetch all levels at load
   useEffect(() => {
-    dispatch(fetchItems({ entity: 'levels' }));
-    dispatch(getAiInsights({ endpoint: '/api/admin/curriculum/insights' }));
-  }, [dispatch]);
+    fetchLevels();
+  }, []);
 
-  // cascade children fetches
-  useEffect(() => {
-    if (selected.levelId) {
-      dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selected.levelId }));
+  const fetchLevels = async () => {
+    try {
+      setLoading(true);
+      const data = await curriculumService.getItems('levels');
+      setLevels(data || []);
+    } catch (error) {
+      console.error('Error fetching levels:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [dispatch, selected.levelId]);
+  };
 
-  useEffect(() => {
-    if (selected.classId) {
-      dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selected.classId }));
-    }
-  }, [dispatch, selected.classId]);
-
-  useEffect(() => {
-    if (selected.subjectId) {
-      dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selected.subjectId }));
-    }
-  }, [dispatch, selected.subjectId]);
-
-  useEffect(() => {
-    if (selected.strandId) {
-      dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selected.strandId }));
-    }
-  }, [dispatch, selected.strandId]);
-
-  const onSelect = useCallback((level, id) => {
-    setSelected((prev) => {
-      const next = { ...prev, [level]: id };
-      // reset downstream selections + cached children
-      const resetMap = {
-        levelId: ['classId', 'subjectId', 'strandId'],
-        classId: ['subjectId', 'strandId'],
-        subjectId: ['strandId'],
-      };
-      if (resetMap[level]) {
-        resetMap[level].forEach((k) => (next[k] = ''));
-        dispatch(clearChildren({ entities: resetMap[level].map((x) =>
-          x === 'classId' ? 'classes' :
-          x === 'subjectId' ? 'subjects' :
-          x === 'strandId' ? 'strands' : x
-        ) }));
+  const fetchChildren = async (type, id) => {
+    try {
+      setLoading(true);
+      const data = await curriculumService.getChildrenOf(type, id);
+      switch (type) {
+        case 'classes':
+          setClasses(data || []);
+          break;
+        case 'subjects':
+          setSubjects(data || []);
+          break;
+        case 'strands':
+          setStrands(data || []);
+          break;
+        case 'sub-strands':
+          setSubStrands(data || []);
+          break;
+        default:
+          break;
       }
-      return next;
-    });
-  }, [dispatch]);
+    } catch (error) {
+      console.error(`Error fetching ${type}:`, error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const create = useCallback((entity, payload) => {
-    const body = {
-      name: payload.name,
-      parentId:
-        entity === 'classes' ? selected.levelId :
-        entity === 'subjects' ? selected.classId :
-        entity === 'strands' ? selected.subjectId :
-        entity === 'subStrands' ? selected.strandId :
-        undefined,
-    };
-    dispatch(createItem({ entity, body }));
-  }, [dispatch, selected]);
+  // ➕ Create new item
+  const handleCreate = async () => {
+    try {
+      if (!dialogType || !newName.trim()) return;
+      const payload = { name: newName.trim(), parentId: parentId || undefined };
+      await curriculumService.createItem(dialogType, payload);
 
-  const remove = useCallback((entity, id) => {
-    if (!window.confirm('Delete this item? All its descendants will also be removed.')) return;
-    dispatch(deleteItem({ entity, id }));
-  }, [dispatch]);
+      // Refresh data
+      if (dialogType === 'levels') fetchLevels();
+      else fetchChildren(dialogType, parentId);
 
-  if (isLoading) {
-    return (
-      <Box textAlign="center" mt={10}>
-        <CircularProgress />
-        <Typography mt={2}>Loading curriculum…</Typography>
-      </Box>
-    );
-  }
+      setNewName('');
+      setDialogOpen(false);
+    } catch (error) {
+      console.error(`Error creating ${dialogType}:`, error);
+    }
+  };
 
-  if (error) {
-    return (
-      <Box textAlign="center" mt={10}>
-        <Typography color="error">Failed to load curriculum: {error}</Typography>
-      </Box>
-    );
-  }
+  // ❌ Delete item
+  const handleDelete = async (type, id, parent) => {
+    try {
+      await curriculumService.deleteItem(type, id);
+      if (type === 'levels') fetchLevels();
+      else fetchChildren(type, parent);
+    } catch (error) {
+      console.error(`Error deleting ${type}:`, error);
+    }
+  };
+
+  const openDialog = (type, parent = '') => {
+    setDialogType(type);
+    setParentId(parent);
+    setDialogOpen(true);
+  };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Typography variant="h4" fontWeight="bold" gutterBottom>
-        Curriculum Manager
-      </Typography>
+    <Box>
+      <Paper
+        component={motion.div}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        sx={{ p: 3, borderRadius: 3 }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Typography variant="h6" fontWeight={700}>
+            Curriculum Management
+          </Typography>
+          <Tooltip title="Refresh All">
+            <IconButton onClick={fetchLevels}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6} lg={3}>
-          <Section
-            title="Levels"
-            createLabel="Add Level"
-            items={levels}
-            selectedId={selected.levelId}
-            onCreate={(name) => create('levels', { name })}
-            onSelect={(id) => onSelect('levelId', id)}
-            onDelete={(id) => remove('levels', id)}
+        {/* LEVELS */}
+        <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 1 }}>
+          Levels
+        </Typography>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {levels.map((level) => (
+              <TableRow key={level._id}>
+                <TableCell>{level.name}</TableCell>
+                <TableCell align="right">
+                  <Tooltip title="Add Class">
+                    <IconButton onClick={() => openDialog('classes', level._id)}>
+                      <AddIcon color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Level">
+                    <IconButton onClick={() => handleDelete('levels', level._id)}>
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* CLASSES */}
+        <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 4 }}>
+          Classes
+        </Typography>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Level</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {classes.map((c) => (
+              <TableRow key={c._id}>
+                <TableCell>{c.name}</TableCell>
+                <TableCell>{c.level?.name || '—'}</TableCell>
+                <TableCell align="right">
+                  <Tooltip title="Add Subject">
+                    <IconButton onClick={() => openDialog('subjects', c._id)}>
+                      <AddIcon color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Class">
+                    <IconButton onClick={() => handleDelete('classes', c._id, c.level?._id)}>
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* SUBJECTS */}
+        <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 4 }}>
+          Subjects
+        </Typography>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Class</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {subjects.map((s) => (
+              <TableRow key={s._id}>
+                <TableCell>{s.name}</TableCell>
+                <TableCell>{s.class?.name || '—'}</TableCell>
+                <TableCell align="right">
+                  <Tooltip title="Add Strand">
+                    <IconButton onClick={() => openDialog('strands', s._id)}>
+                      <AddIcon color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Subject">
+                    <IconButton onClick={() => handleDelete('subjects', s._id, s.class?._id)}>
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* STRANDS */}
+        <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 4 }}>
+          Strands
+        </Typography>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Subject</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {strands.map((st) => (
+              <TableRow key={st._id}>
+                <TableCell>{st.name}</TableCell>
+                <TableCell>{st.subject?.name || '—'}</TableCell>
+                <TableCell align="right">
+                  <Tooltip title="Add Sub-Strand">
+                    <IconButton onClick={() => openDialog('sub-strands', st._id)}>
+                      <AddIcon color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Strand">
+                    <IconButton onClick={() => handleDelete('strands', st._id, st.subject?._id)}>
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* SUB-STRANDS */}
+        <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 4 }}>
+          Sub-Strands
+        </Typography>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Strand</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {subStrands.map((ss) => (
+              <TableRow key={ss._id}>
+                <TableCell>{ss.name}</TableCell>
+                <TableCell>{ss.strand?.name || '—'}</TableCell>
+                <TableCell align="right">
+                  <Tooltip title="Delete Sub-Strand">
+                    <IconButton onClick={() => handleDelete('sub-strands', ss._id, ss.strand?._id)}>
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Paper>
+
+      {/* Create Item Dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Create {dialogType?.replace('-', ' ').toUpperCase()}</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Name"
+            fullWidth
+            sx={{ mt: 2 }}
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
           />
-        </Grid>
-
-        <Grid item xs={12} md={6} lg={3}>
-          <Section
-            title="Classes"
-            createLabel="Add Class"
-            items={classes}
-            selectedId={selected.classId}
-            onCreate={(name) => create('classes', { name })}
-            onSelect={(id) => onSelect('classId', id)}
-            onDelete={(id) => remove('classes', id)}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6} lg={3}>
-          <Section
-            title="Subjects"
-            createLabel="Add Subject"
-            items={subjects}
-            selectedId={selected.subjectId}
-            onCreate={(name) => create('subjects', { name })}
-            onSelect={(id) => onSelect('subjectId', id)}
-            onDelete={(id) => remove('subjects', id)}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6} lg={3}>
-          <Section
-            title="Strands"
-            createLabel="Add Strand"
-            items={strands}
-            selectedId={selected.strandId}
-            onCreate={(name) => create('strands', { name })}
-            onSelect={(id) => onSelect('strandId', id)}
-            onDelete={(id) => remove('strands', id)}
-          />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom>Sub-Strands</Typography>
-            <Stack direction="row" spacing={1} mb={2}>
-              <TextField
-                size="small"
-                placeholder="Sub-strand name"
-                sx={{ width: 320 }}
-                id="substrand-input"
-              />
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                disabled={!selected.strandId}
-                onClick={() => {
-                  const el = document.getElementById('substrand-input');
-                  const name = el?.value?.trim();
-                  if (!name) return;
-                  create('subStrands', { name });
-                  el.value = '';
-                }}
-              >
-                Add Sub-Strand
-              </Button>
-            </Stack>
-
-            <Divider sx={{ mb: 1 }} />
-
-            <List dense sx={{ maxHeight: 360, overflowY: 'auto' }}>
-              {Array.isArray(subStrands) && subStrands.length > 0 ? (
-                subStrands.map((ss) => (
-                  <ListItem
-                    key={ss._id}
-                    secondaryAction={
-                      <IconButton color="error" edge="end" onClick={() => remove('subStrands', ss._id)}>
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    }
-                  >
-                    <ListItemText primary={ss.name} secondary={ss.description} />
-                  </ListItem>
-                ))
-              ) : (
-                <Typography color="text.secondary">No sub-strands for the selected strand.</Typography>
-              )}
-            </List>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      {aiInsights && (
-        <AIInsightsCard title="AI Insights on Curriculum Trends" content={aiInsights} />
-      )}
-    </Container>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleCreate} disabled={!newName.trim()}>
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

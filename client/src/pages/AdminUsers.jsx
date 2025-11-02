@@ -1,80 +1,203 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { getUsers, getAiInsights, deleteUser } from '../features/admin/adminSlice';
+// /client/src/pages/AdminUsers.jsx
+import React, { useEffect, useState } from 'react';
 import {
-  Box, Typography, CircularProgress, IconButton, Paper, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Tooltip
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  TablePagination,
+  IconButton,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
+import CheckIcon from '@mui/icons-material/Check';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SchoolIcon from '@mui/icons-material/School';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { motion } from 'framer-motion';
-import AIInsightsCard from '../components/AIInsightsCard';
+import adminService from '../features/admin/adminService';
 
 const AdminUsers = () => {
-  const dispatch = useDispatch();
-  const { users, aiInsights, isLoading, error } = useSelector((state) => state.admin);
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    dispatch(getUsers());
-    dispatch(getAiInsights({ endpoint: '/api/admin/users/insights' }));
-  }, [dispatch]);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [schools, setSchools] = useState([]);
+  const [schoolId, setSchoolId] = useState('');
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      dispatch(deleteUser(id));
+  // 🧠 Load all users
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await adminService.getUsers(page + 1);
+      setRows(data.users || []);
+      setTotal(data.total || 0);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box textAlign="center" mt={10}>
-        <CircularProgress color="primary" />
-        <Typography mt={2}>Loading users...</Typography>
-      </Box>
-    );
-  }
+  // 🏫 Load all schools
+  const fetchSchools = async () => {
+    const data = await adminService.getSchools();
+    setSchools(data || []);
+  };
 
-  if (error) {
-    return <Typography color="error" textAlign="center" mt={4}>{error}</Typography>;
-  }
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, rowsPerPage]);
+
+  // ✅ Approve user
+  const approveUser = async (id) => {
+    await adminService.approveUser(id);
+    fetchUsers();
+  };
+
+  // ❌ Delete user
+  const deleteUser = async (id) => {
+    await adminService.deleteUser(id);
+    fetchUsers();
+  };
+
+  // 🏫 Open assign dialog
+  const openAssign = async (user) => {
+    setSelectedUser(user);
+    await fetchSchools();
+    setAssignOpen(true);
+  };
+
+  // 🧩 Assign user to school
+  const assignToSchool = async () => {
+    if (!selectedUser || !schoolId) return;
+    await adminService.assignUserToSchool({
+      userId: selectedUser._id,
+      schoolId,
+    });
+    setAssignOpen(false);
+    setSchoolId('');
+    setSelectedUser(null);
+    fetchUsers();
+  };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" gutterBottom fontWeight="bold">User Management</Typography>
+    <Box>
+      <Paper
+        component={motion.div}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        sx={{ p: 3, borderRadius: 3 }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Typography variant="h6" fontWeight={700}>User Management</Typography>
+          <IconButton onClick={fetchUsers} title="Refresh">
+            <RefreshIcon />
+          </IconButton>
+        </Box>
 
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell><strong>Name</strong></TableCell>
-              <TableCell><strong>Email</strong></TableCell>
-              <TableCell><strong>Role</strong></TableCell>
-              <TableCell align="center"><strong>Actions</strong></TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Role</TableCell>
+              <TableCell>School</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {users?.map((user) => (
-              <TableRow
-                key={user._id}
-                component={motion.tr}
-                whileHover={{ backgroundColor: '#f9f9f9' }}
-              >
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell align="center">
-                  <Tooltip title="Delete User">
-                    <IconButton color="error" onClick={() => handleDelete(user._id)}>
-                      <DeleteIcon />
+            {!loading && rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6}>
+                  <Typography color="text.secondary">No users found.</Typography>
+                </TableCell>
+              </TableRow>
+            )}
+            {rows.map((u) => (
+              <TableRow key={u._id}>
+                <TableCell>{u.fullName || u.name || '—'}</TableCell>
+                <TableCell>{u.email}</TableCell>
+                <TableCell sx={{ textTransform: 'capitalize' }}>{u.role}</TableCell>
+                <TableCell>{u.school?.name || '—'}</TableCell>
+                <TableCell>{u.approved ? 'Approved' : 'Pending'}</TableCell>
+                <TableCell align="right">
+                  {!u.approved && (
+                    <IconButton onClick={() => approveUser(u._id)} title="Approve">
+                      <CheckIcon color="success" />
                     </IconButton>
-                  </Tooltip>
+                  )}
+                  <IconButton onClick={() => openAssign(u)} title="Assign to School">
+                    <SchoolIcon />
+                  </IconButton>
+                  <IconButton onClick={() => deleteUser(u._id)} title="Delete">
+                    <DeleteIcon color="error" />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
 
-      <AIInsightsCard title="AI Insights on Users" content={aiInsights} />
+        <TablePagination
+          component="div"
+          count={total}
+          page={page}
+          onPageChange={(_, p) => setPage(p)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[5, 10, 20, 50]}
+        />
+      </Paper>
+
+      {/* Assign School Dialog */}
+      <Dialog open={assignOpen} onClose={() => setAssignOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Assign User to School</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            {selectedUser?.fullName || selectedUser?.name} ({selectedUser?.email})
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel>School</InputLabel>
+            <Select
+              label="School"
+              value={schoolId}
+              onChange={(e) => setSchoolId(e.target.value)}
+            >
+              {schools.map((s) => (
+                <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAssignOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={assignToSchool} disabled={!schoolId}>
+            Assign
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

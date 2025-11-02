@@ -1,5 +1,5 @@
 // src/features/admin/adminService.js
-import api from '../../api/axios'; // Centralized Axios instance
+import api from '../../api/axios';
 
 // Get all users with pagination
 const getUsers = async (pageNumber = 1) => {
@@ -50,9 +50,27 @@ const assignUserToSchool = async (data) => {
   return response.data;
 };
 
-// 🧠 Get AI Insights (for Admin Dashboard)
+// 🧠 Get AI Insights
 const getAiInsights = async () => {
-  const response = await api.get('/admin/ai-insights');
+  const response = await api.get('/admin/analytics/insights'); // fixed route
+  return response.data;
+};
+
+// 📊 Get Analytics Overview
+const getAnalyticsOverview = async () => {
+  const response = await api.get('/admin/analytics/overview');
+  return response.data;
+};
+
+// 🧑‍🏫 Get Top Teachers
+const getTopTeachers = async () => {
+  const response = await api.get('/admin/analytics/top-teachers');
+  return response.data;
+};
+
+// 👩‍🎓 Get Top Students
+const getTopStudents = async () => {
+  const response = await api.get('/admin/analytics/top-students');
   return response.data;
 };
 
@@ -66,6 +84,9 @@ const adminService = {
   deleteSchool,
   assignUserToSchool,
   getAiInsights,
+  getAnalyticsOverview,
+  getTopTeachers,
+  getTopStudents,
 };
 
 export default adminService;
