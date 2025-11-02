@@ -1,4 +1,3 @@
-// src/features/auth/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from './authService';
 
@@ -31,17 +30,16 @@ export const register = createAsyncThunk('auth/register', async (userData, thunk
 // ======================
 export const login = createAsyncThunk('auth/login', async (userData, thunkAPI) => {
   try {
-    const response = await authService.login(userData); // authService handles localStorage save
+    const response = await authService.login(userData);
 
-    // ❌ REMOVED REDUNDANT localStorage.setItem BLOCK HERE:
-    /*
-    if (response?.token) {
-      localStorage.setItem('user', JSON.stringify(response.user));
-      localStorage.setItem('token', response.token);
+    // Defensive structure: handle { user } or flat response
+    const user = response.user || response;
+
+    if (user && user.token) {
+      localStorage.setItem('user', JSON.stringify(user));
     }
-    */
 
-    return response.user; // Return only the user object for the Redux store
+    return user;
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
@@ -66,7 +64,6 @@ export const getProfile = createAsyncThunk('auth/getProfile', async (_, thunkAPI
 // ======================
 export const logout = createAsyncThunk('auth/logout', async () => {
   localStorage.removeItem('user');
-  localStorage.removeItem('token');
   return null;
 });
 
