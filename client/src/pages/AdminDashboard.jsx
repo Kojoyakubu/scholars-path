@@ -45,18 +45,9 @@ const AdminDashboard = () => {
   const [tab, setTab] = useState(0);
 
   useEffect(() => {
-    console.log('🔍 AdminDashboard - Fetching data...');
     dispatch(getStats());
     dispatch(getAiInsights());
   }, [dispatch]);
-
-  // 🐛 Debug logs
-  useEffect(() => {
-    console.log('📊 Admin Stats:', stats);
-    console.log('🤖 AI Insights:', aiInsights);
-    console.log('⚠️ Is Error:', isError);
-    console.log('💬 Message:', message);
-  }, [stats, aiInsights, isError, message]);
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -112,6 +103,9 @@ const AdminDashboard = () => {
         {isLoading ? (
           <Grid container justifyContent="center" sx={{ mt: 6 }}>
             <CircularProgress />
+            <Typography sx={{ width: '100%', textAlign: 'center', mt: 2 }}>
+              Loading admin data...
+            </Typography>
           </Grid>
         ) : (
           <Grid container spacing={2}>

@@ -246,7 +246,7 @@ const deleteSchool = asyncHandler(async (req, res) => {
     throw new Error('School not found');
   }
 
-  // Optional: orphan users policy — here we set their school to null
+  // Optional: orphan users policy – here we set their school to null
   await User.updateMany({ school: school._id }, { $set: { school: null } });
   await school.deleteOne();
 
@@ -325,13 +325,18 @@ const getTopTeachers = asyncHandler(async (_req, res) => {
     { $sort: { totalNotes: -1 } },
     { $limit: 5 },
   ]);
-  const populated = await User.populate(teachers, { path: '_id', select: 'fullName email role school' });
+  const populated = await User.populate(teachers, { path: '_id', select: 'fullName name email role school' });
   res.json(populated);
 });
 
 // GET /api/admin/analytics/top-students
 const getTopStudents = asyncHandler(async (_req, res) => {
   const students = await QuizAttempt.aggregate([
+    {
+      $match: {
+        totalQuestions: { $gt: 0 } // Only valid attempts
+      }
+    },
     {
       $group: {
         _id: '$student',
@@ -342,7 +347,7 @@ const getTopStudents = asyncHandler(async (_req, res) => {
     { $sort: { avgScore: -1 } },
     { $limit: 5 },
   ]);
-  const populated = await User.populate(students, { path: '_id', select: 'fullName email role school' });
+  const populated = await User.populate(students, { path: '_id', select: 'fullName name email role school' });
   res.json(populated);
 });
 
@@ -366,33 +371,50 @@ const getAiUsageSummary = asyncHandler(async (_req, res) => {
   });
 });
 
-// GET /api/admin/analytics/insights
+// GET /api/admin/analytics/insights - FIXED VERSION
 const getAiAnalyticsInsights = asyncHandler(async (_req, res) => {
-  const [teacherCount, studentCount, schoolCount, avgQuizScore, aiUsage] = await Promise.all([
-    User.countDocuments({ role: 'teacher' }),
-    User.countDocuments({ role: 'student' }),
-    School.countDocuments(),
-    QuizAttempt.aggregate([
-      {
-        $group: {
-          _id: null,
-          avgScore: { $avg: { $multiply: [{ $divide: ['$score', '$totalQuestions'] }, 100] } },
+  try {
+    const [teacherCount, studentCount, schoolCount, avgQuizScoreResult, aiUsage, totalQuizAttempts] = await Promise.all([
+      User.countDocuments({ role: 'teacher' }),
+      User.countDocuments({ role: 'student' }),
+      School.countDocuments(),
+      QuizAttempt.aggregate([
+        {
+          $match: {
+            totalQuestions: { $gt: 0 } // ✅ Only include attempts with questions
+          }
         },
-      },
-    ]),
-    LessonNote.aggregate([{ $group: { _id: '$aiProvider', count: { $sum: 1 } } }]),
-  ]);
+        {
+          $group: {
+            _id: null,
+            avgScore: { 
+              $avg: { 
+                $multiply: [
+                  { 
+                    $divide: ['$score', '$totalQuestions'] 
+                  }, 
+                  100
+                ] 
+              } 
+            },
+          },
+        },
+      ]),
+      LessonNote.aggregate([{ $group: { _id: '$aiProvider', count: { $sum: 1 } } }]),
+      QuizAttempt.countDocuments(),
+    ]);
 
-  const stats = {
-    teacherCount,
-    studentCount,
-    schoolCount,
-    avgScore: avgQuizScore[0]?.avgScore?.toFixed(1) || 0,
-    aiUsage,
-  };
+    const stats = {
+      teacherCount,
+      studentCount,
+      schoolCount,
+      avgScore: avgQuizScoreResult[0]?.avgScore?.toFixed(1) || '0',
+      totalQuizAttempts,
+      aiUsage,
+    };
 
-  const prompt = `
-You are an education data analyst for "Scholars Path".
+    const prompt = `
+You are an education data analyst for "Scholar's Path", a Ghanaian educational platform.
 Analyze this JSON data and write a 6–8 sentence report summarizing platform trends.
 
 Data:
@@ -400,33 +422,43 @@ ${JSON.stringify(stats, null, 2)}
 
 Include:
 - Engagement comparison (teachers vs students)
-- AI provider dominance
+- AI provider dominance (if any)
 - Student performance insights
-- One actionable recommendation
-Use a professional Ghanaian educational tone.
+- One actionable recommendation for improvement
+
+Use a professional, encouraging tone suitable for Ghanaian education stakeholders.
 `;
 
-  try {
-    const { text, provider, model } = await aiService.generateTextCore({
-      prompt,
-      task: 'adminInsightSummary',
-      temperature: 0.45,
-      preferredProvider: 'perplexity',
-    });
+    try {
+      const { text, provider, model } = await aiService.generateTextCore({
+        prompt,
+        task: 'adminInsightSummary',
+        temperature: 0.45,
+        preferredProvider: 'perplexity',
+      });
 
-    res.json({
-      summary: (text || '').trim(),
-      provider,
-      model,
-      rawStats: stats,
-    });
+      res.json({
+        summary: (text || '').trim(),
+        provider,
+        model,
+        rawStats: stats,
+      });
+    } catch (aiErr) {
+      console.error('AI insight generation failed:', aiErr.message);
+      
+      // ✅ Fallback response with actual stats
+      res.json({
+        summary: `Platform Overview: Scholar's Path currently serves ${teacherCount} teachers and ${studentCount} students across ${schoolCount} schools. ${totalQuizAttempts > 0 ? `Average quiz performance stands at ${stats.avgScore}%.` : 'Quiz engagement is growing.'} AI-powered content generation continues to support educators. Recommendation: Focus on increasing student engagement through interactive quizzes and personalized learning paths.`,
+        provider: 'fallback',
+        model: 'static',
+        rawStats: stats,
+      });
+    }
   } catch (err) {
-    console.error('AI insight generation failed:', err.message);
-    res.json({
-      summary:
-        'Engagement remains balanced across teachers and students. AI usage shows consistent adoption. Student quiz performance is steady. Recommended: focus on lesson quality reviews to improve average scores.',
-      provider: 'fallback',
-      rawStats: stats,
+    console.error('Error in getAiAnalyticsInsights:', err);
+    res.status(500).json({ 
+      message: 'Failed to generate analytics insights',
+      error: err.message 
     });
   }
 });
