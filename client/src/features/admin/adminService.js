@@ -1,89 +1,56 @@
-// src/features/admin/adminService.js
-import api from '../../api/axios';
+// /client/src/features/admin/adminService.js
+import axios from '../../api/axios'; // Your pre-configured axios instance
 
-// ... (all your existing functions like getUsers, approveUser, etc. remain here)
-const getUsers = async (pageNumber = 1) => {
-  const response = await api.get(`/api/admin/users?pageNumber=${pageNumber}`);
+// Base URL for admin-related endpoints
+const API_URL = '/admin/';
+
+/**
+ * @desc    Get dashboard statistics (total users, schools, etc.)
+ * @route   GET /api/admin/stats
+ * @access  Private (Admin)
+ */
+const getAdminStats = async () => {
+  const response = await axios.get(API_URL + 'stats');
   return response.data;
 };
 
-const approveUser = async (userId) => {
-  const response = await api.put(`/api/admin/users/${userId}/approve`);
+/**
+ * @desc    Get a paginated list of all users
+ * @route   GET /api/admin/users
+ * @access  Private (Admin)
+ */
+const getAllUsers = async () => {
+  // Assuming this endpoint returns a list of all users for the count
+  const response = await axios.get(API_URL + 'users');
   return response.data;
 };
 
-const deleteUser = async (userId) => {
-  const response = await api.delete(`/api/admin/users/${userId}`);
+/**
+ * @desc    Get a list of all schools
+ * @route   GET /api/admin/schools
+ * @access  Private (Admin)
+ */
+const getAllSchools = async () => {
+  const response = await axios.get(API_URL + 'schools');
   return response.data;
 };
 
-const getStats = async () => {
-  const response = await api.get('/api/admin/stats');
-  return response.data;
-};
-
-const getSchools = async () => {
-  const response = await api.get('/api/admin/schools');
-  return response.data;
-};
-
-const createSchool = async (schoolData) => {
-  const response = await api.post('/api/admin/schools', schoolData);
-  return response.data;
-};
-
-const deleteSchool = async (schoolId) => {
-  const response = await api.delete(`/api/admin/schools/${schoolId}`);
-  return response.data;
-};
-
-const assignUserToSchool = async (data) => {
-  const { userId, schoolId } = data;
-  const response = await api.put(`/api/admin/users/${userId}/assign-school`, { schoolId });
-  return response.data;
-};
-
-const getAiInsights = async () => {
-  const response = await api.get('/api/admin/analytics/insights');
-  return response.data;
-};
-
-const getAnalyticsOverview = async () => {
-  const response = await api.get('/api/admin/analytics/overview');
-  return response.data;
-};
-
-const getTopTeachers = async () => {
-  const response = await api.get('/api/admin/analytics/top-teachers');
-  return response.data;
-};
-
-const getTopStudents = async () => {
-  const response = await api.get('/api/admin/analytics/top-students');
-  return response.data;
-};
-
-// ✨ NEW: Function to get curriculum levels
+/**
+ * @desc    Get all curriculum levels
+ * @route   GET /api/curriculum/levels
+ * @access  Private (Admin)
+ */
 const getCurriculumLevels = async () => {
-    const response = await api.get('/api/curriculum/levels');
-    return response.data;
-}
+  const response = await axios.get('/curriculum/levels');
+  return response.data;
+};
 
 
 const adminService = {
-  getUsers,
-  approveUser,
-  deleteUser,
-  getStats,
-  getSchools,
-  createSchool,
-  deleteSchool,
-  assignUserToSchool,
-  getAiInsights,
-  getAnalyticsOverview,
-  getTopTeachers,
-  getTopStudents,
-  getCurriculumLevels, // ✨ NEW
+  getAdminStats,
+  getAllUsers,
+  getAllSchools,
+  getCurriculumLevels,
 };
 
 export default adminService;
