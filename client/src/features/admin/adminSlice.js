@@ -8,7 +8,8 @@ const initialState = {
   page: 1,
   stats: {},
   schools: [],
-  aiInsights: null, // For AI feedback
+  levels: [], // ✨ NEW: For curriculum levels
+  aiInsights: null,
   isLoading: false,
   isError: false,
   isSuccess: false,
@@ -16,6 +17,7 @@ const initialState = {
 };
 
 // --- Async Thunks ---
+// ... (all your existing thunks like getUsers, approveUser, etc. remain here)
 export const getUsers = createAsyncThunk('admin/getUsers', async (pageNumber, thunkAPI) => {
   try {
     return await adminService.getUsers(pageNumber);
@@ -97,6 +99,17 @@ export const getAiInsights = createAsyncThunk('admin/getAiInsights', async (_, t
   }
 });
 
+// ✨ NEW: Thunk for curriculum levels
+export const getCurriculumLevels = createAsyncThunk('admin/getCurriculumLevels', async (_, thunkAPI) => {
+    try {
+      return await adminService.getCurriculumLevels();
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+});
+
+
 // --- Slice ---
 export const adminSlice = createSlice({
   name: 'admin',
@@ -110,7 +123,7 @@ export const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Users
+      // ... (your existing builder cases for users, schools, etc. remain here)
       .addCase(getUsers.fulfilled, (state, action) => {
         state.users = action.payload.users || [];
         state.page = action.payload.page || 1;
@@ -128,8 +141,6 @@ export const adminSlice = createSlice({
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.users = state.users.filter((u) => u._id !== action.payload);
       })
-
-      // Schools
       .addCase(getSchools.fulfilled, (state, action) => {
         state.schools = action.payload;
       })
@@ -139,18 +150,17 @@ export const adminSlice = createSlice({
       .addCase(deleteSchool.fulfilled, (state, action) => {
         state.schools = state.schools.filter((s) => s._id !== action.payload);
       })
-
-      // Stats
       .addCase(getStats.fulfilled, (state, action) => {
         state.stats = action.payload;
       })
-
-      // AI Insights
       .addCase(getAiInsights.fulfilled, (state, action) => {
         state.aiInsights = action.payload;
       })
-
-      // Global state matchers
+      // ✨ NEW: Reducer for curriculum levels
+      .addCase(getCurriculumLevels.fulfilled, (state, action) => {
+          state.levels = action.payload.data || action.payload; // Adjust based on your API response structure
+      })
+      // Global state matchers (your existing setup is perfect)
       .addMatcher((a) => a.type.startsWith('admin/') && a.type.endsWith('/pending'), (s) => {
         s.isLoading = true;
       })

@@ -12,7 +12,13 @@ import {
   Alert,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getStats, getAiInsights } from '../features/admin/adminSlice';
+import {
+  getStats,
+  getAiInsights,
+  getUsers,
+  getSchools,
+  getCurriculumLevels
+} from '../features/admin/adminSlice';
 
 import AdminCurriculum from './AdminCurriculum';
 import AdminUsers from './AdminUsers';
@@ -40,14 +46,21 @@ const TabPanel = ({ index, value, children }) => {
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
-  const { stats, aiInsights, isLoading, isError, message } = useSelector((s) => s.admin);
+  const { stats, aiInsights, levels, isLoading, isError, message } = useSelector((s) => s.admin);
   const { user } = useSelector((s) => s.auth);
   const [tab, setTab] = useState(0);
 
   useEffect(() => {
+    // Dispatch all required actions on initial component load
     dispatch(getStats());
     dispatch(getAiInsights());
+    dispatch(getUsers(1)); // Fetch first page of users
+    dispatch(getSchools());
+    dispatch(getCurriculumLevels());
   }, [dispatch]);
+
+  // Refined loading state: show spinner only when essential stats data is missing
+  const isPageLoading = isLoading && !stats;
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -100,11 +113,11 @@ const AdminDashboard = () => {
 
       {/* Dashboard Tab */}
       <TabPanel value={tab} index={0}>
-        {isLoading ? (
+        {isPageLoading ? (
           <Grid container justifyContent="center" sx={{ mt: 6 }}>
             <CircularProgress />
             <Typography sx={{ width: '100%', textAlign: 'center', mt: 2 }}>
-              Loading admin data...
+              Loading dashboard data...
             </Typography>
           </Grid>
         ) : (
@@ -113,7 +126,7 @@ const AdminDashboard = () => {
             {[
               { label: 'Total Users', value: stats?.totalUsers ?? 0, color: '#1E8449' },
               { label: 'Total Schools', value: stats?.totalSchools ?? 0, color: '#28B463' },
-              { label: 'Quiz Attempts', value: stats?.totalQuizAttempts ?? 0, color: '#1D8348' },
+              { label: 'Curriculum Levels', value: levels?.length ?? 0, color: '#1D8348' },
               { label: 'Pending Users', value: stats?.pendingUsers ?? 0, color: '#145A32' },
             ].map((card, i) => (
               <Grid item xs={12} sm={6} md={3} key={i}>
