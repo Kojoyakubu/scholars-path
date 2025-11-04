@@ -1,4 +1,3 @@
-// /client/src/pages/AdminSchools.jsx
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -16,6 +15,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -27,15 +28,24 @@ const AdminSchools = () => {
   const [rows, setRows] = useState([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [schoolName, setSchoolName] = useState('');
+  const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const [alert, setAlert] = useState({ open: false, type: 'success', message: '' });
 
   // 🔄 Fetch all schools
   const fetchSchools = async () => {
     try {
+      setLoading(true);
       const data = await adminService.getSchools();
       setRows(data || []);
     } catch (error) {
       console.error('Error fetching schools:', error);
+      setAlert({ open: true, type: 'error', message: 'Failed to load schools.' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,13 +56,28 @@ const AdminSchools = () => {
   // ➕ Create new school
   const createSchool = async () => {
     try {
-      await adminService.createSchool({ name: schoolName, adminEmail });
+      await adminService.createSchool({
+        name: schoolName,
+        adminName,
+        adminEmail,
+        adminPassword,
+      });
+      setAlert({ open: true, type: 'success', message: 'School created successfully!' });
       setCreateOpen(false);
       setSchoolName('');
+      setAdminName('');
       setAdminEmail('');
+      setAdminPassword('');
       fetchSchools();
     } catch (error) {
       console.error('Error creating school:', error);
+      setAlert({
+        open: true,
+        type: 'error',
+        message:
+          error.response?.data?.message ||
+          'Failed to create school. Please check input fields.',
+      });
     }
   };
 
@@ -60,11 +85,16 @@ const AdminSchools = () => {
   const deleteSchool = async (id) => {
     try {
       await adminService.deleteSchool(id);
+      setAlert({ open: true, type: 'success', message: 'School deleted successfully!' });
       fetchSchools();
     } catch (error) {
       console.error('Error deleting school:', error);
+      setAlert({ open: true, type: 'error', message: 'Failed to delete school.' });
     }
   };
+
+  // 🧹 Close snackbar
+  const handleCloseAlert = () => setAlert({ ...alert, open: false });
 
   return (
     <Box>
@@ -109,7 +139,7 @@ const AdminSchools = () => {
               <TableRow>
                 <TableCell colSpan={5}>
                   <Typography color="text.secondary">
-                    No schools found.
+                    {loading ? 'Loading...' : 'No schools found.'}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -135,7 +165,7 @@ const AdminSchools = () => {
         </Table>
       </Paper>
 
-      {/* Create School Modal */}
+      {/* ➕ Create School Dialog */}
       <Dialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
@@ -152,13 +182,29 @@ const AdminSchools = () => {
             onChange={(e) => setSchoolName(e.target.value)}
           />
           <TextField
+            label="Admin Name"
+            fullWidth
+            sx={{ mt: 2 }}
+            value={adminName}
+            onChange={(e) => setAdminName(e.target.value)}
+          />
+          <TextField
             label="Admin Email"
             type="email"
             fullWidth
             sx={{ mt: 2 }}
             value={adminEmail}
             onChange={(e) => setAdminEmail(e.target.value)}
-            helperText="An admin account will be generated for this email."
+            helperText="An admin account will be created for this email."
+          />
+          <TextField
+            label="Admin Password"
+            type="password"
+            fullWidth
+            sx={{ mt: 2 }}
+            value={adminPassword}
+            onChange={(e) => setAdminPassword(e.target.value)}
+            helperText="Password for the school's admin account."
           />
         </DialogContent>
         <DialogActions>
@@ -166,12 +212,28 @@ const AdminSchools = () => {
           <Button
             onClick={createSchool}
             variant="contained"
-            disabled={!schoolName || !adminEmail}
+            disabled={!schoolName || !adminName || !adminEmail || !adminPassword}
           >
             Create
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ✅ Snackbar for feedback */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={4000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseAlert}
+          severity={alert.type}
+          sx={{ width: '100%' }}
+        >
+          {alert.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
