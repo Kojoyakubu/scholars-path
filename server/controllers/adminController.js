@@ -454,6 +454,35 @@ Use a professional, encouraging tone suitable for Ghanaian education stakeholder
   }
 });
 
+// PUT /api/admin/users/:id/assign-school
+const assignUserToSchool = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { schoolId } = req.body;
+
+  const [user, school] = await Promise.all([
+    User.findById(id),
+    School.findById(schoolId),
+  ]);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (!school) {
+    res.status(404);
+    throw new Error('School not found');
+  }
+
+  user.school = school._id;
+  await user.save();
+
+  res.json({
+    message: `Assigned ${user.fullName} to ${school.name}.`,
+    user,
+  });
+});
+
 module.exports = {
   // Users
   getUsers,
