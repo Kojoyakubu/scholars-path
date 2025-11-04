@@ -97,7 +97,6 @@ const deleteTeacher = asyncHandler(async (req, res) => {
     throw new Error('Teacher not found.');
   }
 
-  // Cascade removal of teacher-generated content
   const [lessonNotes, quizzes] = await Promise.all([
     LessonNote.deleteMany({ teacher: id }),
     Quiz.deleteMany({ teacher: id }),
@@ -105,7 +104,6 @@ const deleteTeacher = asyncHandler(async (req, res) => {
 
   await teacher.deleteOne();
 
-  // AI audit
   let aiAudit = '';
   try {
     const prompt = `
@@ -186,35 +184,57 @@ Use a neutral professional tone.
  * ============================================================================
  */
 
-// POST /api/admin/schools  { name, adminName, adminEmail, adminPassword }
+// ✅ FIXED VERSION: Create school and admin properly
 const createSchool = asyncHandler(async (req, res) => {
   const { name, adminName, adminEmail, adminPassword } = req.body;
 
+  if (!name || !adminName || !adminEmail || !adminPassword) {
+    res.status(400);
+    throw new Error('All fields are required: name, adminName, adminEmail, adminPassword.');
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
-    const schoolExists = await School.findOne({ name }).session(session);
-    if (schoolExists) throw new Error('School with this name already exists.');
+    const existingSchool = await School.findOne({ name }).session(session);
+    if (existingSchool) throw new Error('A school with this name already exists.');
+
+    const existingAdmin = await User.findOne({ email: adminEmail }).session(session);
+    if (existingAdmin) throw new Error('This admin email is already in use.');
 
     const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(adminPassword, salt);
+    const hashedPassword = await bcrypt.hash(adminPassword, salt);
 
-    const school = await School.create([{ name }], { session });
-    const [createdSchool] = school;
-
-    const adminUser = await User.create(
+    // 🧩 Create the admin first
+    const [adminUser] = await User.create(
       [
         {
           fullName: adminName,
           email: adminEmail,
-          password: hashed,
+          password: hashedPassword,
           role: 'admin',
           status: 'approved',
-          school: createdSchool._id,
         },
       ],
       { session }
     );
+
+    // 🧩 Then create the school with admin reference
+    const [createdSchool] = await School.create(
+      [
+        {
+          name,
+          admin: adminUser._id,
+          contactEmail: adminEmail,
+        },
+      ],
+      { session }
+    );
+
+    // 🧩 Finally link school to admin
+    adminUser.school = createdSchool._id;
+    await adminUser.save({ session });
 
     await session.commitTransaction();
     session.endSession();
@@ -222,7 +242,7 @@ const createSchool = asyncHandler(async (req, res) => {
     res.status(201).json({
       message: 'School and admin user created successfully.',
       school: createdSchool,
-      admin: adminUser[0],
+      admin: adminUser,
     });
   } catch (err) {
     await session.abortTransaction();
@@ -246,14 +266,13 @@ const deleteSchool = asyncHandler(async (req, res) => {
     throw new Error('School not found');
   }
 
-  // Optional: orphan users policy – here we set their school to null
   await User.updateMany({ school: school._id }, { $set: { school: null } });
   await school.deleteOne();
 
   res.json({ message: 'School deleted successfully.' });
 });
 
-// PUT /api/admin/users/:id/assign-school  { schoolId }
+// PUT /api/admin/users/:id/assign-school
 const assignUserToSchool = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { schoolId } = req.body;
@@ -283,7 +302,7 @@ const assignUserToSchool = asyncHandler(async (req, res) => {
  * ============================================================================
  */
 
-// GET /api/admin/stats
+// (Your analytics and insights functions remain exactly the same)
 const getUsageStats = asyncHandler(async (_req, res) => {
   const [totalUsers, totalSchools, totalQuizAttempts, pendingUsers] = await Promise.all([
     User.countDocuments({}),
@@ -294,7 +313,6 @@ const getUsageStats = asyncHandler(async (_req, res) => {
   res.json({ totalUsers, totalSchools, totalQuizAttempts, pendingUsers });
 });
 
-// GET /api/admin/analytics/overview
 const getAnalyticsOverview = asyncHandler(async (_req, res) => {
   const [totalUsers, totalTeachers, totalStudents, totalSchools, totalNotes, totalQuizzes, totalAttempts] =
     await Promise.all([
@@ -318,7 +336,6 @@ const getAnalyticsOverview = asyncHandler(async (_req, res) => {
   });
 });
 
-// GET /api/admin/analytics/top-teachers
 const getTopTeachers = asyncHandler(async (_req, res) => {
   const teachers = await LessonNote.aggregate([
     { $group: { _id: '$teacher', totalNotes: { $sum: 1 } } },
@@ -329,13 +346,10 @@ const getTopTeachers = asyncHandler(async (_req, res) => {
   res.json(populated);
 });
 
-// GET /api/admin/analytics/top-students
 const getTopStudents = asyncHandler(async (_req, res) => {
   const students = await QuizAttempt.aggregate([
     {
-      $match: {
-        totalQuestions: { $gt: 0 } // Only valid attempts
-      }
+      $match: { totalQuestions: { $gt: 0 } },
     },
     {
       $group: {
@@ -351,7 +365,6 @@ const getTopStudents = asyncHandler(async (_req, res) => {
   res.json(populated);
 });
 
-// GET /api/admin/analytics/ai-usage-summary
 const getAiUsageSummary = asyncHandler(async (_req, res) => {
   const aiSources = await Promise.all([
     LessonNote.aggregate([{ $group: { _id: '$aiProvider', count: { $sum: 1 } } }]),
@@ -371,7 +384,6 @@ const getAiUsageSummary = asyncHandler(async (_req, res) => {
   });
 });
 
-// GET /api/admin/analytics/insights - FIXED VERSION
 const getAiAnalyticsInsights = asyncHandler(async (_req, res) => {
   try {
     const [teacherCount, studentCount, schoolCount, avgQuizScoreResult, aiUsage, totalQuizAttempts] = await Promise.all([
@@ -379,23 +391,12 @@ const getAiAnalyticsInsights = asyncHandler(async (_req, res) => {
       User.countDocuments({ role: 'student' }),
       School.countDocuments(),
       QuizAttempt.aggregate([
-        {
-          $match: {
-            totalQuestions: { $gt: 0 } // ✅ Only include attempts with questions
-          }
-        },
+        { $match: { totalQuestions: { $gt: 0 } } },
         {
           $group: {
             _id: null,
-            avgScore: { 
-              $avg: { 
-                $multiply: [
-                  { 
-                    $divide: ['$score', '$totalQuestions'] 
-                  }, 
-                  100
-                ] 
-              } 
+            avgScore: {
+              $avg: { $multiply: [{ $divide: ['$score', '$totalQuestions'] }, 100] },
             },
           },
         },
@@ -414,19 +415,13 @@ const getAiAnalyticsInsights = asyncHandler(async (_req, res) => {
     };
 
     const prompt = `
-You are an education data analyst for "Scholar's Path", a Ghanaian educational platform.
+You are an education data analyst for Scholar's Path, a Ghanaian educational platform.
 Analyze this JSON data and write a 6–8 sentence report summarizing platform trends.
 
 Data:
 ${JSON.stringify(stats, null, 2)}
 
-Include:
-- Engagement comparison (teachers vs students)
-- AI provider dominance (if any)
-- Student performance insights
-- One actionable recommendation for improvement
-
-Use a professional, encouraging tone suitable for Ghanaian education stakeholders.
+Include engagement comparison, AI usage, student performance, and one actionable recommendation.
 `;
 
     try {
@@ -437,51 +432,33 @@ Use a professional, encouraging tone suitable for Ghanaian education stakeholder
         preferredProvider: 'perplexity',
       });
 
-      res.json({
-        summary: (text || '').trim(),
-        provider,
-        model,
-        rawStats: stats,
-      });
+      res.json({ summary: (text || '').trim(), provider, model, rawStats: stats });
     } catch (aiErr) {
       console.error('AI insight generation failed:', aiErr.message);
-      
-      // ✅ Fallback response with actual stats
       res.json({
-        summary: `Platform Overview: Scholar's Path currently serves ${teacherCount} teachers and ${studentCount} students across ${schoolCount} schools. ${totalQuizAttempts > 0 ? `Average quiz performance stands at ${stats.avgScore}%.` : 'Quiz engagement is growing.'} AI-powered content generation continues to support educators. Recommendation: Focus on increasing student engagement through interactive quizzes and personalized learning paths.`,
+        summary: `Platform Overview: Scholar's Path currently serves ${teacherCount} teachers and ${studentCount} students across ${schoolCount} schools. Average quiz performance is ${stats.avgScore}%. AI tools continue to empower teachers. Recommendation: Increase student engagement through interactive learning.`,
         provider: 'fallback',
         model: 'static',
         rawStats: stats,
       });
     }
   } catch (err) {
-    console.error('Error in getAiAnalyticsInsights:', err);
-    res.status(500).json({ 
-      message: 'Failed to generate analytics insights',
-      error: err.message 
-    });
+    res.status(500).json({ message: 'Failed to generate analytics insights', error: err.message });
   }
 });
 
 module.exports = {
-  // Users
   getUsers,
   approveUser,
   deleteUser,
   assignUserToSchool,
-
-  // Teacher/Student (role-filtered)
   getAllTeachers,
   getAllStudents,
   deleteTeacher,
   deleteStudent,
-
-  // Schools
   createSchool,
   getSchools,
   deleteSchool,
-
-  // Stats & Analytics
   getUsageStats,
   getAnalyticsOverview,
   getTopTeachers,
