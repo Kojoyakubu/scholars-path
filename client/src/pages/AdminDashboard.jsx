@@ -18,7 +18,7 @@ import {
   getUsers,
   getSchools,
   getCurriculumLevels,
-} from '../../features/admin/adminSlice';
+} from '../features/admin/adminSlice';
 import AdminUsers from './AdminUsers';
 import AdminSchools from './AdminSchools';
 
