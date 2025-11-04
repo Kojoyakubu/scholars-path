@@ -1,78 +1,107 @@
-// /client/src/pages/admin/AdminDashboard.jsx
+// /client/src/pages/AdminDashboard.jsx
 import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
-  Grid,
-  Typography,
-  Card,
-  CardContent,
-  CircularProgress,
-  Paper,
   Tabs,
   Tab,
+  Grid,
+  Paper,
+  Typography,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
-import { useSelector, useDispatch } from 'react-redux';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   getStats,
   getAiInsights,
   getUsers,
   getSchools,
-  getCurriculumLevels,
+  getCurriculumLevels
 } from '../features/admin/adminSlice';
+
+import AdminCurriculum from './AdminCurriculum';
 import AdminUsers from './AdminUsers';
 import AdminSchools from './AdminSchools';
+import AdminAnalytics from './AdminAnalytics';
+
+const fade = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+  exit: { opacity: 0, y: -12, transition: { duration: 0.25 } },
+};
+
+const TabPanel = ({ index, value, children }) => {
+  const visible = value === index;
+  return (
+    <AnimatePresence mode="wait">
+      {visible && (
+        <motion.div key={index} {...fade} style={{ width: '100%' }}>
+          <Box sx={{ mt: 3 }}>{children}</Box>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-  const { stats, aiInsights, levels, isLoading } = useSelector((state) => state.admin);
-  const [tabValue, setTabValue] = useState(0);
+  const { stats, aiInsights, levels, isLoading, isError, message } = useSelector((s) => s.admin);
+  const { user } = useSelector((s) => s.auth);
+  const [tab, setTab] = useState(0);
 
   useEffect(() => {
+    // Dispatch all required actions on initial component load
     dispatch(getStats());
     dispatch(getAiInsights());
-    dispatch(getUsers(1));
+    dispatch(getUsers(1)); // Fetch first page of users
     dispatch(getSchools());
     dispatch(getCurriculumLevels());
   }, [dispatch]);
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="70vh">
-        <CircularProgress color="primary" />
-      </Box>
-    );
-  }
+  // Refined loading state: show spinner only when essential stats data is missing
+  const isPageLoading = isLoading && !stats;
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: '#02367B' }}>
-        Admin Control Center
-      </Typography>
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      {/* Header */}
+      <Paper
+        component={motion.div}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          bgcolor: '#145A32',
+          color: '#E8F5E9',
+          boxShadow: '0 8px 20px rgba(20,90,50,0.3)',
+        }}
+      >
+        <Typography variant="h5" fontWeight={700}>
+          Admin Control Center
+        </Typography>
+        <Typography variant="body1" sx={{ opacity: 0.9 }}>
+          Welcome back, {user?.name || user?.fullName || 'Admin'}! Manage users, schools, curriculum, and platform analytics.
+        </Typography>
+      </Paper>
 
-      <Typography variant="subtitle1" sx={{ mb: 3, color: '#006CA5' }}>
-        Welcome back, {user?.fullName || user?.name || 'Admin'}! Manage users, schools,
-        curriculum, and analytics.
-      </Typography>
+      {/* Error Alert */}
+      {isError && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {message || 'Failed to load admin data. Please try again.'}
+        </Alert>
+      )}
 
       {/* Tabs */}
-      <Box sx={{ mb: 4, borderBottom: '1px solid rgba(4,150,199,0.15)' }}>
+      <Box sx={{ mt: 2 }}>
         <Tabs
-          value={tabValue}
-          onChange={(_, newValue) => setTabValue(newValue)}
+          value={tab}
+          onChange={(_, v) => setTab(v)}
+          variant="scrollable"
+          scrollButtons="auto"
           textColor="primary"
-          indicatorColor="secondary"
-          sx={{
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontWeight: 600,
-              color: '#006CA5',
-              minWidth: 'auto',
-              mr: 2,
-            },
-            '& .MuiTab-root.Mui-selected': { color: '#02367B' },
-            '& .MuiTabs-indicator': { height: 3, borderRadius: 3 },
-          }}
+          indicatorColor="primary"
         >
           <Tab label="Dashboard" />
           <Tab label="Users" />
@@ -82,222 +111,106 @@ const AdminDashboard = () => {
         </Tabs>
       </Box>
 
-      {/* TAB 0 - Dashboard */}
-      {tabValue === 0 && (
-        <>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ borderRadius: 4, p: 1, boxShadow: '0 4px 20px rgba(2,54,123,0.08)' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ color: '#006CA5', fontWeight: 600 }}>
-                    Total Users
+      {/* Dashboard Tab */}
+      <TabPanel value={tab} index={0}>
+        {isPageLoading ? (
+          <Grid container justifyContent="center" sx={{ mt: 6 }}>
+            <CircularProgress />
+            <Typography sx={{ width: '100%', textAlign: 'center', mt: 2 }}>
+              Loading dashboard data...
+            </Typography>
+          </Grid>
+        ) : (
+          <Grid container spacing={2}>
+            {/* Quick Stats */}
+            {[
+              { label: 'Total Users', value: stats?.totalUsers ?? 0, color: '#1E8449' },
+              { label: 'Total Schools', value: stats?.totalSchools ?? 0, color: '#28B463' },
+              { label: 'Curriculum Levels', value: levels?.length ?? 0, color: '#1D8348' },
+              { label: 'Pending Users', value: stats?.pendingUsers ?? 0, color: '#145A32' },
+            ].map((card, i) => (
+              <Grid item xs={12} sm={6} md={3} key={i}>
+                <Paper
+                  component={motion.div}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: 0.05 * i }}
+                  sx={{
+                    p: 3,
+                    textAlign: 'center',
+                    borderLeft: `6px solid ${card.color}`,
+                    borderRadius: 3,
+                    boxShadow: '0 4px 15px rgba(20,90,50,0.18)',
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {card.label}
                   </Typography>
-                  <Typography variant="h4" sx={{ color: '#02367B', fontWeight: 700 }}>
-                    {stats?.totalUsers ?? 0}
+                  <Typography variant="h4" fontWeight={800} color="primary">
+                    {card.value}
                   </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+                </Paper>
+              </Grid>
+            ))}
 
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ borderRadius: 4, p: 1, boxShadow: '0 4px 20px rgba(2,54,123,0.08)' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ color: '#006CA5', fontWeight: 600 }}>
-                    Total Schools
+            {/* AI Insights */}
+            <Grid item xs={12}>
+              <Paper
+                component={motion.div}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.2 }}
+                sx={{
+                  p: 3,
+                  borderLeft: '6px solid #6A1B9A',
+                  borderRadius: 3,
+                  bgcolor: '#F3E5F5',
+                }}
+              >
+                <Typography variant="h6" fontWeight={700} color="primary" gutterBottom>
+                  AI Insights Summary
+                </Typography>
+                {aiInsights ? (
+                  <>
+                    <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+                      {aiInsights?.summary || aiInsights}
+                    </Typography>
+                    {aiInsights?.provider && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, fontStyle: 'italic' }}>
+                        Generated by {aiInsights.provider} {aiInsights.model ? `(${aiInsights.model})` : ''}
+                      </Typography>
+                    )}
+                  </>
+                ) : (
+                  <Typography variant="body1" color="text.secondary">
+                    No AI insights available yet. Data is being processed...
                   </Typography>
-                  <Typography variant="h4" sx={{ color: '#02367B', fontWeight: 700 }}>
-                    {stats?.totalSchools ?? 0}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ borderRadius: 4, p: 1, boxShadow: '0 4px 20px rgba(2,54,123,0.08)' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ color: '#006CA5', fontWeight: 600 }}>
-                    Curriculum Levels
-                  </Typography>
-                  <Typography variant="h4" sx={{ color: '#02367B', fontWeight: 700 }}>
-                    {levels?.length ?? 0}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ borderRadius: 4, p: 1, boxShadow: '0 4px 20px rgba(2,54,123,0.08)' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ color: '#006CA5', fontWeight: 600 }}>
-                    Pending Users
-                  </Typography>
-                  <Typography variant="h4" sx={{ color: '#02367B', fontWeight: 700 }}>
-                    {stats?.pendingUsers ?? 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+                )}
+              </Paper>
             </Grid>
           </Grid>
+        )}
+      </TabPanel>
 
-          {aiInsights && (
-            <Paper
-              elevation={3}
-              sx={{
-                mt: 5,
-                p: 3,
-                borderRadius: 4,
-                background: 'rgba(255,255,255,0.85)',
-                boxShadow: '0 8px 32px rgba(2,54,123,0.08)',
-              }}
-            >
-              <Typography variant="h6" sx={{ color: '#02367B', fontWeight: 700, mb: 1 }}>
-                AI Insights Summary
-              </Typography>
-              <Typography variant="body1" sx={{ color: '#006CA5', mb: 1 }}>
-                {aiInsights?.summary || 'No insights available.'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#02367B', fontStyle: 'italic' }}>
-                Generated by {aiInsights?.provider || 'AI'}
-              </Typography>
-            </Paper>
-          )}
-        </>
-      )}
+      {/* Users Tab */}
+      <TabPanel value={tab} index={1}>
+        <AdminUsers />
+      </TabPanel>
 
-      {/* TAB 1 - Users */}
-      {tabValue === 1 && <Box sx={{ mt: 2 }}><AdminUsers /></Box>}
+      {/* Schools Tab */}
+      <TabPanel value={tab} index={2}>
+        <AdminSchools />
+      </TabPanel>
 
-      {/* TAB 2 - Schools */}
-      {tabValue === 2 && <Box sx={{ mt: 2 }}><AdminSchools /></Box>}
+      {/* Curriculum Tab */}
+      <TabPanel value={tab} index={3}>
+        <AdminCurriculum />
+      </TabPanel>
 
-      {/* TAB 3 - Curriculum (FULL HIERARCHY) */}
-      {tabValue === 3 && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" sx={{ color: '#02367B', mb: 2 }}>
-            Curriculum Levels
-          </Typography>
-
-          {levels && levels.length > 0 ? (
-            <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
-              {levels.map((level) => (
-                <li key={level._id}>
-                  <Typography
-                    variant="subtitle1"
-                    sx={{ fontWeight: 700, color: '#006CA5', mb: 1, mt: 2 }}
-                  >
-                    {level.name}
-                  </Typography>
-
-                  {level.classes && level.classes.length > 0 ? (
-                    <ul style={{ marginLeft: '1.5rem' }}>
-                      {level.classes.map((cls) => (
-                        <li key={cls._id}>
-                          <Typography
-                            variant="body1"
-                            sx={{ fontWeight: 600, color: '#02367B', mb: 0.5 }}
-                          >
-                            {cls.name}
-                          </Typography>
-
-                          {cls.subjects && cls.subjects.length > 0 ? (
-                            <ul style={{ marginLeft: '1.5rem' }}>
-                              {cls.subjects.map((sub) => (
-                                <li key={sub._id}>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{ fontWeight: 600, color: '#006CA5', mb: 0.5 }}
-                                  >
-                                    {sub.name}
-                                  </Typography>
-
-                                  {sub.strands && sub.strands.length > 0 ? (
-                                    <ul style={{ marginLeft: '1.5rem' }}>
-                                      {sub.strands.map((strand) => (
-                                        <li key={strand._id}>
-                                          <Typography
-                                            variant="body2"
-                                            sx={{
-                                              color: '#004D73',
-                                              fontWeight: 600,
-                                              mb: 0.25,
-                                            }}
-                                          >
-                                            {strand.name}
-                                          </Typography>
-
-                                          {strand.subStrands && strand.subStrands.length > 0 ? (
-                                            <ul style={{ marginLeft: '1.5rem' }}>
-                                              {strand.subStrands.map((ss) => (
-                                                <li key={ss._id}>
-                                                  <Typography
-                                                    variant="body2"
-                                                    sx={{ color: '#0077A2' }}
-                                                  >
-                                                    {ss.name}
-                                                  </Typography>
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          ) : (
-                                            <Typography
-                                              variant="caption"
-                                              sx={{ color: '#777', ml: 2 }}
-                                            >
-                                              No substrands
-                                            </Typography>
-                                          )}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  ) : (
-                                    <Typography variant="caption" sx={{ color: '#777', ml: 2 }}>
-                                      No strands
-                                    </Typography>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <Typography variant="caption" sx={{ color: '#777', ml: 2 }}>
-                              No subjects
-                            </Typography>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <Typography variant="caption" sx={{ color: '#777', ml: 2 }}>
-                      No classes
-                    </Typography>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <Typography variant="body1" sx={{ color: '#006CA5' }}>
-              No curriculum levels available.
-            </Typography>
-          )}
-        </Box>
-      )}
-
-      {/* TAB 4 - Analytics */}
-      {tabValue === 4 && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" sx={{ color: '#02367B', mb: 1 }}>
-            Platform Analytics
-          </Typography>
-          {stats ? (
-            <Typography variant="body1" sx={{ color: '#006CA5' }}>
-              There are {stats.totalUsers} users across {stats.totalSchools} schools.
-            </Typography>
-          ) : (
-            <Typography variant="body1" sx={{ color: '#006CA5' }}>
-              Analytics not available.
-            </Typography>
-          )}
-        </Box>
-      )}
+      {/* Analytics Tab */}
+      <TabPanel value={tab} index={4}>
+        <AdminAnalytics />
+      </TabPanel>
     </Box>
   );
 };
