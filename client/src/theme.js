@@ -3,57 +3,60 @@ import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
   palette: {
-    mode: 'light', // or 'dark' if you want deep contrast
+    mode: 'light', // Clean modern look
     primary: {
-      main: '#1E8449',   // Rich forest green
+      main: '#006CA5',   // Deep Ocean Blue
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#145A32',   // Deeper earthy tone
+      main: '#04BADE',   // Aqua highlight
       contrastText: '#ffffff',
     },
     background: {
-      default: '#F9FBE7', // Soft natural background
-      paper: '#F1F8E9',
+      default: '#F4FBFF', // Soft sky blue background
+      paper: '#FFFFFF',
     },
     success: {
-      main: '#28B463',   // Consistent with AuthPortal button
+      main: '#55E2E9',   // Bright accent blue
     },
     error: {
-      main: '#C0392B',
+      main: '#E53935',
     },
     text: {
-      primary: '#1B2631',  // Deep ink color
-      secondary: '#2E4053',
+      primary: '#02367B',   // Navy text color
+      secondary: '#006CA5',
     },
   },
   typography: {
     fontFamily: '"Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h4: {
       fontWeight: 700,
-      color: '#145A32',
+      color: '#02367B',
     },
     h5: {
       fontWeight: 600,
-      color: '#1E8449',
+      color: '#006CA5',
     },
     body1: {
-      color: '#2E4053',
+      color: '#02367B',
     },
     button: {
       textTransform: 'none',
       fontWeight: 600,
+      letterSpacing: '0.3px',
     },
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 10,
           padding: '10px 18px',
           boxShadow: 'none',
+          transition: 'all 0.3s ease',
           '&:hover': {
-            boxShadow: '0 4px 10px rgba(20,90,50,0.3)',
+            boxShadow: '0 4px 12px rgba(0,108,165,0.25)',
+            backgroundColor: '#0496C7',
           },
         },
       },
@@ -61,7 +64,17 @@ const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 14,
+          boxShadow: '0 3px 8px rgba(2,54,123,0.1)',
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          background: 'linear-gradient(90deg, #02367B, #006CA5, #0496C7)',
+          color: '#ffffff',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
         },
       },
     },
