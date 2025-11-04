@@ -2,74 +2,96 @@
 
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
+const Level = require('../models/levelModel');
 const Class = require('../models/classModel');
 const Subject = require('../models/subjectModel');
 const Strand = require('../models/strandModel');
 const SubStrand = require('../models/subStrandModel');
 const aiService = require('../services/aiService');
 
-/**
- * @desc    Create a new class
- * @route   POST /api/curriculum/classes
- * @access  Private (Admin)
+/* ============================================================================
+ * CREATE OPERATIONS
+ * ============================================================================
  */
-const createClass = asyncHandler(async (req, res) => {
+
+// Create Level
+const createLevel = asyncHandler(async (req, res) => {
   const { name } = req.body;
+  if (!name) {
+    res.status(400);
+    throw new Error('Level name is required.');
+  }
+
+  const existing = await Level.findOne({ name });
+  if (existing) {
+    res.status(400);
+    throw new Error('This level already exists.');
+  }
+
+  const newLevel = await Level.create({ name });
+  res.status(201).json(newLevel);
+});
+
+// Create Class
+const createClass = asyncHandler(async (req, res) => {
+  const { name, parentId } = req.body;
   if (!name) {
     res.status(400);
     throw new Error('Class name is required.');
   }
 
-  const existing = await Class.findOne({ name });
-  if (existing) {
-    res.status(400);
-    throw new Error('This class already exists.');
+  const classData = { name };
+  if (parentId && mongoose.Types.ObjectId.isValid(parentId)) {
+    classData.level = parentId;
   }
 
-  const newClass = await Class.create({ name });
+  const newClass = await Class.create(classData);
   res.status(201).json(newClass);
 });
 
-/**
- * @desc    Create a new subject under a class
- * @route   POST /api/curriculum/subjects
- * @access  Private (Admin)
- */
+// Create Subject
 const createSubject = asyncHandler(async (req, res) => {
-  const { classId, name } = req.body;
+  const { name, parentId } = req.body;
 
-  if (!mongoose.Types.ObjectId.isValid(classId) || !name) {
+  if (!name) {
     res.status(400);
-    throw new Error('Valid classId and subject name are required.');
+    throw new Error('Subject name is required.');
   }
 
-  const subject = await Subject.create({ class: classId, name });
+  const subjectData = { name };
+  if (parentId && mongoose.Types.ObjectId.isValid(parentId)) {
+    subjectData.class = parentId;
+  }
+
+  const subject = await Subject.create(subjectData);
   res.status(201).json(subject);
 });
 
-/**
- * @desc    Create or expand a Strand with AI support
- * @route   POST /api/curriculum/strands
- * @access  Private (Admin/Teacher)
- */
+// Create Strand
 const createStrand = asyncHandler(async (req, res) => {
-  const { subjectId, name, aiExpand } = req.body;
+  const { name, parentId, aiExpand } = req.body;
 
-  if (!mongoose.Types.ObjectId.isValid(subjectId) || !name) {
+  if (!name) {
     res.status(400);
-    throw new Error('Valid subjectId and strand name are required.');
+    throw new Error('Strand name is required.');
   }
 
-  const strand = await Strand.create({ subject: subjectId, name });
+  const strandData = { name };
+  if (parentId && mongoose.Types.ObjectId.isValid(parentId)) {
+    strandData.subject = parentId;
+  }
 
-  // 🧠 If teacher requested AI expansion, auto-generate sub-strands
+  const strand = await Strand.create(strandData);
+
+  // AI expansion
   let aiSuggestions = [];
-  if (aiExpand) {
+  if (aiExpand && parentId) {
     try {
+      const subject = await Subject.findById(parentId);
       const prompt = `
 You are a Ghanaian curriculum design expert.
-Suggest 4–6 logical Sub-Strands that belong under the Strand "${name}" for the subject "${(await Subject.findById(subjectId)).name}".
-Follow the NaCCA Ghana curriculum style for ${new Date().getFullYear()}.
+Suggest 4–6 logical Sub-Strands that belong under the Strand "${name}" for the subject "${subject?.name || 'General'}".
+Follow the NaCCA Ghana curriculum style.
 Each Sub-Strand name should be short (max 8 words) and conceptually accurate.
 Return ONLY a JSON array of sub-strand names. Example:
 ["Introduction to Plants", "Parts of a Plant", "Functions of Plant Parts"]
@@ -99,28 +121,191 @@ Return ONLY a JSON array of sub-strand names. Example:
   });
 });
 
-/**
- * @desc    Add a Sub-Strand manually
- * @route   POST /api/curriculum/sub-strands
- * @access  Private (Admin/Teacher)
- */
+// Create Sub-Strand
 const createSubStrand = asyncHandler(async (req, res) => {
-  const { strandId, name } = req.body;
+  const { name, parentId } = req.body;
 
-  if (!mongoose.Types.ObjectId.isValid(strandId) || !name) {
+  if (!name) {
     res.status(400);
-    throw new Error('Valid strandId and sub-strand name are required.');
+    throw new Error('Sub-strand name is required.');
   }
 
-  const subStrand = await SubStrand.create({ strand: strandId, name });
+  const subStrandData = { name };
+  if (parentId && mongoose.Types.ObjectId.isValid(parentId)) {
+    subStrandData.strand = parentId;
+  }
+
+  const subStrand = await SubStrand.create(subStrandData);
   res.status(201).json(subStrand);
 });
 
-/**
- * @desc    Auto-fill Sub-Strand details using AI (description + learning outcomes)
- * @route   POST /api/curriculum/sub-strands/:id/autofill
- * @access  Private (Admin/Teacher)
+/* ============================================================================
+ * READ OPERATIONS
+ * ============================================================================
  */
+
+// Get all items of a type
+const getCurriculum = asyncHandler(async (req, res) => {
+  const { type } = req.params;
+
+  const models = {
+    levels: Level,
+    classes: Class,
+    subjects: Subject,
+    strands: Strand,
+    'sub-strands': SubStrand,
+    subStrands: SubStrand,
+  };
+
+  const model = models[type];
+  if (!model) {
+    res.status(400);
+    throw new Error('Invalid type. Use levels, classes, subjects, strands, or sub-strands.');
+  }
+
+  let data = await model.find().sort({ createdAt: -1 }).lean();
+  
+  // Populate parent references
+  if (type === 'classes') {
+    data = await Class.find().populate('level', 'name').sort({ createdAt: -1 }).lean();
+  } else if (type === 'subjects') {
+    data = await Subject.find().populate('class', 'name').sort({ createdAt: -1 }).lean();
+  } else if (type === 'strands') {
+    data = await Strand.find().populate('subject', 'name').sort({ createdAt: -1 }).lean();
+  } else if (type === 'sub-strands' || type === 'subStrands') {
+    data = await SubStrand.find().populate('strand', 'name').sort({ createdAt: -1 }).lean();
+  }
+
+  res.json(data);
+});
+
+// Get children of a specific parent
+const getChildren = asyncHandler(async (req, res) => {
+  const { parentType, parentId, childType } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(parentId)) {
+    res.status(400);
+    throw new Error('Invalid parent ID.');
+  }
+
+  const filterMap = {
+    'levels-classes': { model: Class, filter: { level: parentId }, populate: 'level' },
+    'classes-subjects': { model: Subject, filter: { class: parentId }, populate: 'class' },
+    'subjects-strands': { model: Strand, filter: { subject: parentId }, populate: 'subject' },
+    'strands-sub-strands': { model: SubStrand, filter: { strand: parentId }, populate: 'strand' },
+    'strands-subStrands': { model: SubStrand, filter: { strand: parentId }, populate: 'strand' },
+  };
+
+  const key = `${parentType}-${childType}`;
+  const config = filterMap[key];
+
+  if (!config) {
+    res.status(400);
+    throw new Error(`Invalid parent-child relationship: ${parentType} -> ${childType}`);
+  }
+
+  const data = await config.model
+    .find(config.filter)
+    .populate(config.populate, 'name')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  res.json(data);
+});
+
+/* ============================================================================
+ * UPDATE OPERATIONS
+ * ============================================================================
+ */
+
+const updateCurriculum = asyncHandler(async (req, res) => {
+  const { type, id } = req.params;
+  const { name } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400);
+    throw new Error('Invalid ID.');
+  }
+
+  const models = {
+    levels: Level,
+    classes: Class,
+    subjects: Subject,
+    strands: Strand,
+    'sub-strands': SubStrand,
+    subStrands: SubStrand,
+  };
+
+  const model = models[type];
+  if (!model) {
+    res.status(400);
+    throw new Error('Invalid type.');
+  }
+
+  const item = await model.findByIdAndUpdate(id, { name }, { new: true });
+
+  if (!item) {
+    res.status(404);
+    throw new Error(`${type} not found.`);
+  }
+
+  res.json(item);
+});
+
+/* ============================================================================
+ * DELETE OPERATIONS
+ * ============================================================================
+ */
+
+const deleteCurriculum = asyncHandler(async (req, res) => {
+  const { type, id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400);
+    throw new Error('Invalid ID.');
+  }
+
+  const models = {
+    levels: Level,
+    classes: Class,
+    subjects: Subject,
+    strands: Strand,
+    'sub-strands': SubStrand,
+    subStrands: SubStrand,
+  };
+
+  const model = models[type];
+  if (!model) {
+    res.status(400);
+    throw new Error('Invalid type.');
+  }
+
+  const item = await model.findById(id);
+  if (!item) {
+    res.status(404);
+    throw new Error(`${type} not found.`);
+  }
+
+  // Cascade delete children
+  if (type === 'levels') {
+    await Class.deleteMany({ level: id });
+  } else if (type === 'classes') {
+    await Subject.deleteMany({ class: id });
+  } else if (type === 'subjects') {
+    await Strand.deleteMany({ subject: id });
+  } else if (type === 'strands') {
+    await SubStrand.deleteMany({ strand: id });
+  }
+
+  await item.deleteOne();
+  res.json({ message: `${type} deleted successfully.`, id });
+});
+
+/* ============================================================================
+ * AI AUTO-FILL
+ * ============================================================================
+ */
+
 const autoFillSubStrand = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -139,20 +324,19 @@ const autoFillSubStrand = asyncHandler(async (req, res) => {
     throw new Error('Sub-Strand not found.');
   }
 
-  // 🧠 AI-generated curriculum enrichment
   const prompt = `
 You are a Ghanaian curriculum expert for the National Council for Curriculum and Assessment (NaCCA).
 Provide a JSON object describing this sub-strand:
-- Subject: ${subStrand.strand.subject.name}
-- Strand: ${subStrand.strand.name}
+- Subject: ${subStrand.strand?.subject?.name || 'General'}
+- Strand: ${subStrand.strand?.name || 'N/A'}
 - Sub-Strand: ${subStrand.name}
-- Class: ${subStrand.strand.subject.class.name}
+- Class: ${subStrand.strand?.subject?.class?.name || 'N/A'}
 
 JSON format:
 {
   "description": "A concise academic description of this Sub-Strand.",
   "learningOutcomes": ["Outcome 1", "Outcome 2", "Outcome 3"],
-  "keyCompetencies": ["Critical Thinking", "Collaboration", ...]
+  "keyCompetencies": ["Critical Thinking", "Collaboration"]
 }
 `;
 
@@ -183,36 +367,24 @@ JSON format:
   }
 });
 
-/**
- * @desc    Get all classes, subjects, strands, or sub-strands
- * @route   GET /api/curriculum/:type
- * @access  Private
- */
-const getCurriculum = asyncHandler(async (req, res) => {
-  const { type } = req.params;
-
-  const models = {
-    classes: Class,
-    subjects: Subject,
-    strands: Strand,
-    subStrands: SubStrand,
-  };
-
-  const model = models[type];
-  if (!model) {
-    res.status(400);
-    throw new Error('Invalid type. Use classes, subjects, strands, or subStrands.');
-  }
-
-  const data = await model.find().sort({ createdAt: -1 });
-  res.json(data);
-});
-
 module.exports = {
+  // Create
+  createLevel,
   createClass,
   createSubject,
   createStrand,
   createSubStrand,
-  autoFillSubStrand,
+  
+  // Read
   getCurriculum,
+  getChildren,
+  
+  // Update
+  updateCurriculum,
+  
+  // Delete
+  deleteCurriculum,
+  
+  // AI
+  autoFillSubStrand,
 };
