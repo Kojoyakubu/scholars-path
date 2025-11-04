@@ -7,9 +7,12 @@ import {
   CardContent,
   CircularProgress,
   Paper,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import { useSelector } from 'react-redux';
-import adminService from '../features/admin/adminService';
+import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const AdminDashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -17,15 +20,32 @@ const AdminDashboard = () => {
   const [aiInsights, setAiInsights] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // NEW: routing helpers for tabs
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const navItems = [
+    { label: 'Dashboard', path: '/admin/dashboard' },
+    { label: 'Users', path: '/admin/users' },
+    { label: 'Schools', path: '/admin/schools' },
+    { label: 'Curriculum', path: '/admin/curriculum' },
+    { label: 'Analytics', path: '/admin/analytics' },
+  ];
+
+  const currentIndex = navItems.findIndex((item) =>
+    location.pathname.startsWith(item.path)
+  );
+  const tabValue = currentIndex === -1 ? 0 : currentIndex;
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const [statsRes, aiRes] = await Promise.all([
-          adminService.getAnalyticsOverview(),
-          adminService.getAiInsights(),
+          axios.get('/api/admin/analytics-overview'),
+          axios.get('/api/admin/ai-insights'),
         ]);
-        setStats(statsRes);
-        setAiInsights(aiRes);
+        setStats(statsRes.data);
+        setAiInsights(aiRes.data);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
@@ -57,14 +77,39 @@ const AdminDashboard = () => {
         Admin Control Center
       </Typography>
 
-      <Typography variant="subtitle1" sx={{ mb: 4, color: '#006CA5' }}>
-        Welcome back,{' '}
-        {user?.fullName ||
-          user?.name ||
-          (user?.email && user.email.split('@')[0]) ||
-          ''}{' '}
-        ! Manage users, schools, curriculum, and platform analytics.
+      <Typography variant="subtitle1" sx={{ mb: 3, color: '#006CA5' }}>
+        Welcome back, {user?.fullName}! Manage users, schools, curriculum, and platform analytics.
       </Typography>
+
+      {/* NEW: Top Navigation Tabs */}
+      <Box sx={{ mb: 4, borderBottom: '1px solid rgba(4,150,199,0.15)' }}>
+        <Tabs
+          value={tabValue}
+          onChange={(_, newValue) => navigate(navItems[newValue].path)}
+          textColor="primary"
+          indicatorColor="secondary"
+          sx={{
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 600,
+              color: '#006CA5',
+              minWidth: 'auto',
+              mr: 2,
+            },
+            '& .MuiTab-root.Mui-selected': {
+              color: '#02367B',
+            },
+            '& .MuiTabs-indicator': {
+              height: 3,
+              borderRadius: 3,
+            },
+          }}
+        >
+          {navItems.map((item) => (
+            <Tab key={item.path} label={item.label} />
+          ))}
+        </Tabs>
+      </Box>
 
       {/* Stat Cards */}
       <Grid container spacing={3}>
