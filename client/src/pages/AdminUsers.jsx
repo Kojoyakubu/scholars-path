@@ -1,4 +1,3 @@
-// /client/src/pages/AdminUsers.jsx
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -56,8 +55,12 @@ const AdminUsers = () => {
 
   // 🏫 Load all schools
   const fetchSchools = async () => {
-    const data = await adminService.getSchools();
-    setSchools(data || []);
+    try {
+      const data = await adminService.getSchools();
+      setSchools(data || []);
+    } catch (err) {
+      console.error('Error fetching schools:', err);
+    }
   };
 
   useEffect(() => {
@@ -67,14 +70,22 @@ const AdminUsers = () => {
 
   // ✅ Approve user
   const approveUser = async (id) => {
-    await adminService.approveUser(id);
-    fetchUsers();
+    try {
+      await adminService.approveUser(id);
+      fetchUsers();
+    } catch (err) {
+      console.error('Error approving user:', err);
+    }
   };
 
   // ❌ Delete user
   const deleteUser = async (id) => {
-    await adminService.deleteUser(id);
-    fetchUsers();
+    try {
+      await adminService.deleteUser(id);
+      fetchUsers();
+    } catch (err) {
+      console.error('Error deleting user:', err);
+    }
   };
 
   // 🏫 Open assign dialog
@@ -87,14 +98,18 @@ const AdminUsers = () => {
   // 🧩 Assign user to school
   const assignToSchool = async () => {
     if (!selectedUser || !schoolId) return;
-    await adminService.assignUserToSchool({
-      userId: selectedUser._id,
-      schoolId,
-    });
-    setAssignOpen(false);
-    setSchoolId('');
-    setSelectedUser(null);
-    fetchUsers();
+    try {
+      await adminService.assignUserToSchool({
+        userId: selectedUser._id,
+        schoolId,
+      });
+      setAssignOpen(false);
+      setSchoolId('');
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (err) {
+      console.error('Error assigning user:', err);
+    }
   };
 
   return (
@@ -107,7 +122,9 @@ const AdminUsers = () => {
         sx={{ p: 3, borderRadius: 3 }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Typography variant="h6" fontWeight={700}>User Management</Typography>
+          <Typography variant="h6" fontWeight={700}>
+            User Management
+          </Typography>
           <IconButton onClick={fetchUsers} title="Refresh">
             <RefreshIcon />
           </IconButton>
@@ -132,15 +149,35 @@ const AdminUsers = () => {
                 </TableCell>
               </TableRow>
             )}
+
             {rows.map((u) => (
               <TableRow key={u._id}>
                 <TableCell>{u.fullName || u.name || '—'}</TableCell>
                 <TableCell>{u.email}</TableCell>
                 <TableCell sx={{ textTransform: 'capitalize' }}>{u.role}</TableCell>
                 <TableCell>{u.school?.name || '—'}</TableCell>
-                <TableCell>{u.approved ? 'Approved' : 'Pending'}</TableCell>
+
+                {/* ✅ Properly show status */}
+                <TableCell>
+                  <Typography
+                    sx={{
+                      color:
+                        u.status === 'approved'
+                          ? 'green'
+                          : u.status === 'pending'
+                          ? 'orange'
+                          : 'red',
+                      fontWeight: 600,
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {u.status}
+                  </Typography>
+                </TableCell>
+
                 <TableCell align="right">
-                  {!u.approved && (
+                  {/* ✅ Only show Approve button if pending */}
+                  {u.status === 'pending' && (
                     <IconButton onClick={() => approveUser(u._id)} title="Approve">
                       <CheckIcon color="success" />
                     </IconButton>
@@ -171,7 +208,7 @@ const AdminUsers = () => {
         />
       </Paper>
 
-      {/* Assign School Dialog */}
+      {/* 🏫 Assign School Dialog */}
       <Dialog open={assignOpen} onClose={() => setAssignOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Assign User to School</DialogTitle>
         <DialogContent>
@@ -186,7 +223,9 @@ const AdminUsers = () => {
               onChange={(e) => setSchoolId(e.target.value)}
             >
               {schools.map((s) => (
-                <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+                <MenuItem key={s._id} value={s._id}>
+                  {s.name}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
