@@ -16,9 +16,17 @@ const getItems = async (entity) => {
   }
 };
 
-// ✅ Fetch children of a specific parent entity
-const getChildrenOf = async (entity, parentId) => {
-  const response = await api.get(`/api/curriculum/${entity}/parent/${parentId}`);
+//
+// ✅✅ THIS IS THE FIX ✅✅
+//
+// Fetch children of a specific parent entity
+const getChildrenOf = async ({ entity, parentEntity, parentId }) => {
+  // 'entity' is the child type (e.g., 'classes')
+  // 'parentEntity' is the parent type (e.g., 'levels')
+  // This now matches the backend route: /:parentType/:parentId/:childType
+  const response = await api.get(
+    `/api/curriculum/${parentEntity}/${parentId}/${entity}`
+  );
   return response.data;
 };
 
