@@ -1,63 +1,75 @@
+// /client/src/features/teacher/teacherService.js
 import api from '../../api/axios';
 
 const getMyLessonNotes = async () => {
-  const response = await api.get('/teacher/lesson-notes');
+  // ✅ FIX: Added /api prefix
+  const response = await api.get('/api/teacher/lesson-notes');
   return response.data;
 };
 
 const generateLessonNote = async (noteData) => {
-  const response = await api.post('/teacher/generate-note', noteData);
+  // ✅ FIX: Added /api prefix
+  const response = await api.post('/api/teacher/generate-note', noteData);
   return response.data;
 };
 
 const getLessonNoteById = async (noteId) => {
-  const response = await api.get(`/teacher/lesson-notes/${noteId}`);
+  // ✅ FIX: Added /api prefix
+  const response = await api.get(`/api/teacher/lesson-notes/${noteId}`);
   return response.data;
 };
 
 const deleteLessonNote = async (noteId) => {
-  const response = await api.delete(`/teacher/lesson-notes/${noteId}`);
+  // ✅ FIX: Added /api prefix
+  const response = await api.delete(`/api/teacher/lesson-notes/${noteId}`);
   return response.data;
 };
 
 /** ✅ Generates learner-friendly version of a note **/
 const generateLearnerNote = async (lessonNoteId) => {
-  const response = await api.post('/teacher/generate-learner-note', { lessonNoteId });
+  // ✅ FIX: Added /api prefix
+  const response = await api.post('/api/teacher/generate-learner-note', { lessonNoteId });
   return response.data;
 };
 
 /** ✅ Retrieves overall dashboard stats **/
 const getTeacherAnalytics = async () => {
-  const response = await api.get('/teacher/analytics');
+  // ✅ FIX: Added /api prefix
+  const response = await api.get('/api/teacher/analytics');
   return response.data;
 };
 
 /** ✅ Draft learner notes (before publishing) **/
 const getDraftLearnerNotes = async () => {
-  const response = await api.get('/teacher/learner-notes/drafts');
+  // ✅ FIX: Added /api prefix
+  const response = await api.get('/api/teacher/learner-notes/drafts');
   return response.data;
 };
 
 const publishLearnerNote = async (noteId) => {
-  const response = await api.put(`/teacher/learner-notes/${noteId}/publish`);
+  // ✅ FIX: Added /api prefix
+  const response = await api.put(`/api/teacher/learner-notes/${noteId}/publish`);
   return response.data;
 };
 
 const deleteLearnerNote = async (noteId) => {
-  const response = await api.delete(`/teacher/learner-notes/${noteId}`);
+  // ✅ FIX: Added /api prefix
+  const response = await api.delete(`/api/teacher/learner-notes/${noteId}`);
   return response.data;
 };
 
 /** ✅ AI-generated quizzes **/
 const generateAiQuiz = async (quizData) => {
-  const response = await api.post('/teacher/quizzes/generate-ai', quizData);
+  // ✅ FIX: Added /api prefix
+  const response = await api.post('/api/teacher/quizzes/generate-ai', quizData);
   return response.data;
 };
 
 /** 🧠 NEW: Teacher AI insights **/
 const getAiInsights = async () => {
   try {
-    const response = await api.get('/teacher/ai-insights');
+    // ✅ FIX: Added /api prefix
+    const response = await api.get('/api/teacher/ai-insights');
     return response.data;
   } catch (err) {
     console.error('AI Insights fetch failed:', err.message);
@@ -79,7 +91,7 @@ const teacherService = {
   publishLearnerNote,
   deleteLearnerNote,
   generateAiQuiz,
-  getAiInsights, // ✅ added here
+  getAiInsights,
 };
 
 export default teacherService;
