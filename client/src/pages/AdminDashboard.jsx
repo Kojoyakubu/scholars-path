@@ -1,381 +1,415 @@
-// /client/src/pages/admin/AdminDashboard.jsx
+// /client/src/pages/AdminDashboard.jsx
 import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
-  Grid,
-  Typography,
-  Card,
-  CardContent,
-  CircularProgress,
-  Paper,
   Tabs,
   Tab,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Grid,
+  Paper,
+  Typography,
+  CircularProgress,
+  Alert,
+  Avatar,
+  Card,
+  CardContent,
+  useTheme,
+  alpha,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { motion } from 'framer-motion';
-import { useSelector, useDispatch } from 'react-redux';
-import {
-  getStats,
-  getAiInsights,
-  getUsers,
-  getSchools,
-  getCurriculumLevels,
-} from '../features/admin/adminSlice';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getStats, getAiInsights } from '../features/admin/adminSlice';
+import PeopleIcon from '@mui/icons-material/People';
+import SchoolIcon from '@mui/icons-material/School';
+import QuizIcon from '@mui/icons-material/Quiz';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+
+import AdminCurriculum from './AdminCurriculum';
 import AdminUsers from './AdminUsers';
 import AdminSchools from './AdminSchools';
+import AdminAnalytics from './AdminAnalytics';
+
+const fade = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
+};
+
+const TabPanel = ({ index, value, children }) => {
+  const visible = value === index;
+  return (
+    <AnimatePresence mode="wait">
+      {visible && (
+        <motion.div key={index} {...fade} style={{ width: '100%' }}>
+          <Box sx={{ mt: 4 }}>{children}</Box>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// Modern Stat Card Component
+const StatCard = ({ icon: Icon, label, value, color, delay }) => {
+  const theme = useTheme();
+  
+  return (
+    <Grid item xs={12} sm={6} lg={3}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, delay }}
+      >
+        <Card
+          sx={{
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 3,
+            background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.05)} 100%)`,
+            border: `1px solid ${alpha(color, 0.1)}`,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-8px)',
+              boxShadow: `0 12px 40px ${alpha(color, 0.2)}`,
+              border: `1px solid ${alpha(color, 0.3)}`,
+            },
+          }}
+        >
+          <CardContent sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    fontWeight: 600,
+                    letterSpacing: 0.5,
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                    mb: 1,
+                  }}
+                >
+                  {label}
+                </Typography>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 800,
+                    background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.7)} 100%)`,
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    mb: 0.5,
+                  }}
+                >
+                  {value}
+                </Typography>
+              </Box>
+              <Avatar
+                sx={{
+                  width: 56,
+                  height: 56,
+                  background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.8)} 100%)`,
+                  boxShadow: `0 8px 24px ${alpha(color, 0.3)}`,
+                }}
+              >
+                <Icon sx={{ fontSize: 28 }} />
+              </Avatar>
+            </Box>
+            <Box
+              sx={{
+                mt: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                color: color,
+              }}
+            >
+              <TrendingUpIcon sx={{ fontSize: 16 }} />
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                Active
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </Grid>
+  );
+};
 
 const AdminDashboard = () => {
+  const theme = useTheme();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-  const { stats, aiInsights, levels, isLoading } = useSelector((state) => state.admin);
-  const [tabValue, setTabValue] = useState(0);
+  const { stats, aiInsights, isLoading, isError, message } = useSelector((s) => s.admin);
+  const { user } = useSelector((s) => s.auth);
+  const [tab, setTab] = useState(0);
 
   useEffect(() => {
     dispatch(getStats());
     dispatch(getAiInsights());
-    dispatch(getUsers(1));
-    dispatch(getSchools());
-    dispatch(getCurriculumLevels());
   }, [dispatch]);
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="70vh">
-        <CircularProgress color="primary" />
-      </Box>
-    );
-  }
+  const statCards = [
+    { icon: PeopleIcon, label: 'Total Users', value: stats?.totalUsers ?? 0, color: '#2196F3' },
+    { icon: SchoolIcon, label: 'Total Schools', value: stats?.totalSchools ?? 0, color: '#9C27B0' },
+    { icon: QuizIcon, label: 'Quiz Attempts', value: stats?.totalQuizAttempts ?? 0, color: '#FF9800' },
+    { icon: PendingActionsIcon, label: 'Pending Users', value: stats?.pendingUsers ?? 0, color: '#F44336' },
+  ];
 
   return (
-    <Box
-      sx={{
-        p: 2,
-        background: 'linear-gradient(135deg, #012B47 0%, #017F9E 100%)',
-        minHeight: '100vh',
-      }}
-    >
-      <Typography
-        variant="h4"
+    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', pb: 6 }}>
+      {/* Hero Header */}
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
         sx={{
-          mb: 2,
-          fontWeight: 700,
-          color: '#E1F5FE',
-          textShadow: '0 0 10px rgba(255,255,255,0.2)',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          py: 4,
+          px: { xs: 2, md: 4 },
         }}
       >
-        Admin Control Center
-      </Typography>
-
-      <Typography variant="subtitle1" sx={{ mb: 3, color: '#B2EBF2' }}>
-        Welcome back, {user?.fullName || user?.name || 'Admin'}!
-      </Typography>
-
-      {/* Tabs */}
-      <Box sx={{ mb: 4, borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-        <Tabs
-          value={tabValue}
-          onChange={(_, newValue) => setTabValue(newValue)}
-          textColor="primary"
-          indicatorColor="secondary"
-          sx={{
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontWeight: 600,
-              color: '#B2EBF2',
-              minWidth: 'auto',
-              mr: 2,
-            },
-            '& .MuiTab-root.Mui-selected': { color: '#E1F5FE' },
-            '& .MuiTabs-indicator': {
-              height: 3,
-              borderRadius: 3,
-              backgroundColor: '#4DD0E1',
-            },
-          }}
-        >
-          <Tab label="Dashboard" />
-          <Tab label="Users" />
-          <Tab label="Schools" />
-          <Tab label="Curriculum" />
-          <Tab label="Analytics" />
-        </Tabs>
-      </Box>
-
-      {/* TAB 0 - Dashboard */}
-      {tabValue === 0 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-          <Grid container spacing={3}>
-            {[
-              { title: 'Total Users', value: stats?.totalUsers ?? 0 },
-              { title: 'Total Schools', value: stats?.totalSchools ?? 0 },
-              { title: 'Curriculum Levels', value: levels?.length ?? 0 },
-              { title: 'Pending Users', value: stats?.pendingUsers ?? 0 },
-            ].map((item, i) => (
-              <Grid item xs={12} sm={6} md={3} key={i}>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
-                  <Card
-                    sx={{
-                      borderRadius: 4,
-                      p: 1,
-                      backdropFilter: 'blur(12px)',
-                      background: 'rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-                    }}
-                  >
-                    <CardContent>
-                      <Typography variant="subtitle2" sx={{ color: '#B2EBF2', fontWeight: 600 }}>
-                        {item.title}
-                      </Typography>
-                      <Typography variant="h4" sx={{ color: '#E1F5FE', fontWeight: 700 }}>
-                        {item.value}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </Grid>
-            ))}
-          </Grid>
-
-          {aiInsights && (
-            <Paper
-              elevation={3}
+        <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Avatar
               sx={{
-                mt: 5,
-                p: 3,
-                borderRadius: 4,
-                background: 'rgba(255,255,255,0.15)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                width: 64,
+                height: 64,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: '3px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
               }}
             >
-              <Typography variant="h6" sx={{ color: '#E1F5FE', fontWeight: 700, mb: 1 }}>
-                AI Insights Summary
+              {(user?.name || user?.fullName || 'A').charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 800,
+                  color: 'white',
+                  textShadow: '0 2px 20px rgba(0,0,0,0.2)',
+                  mb: 0.5,
+                }}
+              >
+                Welcome back, {user?.name || user?.fullName || 'Admin'}! 👋
               </Typography>
-              <Typography variant="body1" sx={{ color: '#B2EBF2', mb: 1 }}>
-                {aiInsights?.summary || 'No insights available.'}
+              <Typography
+                variant="h6"
+                sx={{
+                  color: 'rgba(255,255,255,0.9)',
+                  fontWeight: 400,
+                }}
+              >
+                Here's what's happening with Scholar's Path today
               </Typography>
-              <Typography variant="caption" sx={{ color: '#E1F5FE', fontStyle: 'italic' }}>
-                Generated by {aiInsights?.provider || 'AI'}
-              </Typography>
-            </Paper>
-          )}
-        </motion.div>
-      )}
+            </Box>
+          </Box>
+        </Box>
+      </Box>
 
-      {/* TAB 1 - Users */}
-      {tabValue === 1 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-          <AdminUsers />
-        </motion.div>
-      )}
+      {/* Main Content */}
+      <Box sx={{ maxWidth: 1400, mx: 'auto', px: { xs: 2, md: 4 }, mt: -3 }}>
+        {/* Error Alert */}
+        {isError && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                backdropFilter: 'blur(10px)',
+                background: alpha(theme.palette.error.main, 0.1),
+                border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
+              }}
+            >
+              {message || 'Failed to load admin data. Please try again.'}
+            </Alert>
+          </motion.div>
+        )}
 
-      {/* TAB 2 - Schools */}
-      {tabValue === 2 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-          <AdminSchools />
-        </motion.div>
-      )}
+        {/* Tabs */}
+        <Paper
+          sx={{
+            borderRadius: 3,
+            mb: 3,
+            background: 'rgba(255,255,255,0.95)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              px: 2,
+              '& .MuiTab-root': {
+                fontWeight: 600,
+                fontSize: '1rem',
+                textTransform: 'none',
+                minHeight: 64,
+              },
+              '& .Mui-selected': {
+                color: '#667eea',
+              },
+              '& .MuiTabs-indicator': {
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+                background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+              },
+            }}
+          >
+            <Tab label="📊 Dashboard" />
+            <Tab label="👥 Users" />
+            <Tab label="🏫 Schools" />
+            <Tab label="📚 Curriculum" />
+            <Tab label="📈 Analytics" />
+          </Tabs>
+        </Paper>
 
-      {/* TAB 3 - Curriculum (Fully Collapsible) */}
-      {tabValue === 3 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-          <Typography variant="h6" sx={{ color: '#E1F5FE', fontWeight: 700, mb: 2 }}>
-            Curriculum Explorer
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 2 }}>
-            Expand each level to explore classes, subjects, strands, and sub-strands.
-          </Typography>
+        {/* Dashboard Tab */}
+        <TabPanel value={tab} index={0}>
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+              <CircularProgress size={60} sx={{ color: 'white' }} />
+            </Box>
+          ) : (
+            <>
+              {/* Stats Grid */}
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                {statCards.map((card, i) => (
+                  <StatCard key={i} {...card} delay={0.1 * i} />
+                ))}
+              </Grid>
 
-          <Box sx={{ mt: 2 }}>
-            {levels && levels.length > 0 ? (
-              levels.map((level) => (
-                <Accordion
-                  key={level._id}
-                  disableGutters
+              {/* AI Insights */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <Paper
                   sx={{
-                    mb: 1.5,
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.2)',
+                    p: 4,
                     borderRadius: 3,
-                    '&::before': { display: 'none' },
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(103, 126, 234, 0.2)',
+                    boxShadow: '0 8px 32px rgba(103, 126, 234, 0.15)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 4,
+                      background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                    },
                   }}
                 >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon sx={{ color: '#E1F5FE' }} />}
-                  >
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ color: '#E1F5FE', fontWeight: 700 }}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        boxShadow: '0 4px 20px rgba(103, 126, 234, 0.3)',
+                      }}
                     >
-                      {level.name}
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    {level.classes?.length ? (
-                      level.classes.map((cls) => (
-                        <Accordion
-                          key={cls._id}
-                          disableGutters
+                      <AutoAwesomeIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 700,
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          backgroundClip: 'text',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                        }}
+                      >
+                        AI-Powered Insights
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Smart analytics for better decisions
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {aiInsights ? (
+                    <>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          color: theme.palette.text.primary,
+                          lineHeight: 1.8,
+                          fontSize: '1rem',
+                          whiteSpace: 'pre-line',
+                        }}
+                      >
+                        {aiInsights?.summary || aiInsights}
+                      </Typography>
+                      {aiInsights?.provider && (
+                        <Box
                           sx={{
-                            mb: 1,
-                            ml: 2,
-                            background: 'rgba(255,255,255,0.06)',
-                            borderRadius: 2,
+                            mt: 3,
+                            pt: 2,
+                            borderTop: `1px solid ${alpha('#667eea', 0.1)}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
                           }}
                         >
-                          <AccordionSummary
-                            expandIcon={<ExpandMoreIcon sx={{ color: '#B2EBF2' }} />}
+                          <AutoAwesomeIcon sx={{ fontSize: 16, color: '#667eea' }} />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: theme.palette.text.secondary,
+                              fontStyle: 'italic',
+                            }}
                           >
-                            <Typography
-                              variant="subtitle2"
-                              sx={{ color: '#B2EBF2', fontWeight: 600 }}
-                            >
-                              {cls.name}
-                            </Typography>
-                          </AccordionSummary>
-                          <AccordionDetails>
-                            {cls.subjects?.length ? (
-                              cls.subjects.map((sub) => (
-                                <Accordion
-                                  key={sub._id}
-                                  disableGutters
-                                  sx={{
-                                    mb: 1,
-                                    ml: 2,
-                                    background: 'rgba(255,255,255,0.05)',
-                                    borderRadius: 2,
-                                  }}
-                                >
-                                  <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon sx={{ color: '#80DEEA' }} />}
-                                  >
-                                    <Typography
-                                      variant="body2"
-                                      sx={{ color: '#80DEEA', fontWeight: 600 }}
-                                    >
-                                      {sub.name}
-                                    </Typography>
-                                  </AccordionSummary>
-                                  <AccordionDetails>
-                                    {sub.strands?.length ? (
-                                      sub.strands.map((strand) => (
-                                        <Accordion
-                                          key={strand._id}
-                                          disableGutters
-                                          sx={{
-                                            mb: 1,
-                                            ml: 2,
-                                            background: 'rgba(255,255,255,0.04)',
-                                            borderRadius: 2,
-                                          }}
-                                        >
-                                          <AccordionSummary
-                                            expandIcon={
-                                              <ExpandMoreIcon sx={{ color: '#4DD0E1' }} />
-                                            }
-                                          >
-                                            <Typography
-                                              variant="body2"
-                                              sx={{ color: '#4DD0E1', fontWeight: 600 }}
-                                            >
-                                              {strand.name}
-                                            </Typography>
-                                          </AccordionSummary>
-                                          <AccordionDetails>
-                                            {strand.subStrands?.length ? (
-                                              <Box component="ul" sx={{ pl: 3, m: 0 }}>
-                                                {strand.subStrands.map((ss) => (
-                                                  <Box
-                                                    key={ss._id}
-                                                    component="li"
-                                                    sx={{
-                                                      color: '#B2EBF2',
-                                                      mb: 0.5,
-                                                      fontSize: 14,
-                                                    }}
-                                                  >
-                                                    {ss.name}
-                                                  </Box>
-                                                ))}
-                                              </Box>
-                                            ) : (
-                                              <Typography
-                                                variant="caption"
-                                                sx={{ color: 'rgba(255,255,255,0.7)' }}
-                                              >
-                                                No sub-strands defined.
-                                              </Typography>
-                                            )}
-                                          </AccordionDetails>
-                                        </Accordion>
-                                      ))
-                                    ) : (
-                                      <Typography
-                                        variant="caption"
-                                        sx={{ color: 'rgba(255,255,255,0.7)' }}
-                                      >
-                                        No strands defined.
-                                      </Typography>
-                                    )}
-                                  </AccordionDetails>
-                                </Accordion>
-                              ))
-                            ) : (
-                              <Typography
-                                variant="caption"
-                                sx={{ color: 'rgba(255,255,255,0.7)' }}
-                              >
-                                No subjects defined.
-                              </Typography>
-                            )}
-                          </AccordionDetails>
-                        </Accordion>
-                      ))
-                    ) : (
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'rgba(255,255,255,0.7)' }}
-                      >
-                        No classes defined.
-                      </Typography>
-                    )}
-                  </AccordionDetails>
-                </Accordion>
-              ))
-            ) : (
-              <Typography variant="body2" sx={{ color: '#B2EBF2' }}>
-                No curriculum levels available.
-              </Typography>
-            )}
-          </Box>
-        </motion.div>
-      )}
-
-      {/* TAB 4 - Analytics */}
-      {tabValue === 4 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-          <Typography variant="h6" sx={{ color: '#E1F5FE', fontWeight: 700, mb: 1 }}>
-            Platform Analytics
-          </Typography>
-          {stats ? (
-            <Typography variant="body1" sx={{ color: '#B2EBF2' }}>
-              There are {stats.totalUsers} users across {stats.totalSchools} schools.
-            </Typography>
-          ) : (
-            <Typography variant="body1" sx={{ color: '#B2EBF2' }}>
-              Analytics not available.
-            </Typography>
+                            Generated by {aiInsights.provider}
+                            {aiInsights.model && ` (${aiInsights.model})`}
+                          </Typography>
+                        </Box>
+                      )}
+                    </>
+                  ) : (
+                    <Typography variant="body1" color="text.secondary">
+                      🤖 Analyzing platform data... AI insights will appear here shortly.
+                    </Typography>
+                  )}
+                </Paper>
+              </motion.div>
+            </>
           )}
-        </motion.div>
-      )}
+        </TabPanel>
+
+        {/* Other Tabs */}
+        <TabPanel value={tab} index={1}>
+          <AdminUsers />
+        </TabPanel>
+
+        <TabPanel value={tab} index={2}>
+          <AdminSchools />
+        </TabPanel>
+
+        <TabPanel value={tab} index={3}>
+          <AdminCurriculum />
+        </TabPanel>
+
+        <TabPanel value={tab} index={4}>
+          <AdminAnalytics />
+        </TabPanel>
+      </Box>
     </Box>
   );
 };
