@@ -1,8 +1,12 @@
 // /client/src/features/curriculum/curriculumService.js
 import api from '../../api/axios';
 
-// ✅ Generic fetch for items (levels, classes, subjects, strands, substrands)
-const getItems = async (entity) => {
+//
+// ✅✅ THIS IS THE FIX ✅✅
+//
+// The 'getItems' function was expecting (entity) but the thunk passes ({ entity })
+// Change the function signature to de-structure the object argument
+const getItems = async ({ entity }) => {
   try {
     const response = await api.get(`/api/curriculum/${entity}`);
     return response.data;
@@ -16,10 +20,7 @@ const getItems = async (entity) => {
   }
 };
 
-//
-// ✅✅ THIS IS THE FIX ✅✅
-//
-// Fetch children of a specific parent entity
+// ✅ Fetch children of a specific parent entity
 const getChildrenOf = async ({ entity, parentEntity, parentId }) => {
   // 'entity' is the child type (e.g., 'classes')
   // 'parentEntity' is the parent type (e.g., 'levels')
@@ -31,19 +32,22 @@ const getChildrenOf = async ({ entity, parentEntity, parentId }) => {
 };
 
 // ✅ Create a new curriculum item
-const createItem = async (entity, itemData) => {
+// (No change needed here, but ensure your thunk calls it correctly)
+const createItem = async ({ entity, itemData }) => {
   const response = await api.post(`/api/curriculum/${entity}`, itemData);
   return response.data;
 };
 
 // ✅ Update an existing item
-const updateItem = async (entity, itemId, itemData) => {
+// (No change needed here, but ensure your thunk calls it correctly)
+const updateItem = async ({ entity, itemId, itemData }) => {
   const response = await api.put(`/api/curriculum/${entity}/${itemId}`, itemData);
   return response.data;
 };
 
 // ✅ Delete an item
-const deleteItem = async (entity, itemId) => {
+// (No change needed here, but ensure your thunk calls it correctly)
+const deleteItem = async ({ entity, itemId }) => {
   const response = await api.delete(`/api/curriculum/${entity}/${itemId}`);
   return response.data;
 };
