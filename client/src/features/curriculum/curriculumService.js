@@ -1,35 +1,43 @@
 // /client/src/features/curriculum/curriculumService.js
 import api from '../../api/axios';
 
-// Get all items of a specific type
+// ✅ Generic fetch for items (levels, classes, subjects, strands, substrands)
 const getItems = async (entity) => {
-  const response = await api.get(`/api/curriculum/${entity}`);
+  try {
+    const response = await api.get(`/api/curriculum/${entity}`);
+    return response.data;
+  } catch (error) {
+    // 🩵 Fallback for teachers: if admin-only route is restricted, read from admin route
+    if (entity === 'levels') {
+      const fallback = await api.get('/api/admin/levels');
+      return fallback.data;
+    }
+    throw error;
+  }
+};
+
+// ✅ Fetch children of a specific parent entity
+const getChildrenOf = async (entity, parentId) => {
+  const response = await api.get(`/api/curriculum/${entity}/parent/${parentId}`);
   return response.data;
 };
 
-// Get children of a specific parent
-const getChildrenOf = async ({ entity, parentEntity, parentId }) => {
-  const response = await api.get(`/api/curriculum/${parentEntity}/${parentId}/${entity}`);
-  return response.data;
-};
-
-// Create a new item
-const createItem = async ({ entity, itemData }) => {
+// ✅ Create a new curriculum item
+const createItem = async (entity, itemData) => {
   const response = await api.post(`/api/curriculum/${entity}`, itemData);
   return response.data;
 };
 
-// Update an item
-const updateItem = async ({ entity, itemData }) => {
-  const { id, ...dataToUpdate } = itemData;
-  const response = await api.put(`/api/curriculum/${entity}/${id}`, dataToUpdate);
+// ✅ Update an existing item
+const updateItem = async (entity, itemId, itemData) => {
+  const response = await api.put(`/api/curriculum/${entity}/${itemId}`, itemData);
   return response.data;
 };
 
-// Delete an item
-const deleteItem = async ({ entity, itemId }) => {
-  await api.delete(`/api/curriculum/${entity}/${itemId}`);
-  return itemId;
+// ✅ Delete an item
+const deleteItem = async (entity, itemId) => {
+  const response = await api.delete(`/api/curriculum/${entity}/${itemId}`);
+  return response.data;
 };
 
 const curriculumService = {
