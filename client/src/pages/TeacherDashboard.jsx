@@ -1,452 +1,264 @@
-// /client/src/pages/TeacherDashboard.jsx
-import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Paper,
-  CircularProgress,
-  Alert,
-  Avatar,
-  Card,
-  CardContent,
-  useTheme,
-  alpha,
-} from '@mui/material';
-import { motion } from 'framer-motion';
+import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { syncUserFromStorage } from '../features/auth/authSlice';
-import api from '../api/axios';
+import { Link as RouterLink } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 
-// --- Icons for Stat Cards ---
-import DescriptionIcon from '@mui/icons-material/Description';
-import QuizIcon from '@mui/icons-material/Quiz';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+// Redux & Components
+import { fetchItems, fetchChildren, clearChildren } from '../features/curriculum/curriculumSlice';
+import {
+  generateLessonNote, getMyLessonNotes, deleteLessonNote,
+  generateLearnerNote, getDraftLearnerNotes, publishLearnerNote,
+  deleteLearnerNote as deleteDraftLearnerNote, resetTeacherState,
+  generateAiQuiz,
+  getTeacherAnalytics, // ✅ 1. Import the analytics action
+} from '../features/teacher/teacherSlice';
+import LessonNoteForm from '../components/LessonNoteForm';
+import AiQuizForm from '../components/AiQuizForm';
 
-// --- Re-usable StatCard from AdminDashboard ---
-const StatCard = ({ icon: Icon, label, value, color, delay }) => {
-  const theme = useTheme();
+// MUI Imports
+import {
+  Box, Typography, Container, Button, Grid, Select, MenuItem, FormControl,
+  InputLabel, Paper, List, ListItem, ListItemText, ListItemButton, CircularProgress,
+  Stack, IconButton, Dialog, DialogActions, DialogContent, DialogContentText,
+  DialogTitle, Snackbar, Alert, Tooltip, Card, CardHeader, CardContent, Divider
+} from '@mui/material';
+import {
+  Article, Delete, FaceRetouchingNatural, CheckCircle, Visibility, AddCircle, Quiz,
+  BarChart, Preview, Assessment // ✅ 2. Import icons for analytics
+} from '@mui/icons-material';
 
-  return (
-    <Grid item xs={12} sm={6} lg={3}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5, delay }}
-      >
-        <Card
-          sx={{
-            position: 'relative',
-            overflow: 'hidden',
-            borderRadius: 3,
-            background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(
-              color,
-              0.05
-            )} 100%)`,
-            border: `1px solid ${alpha(color, 0.1)}`,
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              transform: 'translateY(-8px)',
-              boxShadow: `0 12px 40px ${alpha(color, 0.2)}`,
-              border: `1px solid ${alpha(color, 0.3)}`,
-            },
-          }}
-        >
-          <CardContent sx={{ p: 3 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 600,
-                    letterSpacing: 0.5,
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                    mb: 1,
-                  }}
-                >
-                  {label}
-                </Typography>
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontWeight: 800,
-                    background: `linear-gradient(135deg, ${color} 0%, ${alpha(
-                      color,
-                      0.7
-                    )} 100%)`,
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    mb: 0.5,
-                  }}
-                >
-                  {value}
-                </Typography>
-              </Box>
-              <Avatar
-                sx={{
-                  width: 56,
-                  height: 56,
-                  background: `linear-gradient(135deg, ${color} 0%, ${alpha(
-                    color,
-                    0.8
-                  )} 100%)`,
-                  boxShadow: `0 8px 24px ${alpha(color, 0.3)}`,
-                }}
-              >
-                <Icon sx={{ fontSize: 28 }} />
-              </Avatar>
-            </Box>
-            <Box
-              sx={{
-                mt: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                color: color,
-              }}
-            >
-              <TrendingUpIcon sx={{ fontSize: 16 }} />
-              <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                Active
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </Grid>
-  );
-};
+// --- Reusable Sub-Components ---
+const SectionCard = ({ title, icon, children }) => (
+  <Card component={motion.div} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} sx={{ height: '100%' }}>
+    <CardHeader
+      avatar={icon}
+      title={title}
+      titleTypographyProps={{ variant: 'h6' }}
+    />
+    <CardContent>{children}</CardContent>
+  </Card>
+);
 
-// --- Helper function from original TeacherDashboard ---
-const highlightKeywords = (text) => {
-  if (!text) return '';
-  const patterns = [
-    {
-      regex: /\b(excellent|great|outstanding|improved?)\b/gi,
-      color: '#2E7D32',
-    },
-    {
-      regex: /\b(needs improvement|consider|could|attention)\b/gi,
-      color: '#CDAA00',
-    },
-    { regex: /\b(recommended|suggests?|next step|ai)\b/gi, color: '#003366' },
-  ];
-  let result = text;
-  patterns.forEach(({ regex, color }) => {
-    result = result.replace(
-      regex,
-      (match) =>
-        `<span style="color:${color};font-weight:600">${match}</span>`
-    );
-  });
-  return result;
-};
+// ✅ 3. Reusable Stat Card component
+const StatCard = ({ title, value, icon }) => (
+  <Grid item xs={12} sm={4}>
+    <Paper elevation={3} sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+      {icon}
+      <Box sx={{ ml: 2 }}>
+        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+          {value}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {title}
+        </Typography>
+      </Box>
+    </Paper>
+  </Grid>
+);
 
-// --- Main TeacherDashboard Component ---
-const TeacherDashboard = () => {
-  const theme = useTheme();
+const renderDropdown = (name, label, value, items, onChange, disabled = false) => (
+  <FormControl fullWidth disabled={disabled}>
+    <InputLabel>{label}</InputLabel>
+    <Select name={name} value={value} label={label} onChange={onChange}>
+      {items.map((item) => (<MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>))}
+    </Select>
+  </FormControl>
+);
+
+// --- Main Component ---
+function TeacherDashboard() {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth || {});
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [aiInsights, setAiInsights] = useState('');
-  const [aiError, setAiError] = useState('');
+  const { levels, classes, subjects, strands, subStrands } = useSelector((state) => state.curriculum);
+  // ✅ 4. Get analytics and loading state
+  const { lessonNotes, draftLearnerNotes, analytics, isLoading, isError, message } = useSelector((state) => state.teacher);
 
-  // Sync user from localStorage on component mount
+  const [selections, setSelections] = useState({ level: '', class: '', subject: '', strand: '', subStrand: '' });
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [isAiQuizModalOpen, setIsAiQuizModalOpen] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [generatingNoteId, setGeneratingNoteId] = useState(null);
+  const [viewingNote, setViewingNote] = useState(null);
+
   useEffect(() => {
-    dispatch(syncUserFromStorage());
+    dispatch(fetchItems({ entity: 'levels' }));
+    dispatch(fetchItems({ entity: 'subjects' }));
+    dispatch(fetchItems({ entity: 'classes' }));
+    dispatch(getMyLessonNotes());
+    dispatch(getDraftLearnerNotes());
+    dispatch(getTeacherAnalytics()); // ✅ 5. Call the action on load
   }, [dispatch]);
 
-  // Debug: Log user object
   useEffect(() => {
-    console.log('👤 TeacherDashboard - Current user:', user);
-    console.log('📛 User name:', user?.name);
-    console.log('📛 User fullName:', user?.fullName);
-  }, [user]);
+    if (message) {
+      setSnackbar({ open: true, message, severity: isError ? 'error' : 'success' });
+      dispatch(resetTeacherState());
+    }
+  }, [message, isError, dispatch]);
 
-  // --- THIS IS THE CORE TEACHER LOGIC (PRESERVED) ---
-  useEffect(() => {
-    let isMounted = true;
-    const fetchAnalytics = async () => {
-      if (!user) {
-        console.log('⚠️ No user found, skipping analytics fetch');
-        setLoading(false);
-        return;
+  useEffect(() => { if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); }, [selections.level, dispatch]);
+  useEffect(() => { if (selections.class) dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class })); }, [selections.class, dispatch]);
+  useEffect(() => { if (selections.subject) dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject })); }, [selections.subject, dispatch]);
+  useEffect(() => { if (selections.strand) dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand })); }, [selections.strand, dispatch]);
+
+  const handleSelectionChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setSelections(prev => {
+      const newSelections = { ...prev, [name]: value };
+      const resetMap = {
+        level: ['class', 'subject', 'strand', 'subStrand'], class: ['subject', 'strand', 'subStrand'],
+        subject: ['strand', 'subStrand'], strand: ['subStrand'],
+      };
+      if (resetMap[name]) {
+        resetMap[name].forEach(key => newSelections[key] = '');
+        dispatch(clearChildren({ entities: resetMap[name] }));
       }
+      return newSelections;
+    });
+  }, [dispatch]);
 
-      try {
-        const res = await api.get('/api/teacher/analytics', {
-          params: { role: user?.role, name: user?.name || user?.fullName },
-        });
-        if (!isMounted) return;
+  const handleGenerateNoteSubmit = useCallback((formData) => {
+    dispatch(generateLessonNote(formData)).unwrap().then(() => setIsNoteModalOpen(false)).catch(() => {});
+  }, [dispatch]);
 
-        setDashboardData({
-          lessonNotes: res.data?.lessonNotes ?? 0,
-          quizzes: res.data?.quizzes ?? 0,
-          engagementRate: res.data?.engagementRate ?? '0%',
-          aiLessons: res.data?.aiLessons ?? 0,
-        });
+  const handleGenerateAiQuizSubmit = useCallback((formData) => {
+    dispatch(generateAiQuiz(formData)).unwrap().then(() => setIsAiQuizModalOpen(false)).catch(() => {});
+  }, [dispatch]);
 
-        const text = res?.data?.insight || res?.data?.message || '';
-        setAiInsights(text);
-      } catch (err) {
-        console.error('Failed to load teacher analytics', err);
-        if (isMounted)
-          setAiError(
-            err?.response?.data?.message || 'Failed to load teacher analytics.'
-          );
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    if (user) fetchAnalytics();
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
-  // Get display name with proper fallback
-  const getDisplayName = () => {
-    if (!user) return 'Teacher';
-    const name = user.name || user.fullName || 'Teacher';
-    return name.split(' ')[0]; // Get first name
-  };
-
-  // --- Data for the new StatCards ---
-  const statCards = [
-    {
-      icon: DescriptionIcon,
-      label: 'Lesson Notes',
-      value: dashboardData?.lessonNotes ?? 0,
-      color: '#2196F3', // Blue
-    },
-    {
-      icon: QuizIcon,
-      label: 'Quizzes Created',
-      value: dashboardData?.quizzes ?? 0,
-      color: '#FF9800', // Orange
-    },
-    {
-      icon: TrendingUpIcon,
-      label: 'Student Engagement',
-      value: dashboardData?.engagementRate ?? '0%',
-      color: '#4CAF50', // Green
-    },
-    {
-      icon: ModelTrainingIcon,
-      label: 'AI Lessons Generated',
-      value: dashboardData?.aiLessons ?? 0,
-      color: '#9C27B0', // Purple
-    },
-  ];
+  const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        pb: 6,
-      }}
-    >
-      {/* Hero Header (from AdminDashboard) */}
-      <Box
-        component={motion.div}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        sx={{
-          background:
-            'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          py: 4,
-          px: { xs: 2, md: 4 },
-        }}
-      >
-        <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Avatar
-              sx={{
-                width: 64,
-                height: 64,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                border: '3px solid rgba(255,255,255,0.3)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-              }}
-            >
-              {getDisplayName().charAt(0).toUpperCase()}
-            </Avatar>
-            <Box>
-              <Typography
-                variant="h3"
-                sx={{
-                  fontWeight: 800,
-                  color: 'white',
-                  textShadow: '0 2px 20px rgba(0,0,0,0.2)',
-                  mb: 0.5,
-                }}
-              >
-                Welcome back, {getDisplayName()}! 👩‍🏫
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: 'rgba(255,255,255,0.9)',
-                  fontWeight: 400,
-                }}
-              >
-                Here's a quick look at your teaching stats
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <Typography variant="h4" gutterBottom>Teacher Dashboard</Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          Welcome back! Here are your tools and performance insights.
+        </Typography>
+      </motion.div>
+
+      {/* ✅ 6. Analytics Insights Section */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" gutterBottom>Analytics & Insights</Typography>
+        <Grid container spacing={3}>
+          {isLoading && !analytics.totalNoteViews ? <CircularProgress sx={{ml: 3, mt: 2}} /> : (
+            <>
+              <StatCard title="Total Note Views" value={analytics.totalNoteViews ?? 0} icon={<Preview color="primary" sx={{ fontSize: 40 }} />} />
+              <StatCard title="Total Quiz Attempts" value={analytics.totalQuizAttempts ?? 0} icon={<Assessment color="secondary" sx={{ fontSize: 40 }} />} />
+              <StatCard title="Average Quiz Score" value={`${Math.round(analytics.averageScore ?? 0)}%`} icon={<BarChart color="success" sx={{ fontSize: 40 }} />} />
+            </>
+          )}
+        </Grid>
       </Box>
 
-      {/* Main Content (from AdminDashboard) */}
-      <Box sx={{ maxWidth: 1400, mx: 'auto', px: { xs: 2, md: 4 }, mt: -3 }}>
-        {/* Error Alert (using teacher's aiError state) */}
-        {aiError && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Alert
-              severity="error"
-              sx={{
-                mb: 3,
-                borderRadius: 2,
-                backdropFilter: 'blur(10px)',
-                background: alpha(theme.palette.error.main, 0.1),
-                border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
-              }}
-            >
-              {aiError}
-            </Alert>
-          </motion.div>
-        )}
+      <Grid container spacing={4}>
+        <Grid item xs={12} lg={6}>
+          <SectionCard title="Content Generators" icon={<AddCircle color="primary" />}>
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="h6" component="h3">Lesson Note Generator</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Select a topic from the curriculum to generate a new AI-powered lesson note.
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>{renderDropdown('level', 'Level', selections.level, levels, handleSelectionChange)}</Grid>
+                  <Grid item xs={12} sm={6}>{renderDropdown('class', 'Class', selections.class, classes, handleSelectionChange, !selections.level)}</Grid>
+                  <Grid item xs={12} sm={6}>{renderDropdown('subject', 'Subject', selections.subject, subjects, handleSelectionChange, !selections.class)}</Grid>
+                  <Grid item xs={12} sm={6}>{renderDropdown('strand', 'Strand', selections.strand, strands, handleSelectionChange, !selections.subject)}</Grid>
+                  <Grid item xs={12}>{renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, handleSelectionChange, !selections.strand)}</Grid>
+                </Grid>
+                <Button variant="contained" onClick={() => setIsNoteModalOpen(true)} disabled={!selections.subStrand || isLoading} sx={{ mt: 2 }}>
+                  Generate Lesson Note
+                </Button>
+              </Box>
+              <Divider />
+              <Box>
+                <Typography variant="h6" component="h3">Quiz Generator</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Automatically create a WAEC-standard quiz on a subject of your choice.
+                </Typography>
+                <Stack spacing={2} direction="row">
+                  <Button variant="contained" onClick={() => setIsAiQuizModalOpen(true)} startIcon={<Quiz />}>
+                    Generate with AI
+                  </Button>
+                  <Button variant="outlined" disabled>Create Manually (Soon)</Button>
+                </Stack>
+              </Box>
+            </Stack>
+          </SectionCard>
+        </Grid>
 
-        {/* Loading Spinner (using teacher's loading state) */}
-        {loading ? (
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              minHeight: 400,
-            }}
-          >
-            <CircularProgress size={60} sx={{ color: 'white' }} />
-          </Box>
-        ) : (
-          <>
-            {/* Stats Grid (using teacher's statCards data) */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              {statCards.map((card, i) => (
-                <StatCard key={i} {...card} delay={0.1 * i} />
-              ))}
-            </Grid>
+        <Grid item xs={12} lg={6}>
+          <Stack spacing={4}>
+            <SectionCard title="My Generated Lesson Notes" icon={<Article color="action" />}>
+              {isLoading && !lessonNotes.length ? <CircularProgress /> : (
+                <List disablePadding>
+                  {lessonNotes.length > 0 ? lessonNotes.map(note => (
+                    <ListItem key={note._id} disablePadding secondaryAction={
+                      <Stack direction="row" spacing={0.5}>
+                        <Tooltip title="Generate Learner's Version"><IconButton onClick={() => {
+                            setGeneratingNoteId(note._id);
+                            dispatch(generateLearnerNote(note._id)).finally(() => setGeneratingNoteId(null));
+                        }} disabled={generatingNoteId === note._id}>
+                          {generatingNoteId === note._id ? <CircularProgress size={22} /> : <FaceRetouchingNatural color="primary" />}
+                        </IconButton></Tooltip>
+                        <Tooltip title="Delete Note"><IconButton onClick={() => setNoteToDelete(note)}><Delete color="error" /></IconButton></Tooltip>
+                      </Stack>
+                    }>
+                      <ListItemButton component={RouterLink} to={`/teacher/notes/${note._id}`}>
+                        <ListItemText primary={`Note for ${note.subStrand?.name || '...'}`} secondary={`Created on ${new Date(note.createdAt).toLocaleDateString()}`} />
+                      </ListItemButton>
+                    </ListItem>
+                  )) : <Typography color="text.secondary">You haven't generated any lesson notes yet.</Typography>}
+                </List>
+              )}
+            </SectionCard>
 
-            {/* AI Insights (from AdminDashboard, using teacher's aiInsights state) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <Paper
-                sx={{
-                  p: 4,
-                  borderRadius: 3,
-                  background:
-                    'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%)',
-                  backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(103, 126, 234, 0.2)',
-                  boxShadow: '0 8px 32px rgba(103, 126, 234, 0.15)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    background:
-                      'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                  },
-                }}
-              >
-                <Box
-                  sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}
-                >
-                  <Avatar
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      background:
-                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      boxShadow: '0 4px 20px rgba(103, 126, 234, 0.3)',
-                    }}
-                  >
-                    <AutoAwesomeIcon />
-                  </Avatar>
-                  <Box>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontWeight: 700,
-                        background:
-                          'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                      }}
-                    >
-                      Your Teaching Highlights
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Smart analytics to guide your next lesson
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {aiInsights ? (
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: theme.palette.text.primary,
-                      lineHeight: 1.8,
-                      fontSize: '1rem',
-                      whiteSpace: 'pre-line', // Preserves line breaks from the AI
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: highlightKeywords(aiInsights),
-                    }}
-                  />
-                ) : (
-                  <Typography variant="body1" color="text.secondary">
-                    🕵️‍♂️ Analyzing platform data... AI insights will appear
-                    here shortly.
-                  </Typography>
-                )}
-              </Paper>
-            </motion.div>
-          </>
-        )}
-      </Box>
-    </Box>
+            <SectionCard title="Draft Learner Notes (For Review)" icon={<Visibility color="action" />}>
+              {isLoading && !draftLearnerNotes.length ? <CircularProgress /> : (
+                <List disablePadding>
+                  {draftLearnerNotes.length > 0 ? draftLearnerNotes.map(note => (
+                    <ListItem key={note._id} disablePadding secondaryAction={
+                      <Stack direction="row" spacing={0.5}>
+                        <Tooltip title="Preview"><IconButton onClick={() => setViewingNote(note)}><Visibility /></IconButton></Tooltip>
+                        <Tooltip title="Publish to Students"><IconButton onClick={() => dispatch(publishLearnerNote(note._id))}><CheckCircle color="success" /></IconButton></Tooltip>
+                        <Tooltip title="Delete Draft"><IconButton onClick={() => dispatch(deleteDraftLearnerNote(note._id))}><Delete color="error" /></IconButton></Tooltip>
+                      </Stack>
+                    }>
+                      <ListItemText primary={`Draft for: ${note.subStrand?.name || 'N/A'}`} secondary={`Generated on ${new Date(note.createdAt).toLocaleDateString()}`} />
+                    </ListItem>
+                  )) : <Typography color="text.secondary">No draft learner notes pending review.</Typography>}
+                </List>
+              )}
+            </SectionCard>
+          </Stack>
+        </Grid>
+      </Grid>
+      
+      {/* --- Modals & Snackbars --- */}
+      <LessonNoteForm open={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSubmit={(data) => handleGenerateNoteSubmit({ ...data, subStrandId: selections.subStrand })} subStrandName={subStrands.find(s => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
+      <AiQuizForm open={isAiQuizModalOpen} onClose={() => setIsAiQuizModalOpen(false)} onSubmit={handleGenerateAiQuizSubmit} isLoading={isLoading} curriculum={{ subjects, classes }} />
+      <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent><DialogContentText>Are you sure you want to permanently delete this lesson note?</DialogContentText></DialogContent>
+        <DialogActions><Button onClick={() => setNoteToDelete(null)}>Cancel</Button><Button onClick={() => {
+            dispatch(deleteLessonNote(noteToDelete._id));
+            setNoteToDelete(null);
+        }} color="error">Delete</Button></DialogActions>
+      </Dialog>
+      <Dialog open={!!viewingNote} onClose={() => setViewingNote(null)} fullWidth maxWidth="md">
+        <DialogTitle>Preview Learner Note</DialogTitle>
+        <DialogContent><Box sx={{ '& h2, & h3': { fontSize: '1.2em', fontWeight: 'bold' }, '& p': { fontSize: '1em' } }}>
+          <ReactMarkdown rehypePlugins={[rehypeRaw]}>{viewingNote?.content || ''}</ReactMarkdown>
+        </Box></DialogContent>
+        <DialogActions><Button onClick={() => setViewingNote(null)}>Close</Button></DialogActions>
+      </Dialog>
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
+      </Snackbar>
+    </Container>
   );
-};
+}
 
 export default TeacherDashboard;
