@@ -266,7 +266,7 @@ function TeacherDashboard() {
   // All useEffect hooks from your file (unchanged)
   useEffect(() => {
     dispatch(syncUserFromStorage()); // ✅ 9. Sync user on load
-    dispatch(fetchLevels());
+    dispatch(fetchItems({ entity: 'levels' }));
     dispatch(getMyLessonNotes());
     dispatch(getDraftLearnerNotes());
     dispatch(getTeacherAnalytics());
