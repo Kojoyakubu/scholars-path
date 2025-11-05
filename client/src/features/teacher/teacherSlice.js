@@ -37,15 +37,14 @@ export const getDraftLearnerNotes = createTeacherThunk('getDraftLearnerNotes', t
 export const publishLearnerNote = createTeacherThunk('publishLearnerNote', teacherService.publishLearnerNote);
 export const deleteLearnerNote = createTeacherThunk('deleteLearnerNote', teacherService.deleteLearnerNote);
 export const generateAiQuiz = createTeacherThunk('generateAiQuiz', teacherService.generateAiQuiz);
+export const getAiInsights = createTeacherThunk('getAiInsights', teacherService.getAiInsights); // new
 
-// 🧠 NEW: AI Insights thunk
-export const getAiInsights = createTeacherThunk('getAiInsights', teacherService.getAiInsights);
-
-const teacherSlice = createSlice({
+export const teacherSlice = createSlice({
   name: 'teacher',
   initialState,
   reducers: {
     resetTeacherState: (state) => {
+      state.isLoading = false;
       state.isError = false;
       state.isSuccess = false;
       state.message = '';
@@ -58,17 +57,16 @@ const teacherSlice = createSlice({
     builder
       .addCase(getMyLessonNotes.fulfilled, (state, action) => {
         state.lessonNotes = action.payload;
-      })
-      .addCase(getLessonNoteById.fulfilled, (state, action) => {
-        state.currentNote = action.payload;
-      })
-      .addCase(getTeacherAnalytics.fulfilled, (state, action) => {
-        state.analytics = action.payload;
+        state.isSuccess = true;
       })
       .addCase(generateLessonNote.fulfilled, (state, action) => {
         state.lessonNotes.unshift(action.payload);
         state.isSuccess = true;
-        state.message = 'Lesson Note Generated Successfully!';
+        state.message = 'Lesson note generated successfully!';
+      })
+      .addCase(getLessonNoteById.fulfilled, (state, action) => {
+        state.currentNote = action.payload;
+        state.isSuccess = true;
       })
       .addCase(deleteLessonNote.fulfilled, (state, action) => {
         state.lessonNotes = state.lessonNotes.filter(
@@ -78,12 +76,13 @@ const teacherSlice = createSlice({
         state.message = action.payload.message;
       })
       .addCase(generateLearnerNote.fulfilled, (state, action) => {
-        state.draftLearnerNotes.unshift(action.payload.learnerNote);
+        state.draftLearnerNotes.unshift(action.payload);
         state.isSuccess = true;
-        state.message = action.payload.message;
+        state.message = 'Learner note generated successfully!';
       })
       .addCase(getDraftLearnerNotes.fulfilled, (state, action) => {
         state.draftLearnerNotes = action.payload;
+        state.isSuccess = true;
       })
       .addCase(publishLearnerNote.fulfilled, (state, action) => {
         state.draftLearnerNotes = state.draftLearnerNotes.filter(
@@ -103,6 +102,12 @@ const teacherSlice = createSlice({
         state.quizzes.unshift(action.payload);
         state.isSuccess = true;
         state.message = 'AI Quiz generated successfully!';
+      })
+
+      // ✅ THE FIX IS HERE: This case was missing
+      .addCase(getTeacherAnalytics.fulfilled, (state, action) => {
+        state.analytics = action.payload;
+        state.isSuccess = true;
       })
 
       // 🧠 AI Insights fulfilled
