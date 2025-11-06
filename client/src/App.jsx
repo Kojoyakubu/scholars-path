@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import LessonNoteView from './pages/LessonNoteView'; // ✅ ADD THIS IMPORT
 
 // Routes
 import PrivateRoute from './components/PrivateRoute';
@@ -25,9 +26,10 @@ const App = () => {
 
         {/* Protected routes */}
         <Route element={<PrivateRoute />}>
-          {/* Teacher & School Admin Dashboard */}
+          {/* Teacher & School Admin Routes */}
           <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin']} />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/notes/:id" element={<LessonNoteView />} /> {/* ✅ ADD THIS ROUTE */}
           </Route>
 
           {/* Admin Dashboard */}
