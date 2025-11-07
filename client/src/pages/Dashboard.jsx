@@ -89,36 +89,51 @@ function Dashboard() {
   // Sync user and load initial data
   useEffect(() => {
     dispatch(syncUserFromStorage());
+    return () => {
+      dispatch(resetCurriculumState());
+    };
+  }, [dispatch]);
+
+  // Navigate based on user role and fetch initial levels
+  useEffect(() => {
     if (!user) return;
-    if (user.role === 'admin') navigate('/admin');
-    if (user.role === 'teacher' || user.role === 'school_admin') navigate('/teacher/dashboard');
-    if (user.role === 'student') dispatch(fetchItems({ entity: 'levels' }));
-    return () => dispatch(resetCurriculumState());
+    
+    if (user.role === 'admin') {
+      navigate('/admin');
+    } else if (user.role === 'teacher' || user.role === 'school_admin') {
+      navigate('/teacher/dashboard');
+    } else if (user.role === 'student') {
+      dispatch(fetchItems({ entity: 'levels' }));
+    }
   }, [dispatch, user, navigate]);
 
-  // Cascading fetches
+  // Cascading fetches with proper dependency checks
   useEffect(() => {
-    if (selections.level)
+    if (selections.level && selections.level !== '') {
       dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
+    }
   }, [selections.level, dispatch]);
 
   useEffect(() => {
-    if (selections.class)
+    if (selections.class && selections.class !== '') {
       dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
+    }
   }, [selections.class, dispatch]);
 
   useEffect(() => {
-    if (selections.subject)
+    if (selections.subject && selections.subject !== '') {
       dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
+    }
   }, [selections.subject, dispatch]);
 
   useEffect(() => {
-    if (selections.strand)
+    if (selections.strand && selections.strand !== '') {
       dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand }));
+    }
   }, [selections.strand, dispatch]);
 
   useEffect(() => {
-    if (selections.subStrand) {
+    if (selections.subStrand && selections.subStrand !== '') {
       dispatch(getLearnerNotes(selections.subStrand));
       dispatch(getQuizzes(selections.subStrand));
       dispatch(getResources(selections.subStrand));
@@ -193,16 +208,16 @@ function Dashboard() {
               <Typography
                 variant="h3"
                 sx={{
-                  fontWeight: 800,
                   color: 'white',
-                  textShadow: '0 2px 20px rgba(0,0,0,0.2)',
-                  mb: 0.5,
+                  fontWeight: 700,
+                  fontSize: { xs: '2rem', md: '2.5rem' },
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
                 }}
               >
-                Welcome back, {getDisplayName(user)}! 🎓
+                Welcome back, {getDisplayName(user)}!
               </Typography>
-              <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 400 }}>
-                Your personalized learning journey starts here
+              <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 300 }}>
+                Let's continue your learning journey
               </Typography>
             </Box>
           </Box>
@@ -210,274 +225,269 @@ function Dashboard() {
       </Box>
 
       {/* Main Content */}
-      <Container maxWidth="lg" sx={{ mt: 3 }}>
-        {/* Topic Selector */}
+      <Container maxWidth="xl" sx={{ mt: 4 }}>
+        {/* Selection Dropdowns */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.5 }}
         >
           <SectionCard sx={{ p: 3, mb: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-              <Avatar sx={{ bgcolor: 'primary.main' }}>
-                <SchoolIcon />
+              <Avatar sx={{ bgcolor: '#2196F3' }}>
+                <MenuBookIcon />
               </Avatar>
               <Typography variant="h5" fontWeight={700} color="primary">
-                Choose Your Topic
+                Select Your Course
               </Typography>
             </Box>
+
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={4}>
-                {renderDropdown('level', 'Level', selections.level, levels)}
+              <Grid item xs={12} md={2.4}>
+                {renderDropdown('level', 'Level', selections.level, levels, isLoading)}
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                {renderDropdown('class', 'Class', selections.class, classes, !selections.level)}
+              <Grid item xs={12} md={2.4}>
+                {renderDropdown('class', 'Class', selections.class, classes, !selections.level || isLoading)}
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                {renderDropdown('subject', 'Subject', selections.subject, subjects, !selections.class)}
+              <Grid item xs={12} md={2.4}>
+                {renderDropdown('subject', 'Subject', selections.subject, subjects, !selections.class || isLoading)}
               </Grid>
-              <Grid item xs={12} sm={6}>
-                {renderDropdown('strand', 'Strand', selections.strand, strands, !selections.subject)}
+              <Grid item xs={12} md={2.4}>
+                {renderDropdown('strand', 'Strand', selections.strand, strands, !selections.subject || isLoading)}
               </Grid>
-              <Grid item xs={12} sm={6}>
-                {renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, !selections.strand)}
+              <Grid item xs={12} md={2.4}>
+                {renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands, !selections.strand || isLoading)}
               </Grid>
             </Grid>
           </SectionCard>
         </motion.div>
 
-        {/* Content Display */}
-        {selections.subStrand && (
-          isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-              <CircularProgress size={60} sx={{ color: 'white' }} />
-            </Box>
-          ) : (
-            <>
-              {/* Lesson Notes */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <SectionCard sx={{ p: 4, mb: 4 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                    <Avatar sx={{ bgcolor: '#2196F3' }}>
-                      <MenuBookIcon />
-                    </Avatar>
-                    <Typography variant="h5" fontWeight={700} color="primary">
-                      Lesson Notes
-                    </Typography>
-                    {notes.length > 0 && (
-                      <Chip label={`${notes.length} Available`} color="primary" size="small" />
-                    )}
-                  </Box>
+        {/* Loading State */}
+        {isLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress size={60} sx={{ color: 'white' }} />
+          </Box>
+        )}
 
-                  {notes.length > 0 ? (
-                    notes.map((note, index) => (
-                      <Paper
-                        key={note._id}
-                        component={motion.div}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 * index }}
+        {/* Content Areas */}
+        {!isLoading && selections.subStrand && (
+          <>
+            {/* Notes Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <SectionCard sx={{ p: 4, mb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
+                  <Avatar sx={{ bgcolor: '#2196F3', width: 56, height: 56 }}>
+                    <SchoolIcon />
+                  </Avatar>
+                  <Typography variant="h5" fontWeight={700} color="primary">
+                    Learning Notes
+                  </Typography>
+                  {notes.length > 0 && (
+                    <Chip label={`${notes.length} Available`} color="primary" sx={{ fontWeight: 600 }} />
+                  )}
+                </Box>
+
+                {notes.length > 0 ? (
+                  notes.map((note) => (
+                    <Paper
+                      key={note._id}
+                      elevation={0}
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        bgcolor: 'rgba(33, 150, 243, 0.05)',
+                        border: '1px solid rgba(33, 150, 243, 0.2)',
+                      }}
+                    >
+                      <Box
+                        id={`note-content-${note._id}`}
                         sx={{
-                          mb: 3,
-                          p: 3,
-                          border: '1px solid',
-                          borderColor: alpha('#2196F3', 0.2),
-                          borderRadius: 2,
-                          '&:hover': {
-                            borderColor: alpha('#2196F3', 0.4),
-                            boxShadow: `0 4px 20px ${alpha('#2196F3', 0.2)}`,
-                          },
+                          '& h1, & h2, & h3': { fontSize: '1.3em', fontWeight: 700, mb: 2, color: '#333' },
+                          '& p': { mb: 1.5, lineHeight: 1.8, color: '#555' },
+                          '& a': { color: '#2196F3' },
+                          '& ul, & ol': { pl: 3, mb: 2 },
                         }}
                       >
-                        <Box
-                          id={`note-content-${note._id}`}
-                          sx={{
-                            '& h1, & h2, & h3': { fontSize: '1.3em', fontWeight: 700, mb: 2, color: '#333' },
-                            '& p': { mb: 1.5, lineHeight: 1.8, color: '#555' },
-                            '& a': { color: '#2196F3' },
-                            '& ul, & ol': { pl: 3, mb: 2 },
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeRaw]}
+                          components={{
+                            p: ({ node, ...props }) => {
+                              const text = node?.children?.[0]?.value || '';
+                              if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
+                                return <AiImage text={text} />;
+                              }
+                              return <p {...props} />;
+                            },
                           }}
                         >
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[rehypeRaw]}
-                            components={{
-                              p: ({ node, ...props }) => {
-                                const text = node?.children?.[0]?.value || '';
-                                if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
-                                  return <AiImage text={text} />;
-                                }
-                                return <p {...props} />;
-                              },
-                            }}
-                          >
-                            {note.content}
-                          </ReactMarkdown>
-                        </Box>
-
-                        <Stack direction="row" spacing={1} sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                          <Button
-                            startIcon={<PictureAsPdfIcon />}
-                            onClick={() => handleDownload('pdf', note._id, 'lesson_note')}
-                            size="small"
-                            variant="outlined"
-                          >
-                            PDF
-                          </Button>
-                          <Button
-                            startIcon={<DescriptionIcon />}
-                            onClick={() => handleDownload('word', note._id, 'lesson_note')}
-                            size="small"
-                            variant="outlined"
-                          >
-                            Word
-                          </Button>
-                        </Stack>
-                      </Paper>
-                    ))
-                  ) : (
-                    <Typography color="text.secondary">
-                      📚 No notes available yet. Check back later!
-                    </Typography>
-                  )}
-                </SectionCard>
-              </motion.div>
-
-              <Grid container spacing={3}>
-                {/* Quizzes */}
-                <Grid item xs={12} md={6}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                  >
-                    <SectionCard sx={{ p: 3 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                        <Avatar sx={{ bgcolor: '#FF9800' }}>
-                          <QuizIcon />
-                        </Avatar>
-                        <Typography variant="h5" fontWeight={700} color="primary">
-                          Quizzes
-                        </Typography>
-                        {quizzes.length > 0 && (
-                          <Chip label={`${quizzes.length} Ready`} sx={{ bgcolor: '#FF9800', color: 'white' }} size="small" />
-                        )}
+                          {note.content}
+                        </ReactMarkdown>
                       </Box>
 
-                      {quizzes.length > 0 ? (
-                        <Box display="flex" gap={1.5} flexWrap="wrap">
-                          {quizzes.map((quiz) => (
-                            <Button
-                              key={quiz._id}
-                              component={RouterLink}
-                              to={`/quiz/${quiz._id}`}
-                              variant="contained"
-                              startIcon={<EmojiEventsIcon />}
-                              sx={{
-                                background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
-                                boxShadow: '0 4px 15px rgba(255, 152, 0, 0.3)',
-                                '&:hover': {
-                                  boxShadow: '0 6px 20px rgba(255, 152, 0, 0.4)',
-                                  transform: 'translateY(-2px)',
-                                },
-                              }}
-                            >
-                              {quiz.title}
-                            </Button>
-                          ))}
-                        </Box>
-                      ) : (
-                        <Typography color="text.secondary">
-                          🎯 No quizzes available yet
-                        </Typography>
-                      )}
-                    </SectionCard>
-                  </motion.div>
-                </Grid>
+                      <Stack direction="row" spacing={1} sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                        <Button
+                          startIcon={<PictureAsPdfIcon />}
+                          onClick={() => handleDownload('pdf', note._id, 'lesson_note')}
+                          size="small"
+                          variant="outlined"
+                        >
+                          PDF
+                        </Button>
+                        <Button
+                          startIcon={<DescriptionIcon />}
+                          onClick={() => handleDownload('word', note._id, 'lesson_note')}
+                          size="small"
+                          variant="outlined"
+                        >
+                          Word
+                        </Button>
+                      </Stack>
+                    </Paper>
+                  ))
+                ) : (
+                  <Typography color="text.secondary">
+                    📚 No notes available yet. Check back later!
+                  </Typography>
+                )}
+              </SectionCard>
+            </motion.div>
 
-                {/* Resources */}
-                <Grid item xs={12} md={6}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
-                  >
-                    <SectionCard sx={{ p: 3 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                        <Avatar sx={{ bgcolor: '#4CAF50' }}>
-                          <AttachFileIcon />
-                        </Avatar>
-                        <Typography variant="h5" fontWeight={700} color="primary">
-                          Resources
-                        </Typography>
-                        {resources.length > 0 && (
-                          <Chip label={`${resources.length} Files`} color="success" size="small" />
-                        )}
-                      </Box>
-
-                      {resources.length > 0 ? (
-                        <List disablePadding>
-                          {resources.map((res) => (
-                            <ListItem
-                              key={res._id}
-                              button
-                              component="a"
-                              href={`/${res.filePath.replace(/\\/g, '/')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              sx={{
-                                borderRadius: 1,
-                                mb: 1,
-                                '&:hover': {
-                                  bgcolor: alpha('#4CAF50', 0.1),
-                                },
-                              }}
-                            >
-                              <ListItemIcon>
-                                <AttachFileIcon sx={{ color: '#4CAF50' }} />
-                              </ListItemIcon>
-                              <ListItemText primary={res.fileName} />
-                            </ListItem>
-                          ))}
-                        </List>
-                      ) : (
-                        <Typography color="text.secondary">
-                          📎 No resources available yet
-                        </Typography>
-                      )}
-                    </SectionCard>
-                  </motion.div>
-                </Grid>
-              </Grid>
-
-              {/* AI Insights */}
-              {aiInsights && (
+            <Grid container spacing={3}>
+              {/* Quizzes */}
+              <Grid item xs={12} md={6}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                  <SectionCard sx={{ p: 4, mt: 4 }}>
+                  <SectionCard sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                      <Avatar sx={{ bgcolor: '#9C27B0' }}>
-                        <AutoAwesomeIcon />
+                      <Avatar sx={{ bgcolor: '#FF9800' }}>
+                        <QuizIcon />
                       </Avatar>
                       <Typography variant="h5" fontWeight={700} color="primary">
-                        AI Study Tips
+                        Quizzes
                       </Typography>
+                      {quizzes.length > 0 && (
+                        <Chip label={`${quizzes.length} Ready`} sx={{ bgcolor: '#FF9800', color: 'white' }} size="small" />
+                      )}
                     </Box>
-                    <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line', color: 'text.secondary' }}>
-                      {aiInsights}
-                    </Typography>
+
+                    {quizzes.length > 0 ? (
+                      <Box display="flex" gap={1.5} flexWrap="wrap">
+                        {quizzes.map((quiz) => (
+                          <Button
+                            key={quiz._id}
+                            component={RouterLink}
+                            to={`/quiz/${quiz._id}`}
+                            variant="contained"
+                            startIcon={<EmojiEventsIcon />}
+                            sx={{
+                              background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
+                              boxShadow: '0 4px 15px rgba(255, 152, 0, 0.3)',
+                              '&:hover': {
+                                boxShadow: '0 6px 20px rgba(255, 152, 0, 0.4)',
+                                transform: 'translateY(-2px)',
+                              },
+                            }}
+                          >
+                            {quiz.title}
+                          </Button>
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography color="text.secondary">
+                        🎯 No quizzes available yet
+                      </Typography>
+                    )}
                   </SectionCard>
                 </motion.div>
-              )}
-            </>
-          )
+              </Grid>
+
+              {/* Resources */}
+              <Grid item xs={12} md={6}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <SectionCard sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                      <Avatar sx={{ bgcolor: '#4CAF50' }}>
+                        <AttachFileIcon />
+                      </Avatar>
+                      <Typography variant="h5" fontWeight={700} color="primary">
+                        Resources
+                      </Typography>
+                      {resources.length > 0 && (
+                        <Chip label={`${resources.length} Files`} color="success" size="small" />
+                      )}
+                    </Box>
+
+                    {resources.length > 0 ? (
+                      <List disablePadding>
+                        {resources.map((res) => (
+                          <ListItem
+                            key={res._id}
+                            button
+                            component="a"
+                            href={`/${res.filePath.replace(/\\/g, '/')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              borderRadius: 1,
+                              mb: 1,
+                              '&:hover': {
+                                bgcolor: alpha('#4CAF50', 0.1),
+                              },
+                            }}
+                          >
+                            <ListItemIcon>
+                              <AttachFileIcon sx={{ color: '#4CAF50' }} />
+                            </ListItemIcon>
+                            <ListItemText primary={res.fileName} />
+                          </ListItem>
+                        ))}
+                      </List>
+                    ) : (
+                      <Typography color="text.secondary">
+                        📎 No resources available yet
+                      </Typography>
+                    )}
+                  </SectionCard>
+                </motion.div>
+              </Grid>
+            </Grid>
+
+            {/* AI Insights */}
+            {aiInsights && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
+                <SectionCard sx={{ p: 4, mt: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                    <Avatar sx={{ bgcolor: '#9C27B0' }}>
+                      <AutoAwesomeIcon />
+                    </Avatar>
+                    <Typography variant="h5" fontWeight={700} color="primary">
+                      AI Study Tips
+                    </Typography>
+                  </Box>
+                  <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line', color: 'text.secondary' }}>
+                    {aiInsights}
+                  </Typography>
+                </SectionCard>
+              </motion.div>
+            )}
+          </>
         )}
       </Container>
     </Box>
