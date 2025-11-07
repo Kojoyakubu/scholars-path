@@ -78,13 +78,37 @@ function Dashboard() {
   const { user } = useSelector((state) => state.auth);
   const curriculumState = useSelector((state) => state.curriculum);
   const studentState = useSelector((state) => state.student);
-  const { levels, classes, subjects, strands, subStrands, isLoading: isCurriculumLoading } = curriculumState;
-  const { notes, quizzes, resources, isLoading: isStudentLoading, aiInsights } = studentState;
+  
+  // Safely destructure with defaults
+  const { 
+    levels = [], 
+    classes = [], 
+    subjects = [], 
+    strands = [], 
+    subStrands = [], 
+    isLoading: isCurriculumLoading = false 
+  } = curriculumState || {};
+  
+  const { 
+    notes = [], 
+    quizzes = [], 
+    resources = [], 
+    isLoading: isStudentLoading = false, 
+    aiInsights = null 
+  } = studentState || {};
+  
   const isLoading = isCurriculumLoading || isStudentLoading;
 
   const [selections, setSelections] = useState({
-    level: '', class: '', subject: '', strand: '', subStrand: '',
+    level: '', 
+    class: '', 
+    subject: '', 
+    strand: '', 
+    subStrand: '',
   });
+
+  // Track if content has been loaded for a substrand
+  const [contentLoaded, setContentLoaded] = useState(false);
 
   // Sync user and load initial data
   useEffect(() => {
@@ -110,33 +134,60 @@ function Dashboard() {
   // Cascading fetches with proper dependency checks
   useEffect(() => {
     if (selections.level && selections.level !== '') {
-      dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
+      dispatch(fetchChildren({ 
+        entity: 'classes', 
+        parentEntity: 'levels', 
+        parentId: selections.level 
+      }));
     }
   }, [selections.level, dispatch]);
 
   useEffect(() => {
     if (selections.class && selections.class !== '') {
-      dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
+      dispatch(fetchChildren({ 
+        entity: 'subjects', 
+        parentEntity: 'classes', 
+        parentId: selections.class 
+      }));
     }
   }, [selections.class, dispatch]);
 
   useEffect(() => {
     if (selections.subject && selections.subject !== '') {
-      dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
+      dispatch(fetchChildren({ 
+        entity: 'strands', 
+        parentEntity: 'subjects', 
+        parentId: selections.subject 
+      }));
     }
   }, [selections.subject, dispatch]);
 
   useEffect(() => {
     if (selections.strand && selections.strand !== '') {
-      dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand }));
+      dispatch(fetchChildren({ 
+        entity: 'subStrands', 
+        parentEntity: 'strands', 
+        parentId: selections.strand 
+      }));
     }
   }, [selections.strand, dispatch]);
 
+  // Load content when substrand is selected
   useEffect(() => {
     if (selections.subStrand && selections.subStrand !== '') {
-      dispatch(getLearnerNotes(selections.subStrand));
-      dispatch(getQuizzes(selections.subStrand));
-      dispatch(getResources(selections.subStrand));
+      setContentLoaded(false);
+      Promise.all([
+        dispatch(getLearnerNotes(selections.subStrand)),
+        dispatch(getQuizzes(selections.subStrand)),
+        dispatch(getResources(selections.subStrand))
+      ]).then(() => {
+        setContentLoaded(true);
+      }).catch((error) => {
+        console.error('Error loading content:', error);
+        setContentLoaded(true); // Set to true even on error to show empty state
+      });
+    } else {
+      setContentLoaded(false);
     }
   }, [selections.subStrand, dispatch]);
 
@@ -159,21 +210,41 @@ function Dashboard() {
   }, [dispatch]);
 
   const handleDownload = useCallback((type, noteId, noteTopic) => {
-    dispatch(logNoteView(noteId));
-    const elementId = `note-content-${noteId}`;
-    type === 'pdf' ? downloadAsPdf(elementId, noteTopic) : downloadAsWord(elementId, noteTopic);
+    try {
+      dispatch(logNoteView(noteId));
+      const elementId = `note-content-${noteId}`;
+      if (type === 'pdf') {
+        downloadAsPdf(elementId, noteTopic);
+      } else {
+        downloadAsWord(elementId, noteTopic);
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+    }
   }, [dispatch]);
 
-  const renderDropdown = (name, label, value, items, disabled = false) => (
+  const renderDropdown = (name, label, value, items = [], disabled = false) => (
     <FormControl fullWidth disabled={disabled}>
       <InputLabel>{label}</InputLabel>
-      <Select name={name} value={value} label={label} onChange={handleSelectionChange}>
-        {items.map((item) => (
-          <MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>
+      <Select 
+        name={name} 
+        value={value || ''} 
+        label={label} 
+        onChange={handleSelectionChange}
+      >
+        {Array.isArray(items) && items.map((item) => (
+          <MenuItem key={item._id} value={item._id}>
+            {item.name}
+          </MenuItem>
         ))}
       </Select>
     </FormControl>
   );
+
+  // Safe array length check
+  const getArrayLength = (arr) => {
+    return Array.isArray(arr) ? arr.length : 0;
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', pb: 6 }}>
@@ -263,14 +334,14 @@ function Dashboard() {
         </motion.div>
 
         {/* Loading State */}
-        {isLoading && (
+        {isLoading && selections.subStrand && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress size={60} sx={{ color: 'white' }} />
           </Box>
         )}
 
-        {/* Content Areas */}
-        {!isLoading && selections.subStrand && (
+        {/* Content Areas - Only show when substrand is selected and content is loaded */}
+        {selections.subStrand && contentLoaded && !isLoading && (
           <>
             {/* Notes Section */}
             <motion.div
@@ -286,12 +357,16 @@ function Dashboard() {
                   <Typography variant="h5" fontWeight={700} color="primary">
                     Learning Notes
                   </Typography>
-                  {notes.length > 0 && (
-                    <Chip label={`${notes.length} Available`} color="primary" sx={{ fontWeight: 600 }} />
+                  {getArrayLength(notes) > 0 && (
+                    <Chip 
+                      label={`${getArrayLength(notes)} Available`} 
+                      color="primary" 
+                      sx={{ fontWeight: 600 }} 
+                    />
                   )}
                 </Box>
 
-                {notes.length > 0 ? (
+                {Array.isArray(notes) && notes.length > 0 ? (
                   notes.map((note) => (
                     <Paper
                       key={note._id}
@@ -318,15 +393,20 @@ function Dashboard() {
                           rehypePlugins={[rehypeRaw]}
                           components={{
                             p: ({ node, ...props }) => {
-                              const text = node?.children?.[0]?.value || '';
-                              if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
-                                return <AiImage text={text} />;
+                              try {
+                                const text = node?.children?.[0]?.value || '';
+                                if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
+                                  return <AiImage text={text} />;
+                                }
+                                return <p {...props} />;
+                              } catch (error) {
+                                console.error('Markdown component error:', error);
+                                return <p {...props} />;
                               }
-                              return <p {...props} />;
                             },
                           }}
                         >
-                          {note.content}
+                          {note.content || ''}
                         </ReactMarkdown>
                       </Box>
 
@@ -374,12 +454,16 @@ function Dashboard() {
                       <Typography variant="h5" fontWeight={700} color="primary">
                         Quizzes
                       </Typography>
-                      {quizzes.length > 0 && (
-                        <Chip label={`${quizzes.length} Ready`} sx={{ bgcolor: '#FF9800', color: 'white' }} size="small" />
+                      {getArrayLength(quizzes) > 0 && (
+                        <Chip 
+                          label={`${getArrayLength(quizzes)} Ready`} 
+                          sx={{ bgcolor: '#FF9800', color: 'white' }} 
+                          size="small" 
+                        />
                       )}
                     </Box>
 
-                    {quizzes.length > 0 ? (
+                    {Array.isArray(quizzes) && quizzes.length > 0 ? (
                       <Box display="flex" gap={1.5} flexWrap="wrap">
                         {quizzes.map((quiz) => (
                           <Button
@@ -397,7 +481,7 @@ function Dashboard() {
                               },
                             }}
                           >
-                            {quiz.title}
+                            {quiz.title || 'Untitled Quiz'}
                           </Button>
                         ))}
                       </Box>
@@ -425,19 +509,23 @@ function Dashboard() {
                       <Typography variant="h5" fontWeight={700} color="primary">
                         Resources
                       </Typography>
-                      {resources.length > 0 && (
-                        <Chip label={`${resources.length} Files`} color="success" size="small" />
+                      {getArrayLength(resources) > 0 && (
+                        <Chip 
+                          label={`${getArrayLength(resources)} Files`} 
+                          color="success" 
+                          size="small" 
+                        />
                       )}
                     </Box>
 
-                    {resources.length > 0 ? (
+                    {Array.isArray(resources) && resources.length > 0 ? (
                       <List disablePadding>
                         {resources.map((res) => (
                           <ListItem
                             key={res._id}
                             button
                             component="a"
-                            href={`/${res.filePath.replace(/\\/g, '/')}`}
+                            href={`/${res.filePath?.replace(/\\/g, '/') || '#'}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             sx={{
@@ -451,7 +539,7 @@ function Dashboard() {
                             <ListItemIcon>
                               <AttachFileIcon sx={{ color: '#4CAF50' }} />
                             </ListItemIcon>
-                            <ListItemText primary={res.fileName} />
+                            <ListItemText primary={res.fileName || 'Unnamed File'} />
                           </ListItem>
                         ))}
                       </List>
@@ -481,7 +569,14 @@ function Dashboard() {
                       AI Study Tips
                     </Typography>
                   </Box>
-                  <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line', color: 'text.secondary' }}>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      lineHeight: 1.8, 
+                      whiteSpace: 'pre-line', 
+                      color: 'text.secondary' 
+                    }}
+                  >
                     {aiInsights}
                   </Typography>
                 </SectionCard>
