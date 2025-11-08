@@ -518,6 +518,192 @@ const DraftNoteCard = ({ note, onPreview, onPublish, onDelete }) => {
   );
 };
 
+// 📋 Lesson Note List Item Component (NEW - for list view)
+const LessonNoteListItem = ({ note, onGenerateLearner, onDelete, isGenerating }) => {
+  const theme = useTheme();
+  
+  return (
+    <motion.div
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      layout
+    >
+      <ListItem
+        disablePadding
+        sx={{
+          mb: 1,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          borderRadius: 2,
+          bgcolor: 'background.paper',
+          transition: 'all 0.2s',
+          '&:hover': {
+            bgcolor: alpha(theme.palette.primary.main, 0.02),
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+          },
+        }}
+        secondaryAction={
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="Generate Learner Note">
+              <span>
+                <IconButton
+                  onClick={onGenerateLearner}
+                  disabled={isGenerating}
+                  size="small"
+                >
+                  {isGenerating ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <FaceRetouchingNatural color="primary" />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Delete Note">
+              <IconButton onClick={onDelete} size="small">
+                <Delete color="error" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        }
+      >
+        <ListItemButton
+          component={RouterLink}
+          to={`/teacher/notes/${note._id}`}
+          sx={{ py: 2 }}
+        >
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%', pr: 10 }}>
+            <Avatar
+              sx={{
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: theme.palette.primary.main,
+              }}
+            >
+              <Article />
+            </Avatar>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="subtitle1" fontWeight={600} noWrap>
+                {note.subStrand?.name || 'Untitled Note'}
+              </Typography>
+              <Stack direction="row" spacing={2} alignItems="center" mt={0.5}>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <CalendarToday sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(note.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </Typography>
+                </Stack>
+                {note.subStrand?.strand?.name && (
+                  <Chip
+                    label={note.subStrand.strand.name}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.7rem',
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      color: theme.palette.primary.main,
+                    }}
+                  />
+                )}
+              </Stack>
+            </Box>
+          </Stack>
+        </ListItemButton>
+      </ListItem>
+    </motion.div>
+  );
+};
+
+// 📋 Draft Note List Item Component (NEW - for list view)
+const DraftNoteListItem = ({ note, onPreview, onPublish, onDelete }) => {
+  const theme = useTheme();
+  
+  return (
+    <motion.div
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      layout
+    >
+      <ListItem
+        disablePadding
+        sx={{
+          mb: 1,
+          border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
+          borderRadius: 2,
+          bgcolor: alpha(theme.palette.secondary.main, 0.02),
+          transition: 'all 0.2s',
+          '&:hover': {
+            bgcolor: alpha(theme.palette.secondary.main, 0.05),
+            border: `1px solid ${alpha(theme.palette.secondary.main, 0.4)}`,
+          },
+        }}
+        secondaryAction={
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="Preview">
+              <IconButton onClick={onPreview} size="small">
+                <Visibility />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Publish to Students">
+              <IconButton onClick={onPublish} size="small">
+                <CheckCircle color="success" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete Draft">
+              <IconButton onClick={onDelete} size="small">
+                <Delete color="error" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        }
+      >
+        <ListItemText
+          primary={
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                  color: theme.palette.secondary.main,
+                }}
+              >
+                <Preview />
+              </Avatar>
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {note.subStrand?.name || 'Draft Note'}
+                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
+                  <CalendarToday sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(note.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </Typography>
+                  <Chip
+                    label="Draft"
+                    size="small"
+                    color="secondary"
+                    sx={{ height: 20, fontSize: '0.7rem' }}
+                  />
+                </Stack>
+              </Box>
+            </Stack>
+          }
+          sx={{ pl: 2, py: 1.5, pr: 15 }}
+        />
+      </ListItem>
+    </motion.div>
+  );
+};
+
 // 📑 Tab Panel Component
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -1066,10 +1252,29 @@ function TeacherDashboard() {
                 </Box>
               ) : filteredLessonNotes.length > 0 ? (
                 <AnimatePresence mode="popLayout">
-                  <Grid container spacing={3}>
-                    {filteredLessonNotes.map((note) => (
-                      <Grid item xs={12} sm={6} md={4} key={note._id}>
-                        <LessonNoteCard
+                  {viewMode === 'grid' ? (
+                    <Grid container spacing={3}>
+                      {filteredLessonNotes.map((note) => (
+                        <Grid item xs={12} sm={6} md={4} key={note._id}>
+                          <LessonNoteCard
+                            note={note}
+                            onGenerateLearner={() => {
+                              setGeneratingNoteId(note._id);
+                              dispatch(generateLearnerNote(note._id))
+                                .finally(() => setGeneratingNoteId(null));
+                            }}
+                            onDelete={() => setNoteToDelete(note)}
+                            onView={() => {}}
+                            isGenerating={generatingNoteId === note._id}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+                  ) : (
+                    <List disablePadding>
+                      {filteredLessonNotes.map((note) => (
+                        <LessonNoteListItem
+                          key={note._id}
                           note={note}
                           onGenerateLearner={() => {
                             setGeneratingNoteId(note._id);
@@ -1077,12 +1282,11 @@ function TeacherDashboard() {
                               .finally(() => setGeneratingNoteId(null));
                           }}
                           onDelete={() => setNoteToDelete(note)}
-                          onView={() => {}}
                           isGenerating={generatingNoteId === note._id}
                         />
-                      </Grid>
-                    ))}
-                  </Grid>
+                      ))}
+                    </List>
+                  )}
                 </AnimatePresence>
               ) : (
                 <Paper
@@ -1121,22 +1325,39 @@ function TeacherDashboard() {
           {/* Tab Panel 2: Draft Learner Notes */}
           <TabPanel value={activeTab} index={2}>
             <Box sx={{ px: 3 }}>
-              {/* Search Bar */}
-              <TextField
-                placeholder="Search draft notes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                size="small"
-                fullWidth
-                sx={{ mb: 3, maxWidth: 400 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              {/* Search and View Toggle Bar */}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mb: 3 }}
+              >
+                <TextField
+                  placeholder="Search draft notes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  size="small"
+                  sx={{ flexGrow: 1, maxWidth: { sm: 400 } }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <Tooltip title={viewMode === 'grid' ? 'Switch to List View' : 'Switch to Grid View'}>
+                  <IconButton
+                    onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                    sx={{
+                      border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
+                    }}
+                  >
+                    {viewMode === 'grid' ? <ViewList /> : <ViewModule />}
+                  </IconButton>
+                </Tooltip>
+              </Stack>
 
               {/* Draft Notes Display */}
               {isLoading && !draftLearnerNotes.length ? (
@@ -1145,18 +1366,32 @@ function TeacherDashboard() {
                 </Box>
               ) : filteredDraftNotes.length > 0 ? (
                 <AnimatePresence mode="popLayout">
-                  <Grid container spacing={3}>
-                    {filteredDraftNotes.map((note) => (
-                      <Grid item xs={12} sm={6} md={4} key={note._id}>
-                        <DraftNoteCard
+                  {viewMode === 'grid' ? (
+                    <Grid container spacing={3}>
+                      {filteredDraftNotes.map((note) => (
+                        <Grid item xs={12} sm={6} md={4} key={note._id}>
+                          <DraftNoteCard
+                            note={note}
+                            onPreview={() => setViewingNote(note)}
+                            onPublish={() => dispatch(publishLearnerNote(note._id))}
+                            onDelete={() => dispatch(deleteDraftLearnerNote(note._id))}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+                  ) : (
+                    <List disablePadding>
+                      {filteredDraftNotes.map((note) => (
+                        <DraftNoteListItem
+                          key={note._id}
                           note={note}
                           onPreview={() => setViewingNote(note)}
                           onPublish={() => dispatch(publishLearnerNote(note._id))}
                           onDelete={() => dispatch(deleteDraftLearnerNote(note._id))}
                         />
-                      </Grid>
-                    ))}
-                  </Grid>
+                      ))}
+                    </List>
+                  )}
                 </AnimatePresence>
               ) : (
                 <Paper
