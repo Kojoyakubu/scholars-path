@@ -1,6 +1,5 @@
-// /client/src/pages/Register.jsx
-// 🎨 Modernized Register Page - Following Design Blueprint  
-// Features: Split-screen layout, password strength indicator, smooth animations
+// /client/src/pages/Register.jsx - FIXED VERSION
+// 🔧 Fixed: Ensures fullName is properly sent to backend
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -27,6 +26,10 @@ import {
   Stack,
   Divider,
   LinearProgress,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 
@@ -108,12 +111,15 @@ const PasswordStrength = ({ password }) => {
 
 function Register() {
   const theme = useTheme();
+  
+  // 🔧 FIXED: Initialize with proper field names
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
-    registerAsTeacher: false,
+    role: 'student', // Add role field
   });
+  
   const [notification, setNotification] = useState({ 
     open: false, 
     message: '', 
@@ -124,35 +130,75 @@ function Register() {
   const dispatch = useDispatch();
   const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
 
-  // 🔄 Handle registration success and errors (preserved logic)
+  // Handle registration success and errors
   useEffect(() => {
     if (isError) {
+      console.error('Registration error:', message);
       setNotification({ open: true, message: message, severity: 'error' });
     }
     if (isSuccess && message) {
       setNotification({ open: true, message: message, severity: 'success' });
-      // Redirect to login after a short delay to allow the user to read the message
+      // Redirect to login after success
       const timer = setTimeout(() => navigate('/login'), 3000);
       return () => clearTimeout(timer);
     }
-    // Reset the auth state when the component unmounts (preserved logic)
     return () => {
       dispatch(reset());
     };
   }, [isError, isSuccess, message, navigate, dispatch]);
 
-  // 📝 Form handlers (preserved logic)
+  // Form handlers
   const onChange = useCallback((e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
+    console.log('Form change:', name, value); // Debug log
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: value,
     }));
   }, []);
 
+  // 🔧 FIXED: Validate and log data before submitting
   const onSubmit = useCallback((e) => {
     e.preventDefault();
-    dispatch(register(formData));
+    
+    // Validate required fields
+    if (!formData.fullName || !formData.fullName.trim()) {
+      setNotification({ 
+        open: true, 
+        message: 'Full Name is required', 
+        severity: 'error' 
+      });
+      return;
+    }
+    
+    if (!formData.email || !formData.email.trim()) {
+      setNotification({ 
+        open: true, 
+        message: 'Email is required', 
+        severity: 'error' 
+      });
+      return;
+    }
+    
+    if (!formData.password || formData.password.length < 6) {
+      setNotification({ 
+        open: true, 
+        message: 'Password must be at least 6 characters', 
+        severity: 'error' 
+      });
+      return;
+    }
+
+    // Prepare data - make sure fullName is trimmed and not empty
+    const dataToSend = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+      role: formData.role,
+    };
+
+    console.log('📤 Submitting registration data:', dataToSend);
+    dispatch(register(dataToSend));
   }, [dispatch, formData]);
 
   // Benefits to display on left panel
@@ -161,6 +207,13 @@ function Register() {
     'Generate AI-Powered Quizzes',
     'Track Student Progress',
     'Access Comprehensive Curriculum',
+  ];
+
+  // Role options
+  const roles = [
+    { value: 'student', label: 'Student' },
+    { value: 'teacher', label: 'Teacher (Requires Approval)' },
+    { value: 'school_admin', label: 'School Admin (Requires Approval)' },
   ];
 
   return (
@@ -181,14 +234,13 @@ function Register() {
           sx={{
             background: theme.palette.background.gradient,
             color: 'white',
-            display: { xs: 'none', md: 'flex' }, // Hide on mobile to save space
+            display: { xs: 'none', md: 'flex' },
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
             p: 8,
             position: 'relative',
             overflow: 'hidden',
-            // Animated background shapes
             '&::before': {
               content: '""',
               position: 'absolute',
@@ -207,7 +259,6 @@ function Register() {
           }}
         >
           <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 500 }}>
-            {/* Logo & Title */}
             <Box sx={{ mb: 4 }}>
               <SchoolIcon sx={{ fontSize: 64, mb: 2 }} />
               <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>
@@ -218,7 +269,6 @@ function Register() {
               </Typography>
             </Box>
 
-            {/* Illustration Placeholder */}
             <Box
               sx={{
                 width: '100%',
@@ -238,7 +288,6 @@ function Register() {
               </Typography>
             </Box>
 
-            {/* Benefits List */}
             <Stack spacing={2} alignItems="flex-start" sx={{ textAlign: 'left' }}>
               {benefits.map((benefit, index) => (
                 <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -322,6 +371,8 @@ function Register() {
                   onChange={onChange}
                   disabled={isLoading}
                   sx={{ mb: 2 }}
+                  error={!formData.fullName && notification.open}
+                  helperText={!formData.fullName && notification.open ? 'Full Name is required' : ''}
                 />
 
                 <TextField
@@ -348,29 +399,30 @@ function Register() {
                   onChange={onChange}
                   disabled={isLoading}
                   sx={{ mb: 1 }}
+                  helperText="Minimum 6 characters"
                 />
 
                 {/* Password Strength Indicator */}
                 <PasswordStrength password={formData.password} />
 
-                {/* Teacher Registration Checkbox */}
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="registerAsTeacher"
-                      checked={formData.registerAsTeacher}
-                      onChange={onChange}
-                      color="primary"
-                      disabled={isLoading}
-                    />
-                  }
-                  label={
-                    <Typography variant="body2" color="text.secondary">
-                      Register as a Teacher (Requires Admin Approval)
-                    </Typography>
-                  }
-                  sx={{ mt: 2, mb: 3 }}
-                />
+                {/* Role Selection */}
+                <FormControl fullWidth sx={{ mt: 2, mb: 3 }}>
+                  <InputLabel id="role-label">Register As</InputLabel>
+                  <Select
+                    labelId="role-label"
+                    name="role"
+                    value={formData.role}
+                    onChange={onChange}
+                    label="Register As"
+                    disabled={isLoading}
+                  >
+                    {roles.map((role) => (
+                      <MenuItem key={role.value} value={role.value}>
+                        {role.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
                 <Button
                   type="submit"
