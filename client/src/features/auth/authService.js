@@ -2,15 +2,25 @@
 import api from '../../api/axios';
 
 // -----------------------------------------------------------------------------
-// 📝 REGISTER USER
+// 🔐 REGISTER USER - FIXED VERSION
 // -----------------------------------------------------------------------------
 const register = async (userData) => {
-  const response = await api.post('/api/users/register', userData);
+  // 🔧 FIX: Transform fullName to name for backend compatibility
+  const backendData = {
+    name: userData.fullName || userData.name,  // Backend expects 'name' not 'fullName'
+    email: userData.email,
+    password: userData.password,
+    role: userData.role || 'student',
+  };
+  
+  console.log('📤 Sending registration data to backend:', backendData);
+  
+  const response = await api.post('/api/users/register', backendData);
   return response.data;
 };
 
 // -----------------------------------------------------------------------------
-// 🔐 LOGIN USER
+// 🔓 LOGIN USER
 // -----------------------------------------------------------------------------
 const login = async (userData) => {
   const response = await api.post('/api/users/login', userData);
