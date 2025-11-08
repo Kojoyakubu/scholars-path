@@ -538,29 +538,22 @@ function TeacherDashboard() {
   const dispatch = useDispatch();
 
   // Redux state (all preserved)
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth || {});
+  const { levels, classes, subjects, strands, subStrands } = useSelector(
+    (state) => state.curriculum
+  );
   const {
-    subjects = [],
-    classes = [],
-    strands = [],
-    subStrands = [],
-    loading: curriculumLoading,
-  } = useSelector((state) => state.curriculum);
-  const {
-    lessonNotes = [],
-    draftLearnerNotes = [],
-    analytics = {},
-    loading: teacherLoading,
-    error,
+    lessonNotes,
+    draftLearnerNotes,
+    isLoading,
+    teacherAnalytics,
   } = useSelector((state) => state.teacher);
-
-  const isLoading = curriculumLoading || teacherLoading;
 
   // Local state (all preserved + new ones)
   const [selections, setSelections] = useState({
-    subject: '',
+    level: '',
     class: '',
-    learningArea: '',
+    subject: '',
     strand: '',
     subStrand: '',
   });
@@ -583,8 +576,7 @@ function TeacherDashboard() {
   // Initialization (all preserved)
   useEffect(() => {
     dispatch(syncUserFromStorage());
-    dispatch(fetchItems('subjects'));
-    dispatch(fetchItems('classes'));
+    dispatch(fetchItems({ entity: 'levels' }));
     dispatch(getMyLessonNotes());
     dispatch(getDraftLearnerNotes());
     dispatch(getTeacherAnalytics());
@@ -596,27 +588,48 @@ function TeacherDashboard() {
 
   // Curriculum selection handlers (all preserved)
   useEffect(() => {
+    if (selections.level) {
+      dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
+    }
+  }, [selections.level, dispatch]);
+
+  useEffect(() => {
+    if (selections.class) {
+      dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
+    }
+  }, [selections.class, dispatch]);
+
+  useEffect(() => {
     if (selections.subject) {
-      dispatch(fetchChildren({ type: 'strands', parentId: selections.subject }));
-    } else {
-      dispatch(clearChildren('strands'));
-      setSelections((prev) => ({ ...prev, strand: '', subStrand: '' }));
+      dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
     }
   }, [selections.subject, dispatch]);
 
   useEffect(() => {
     if (selections.strand) {
-      dispatch(fetchChildren({ type: 'subStrands', parentId: selections.strand }));
-    } else {
-      dispatch(clearChildren('subStrands'));
-      setSelections((prev) => ({ ...prev, subStrand: '' }));
+      dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand }));
     }
   }, [selections.strand, dispatch]);
 
   // Handlers (all preserved)
-  const handleSelectionChange = useCallback((field, value) => {
-    setSelections((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  const handleSelectionChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setSelections((prev) => {
+      const next = { ...prev, [name]: value };
+      // Cascading reset logic
+      const resetMap = {
+        level: ['class', 'subject', 'strand', 'subStrand'],
+        class: ['subject', 'strand', 'subStrand'],
+        subject: ['strand', 'subStrand'],
+        strand: ['subStrand'],
+      };
+      if (resetMap[name]) {
+        resetMap[name].forEach((k) => (next[k] = ''));
+        dispatch(clearChildren({ entities: resetMap[name] }));
+      }
+      return next;
+    });
+  }, [dispatch]);
 
   const handleGenerateNoteSubmit = useCallback(
     (formData) => {
@@ -673,7 +686,7 @@ function TeacherDashboard() {
   };
 
   // NEW: Filter notes based on search
-  const filteredLessonNotes = lessonNotes.filter(note => {
+  const filteredLessonNotes = (lessonNotes || []).filter(note => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -682,7 +695,7 @@ function TeacherDashboard() {
     );
   });
 
-  const filteredDraftNotes = draftLearnerNotes.filter(note => {
+  const filteredDraftNotes = (draftLearnerNotes || []).filter(note => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return note.subStrand?.name?.toLowerCase().includes(query);
@@ -765,21 +778,21 @@ function TeacherDashboard() {
           <StatCard
             icon={Article}
             label="Lesson Notes"
-            value={analytics.totalLessonNotes || lessonNotes.length || 0}
+            value={teacherAnalytics?.totalLessonNotes || lessonNotes?.length || 0}
             color={theme.palette.primary.main}
             delay={0}
           />
           <StatCard
             icon={Preview}
             label="Draft Notes"
-            value={analytics.totalDraftNotes || draftLearnerNotes.length || 0}
+            value={teacherAnalytics?.totalDraftNotes || draftLearnerNotes?.length || 0}
             color={theme.palette.secondary.main}
             delay={0.1}
           />
           <StatCard
             icon={Quiz}
             label="AI Quizzes"
-            value={analytics.totalQuizzes || 0}
+            value={teacherAnalytics?.totalQuizzes || 0}
             color={theme.palette.success.main}
             delay={0.2}
           />
@@ -849,31 +862,50 @@ function TeacherDashboard() {
                     <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
                         <FormControl fullWidth size="small">
-                          <InputLabel>Subject</InputLabel>
+                          <InputLabel>Level</InputLabel>
                           <Select
-                            value={selections.subject}
-                            label="Subject"
-                            onChange={(e) => handleSelectionChange('subject', e.target.value)}
+                            name="level"
+                            value={selections.level}
+                            label="Level"
+                            onChange={handleSelectionChange}
                           >
-                            {subjects.map((s) => (
-                              <MenuItem key={s._id} value={s._id}>
-                                {s.name}
+                            {(levels || []).map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.name}
                               </MenuItem>
                             ))}
                           </Select>
                         </FormControl>
                       </Grid>
                       <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small">
+                        <FormControl fullWidth size="small" disabled={!selections.level}>
                           <InputLabel>Class</InputLabel>
                           <Select
+                            name="class"
                             value={selections.class}
                             label="Class"
-                            onChange={(e) => handleSelectionChange('class', e.target.value)}
+                            onChange={handleSelectionChange}
                           >
-                            {classes.map((c) => (
-                              <MenuItem key={c._id} value={c._id}>
-                                {c.name}
+                            {(classes || []).map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small" disabled={!selections.class}>
+                          <InputLabel>Subject</InputLabel>
+                          <Select
+                            name="subject"
+                            value={selections.subject}
+                            label="Subject"
+                            onChange={handleSelectionChange}
+                          >
+                            {(subjects || []).map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.name}
                               </MenuItem>
                             ))}
                           </Select>
@@ -883,29 +915,31 @@ function TeacherDashboard() {
                         <FormControl fullWidth size="small" disabled={!selections.subject}>
                           <InputLabel>Learning Area / Strand</InputLabel>
                           <Select
+                            name="strand"
                             value={selections.strand}
                             label="Learning Area / Strand"
-                            onChange={(e) => handleSelectionChange('strand', e.target.value)}
+                            onChange={handleSelectionChange}
                           >
-                            {strands.map((s) => (
-                              <MenuItem key={s._id} value={s._id}>
-                                {s.name}
+                            {(strands || []).map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.name}
                               </MenuItem>
                             ))}
                           </Select>
                         </FormControl>
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid item xs={12}>
                         <FormControl fullWidth size="small" disabled={!selections.strand}>
                           <InputLabel>Sub-Strand</InputLabel>
                           <Select
+                            name="subStrand"
                             value={selections.subStrand}
                             label="Sub-Strand"
-                            onChange={(e) => handleSelectionChange('subStrand', e.target.value)}
+                            onChange={handleSelectionChange}
                           >
-                            {subStrands.map((s) => (
-                              <MenuItem key={s._id} value={s._id}>
-                                {s.name}
+                            {(subStrands || []).map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.name}
                               </MenuItem>
                             ))}
                           </Select>
@@ -1170,7 +1204,7 @@ function TeacherDashboard() {
           onClose={() => setIsAiQuizModalOpen(false)}
           onSubmit={handleGenerateAiQuizSubmit}
           isLoading={isLoading}
-          curriculum={{ subjects, classes }}
+          curriculum={{ levels, classes, subjects }}
         />
         
         <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
