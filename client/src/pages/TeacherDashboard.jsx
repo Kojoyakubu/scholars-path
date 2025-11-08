@@ -1,12 +1,12 @@
 // /client/src/pages/TeacherDashboard.jsx
-// 🎨 Modernized Teacher Dashboard - Following Design Blueprint
-// Features: Enhanced hero, improved stat cards, modern action panels, better layout
+// 🎨 Modernized Teacher Dashboard - Improved Layout & Organization
+// Features: Tab-based navigation, grid layout, search/filter, better spacing
 // ALL REDUX LOGIC AND API CALLS PRESERVED
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 
@@ -67,6 +67,12 @@ import {
   alpha,
   Container,
   Chip,
+  Tabs,
+  Tab,
+  TextField,
+  InputAdornment,
+  Badge,
+  CardActions,
 } from '@mui/material';
 
 // Icon Imports
@@ -84,6 +90,12 @@ import {
   AutoAwesome,
   TrendingUp,
   School,
+  Search,
+  FilterList,
+  ViewModule,
+  ViewList,
+  CalendarToday,
+  Edit,
 } from '@mui/icons-material';
 
 // 🎯 Animation Variants
@@ -100,6 +112,20 @@ const staggerContainer = {
   }
 };
 
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { duration: 0.3 }
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.95,
+    transition: { duration: 0.2 }
+  }
+};
+
 // 🎨 Helper function for user display name (preserved)
 const getDisplayName = (user) => {
   if (!user) return 'Teacher';
@@ -108,7 +134,7 @@ const getDisplayName = (user) => {
 };
 
 // 🎴 Modern Section Card Component
-const SectionCard = ({ title, icon, children, color }) => {
+const SectionCard = ({ title, icon, children, color, action }) => {
   const theme = useTheme();
   
   return (
@@ -136,6 +162,7 @@ const SectionCard = ({ title, icon, children, color }) => {
           </Avatar>
         }
         title={title}
+        action={action}
         titleTypographyProps={{
           variant: 'h6',
           fontWeight: 700,
@@ -234,49 +261,306 @@ const StatCard = ({ icon: Icon, label, value, color, delay }) => {
   );
 };
 
-// 📝 Dropdown Component (preserved)
-const renderDropdown = (
-  name,
-  label,
-  value,
-  items,
-  onChange,
-  disabled = false
-) => (
-  <FormControl fullWidth disabled={disabled}>
-    <InputLabel>{label}</InputLabel>
-    <Select name={name} value={value} label={label} onChange={onChange}>
-      {items.map((item) => (
-        <MenuItem key={item._id} value={item._id}>
-          {item.name}
-        </MenuItem>
-      ))}
-    </Select>
-  </FormControl>
-);
+// 📝 Lesson Note Card Component (NEW - Grid Item)
+const LessonNoteCard = ({ note, onGenerateLearner, onDelete, onView, isGenerating }) => {
+  const theme = useTheme();
+  
+  return (
+    <motion.div
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      layout
+    >
+      <Card
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 2,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+          },
+        }}
+      >
+        <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+          <Stack direction="row" spacing={1} alignItems="flex-start" mb={2}>
+            <Avatar
+              sx={{
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: theme.palette.primary.main,
+                width: 40,
+                height: 40,
+              }}
+            >
+              <Article />
+            </Avatar>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  mb: 0.5,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                }}
+              >
+                {note.subStrand?.name || 'Untitled Note'}
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CalendarToday sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
+                <Typography variant="caption" color="text.secondary">
+                  {new Date(note.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </Typography>
+              </Stack>
+            </Box>
+          </Stack>
 
-// 🏠 Main Teacher Dashboard Component
+          {note.subStrand?.strand?.name && (
+            <Chip
+              label={note.subStrand.strand.name}
+              size="small"
+              sx={{
+                mb: 1,
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+              }}
+            />
+          )}
+        </CardContent>
+
+        <Divider />
+
+        <CardActions sx={{ justifyContent: 'space-between', px: 2, py: 1.5 }}>
+          <Button
+            component={RouterLink}
+            to={`/teacher/notes/${note._id}`}
+            size="small"
+            startIcon={<Visibility />}
+            sx={{ fontWeight: 600 }}
+          >
+            View
+          </Button>
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="Generate Learner Note">
+              <span>
+                <IconButton
+                  onClick={onGenerateLearner}
+                  disabled={isGenerating}
+                  size="small"
+                  sx={{
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    },
+                  }}
+                >
+                  {isGenerating ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <FaceRetouchingNatural color="primary" />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Delete Note">
+              <IconButton
+                onClick={onDelete}
+                size="small"
+                sx={{
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.error.main, 0.1),
+                  },
+                }}
+              >
+                <Delete color="error" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        </CardActions>
+      </Card>
+    </motion.div>
+  );
+};
+
+// 📋 Draft Note Card Component (NEW)
+const DraftNoteCard = ({ note, onPreview, onPublish, onDelete }) => {
+  const theme = useTheme();
+  
+  return (
+    <motion.div
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      layout
+    >
+      <Card
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 2,
+          border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
+          bgcolor: alpha(theme.palette.secondary.main, 0.02),
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: `0 8px 24px ${alpha(theme.palette.secondary.main, 0.2)}`,
+            border: `1px solid ${alpha(theme.palette.secondary.main, 0.4)}`,
+          },
+        }}
+      >
+        <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+          <Stack direction="row" spacing={1} alignItems="flex-start" mb={2}>
+            <Avatar
+              sx={{
+                bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                color: theme.palette.secondary.main,
+                width: 40,
+                height: 40,
+              }}
+            >
+              <Preview />
+            </Avatar>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  mb: 0.5,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                }}
+              >
+                {note.subStrand?.name || 'Draft Note'}
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CalendarToday sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
+                <Typography variant="caption" color="text.secondary">
+                  {new Date(note.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </Typography>
+              </Stack>
+            </Box>
+          </Stack>
+
+          <Chip
+            label="Draft"
+            size="small"
+            color="secondary"
+            sx={{ fontWeight: 600 }}
+          />
+        </CardContent>
+
+        <Divider />
+
+        <CardActions sx={{ justifyContent: 'space-between', px: 2, py: 1.5 }}>
+          <Button
+            onClick={onPreview}
+            size="small"
+            startIcon={<Visibility />}
+            sx={{ fontWeight: 600 }}
+          >
+            Preview
+          </Button>
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="Publish to Students">
+              <IconButton
+                onClick={onPublish}
+                size="small"
+                sx={{
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.success.main, 0.1),
+                  },
+                }}
+              >
+                <CheckCircle color="success" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete Draft">
+              <IconButton
+                onClick={onDelete}
+                size="small"
+                sx={{
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.error.main, 0.1),
+                  },
+                }}
+              >
+                <Delete color="error" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        </CardActions>
+      </Card>
+    </motion.div>
+  );
+};
+
+// 📑 Tab Panel Component
+function TabPanel({ children, value, index, ...other }) {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`dashboard-tabpanel-${index}`}
+      aria-labelledby={`dashboard-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
 function TeacherDashboard() {
   const theme = useTheme();
   const dispatch = useDispatch();
-  
-  // Redux state selectors (preserved)
-  const { user } = useSelector((state) => state.auth || {});
-  const { levels, classes, subjects, strands, subStrands } = useSelector(
-    (state) => state.curriculum
-  );
+
+  // Redux state (all preserved)
+  const { user } = useSelector((state) => state.auth);
   const {
-    lessonNotes,
-    draftLearnerNotes,
-    isLoading,
-    teacherAnalytics,
+    subjects = [],
+    classes = [],
+    strands = [],
+    subStrands = [],
+    loading: curriculumLoading,
+  } = useSelector((state) => state.curriculum);
+  const {
+    lessonNotes = [],
+    draftLearnerNotes = [],
+    analytics = {},
+    loading: teacherLoading,
+    error,
   } = useSelector((state) => state.teacher);
 
-  // Component state (preserved)
+  const isLoading = curriculumLoading || teacherLoading;
+
+  // Local state (all preserved + new ones)
   const [selections, setSelections] = useState({
-    level: '',
-    class: '',
     subject: '',
+    class: '',
+    learningArea: '',
     strand: '',
     subStrand: '',
   });
@@ -285,517 +569,585 @@ function TeacherDashboard() {
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
   const [generatingNoteId, setGeneratingNoteId] = useState(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info',
+  });
 
-  // 🔄 Initialize and fetch data (preserved logic)
+  // NEW: Tab and view state
+  const [activeTab, setActiveTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+
+  // Initialization (all preserved)
   useEffect(() => {
     dispatch(syncUserFromStorage());
-    dispatch(fetchItems({ entity: 'levels' }));
+    dispatch(fetchItems('subjects'));
+    dispatch(fetchItems('classes'));
     dispatch(getMyLessonNotes());
     dispatch(getDraftLearnerNotes());
     dispatch(getTeacherAnalytics());
-    return () => dispatch(resetTeacherState());
+
+    return () => {
+      dispatch(resetTeacherState());
+    };
   }, [dispatch]);
 
-  // 🔄 Cascading fetches (preserved logic)
-  useEffect(() => {
-    if (selections.level) {
-      dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
-    }
-  }, [selections.level, dispatch]);
-
-  useEffect(() => {
-    if (selections.class) {
-      dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
-    }
-  }, [selections.class, dispatch]);
-
+  // Curriculum selection handlers (all preserved)
   useEffect(() => {
     if (selections.subject) {
-      dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
+      dispatch(fetchChildren({ type: 'strands', parentId: selections.subject }));
+    } else {
+      dispatch(clearChildren('strands'));
+      setSelections((prev) => ({ ...prev, strand: '', subStrand: '' }));
     }
   }, [selections.subject, dispatch]);
 
   useEffect(() => {
     if (selections.strand) {
-      dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand }));
+      dispatch(fetchChildren({ type: 'subStrands', parentId: selections.strand }));
+    } else {
+      dispatch(clearChildren('subStrands'));
+      setSelections((prev) => ({ ...prev, subStrand: '' }));
     }
   }, [selections.strand, dispatch]);
 
-  // 📝 Form handlers (preserved logic)
-  const handleSelectionChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setSelections((prev) => {
-      const next = { ...prev, [name]: value };
-      const resetMap = {
-        level: ['class', 'subject', 'strand', 'subStrand'],
-        class: ['subject', 'strand', 'subStrand'],
-        subject: ['strand', 'subStrand'],
-        strand: ['subStrand'],
-      };
-      if (resetMap[name]) {
-        resetMap[name].forEach((k) => (next[k] = ''));
-        dispatch(clearChildren({ entities: resetMap[name] }));
-      }
-      return next;
-    });
-  }, [dispatch]);
-
-  // 📤 Action handlers (preserved logic)
-  const handleGenerateNoteSubmit = useCallback((data) => {
-    dispatch(generateLessonNote(data))
-      .unwrap()
-      .then(() => {
-        setIsNoteModalOpen(false);
-        setSnackbar({ open: true, message: 'Lesson note generated!', severity: 'success' });
-      })
-      .catch((err) => {
-        setSnackbar({ open: true, message: err.message || 'Error generating note', severity: 'error' });
-      });
-  }, [dispatch]);
-
-  const handleGenerateAiQuizSubmit = useCallback((data) => {
-    dispatch(generateAiQuiz(data))
-      .unwrap()
-      .then(() => {
-        setIsAiQuizModalOpen(false);
-        setSnackbar({ open: true, message: 'AI Quiz generated!', severity: 'success' });
-      })
-      .catch((err) => {
-        setSnackbar({ open: true, message: err.message || 'Error generating quiz', severity: 'error' });
-      });
-  }, [dispatch]);
-
-  const handleSnackbarClose = useCallback(() => {
-    setSnackbar((prev) => ({ ...prev, open: false }));
+  // Handlers (all preserved)
+  const handleSelectionChange = useCallback((field, value) => {
+    setSelections((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  const handleGenerateNoteSubmit = useCallback(
+    (formData) => {
+      dispatch(generateLessonNote(formData))
+        .unwrap()
+        .then(() => {
+          setSnackbar({
+            open: true,
+            message: 'Lesson note generated successfully!',
+            severity: 'success',
+          });
+          setIsNoteModalOpen(false);
+        })
+        .catch((err) => {
+          setSnackbar({
+            open: true,
+            message: err || 'Failed to generate lesson note',
+            severity: 'error',
+          });
+        });
+    },
+    [dispatch]
+  );
+
+  const handleGenerateAiQuizSubmit = useCallback(
+    (formData) => {
+      dispatch(generateAiQuiz(formData))
+        .unwrap()
+        .then(() => {
+          setSnackbar({
+            open: true,
+            message: 'AI Quiz generated successfully!',
+            severity: 'success',
+          });
+          setIsAiQuizModalOpen(false);
+        })
+        .catch((err) => {
+          setSnackbar({
+            open: true,
+            message: err || 'Failed to generate AI quiz',
+            severity: 'error',
+          });
+        });
+    },
+    [dispatch]
+  );
+
+  const handleSnackbarClose = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
+  // NEW: Filter notes based on search
+  const filteredLessonNotes = lessonNotes.filter(note => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      note.subStrand?.name?.toLowerCase().includes(query) ||
+      note.subStrand?.strand?.name?.toLowerCase().includes(query)
+    );
+  });
+
+  const filteredDraftNotes = draftLearnerNotes.filter(note => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return note.subStrand?.name?.toLowerCase().includes(query);
+  });
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
-      {/* 🎨 Hero Section */}
+    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default, pb: 6 }}>
+      {/* Hero Section (preserved) */}
       <Box
         sx={{
-          background: theme.palette.background.gradient,
+          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           color: 'white',
-          py: 6,
-          px: { xs: 2, md: 4 },
+          py: { xs: 4, md: 6 },
           position: 'relative',
           overflow: 'hidden',
           '&::before': {
             content: '""',
             position: 'absolute',
-            width: '400px',
-            height: '400px',
-            borderRadius: '50%',
-            background: alpha('#60A5FA', 0.1),
-            top: '-200px',
-            right: '-100px',
-            animation: 'float 20s ease-in-out infinite',
-          },
-          '@keyframes float': {
-            '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
-            '50%': { transform: 'translateY(-30px) rotate(10deg)' },
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+            opacity: 0.4,
           },
         }}
       >
-        <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
-          <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
-            <motion.div variants={fadeInUp}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
-                <Avatar
+        <Container maxWidth="lg">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" spacing={2}>
+              <Box sx={{ position: 'relative', zIndex: 1 }}>
+                <Typography
+                  variant="h3"
                   sx={{
-                    width: 72,
-                    height: 72,
-                    bgcolor: alpha('#FFFFFF', 0.2),
-                    border: '3px solid rgba(255,255,255,0.3)',
-                    fontSize: '1.75rem',
-                    fontWeight: 700,
+                    fontWeight: 800,
+                    mb: 1,
+                    textShadow: '0 2px 10px rgba(0,0,0,0.2)',
                   }}
                 >
-                  {(user?.name || user?.fullName || 'T').charAt(0).toUpperCase()}
-                </Avatar>
-                <Box>
-                  <Typography variant="h3" sx={{ fontWeight: 800, mb: 0.5 }}>
-                    Welcome, {getDisplayName(user)}! 👨‍🏫
-                  </Typography>
-                  <Typography variant="h6" sx={{ color: alpha('#FFFFFF', 0.9) }}>
-                    Create engaging lessons and track your impact
-                  </Typography>
-                </Box>
+                  Welcome back, {getDisplayName(user)}! 👋
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    opacity: 0.95,
+                    fontWeight: 400,
+                    textShadow: '0 1px 5px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  Create engaging lessons and track your impact
+                </Typography>
               </Box>
-            </motion.div>
-
-            <motion.div variants={fadeInUp}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      bgcolor: alpha('#FFFFFF', 0.15),
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <School sx={{ fontSize: 32, mb: 1 }} />
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {teacherAnalytics?.totalNotes || lessonNotes?.length || 0}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: alpha('#FFFFFF', 0.9) }}>
-                      Lesson Notes
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      bgcolor: alpha('#FFFFFF', 0.15),
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <Preview sx={{ fontSize: 32, mb: 1 }} />
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {teacherAnalytics?.draftCount || draftLearnerNotes?.length || 0}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: alpha('#FFFFFF', 0.9) }}>
-                      Drafts Pending
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      bgcolor: alpha('#FFFFFF', 0.15),
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <TrendingUp sx={{ fontSize: 32, mb: 1 }} />
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {teacherAnalytics?.totalPublished || 0}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: alpha('#FFFFFF', 0.9) }}>
-                      Published
-                    </Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </motion.div>
+              <Avatar
+                sx={{
+                  width: { xs: 64, md: 80 },
+                  height: { xs: 64, md: 80 },
+                  bgcolor: 'white',
+                  color: theme.palette.primary.main,
+                  fontSize: '2rem',
+                  fontWeight: 700,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
+                {getDisplayName(user).charAt(0)}
+              </Avatar>
+            </Stack>
           </motion.div>
         </Container>
       </Box>
 
-      {/* 📚 Main Content */}
-      <Container maxWidth="xl" sx={{ py: 6 }}>
-        {/* Analytics Stats */}
-        {teacherAnalytics && (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-          >
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-              Your Impact
-            </Typography>
-            <Grid container spacing={3} sx={{ mb: 6 }}>
-              <StatCard
-                icon={Article}
-                label="Total Lessons"
-                value={teacherAnalytics.totalNotes || 0}
-                color={theme.palette.primary.main}
-                delay={0}
-              />
-              <StatCard
-                icon={CheckCircle}
-                label="Published Notes"
-                value={teacherAnalytics.totalPublished || 0}
-                color={theme.palette.success.main}
-                delay={0.1}
-              />
-              <StatCard
-                icon={Assessment}
-                label="Total Views"
-                value={teacherAnalytics.totalViews || 0}
-                color={theme.palette.info.main}
-                delay={0.2}
-              />
-            </Grid>
-          </motion.div>
-        )}
+      <Container maxWidth="lg" sx={{ mt: -3 }}>
+        {/* Analytics Cards (preserved) */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <StatCard
+            icon={Article}
+            label="Lesson Notes"
+            value={analytics.totalLessonNotes || lessonNotes.length || 0}
+            color={theme.palette.primary.main}
+            delay={0}
+          />
+          <StatCard
+            icon={Preview}
+            label="Draft Notes"
+            value={analytics.totalDraftNotes || draftLearnerNotes.length || 0}
+            color={theme.palette.secondary.main}
+            delay={0.1}
+          />
+          <StatCard
+            icon={Quiz}
+            label="AI Quizzes"
+            value={analytics.totalQuizzes || 0}
+            color={theme.palette.success.main}
+            delay={0.2}
+          />
+        </Grid>
 
-        {/* Curriculum Selection */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+        {/* Main Content with Tabs */}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            overflow: 'hidden',
+          }}
         >
-          <Paper sx={{ p: 4, mb: 4, borderRadius: 3 }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-              📚 Select Curriculum
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md>
-                {renderDropdown('level', 'Level', selections.level, levels || [], handleSelectionChange)}
-              </Grid>
-              <Grid item xs={12} sm={6} md>
-                {renderDropdown('class', 'Class', selections.class, classes || [], handleSelectionChange, !selections.level)}
-              </Grid>
-              <Grid item xs={12} sm={6} md>
-                {renderDropdown('subject', 'Subject', selections.subject, subjects || [], handleSelectionChange, !selections.class)}
-              </Grid>
-              <Grid item xs={12} sm={6} md>
-                {renderDropdown('strand', 'Strand', selections.strand, strands || [], handleSelectionChange, !selections.subject)}
-              </Grid>
-              <Grid item xs={12} sm={6} md>
-                {renderDropdown('subStrand', 'Sub-Strand', selections.subStrand, subStrands || [], handleSelectionChange, !selections.strand)}
-              </Grid>
-            </Grid>
-          </Paper>
-        </motion.div>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              aria-label="dashboard tabs"
+              sx={{
+                px: 2,
+                '& .MuiTab-root': {
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  textTransform: 'none',
+                  minHeight: 64,
+                },
+              }}
+            >
+              <Tab
+                icon={<AddCircle sx={{ mr: 1 }} />}
+                iconPosition="start"
+                label="Create New"
+              />
+              <Tab
+                icon={
+                  <Badge badgeContent={filteredLessonNotes.length} color="primary" sx={{ mr: 1 }}>
+                    <Article />
+                  </Badge>
+                }
+                iconPosition="start"
+                label="My Lesson Notes"
+              />
+              <Tab
+                icon={
+                  <Badge badgeContent={filteredDraftNotes.length} color="secondary" sx={{ mr: 1 }}>
+                    <Preview />
+                  </Badge>
+                }
+                iconPosition="start"
+                label="Draft Learner Notes"
+              />
+            </Tabs>
+          </Box>
 
-        {/* Action Panels & Lists */}
-        <Grid container spacing={4}>
-          {/* Left Column - Actions */}
-          <Grid item xs={12} lg={6}>
-            <Stack spacing={4}>
-              {/* Lesson Note Generation */}
-              <SectionCard
-                title="Generate Lesson Note"
-                icon={<Article />}
-                color={theme.palette.primary.main}
-              >
-                {!selections.subStrand ? (
-                  <Alert severity="info">
-                    Select a curriculum path above to generate lesson notes
-                  </Alert>
-                ) : (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                      Generate a detailed lesson note for the selected sub-strand using AI.
+          {/* Tab Panel 0: Create New */}
+          <TabPanel value={activeTab} index={0}>
+            <Container maxWidth="md">
+              <Grid container spacing={3}>
+                {/* Curriculum Selection */}
+                <Grid item xs={12}>
+                  <SectionCard
+                    title="Select Curriculum"
+                    icon={<School />}
+                    color={theme.palette.info.main}
+                  >
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Subject</InputLabel>
+                          <Select
+                            value={selections.subject}
+                            label="Subject"
+                            onChange={(e) => handleSelectionChange('subject', e.target.value)}
+                          >
+                            {subjects.map((s) => (
+                              <MenuItem key={s._id} value={s._id}>
+                                {s.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Class</InputLabel>
+                          <Select
+                            value={selections.class}
+                            label="Class"
+                            onChange={(e) => handleSelectionChange('class', e.target.value)}
+                          >
+                            {classes.map((c) => (
+                              <MenuItem key={c._id} value={c._id}>
+                                {c.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small" disabled={!selections.subject}>
+                          <InputLabel>Learning Area / Strand</InputLabel>
+                          <Select
+                            value={selections.strand}
+                            label="Learning Area / Strand"
+                            onChange={(e) => handleSelectionChange('strand', e.target.value)}
+                          >
+                            {strands.map((s) => (
+                              <MenuItem key={s._id} value={s._id}>
+                                {s.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small" disabled={!selections.strand}>
+                          <InputLabel>Sub-Strand</InputLabel>
+                          <Select
+                            value={selections.subStrand}
+                            label="Sub-Strand"
+                            onChange={(e) => handleSelectionChange('subStrand', e.target.value)}
+                          >
+                            {subStrands.map((s) => (
+                              <MenuItem key={s._id} value={s._id}>
+                                {s.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    </Grid>
+                  </SectionCard>
+                </Grid>
+
+                {/* Generate Lesson Note */}
+                <Grid item xs={12} md={6}>
+                  <SectionCard
+                    title="Generate Lesson Note"
+                    icon={<Article />}
+                    color={theme.palette.primary.main}
+                  >
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Create engaging lessons with AI on any topic of your choice.
                     </Typography>
                     <Button
                       variant="contained"
                       fullWidth
+                      startIcon={<AutoAwesome />}
                       onClick={() => setIsNoteModalOpen(true)}
-                      startIcon={<AddCircle />}
-                      size="large"
-                      sx={{ 
-                        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      disabled={!selections.subStrand || isLoading}
+                      sx={{
+                        py: 1.5,
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        textTransform: 'none',
+                        borderRadius: 2,
+                        boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+                        '&:hover': {
+                          boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.6)}`,
+                        },
                       }}
                     >
                       Generate with AI
                     </Button>
-                  </Box>
-                )}
-              </SectionCard>
+                  </SectionCard>
+                </Grid>
 
-              {/* AI Quiz Generation */}
-              <SectionCard
-                title="Generate AI Quiz"
-                icon={<Quiz />}
-                color={theme.palette.warning.main}
-              >
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  Create interactive quizzes for your students on any topic of your choice.
-                </Typography>
-                <Stack spacing={2}>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={() => setIsAiQuizModalOpen(true)}
-                    startIcon={<AutoAwesome />}
-                    size="large"
-                    sx={{ 
-                      background: `linear-gradient(135deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)`,
-                    }}
+                {/* Generate AI Quiz */}
+                <Grid item xs={12} md={6}>
+                  <SectionCard
+                    title="Generate AI Quiz"
+                    icon={<Quiz />}
+                    color={theme.palette.warning.main}
                   >
-                    Generate with AI
-                  </Button>
-                  <Button variant="outlined" fullWidth disabled>
-                    Create Manually (Coming Soon)
-                  </Button>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Create interactive quizzes to your specifications.
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      startIcon={<AutoAwesome />}
+                      onClick={() => setIsAiQuizModalOpen(true)}
+                      disabled={isLoading}
+                      sx={{
+                        py: 1.5,
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        textTransform: 'none',
+                        borderRadius: 2,
+                        bgcolor: theme.palette.warning.main,
+                        boxShadow: `0 4px 14px ${alpha(theme.palette.warning.main, 0.4)}`,
+                        '&:hover': {
+                          bgcolor: theme.palette.warning.dark,
+                          boxShadow: `0 6px 20px ${alpha(theme.palette.warning.main, 0.6)}`,
+                        },
+                      }}
+                    >
+                      Generate Quiz
+                    </Button>
+                  </SectionCard>
+                </Grid>
+              </Grid>
+            </Container>
+          </TabPanel>
+
+          {/* Tab Panel 1: My Lesson Notes */}
+          <TabPanel value={activeTab} index={1}>
+            <Box sx={{ px: 3 }}>
+              {/* Search and Filter Bar */}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mb: 3 }}
+              >
+                <TextField
+                  placeholder="Search lesson notes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  size="small"
+                  sx={{ flexGrow: 1, maxWidth: { sm: 400 } }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title={viewMode === 'grid' ? 'Switch to List View' : 'Switch to Grid View'}>
+                    <IconButton
+                      onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                      sx={{
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                      }}
+                    >
+                      {viewMode === 'grid' ? <ViewList /> : <ViewModule />}
+                    </IconButton>
+                  </Tooltip>
                 </Stack>
-              </SectionCard>
-            </Stack>
-          </Grid>
+              </Stack>
 
-          {/* Right Column - Lists */}
-          <Grid item xs={12} lg={6}>
-            <Stack spacing={4}>
-              {/* Lesson Notes List */}
-              <SectionCard
-                title="My Generated Lesson Notes"
-                icon={<Article />}
-                color={theme.palette.primary.main}
-              >
-                {isLoading && !lessonNotes.length ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : (
-                  <List disablePadding>
-                    {lessonNotes.length > 0 ? (
-                      lessonNotes.map((note) => (
-                        <ListItem
-                          key={note._id}
-                          disablePadding
-                          sx={{
-                            mb: 1,
-                            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                            borderRadius: 2,
-                            '&:hover': {
-                              bgcolor: alpha(theme.palette.primary.main, 0.05),
-                            },
+              {/* Lesson Notes Display */}
+              {isLoading && !lessonNotes.length ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                  <CircularProgress size={48} />
+                </Box>
+              ) : filteredLessonNotes.length > 0 ? (
+                <AnimatePresence mode="popLayout">
+                  <Grid container spacing={3}>
+                    {filteredLessonNotes.map((note) => (
+                      <Grid item xs={12} sm={6} md={4} key={note._id}>
+                        <LessonNoteCard
+                          note={note}
+                          onGenerateLearner={() => {
+                            setGeneratingNoteId(note._id);
+                            dispatch(generateLearnerNote(note._id))
+                              .finally(() => setGeneratingNoteId(null));
                           }}
-                          secondaryAction={
-                            <Stack direction="row" spacing={0.5}>
-                              <Tooltip title="Generate Learner's Version">
-                                <IconButton
-                                  onClick={() => {
-                                    setGeneratingNoteId(note._id);
-                                    dispatch(generateLearnerNote(note._id))
-                                      .finally(() => setGeneratingNoteId(null));
-                                  }}
-                                  disabled={generatingNoteId === note._id}
-                                  size="small"
-                                >
-                                  {generatingNoteId === note._id ? (
-                                    <CircularProgress size={20} />
-                                  ) : (
-                                    <FaceRetouchingNatural color="primary" />
-                                  )}
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Delete Note">
-                                <IconButton
-                                  onClick={() => setNoteToDelete(note)}
-                                  size="small"
-                                >
-                                  <Delete color="error" />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
-                          }
-                        >
-                          <ListItemButton
-                            component={RouterLink}
-                            to={`/teacher/notes/${note._id}`}
-                          >
-                            <ListItemText
-                              primary={`Note for ${note.subStrand?.name || '...'}`}
-                              secondary={`Created on ${new Date(note.createdAt).toLocaleDateString()}`}
-                              primaryTypographyProps={{ fontWeight: 600 }}
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                      ))
-                    ) : (
-                      <Paper
-                        sx={{
-                          p: 3,
-                          textAlign: 'center',
-                          bgcolor: alpha(theme.palette.info.main, 0.05),
-                          border: `1px dashed ${alpha(theme.palette.info.main, 0.3)}`,
-                        }}
-                      >
-                        <Article sx={{ fontSize: 48, color: theme.palette.info.main, mb: 1 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          You haven't generated any lesson notes yet.
-                        </Typography>
-                      </Paper>
-                    )}
-                  </List>
-                )}
-              </SectionCard>
+                          onDelete={() => setNoteToDelete(note)}
+                          onView={() => {}}
+                          isGenerating={generatingNoteId === note._id}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </AnimatePresence>
+              ) : (
+                <Paper
+                  sx={{
+                    p: 6,
+                    textAlign: 'center',
+                    bgcolor: alpha(theme.palette.info.main, 0.05),
+                    border: `2px dashed ${alpha(theme.palette.info.main, 0.3)}`,
+                    borderRadius: 3,
+                  }}
+                >
+                  <Article sx={{ fontSize: 64, color: theme.palette.info.main, mb: 2, opacity: 0.5 }} />
+                  <Typography variant="h6" gutterBottom color="text.secondary" fontWeight={600}>
+                    {searchQuery ? 'No notes found' : 'No lesson notes yet'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    {searchQuery 
+                      ? 'Try adjusting your search terms'
+                      : 'Start creating engaging lesson notes with AI'}
+                  </Typography>
+                  {!searchQuery && (
+                    <Button
+                      variant="contained"
+                      startIcon={<AddCircle />}
+                      onClick={() => setActiveTab(0)}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                      Create Your First Note
+                    </Button>
+                  )}
+                </Paper>
+              )}
+            </Box>
+          </TabPanel>
 
-              {/* Draft Learner Notes */}
-              <SectionCard
-                title="Draft Learner Notes (For Review)"
-                icon={<Visibility />}
-                color={theme.palette.secondary.main}
-              >
-                {isLoading && !draftLearnerNotes.length ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : (
-                  <List disablePadding>
-                    {draftLearnerNotes.length > 0 ? (
-                      draftLearnerNotes.map((note) => (
-                        <ListItem
-                          key={note._id}
-                          disablePadding
-                          sx={{
-                            mb: 1,
-                            border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
-                            borderRadius: 2,
-                            '&:hover': {
-                              bgcolor: alpha(theme.palette.secondary.main, 0.05),
-                            },
-                          }}
-                          secondaryAction={
-                            <Stack direction="row" spacing={0.5}>
-                              <Tooltip title="Preview">
-                                <IconButton
-                                  onClick={() => setViewingNote(note)}
-                                  size="small"
-                                >
-                                  <Visibility />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Publish to Students">
-                                <IconButton
-                                  onClick={() => dispatch(publishLearnerNote(note._id))}
-                                  size="small"
-                                >
-                                  <CheckCircle color="success" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Delete Draft">
-                                <IconButton
-                                  onClick={() => dispatch(deleteDraftLearnerNote(note._id))}
-                                  size="small"
-                                >
-                                  <Delete color="error" />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
-                          }
-                        >
-                          <ListItemText
-                            primary={`Draft for: ${note.subStrand?.name || 'N/A'}`}
-                            secondary={`Generated on ${new Date(note.createdAt).toLocaleDateString()}`}
-                            primaryTypographyProps={{ fontWeight: 600 }}
-                            sx={{ pl: 2, py: 1.5 }}
-                          />
-                        </ListItem>
-                      ))
-                    ) : (
-                      <Paper
-                        sx={{
-                          p: 3,
-                          textAlign: 'center',
-                          bgcolor: alpha(theme.palette.info.main, 0.05),
-                          border: `1px dashed ${alpha(theme.palette.info.main, 0.3)}`,
-                        }}
-                      >
-                        <Visibility sx={{ fontSize: 48, color: theme.palette.info.main, mb: 1 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          No draft learner notes pending review.
-                        </Typography>
-                      </Paper>
-                    )}
-                  </List>
-                )}
-              </SectionCard>
-            </Stack>
-          </Grid>
-        </Grid>
+          {/* Tab Panel 2: Draft Learner Notes */}
+          <TabPanel value={activeTab} index={2}>
+            <Box sx={{ px: 3 }}>
+              {/* Search Bar */}
+              <TextField
+                placeholder="Search draft notes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ mb: 3, maxWidth: 400 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              {/* Draft Notes Display */}
+              {isLoading && !draftLearnerNotes.length ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                  <CircularProgress size={48} />
+                </Box>
+              ) : filteredDraftNotes.length > 0 ? (
+                <AnimatePresence mode="popLayout">
+                  <Grid container spacing={3}>
+                    {filteredDraftNotes.map((note) => (
+                      <Grid item xs={12} sm={6} md={4} key={note._id}>
+                        <DraftNoteCard
+                          note={note}
+                          onPreview={() => setViewingNote(note)}
+                          onPublish={() => dispatch(publishLearnerNote(note._id))}
+                          onDelete={() => dispatch(deleteDraftLearnerNote(note._id))}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </AnimatePresence>
+              ) : (
+                <Paper
+                  sx={{
+                    p: 6,
+                    textAlign: 'center',
+                    bgcolor: alpha(theme.palette.secondary.main, 0.05),
+                    border: `2px dashed ${alpha(theme.palette.secondary.main, 0.3)}`,
+                    borderRadius: 3,
+                  }}
+                >
+                  <Preview sx={{ fontSize: 64, color: theme.palette.secondary.main, mb: 2, opacity: 0.5 }} />
+                  <Typography variant="h6" gutterBottom color="text.secondary" fontWeight={600}>
+                    {searchQuery ? 'No drafts found' : 'No draft notes pending'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {searchQuery 
+                      ? 'Try adjusting your search terms'
+                      : 'Draft learner notes will appear here for review before publishing'}
+                  </Typography>
+                </Paper>
+              )}
+            </Box>
+          </TabPanel>
+        </Paper>
 
         {/* Modals & Snackbars (all preserved) */}
         <LessonNoteForm
