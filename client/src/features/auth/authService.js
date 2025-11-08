@@ -1,22 +1,51 @@
-// /client/src/features/auth/authService.js
+// /client/src/features/auth/authService.js - DIAGNOSTIC VERSION
+// This version includes detailed logging to help debug
+
 import api from '../../api/axios';
 
 // -----------------------------------------------------------------------------
-// 🔐 REGISTER USER - FIXED VERSION
+// 🔐 REGISTER USER - DIAGNOSTIC VERSION
 // -----------------------------------------------------------------------------
 const register = async (userData) => {
-  // 🔧 FIX: Transform fullName to name for backend compatibility
+  console.log('=== REGISTRATION DEBUG START ===');
+  console.log('1. Raw userData received:', userData);
+  console.log('2. userData.fullName:', userData.fullName);
+  console.log('3. userData.name:', userData.name);
+  console.log('4. userData.email:', userData.email);
+  console.log('5. userData.password:', userData.password ? '***' : 'MISSING');
+  console.log('6. userData.role:', userData.role);
+  
+  // Transform fullName to name for backend
   const backendData = {
-    name: userData.fullName || userData.name,  // Backend expects 'name' not 'fullName'
+    name: userData.fullName || userData.name,
     email: userData.email,
     password: userData.password,
     role: userData.role || 'student',
   };
   
-  console.log('📤 Sending registration data to backend:', backendData);
+  console.log('7. Transformed backendData:', backendData);
+  console.log('8. backendData.name:', backendData.name);
+  console.log('9. All fields present?', {
+    hasName: !!backendData.name,
+    hasEmail: !!backendData.email,
+    hasPassword: !!backendData.password,
+    hasRole: !!backendData.role,
+  });
   
-  const response = await api.post('/api/users/register', backendData);
-  return response.data;
+  try {
+    console.log('10. Sending POST to /api/users/register...');
+    const response = await api.post('/api/users/register', backendData);
+    console.log('11. ✅ Success! Response:', response.data);
+    console.log('=== REGISTRATION DEBUG END ===');
+    return response.data;
+  } catch (error) {
+    console.error('12. ❌ Registration failed');
+    console.error('13. Error response:', error.response?.data);
+    console.error('14. Error status:', error.response?.status);
+    console.error('15. Full error:', error);
+    console.log('=== REGISTRATION DEBUG END ===');
+    throw error;
+  }
 };
 
 // -----------------------------------------------------------------------------
