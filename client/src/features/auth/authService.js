@@ -1,24 +1,47 @@
-// /client/src/features/auth/authService.js - FINAL FIX
-// Backend expects 'fullName' not 'name'
-
+// /client/src/features/auth/authService.js - ENSURES EXACT FORMAT
 import api from '../../api/axios';
 
 // -----------------------------------------------------------------------------
-// 🔐 REGISTER USER - SENDS fullName (not name)
+// 🔐 REGISTER USER - Ensures exact data format
 // -----------------------------------------------------------------------------
 const register = async (userData) => {
-  // Backend expects 'fullName' field, not 'name'
+  // Ensure all fields are strings and properly formatted
   const backendData = {
-    fullName: userData.fullName || userData.name,  // Keep as fullName
-    email: userData.email,
-    password: userData.password,
-    role: userData.role || 'student',
+    fullName: String(userData.fullName || userData.name || '').trim(),
+    email: String(userData.email || '').trim().toLowerCase(),
+    password: String(userData.password || ''),
+    role: String(userData.role || 'student'),
   };
   
-  console.log('📤 Sending registration data (with fullName):', backendData);
+  // Validate before sending
+  if (!backendData.fullName) {
+    throw new Error('Full name is required');
+  }
+  if (!backendData.email) {
+    throw new Error('Email is required');
+  }
+  if (!backendData.password) {
+    throw new Error('Password is required');
+  }
   
-  const response = await api.post('/api/users/register', backendData);
-  return response.data;
+  console.log('📤 Sending registration with exact format:', backendData);
+  console.log('📤 Data types:', {
+    fullName: typeof backendData.fullName,
+    email: typeof backendData.email,
+    password: typeof backendData.password,
+    role: typeof backendData.role,
+  });
+  
+  try {
+    const response = await api.post('/api/users/register', backendData);
+    console.log('✅ Registration successful:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Registration failed');
+    console.error('Request data:', backendData);
+    console.error('Error response:', error.response?.data);
+    throw error;
+  }
 };
 
 // -----------------------------------------------------------------------------
@@ -26,13 +49,9 @@ const register = async (userData) => {
 // -----------------------------------------------------------------------------
 const login = async (userData) => {
   const response = await api.post('/api/users/login', userData);
-
-  // ✅ Extract user from response (backend structure: { message, user })
   const user = response.data.user;
 
-  // ✅ Validate user data before storing
   if (user && user.token) {
-    // Store the complete user object in localStorage
     localStorage.setItem('user', JSON.stringify(user));
     return user;
   }
@@ -56,8 +75,6 @@ const getProfile = async () => {
   };
 
   const response = await api.get('/api/users/profile', config);
-  
-  // ✅ Merge profile data with existing user data
   const updatedUser = { ...storedUser, ...response.data };
   localStorage.setItem('user', JSON.stringify(updatedUser));
   
