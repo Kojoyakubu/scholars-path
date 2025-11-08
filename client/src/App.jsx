@@ -1,13 +1,17 @@
-// /client/src/App.jsx - FIXED VERSION WITH SIDEBAR
+// /client/src/App.jsx - COMPLETE FIX
+// ✅ Correct routing: "/" → LandingPage, "/login" → Login, etc.
+// ✅ Layout wrapper for protected routes (sidebar shows)
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 
-// Layout Component (ADDED - this provides the sidebar!)
+// Layout Component (provides sidebar for protected routes)
 import Layout from './components/Layout';
 
 // Pages
-import AuthPortal from './pages/AuthPortal';
+import LandingPage from './pages/LandingPage';  // ✅ CHANGED: Use LandingPage instead of AuthPortal
+import AuthPortal from './pages/AuthPortal';     // Keep for auth form
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -26,23 +30,27 @@ const App = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    dispatch({ type: 'auth/logout' }); // Adjust to match your auth slice
-    window.location.href = '/login';
+    dispatch({ type: 'auth/logout' }); // Adjust to match your auth slice action
+    window.location.href = '/';
   };
 
   return (
     <Router>
       <Routes>
         {/* ==========================================
-            PUBLIC ROUTES (No Sidebar)
+            PUBLIC ROUTES (No Layout/Sidebar)
         ========================================== */}
-        <Route path="/" element={<AuthPortal />} />
+        
+        {/* Landing Page - Marketing homepage */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Authentication Routes */}
+        <Route path="/auth" element={<AuthPortal />} />  {/* Combined login/register */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* ==========================================
-            PROTECTED ROUTES (With Sidebar)
-            🔑 Key Change: Wrap PrivateRoute in Layout!
+            PROTECTED ROUTES (With Layout/Sidebar)
         ========================================== */}
         <Route element={<Layout onLogout={handleLogout} />}>
           <Route element={<PrivateRoute />}>
