@@ -4,6 +4,10 @@ const {
   registerUser,
   loginUser,
   getAllUsers,
+  getPendingUsers,    // ✅ NEW
+  approveUser,        // ✅ NEW
+  suspendUser,        // ✅ NEW
+  rejectUser,         // ✅ NEW
   getUserProfile,
   updateUserProfile,
   deleteUser,
@@ -24,6 +28,27 @@ router.post('/login', loginUser);
 // @desc    Get all users (Admin only)
 // @access  Private/Admin
 router.get('/', protect, authorize('admin'), getAllUsers);
+
+// ✅ NEW APPROVAL ROUTES
+// @route   GET /api/users/pending
+// @desc    Get all pending users (Admin only)
+// @access  Private/Admin
+router.get('/pending', protect, authorize('admin'), getPendingUsers);
+
+// @route   PATCH /api/users/approve/:id
+// @desc    Approve a pending user (Admin only)
+// @access  Private/Admin
+router.patch('/approve/:id', protect, authorize('admin'), approveUser);
+
+// @route   PATCH /api/users/suspend/:id
+// @desc    Suspend a user (Admin only)
+// @access  Private/Admin
+router.patch('/suspend/:id', protect, authorize('admin'), suspendUser);
+
+// @route   DELETE /api/users/reject/:id
+// @desc    Reject and delete a pending user (Admin only)
+// @access  Private/Admin
+router.delete('/reject/:id', protect, authorize('admin'), rejectUser);
 
 // @route   GET /api/users/profile
 // @desc    Get logged-in user profile
