@@ -10,7 +10,7 @@ const generateToken = (user) => {
       id: user._id,
       role: user.role,
       school: user.school,
-      name: user.name, // include name in token payload
+      name: user.fullName || user.name, // ✅ FIXED: handle both field names
     },
     process.env.JWT_SECRET,
     { expiresIn: '30d' }
@@ -22,6 +22,8 @@ const generateToken = (user) => {
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   const { fullName, email, password, role, school } = req.body;
+
+  console.log('📥 Registration request:', { fullName, email, role }); // Debug log
 
   if (!fullName || !email || !password) {
     res.status(400).json({ message: 'Please provide full name, email, and password' });
@@ -35,8 +37,10 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
+  
+  // ✅ FIXED: Save as fullName (matching the User model schema)
   const user = await User.create({
-    name: fullName,
+    fullName: fullName,  // Changed from 'name' to 'fullName'
     email,
     password: hashedPassword,
     role: role || 'student',
@@ -44,11 +48,13 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
+    console.log('✅ User created successfully:', user._id);
     res.status(201).json({
       message: 'User registered successfully',
       user: {
         id: user._id,
-        name: user.name,
+        name: user.fullName, // Return fullName as name for frontend compatibility
+        fullName: user.fullName,
         email: user.email,
         role: user.role,
         school: user.school,
@@ -75,7 +81,8 @@ const loginUser = asyncHandler(async (req, res) => {
       message: 'Login successful',
       user: {
         id: user._id,
-        name: user.name || user.fullName || '',
+        name: user.fullName || user.name || '', // Support both field names
+        fullName: user.fullName || user.name || '',
         email: user.email,
         role: user.role,
         school: user.school,
@@ -93,7 +100,8 @@ const getAllUsers = asyncHandler(async (req, res) => {
   res.json(
     users.map((user) => ({
       id: user._id,
-      name: user.name,
+      name: user.fullName || user.name,
+      fullName: user.fullName || user.name,
       email: user.email,
       role: user.role,
       school: user.school,
@@ -108,7 +116,8 @@ const getUserProfile = asyncHandler(async (req, res) => {
   if (user) {
     res.json({
       id: user._id,
-      name: user.name,
+      name: user.fullName || user.name,
+      fullName: user.fullName || user.name,
       email: user.email,
       role: user.role,
       school: user.school,
@@ -127,7 +136,13 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     return;
   }
 
-  user.name = req.body.fullName || req.body.name || user.name;
+  // Support both fullName and name fields
+  if (req.body.fullName) {
+    user.fullName = req.body.fullName;
+  } else if (req.body.name) {
+    user.fullName = req.body.name;
+  }
+  
   user.email = req.body.email || user.email;
 
   if (req.body.password) {
@@ -140,7 +155,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     message: 'Profile updated successfully',
     user: {
       id: updatedUser._id,
-      name: updatedUser.name,
+      name: updatedUser.fullName,
+      fullName: updatedUser.fullName,
       email: updatedUser.email,
       role: updatedUser.role,
       school: updatedUser.school,
