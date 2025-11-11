@@ -671,13 +671,18 @@ function Dashboard() {
 
   // 🔄 Fetch student content when substrand is selected (preserved logic)
   useEffect(() => {
-    if (selections.subStrand && !contentLoaded) {
+    // Only fetch if we have a valid subStrand ID and haven't loaded this content yet
+    if (selections.subStrand && selections.subStrand !== '') {
+      console.log('Fetching content for subStrand:', selections.subStrand);
       dispatch(getLearnerNotes(selections.subStrand));
       dispatch(getQuizzes(selections.subStrand));
       dispatch(getResources(selections.subStrand));
       setContentLoaded(true);
+    } else {
+      // Reset content loaded when subStrand is cleared
+      setContentLoaded(false);
     }
-  }, [dispatch, selections.subStrand, contentLoaded]);
+  }, [dispatch, selections.subStrand]); // Removed contentLoaded from dependencies
 
   // 📝 Handle selection changes (preserved logic)
   const handleSelectionChange = useCallback((e) => {
