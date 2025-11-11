@@ -19,7 +19,11 @@ import {
   Tooltip,
   Menu,
   MenuItem,
+  Badge,
+  Chip,
+  alpha,
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -33,24 +37,66 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ArticleIcon from '@mui/icons-material/Article';
 import FolderIcon from '@mui/icons-material/Folder';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SettingsIcon from '@mui/icons-material/Settings';
+import SearchIcon from '@mui/icons-material/Search';
 
-const drawerWidth = 240;
+const drawerWidthExpanded = 260;
+const drawerWidthCollapsed = 80;
+
+// Glassmorphism styled components
+const GlassAppBar = styled(AppBar)(({ theme }) => ({
+  background: 'rgba(255, 255, 255, 0.8)',
+  backdropFilter: 'blur(20px)',
+  boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.18)',
+  color: theme.palette.text.primary,
+}));
+
+const GlassDrawer = styled(Box)(({ theme, collapsed }) => ({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  background: 'rgba(255, 255, 255, 0.7)',
+  backdropFilter: 'blur(20px)',
+  borderRight: '1px solid rgba(255, 255, 255, 0.18)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+}));
+
+const StyledListItem = styled(ListItem)(({ theme, active }) => ({
+  marginBottom: 8,
+  marginLeft: 12,
+  marginRight: 12,
+  borderRadius: 12,
+  transition: 'all 0.3s ease',
+  color: active ? theme.palette.primary.main : theme.palette.text.secondary,
+  background: active 
+    ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`
+    : 'transparent',
+  border: active ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}` : '1px solid transparent',
+  '&:hover': {
+    background: active
+      ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`
+      : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.03)} 100%)`,
+    transform: 'translateX(4px)',
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+  },
+}));
 
 const Layout = ({ onLogout }) => {
   const theme = useTheme();
   const { user } = useSelector((state) => state.auth);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-
+  const [collapsed, setCollapsed] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const openMenu = Boolean(anchorEl);
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+  const handleCollapse = () => setCollapsed(!collapsed);
 
   // Define menu items based on user role
   const getMenuItems = () => {
@@ -93,176 +139,471 @@ const Layout = ({ onLogout }) => {
   // Get appropriate page title based on role
   const getPageTitle = () => {
     const role = user?.role?.toLowerCase();
-    switch (role) {
-      case 'admin':
-        return 'Admin Dashboard';
-      case 'teacher':
-        return 'Teacher Dashboard';
-      case 'student':
-      default:
-        return 'Student Dashboard';
-    }
+    const currentItem = menuItems.find(item => item.link === location.pathname);
+    return currentItem?.text || 'Dashboard';
   };
 
   const drawer = (
-    <Box
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'linear-gradient(180deg, #02367B, #006CA5)',
-        color: '#fff',
-      }}
-    >
+    <GlassDrawer collapsed={collapsed}>
       {/* Logo/Brand Section */}
-      <Toolbar sx={{ px: 2 }}>
-        <Typography variant="h6" noWrap sx={{ fontWeight: 700 }}>
-          Scholar's Path
-        </Typography>
-      </Toolbar>
-      <Divider sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
-
-      {/* Navigation Menu */}
-      <List sx={{ flexGrow: 1, pt: 2 }}>
-        {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            component={RouterLink}
-            to={item.link}
-            onClick={() => setMobileOpen(false)} // Close mobile drawer on navigation
+      <Box
+        sx={{
+          px: collapsed ? 1.5 : 3,
+          py: 2.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          minHeight: 64,
+        }}
+      >
+        {!collapsed && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 2,
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+              }}
+            >
+              <SchoolIcon sx={{ color: 'white', fontSize: 24 }} />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 800,
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Scholar's Path
+            </Typography>
+          </Box>
+        )}
+        {collapsed && (
+          <Box
             sx={{
-              mb: 0.5,
-              mx: 1,
-              borderRadius: 1,
-              color: location.pathname === item.link ? '#55E2E9' : '#fff',
-              backgroundColor: location.pathname === item.link ? 'rgba(85, 226, 233, 0.15)' : 'transparent',
-              borderLeft: location.pathname === item.link ? '4px solid #55E2E9' : '4px solid transparent',
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.1)',
-              },
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
             }}
           >
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
+            <SchoolIcon sx={{ color: 'white', fontSize: 24 }} />
+          </Box>
+        )}
+      </Box>
+
+      <Divider sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }} />
+
+      {/* User Profile Section */}
+      {!collapsed && (
+        <Box
+          sx={{
+            px: 2,
+            py: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+          }}
+        >
+          <Avatar
+            alt={user?.fullName || user?.name}
+            src={user?.avatar}
+            sx={{
+              width: 48,
+              height: 48,
+              border: `2px solid ${theme.palette.primary.main}`,
+              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
+            }}
+          >
+            {(user?.fullName || user?.name || 'U')[0].toUpperCase()}
+          </Avatar>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {user?.fullName || user?.name || 'User'}
+            </Typography>
+            <Chip
+              label={user?.role || 'Student'}
+              size="small"
+              sx={{
+                height: 20,
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.secondary.main, 0.15)} 100%)`,
+                color: theme.palette.primary.main,
+              }}
+            />
+          </Box>
+        </Box>
+      )}
+
+      {collapsed && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            py: 2,
+          }}
+        >
+          <Avatar
+            alt={user?.fullName || user?.name}
+            src={user?.avatar}
+            sx={{
+              width: 40,
+              height: 40,
+              border: `2px solid ${theme.palette.primary.main}`,
+              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
+            }}
+          >
+            {(user?.fullName || user?.name || 'U')[0].toUpperCase()}
+          </Avatar>
+        </Box>
+      )}
+
+      <Divider sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), mb: 1 }} />
+
+      {/* Navigation Menu */}
+      <List sx={{ flexGrow: 1, px: 1, overflow: 'auto' }}>
+        {menuItems.map((item) => (
+          <Tooltip
+            key={item.text}
+            title={collapsed ? item.text : ''}
+            placement="right"
+            arrow
+          >
+            <StyledListItem
+              button
+              component={RouterLink}
+              to={item.link}
+              onClick={() => setMobileOpen(false)}
+              active={location.pathname === item.link ? 1 : 0}
+              sx={{
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                px: collapsed ? 0 : 2,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  color: 'inherit',
+                  minWidth: collapsed ? 'auto' : 40,
+                  justifyContent: 'center',
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              {!collapsed && <ListItemText primary={item.text} />}
+            </StyledListItem>
+          </Tooltip>
         ))}
       </List>
 
-      {/* Logout Section */}
-      <Divider sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
-      <List>
-        <ListItem
-          button
-          onClick={onLogout}
-          sx={{
-            mx: 1,
-            mb: 2,
-            borderRadius: 1,
-            color: '#ffcccc',
-            '&:hover': {
-              backgroundColor: 'rgba(255,100,100,0.1)',
-            },
-          }}
+      {/* Bottom Section */}
+      <Divider sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }} />
+      <List sx={{ px: 1 }}>
+        {/* Settings */}
+        <Tooltip title={collapsed ? 'Settings' : ''} placement="right" arrow>
+          <StyledListItem
+            button
+            sx={{
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              px: collapsed ? 0 : 2,
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                color: theme.palette.text.secondary,
+                minWidth: collapsed ? 'auto' : 40,
+                justifyContent: 'center',
+              }}
+            >
+              <SettingsIcon />
+            </ListItemIcon>
+            {!collapsed && (
+              <ListItemText
+                primary="Settings"
+                sx={{ color: theme.palette.text.secondary }}
+              />
+            )}
+          </StyledListItem>
+        </Tooltip>
+
+        {/* Logout */}
+        <Tooltip title={collapsed ? 'Logout' : ''} placement="right" arrow>
+          <StyledListItem
+            button
+            onClick={onLogout}
+            sx={{
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              px: collapsed ? 0 : 2,
+              mb: 1,
+              color: theme.palette.error.main,
+              '&:hover': {
+                background: alpha(theme.palette.error.main, 0.1),
+                border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+              },
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                color: 'inherit',
+                minWidth: collapsed ? 'auto' : 40,
+                justifyContent: 'center',
+              }}
+            >
+              <LogoutIcon />
+            </ListItemIcon>
+            {!collapsed && <ListItemText primary="Logout" />}
+          </StyledListItem>
+        </Tooltip>
+
+        {/* Collapse Toggle */}
+        <Tooltip
+          title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          placement="right"
+          arrow
         >
-          <ListItemIcon sx={{ color: '#ffcccc', minWidth: 40 }}>
-            <LogoutIcon />
-          </ListItemIcon>
-          <ListItemText primary="Logout" />
-        </ListItem>
+          <StyledListItem
+            button
+            onClick={handleCollapse}
+            sx={{
+              justifyContent: 'center',
+              px: 0,
+              mb: 1,
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                color: theme.palette.text.secondary,
+                minWidth: 'auto',
+                justifyContent: 'center',
+              }}
+            >
+              {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            </ListItemIcon>
+          </StyledListItem>
+        </Tooltip>
       </List>
-    </Box>
+    </GlassDrawer>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        minHeight: '100vh',
+      }}
+    >
       <CssBaseline />
 
       {/* ===== AppBar ===== */}
-      <AppBar
+      <GlassAppBar
         position="fixed"
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-          background: 'linear-gradient(90deg, #02367B, #006CA5, #0496C7)',
-          color: '#fff',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+          width: {
+            sm: `calc(100% - ${collapsed ? drawerWidthCollapsed : drawerWidthExpanded}px)`,
+          },
+          ml: {
+            sm: `${collapsed ? drawerWidthCollapsed : drawerWidthExpanded}px`,
+          },
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        <Toolbar>
-          {/* Mobile Menu Toggle */}
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-
-          {/* Page Title */}
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            {getPageTitle()}
-          </Typography>
-
-          {/* Notifications */}
-          <Tooltip title="Notifications">
-            <IconButton color="inherit" sx={{ mr: 1 }}>
-              <NotificationsIcon />
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          {/* Left Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Mobile Menu Toggle */}
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ display: { sm: 'none' } }}
+            >
+              <MenuIcon />
             </IconButton>
-          </Tooltip>
 
-          {/* User Avatar & Menu */}
-          <Tooltip title="Account">
-            <IconButton color="inherit" onClick={handleMenuOpen}>
-              <Avatar
-                alt={user?.fullName || user?.name}
-                src={user?.avatar || '/default-avatar.png'}
+            {/* Page Title */}
+            <Box>
+              <Typography
+                variant="h6"
+                noWrap
                 sx={{
-                  bgcolor: '#04BADE',
-                  border: '2px solid #55E2E9',
-                  width: 38,
-                  height: 38,
+                  fontWeight: 700,
+                  color: theme.palette.text.primary,
                 }}
               >
-                {(user?.fullName || user?.name || 'U')[0].toUpperCase()}
-              </Avatar>
-            </IconButton>
-          </Tooltip>
+                {getPageTitle()}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  display: { xs: 'none', md: 'block' },
+                }}
+              >
+                Welcome back, {user?.fullName || user?.name || 'User'}! 👋
+              </Typography>
+            </Box>
+          </Box>
 
-          {/* Account Dropdown Menu */}
-          <Menu
-            anchorEl={anchorEl}
-            open={openMenu}
-            onClose={handleMenuClose}
-            PaperProps={{
-              elevation: 3,
-              sx: { mt: 1.5, borderRadius: 2, minWidth: 180 },
-            }}
-          >
-            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-            <MenuItem onClick={handleMenuClose}>Settings</MenuItem>
-            <Divider />
-            <MenuItem
-              onClick={() => {
-                handleMenuClose();
-                onLogout();
+          {/* Right Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Search */}
+            <Tooltip title="Search">
+              <IconButton
+                sx={{
+                  color: theme.palette.text.secondary,
+                  '&:hover': {
+                    background: alpha(theme.palette.primary.main, 0.1),
+                  },
+                }}
+              >
+                <SearchIcon />
+              </IconButton>
+            </Tooltip>
+
+            {/* Notifications */}
+            <Tooltip title="Notifications">
+              <IconButton
+                sx={{
+                  color: theme.palette.text.secondary,
+                  '&:hover': {
+                    background: alpha(theme.palette.primary.main, 0.1),
+                  },
+                }}
+              >
+                <Badge badgeContent={3} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+
+            {/* User Avatar & Menu */}
+            <Tooltip title="Account">
+              <IconButton onClick={handleMenuOpen} sx={{ ml: 1 }}>
+                <Avatar
+                  alt={user?.fullName || user?.name}
+                  src={user?.avatar}
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    border: `2px solid ${theme.palette.primary.main}`,
+                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+                  }}
+                >
+                  {(user?.fullName || user?.name || 'U')[0].toUpperCase()}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
+
+            {/* Account Dropdown Menu */}
+            <Menu
+              anchorEl={anchorEl}
+              open={openMenu}
+              onClose={handleMenuClose}
+              PaperProps={{
+                elevation: 0,
+                sx: {
+                  mt: 1.5,
+                  borderRadius: 2,
+                  minWidth: 200,
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255, 255, 255, 0.18)',
+                  boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                  overflow: 'visible',
+                  '&:before': {
+                    content: '""',
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    right: 14,
+                    width: 10,
+                    height: 10,
+                    bgcolor: 'rgba(255, 255, 255, 0.9)',
+                    transform: 'translateY(-50%) rotate(45deg)',
+                    zIndex: 0,
+                  },
+                },
               }}
-              sx={{ color: '#E53935' }}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-              <LogoutIcon fontSize="small" sx={{ mr: 1 }} /> Logout
-            </MenuItem>
-          </Menu>
+              <MenuItem
+                onClick={handleMenuClose}
+                sx={{
+                  borderRadius: 1,
+                  mx: 1,
+                  '&:hover': {
+                    background: alpha(theme.palette.primary.main, 0.08),
+                  },
+                }}
+              >
+                <PersonIcon fontSize="small" sx={{ mr: 1.5 }} /> Profile
+              </MenuItem>
+              <MenuItem
+                onClick={handleMenuClose}
+                sx={{
+                  borderRadius: 1,
+                  mx: 1,
+                  '&:hover': {
+                    background: alpha(theme.palette.primary.main, 0.08),
+                  },
+                }}
+              >
+                <SettingsIcon fontSize="small" sx={{ mr: 1.5 }} /> Settings
+              </MenuItem>
+              <Divider sx={{ my: 1 }} />
+              <MenuItem
+                onClick={() => {
+                  handleMenuClose();
+                  onLogout();
+                }}
+                sx={{
+                  borderRadius: 1,
+                  mx: 1,
+                  color: theme.palette.error.main,
+                  '&:hover': {
+                    background: alpha(theme.palette.error.main, 0.08),
+                  },
+                }}
+              >
+                <LogoutIcon fontSize="small" sx={{ mr: 1.5 }} /> Logout
+              </MenuItem>
+            </Menu>
+          </Box>
         </Toolbar>
-      </AppBar>
+      </GlassAppBar>
 
       {/* ===== Drawer (Sidebar) ===== */}
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{
+          width: { sm: collapsed ? drawerWidthCollapsed : drawerWidthExpanded },
+          flexShrink: { sm: 0 },
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
         aria-label="navigation menu"
       >
         {/* Mobile Drawer (Temporary) */}
@@ -271,11 +612,15 @@ const Layout = ({ onLogout }) => {
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better mobile performance
+            keepMounted: true,
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidthExpanded,
+              border: 'none',
+            },
           }}
         >
           {drawer}
@@ -286,7 +631,12 @@ const Layout = ({ onLogout }) => {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: collapsed ? drawerWidthCollapsed : drawerWidthExpanded,
+              border: 'none',
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            },
           }}
           open
         >
@@ -300,16 +650,31 @@ const Layout = ({ onLogout }) => {
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          backgroundColor: theme.palette.background.default,
+          width: {
+            sm: `calc(100% - ${collapsed ? drawerWidthCollapsed : drawerWidthExpanded}px)`,
+          },
           minHeight: '100vh',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        {/* Toolbar spacer to push content below AppBar */}
+        {/* Toolbar spacer */}
         <Toolbar />
-        
-        {/* Child routes render here via <Outlet /> */}
-        <Outlet />
+
+        {/* Child routes render here */}
+        <Box
+          sx={{
+            mt: 2,
+            background: 'rgba(255, 255, 255, 0.6)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: 3,
+            p: 3,
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+            minHeight: 'calc(100vh - 140px)',
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );
