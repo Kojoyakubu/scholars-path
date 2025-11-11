@@ -721,19 +721,19 @@ const LandingPage = () => {
                 <motion.div variants={fadeInUp}>
                   <Box 
                     sx={{ 
-                      mb: 4,
+                      mb: 5,
                       display: 'inline-block',
-                      p: 2,
-                      borderRadius: 3,
-                      bgcolor: alpha('#FFFFFF', 0.15),
+                      p: { xs: 2.5, sm: 3, md: 3.5 },
+                      borderRadius: 4,
+                      bgcolor: alpha('#FFFFFF', 0.95),
                       backdropFilter: 'blur(20px)',
-                      border: `2px solid ${alpha('#FFFFFF', 0.25)}`,
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                      border: `3px solid ${alpha('#FFFFFF', 1)}`,
+                      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
                     }}
                   >
                     <Logo 
                       sx={{
-                        height: { xs: 70, sm: 90, md: 110 },
+                        height: { xs: 100, sm: 130, md: 150 },
                         width: 'auto',
                         maxWidth: '100%',
                       }}
