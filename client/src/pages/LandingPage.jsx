@@ -916,6 +916,7 @@ const LandingPage = () => {
                     )}
                   </Box>
                 ) : (
+                  // 3D Isometric Illustration
                   <Box
                     sx={{
                       width: '100%',
@@ -932,43 +933,339 @@ const LandingPage = () => {
                       boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
                     }}
                   >
-                    {/* Decorative elements */}
+                    {/* Decorative background grid */}
                     <Box
                       sx={{
                         position: 'absolute',
                         top: '50%',
                         left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: '80%',
-                        height: '80%',
-                        border: `2px dashed ${alpha('#FFFFFF', 0.2)}`,
-                        borderRadius: '50%',
+                        transform: 'translate(-50%, -50%) rotate(45deg)',
+                        width: '150%',
+                        height: '150%',
+                        backgroundImage: `
+                          linear-gradient(${alpha('#FFFFFF', 0.1)} 1px, transparent 1px),
+                          linear-gradient(90deg, ${alpha('#FFFFFF', 0.1)} 1px, transparent 1px)
+                        `,
+                        backgroundSize: '50px 50px',
+                        opacity: 0.3,
                       }}
                     />
+
+                    {/* 3D Isometric Elements */}
                     <Box
-                      component={motion.div}
-                      animate={{
-                        scale: [1, 1.05, 1],
-                        rotate: [0, 5, 0, -5, 0],
-                      }}
-                      transition={{
-                        duration: 6,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
                       sx={{
                         position: 'relative',
                         zIndex: 1,
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      <Logo 
-                        height={100}
-                        white={true}
-                        sx={{
-                          height: { xs: 60, sm: 75, md: 87.5 },
-                          width: 'auto',
+                      {/* Floating Book - Center */}
+                      <Box
+                        component={motion.div}
+                        animate={{
+                          y: [0, -20, 0],
+                          rotateY: [0, 10, 0],
                         }}
-                      />
+                        transition={{
+                          duration: 4,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          top: '45%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 120,
+                            height: 150,
+                            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                            borderRadius: 2,
+                            position: 'relative',
+                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              top: 10,
+                              left: 10,
+                              right: 10,
+                              bottom: 10,
+                              border: `2px solid ${alpha('#FFFFFF', 0.3)}`,
+                              borderRadius: 1,
+                            },
+                            '&::after': {
+                              content: '""',
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              width: 40,
+                              height: 40,
+                              background: alpha('#FFFFFF', 0.2),
+                              borderRadius: '50%',
+                            },
+                          }}
+                        >
+                          <SchoolIcon
+                            sx={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              fontSize: 40,
+                              color: '#FFFFFF',
+                              zIndex: 1,
+                            }}
+                          />
+                        </Box>
+                      </Box>
+
+                      {/* Graduation Cap - Top Right */}
+                      <Box
+                        component={motion.div}
+                        animate={{
+                          y: [0, -15, 0],
+                          rotate: [0, -5, 0],
+                        }}
+                        transition={{
+                          duration: 3.5,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                          delay: 0.5,
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          top: '15%',
+                          right: '15%',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            background: `linear-gradient(135deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)`,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 15px 40px rgba(0, 0, 0, 0.3)',
+                            position: 'relative',
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              top: -15,
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              width: 0,
+                              height: 0,
+                              borderLeft: '40px solid transparent',
+                              borderRight: '40px solid transparent',
+                              borderBottom: `20px solid ${theme.palette.warning.main}`,
+                            },
+                          }}
+                        >
+                          <EmojiEventsIcon
+                            sx={{
+                              fontSize: 40,
+                              color: '#FFFFFF',
+                            }}
+                          />
+                        </Box>
+                      </Box>
+
+                      {/* Light Bulb - Top Left */}
+                      <Box
+                        component={motion.div}
+                        animate={{
+                          y: [0, -10, 0],
+                          scale: [1, 1.05, 1],
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                          delay: 1,
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          top: '20%',
+                          left: '20%',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 70,
+                            height: 70,
+                            background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
+                            borderRadius: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 15px 40px rgba(0, 0, 0, 0.3)',
+                            transform: 'rotate(45deg)',
+                          }}
+                        >
+                          <AutoAwesomeIcon
+                            sx={{
+                              fontSize: 35,
+                              color: '#FFFFFF',
+                              transform: 'rotate(-45deg)',
+                            }}
+                          />
+                        </Box>
+                      </Box>
+
+                      {/* Chart/Analytics - Bottom Right */}
+                      <Box
+                        component={motion.div}
+                        animate={{
+                          y: [0, -12, 0],
+                          x: [0, 5, 0],
+                        }}
+                        transition={{
+                          duration: 4.5,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                          delay: 0.3,
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          bottom: '20%',
+                          right: '20%',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 90,
+                            height: 90,
+                            background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
+                            borderRadius: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 15px 40px rgba(0, 0, 0, 0.3)',
+                            position: 'relative',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <TrendingUpIcon
+                            sx={{
+                              fontSize: 45,
+                              color: '#FFFFFF',
+                            }}
+                          />
+                          {/* Mini bars */}
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              bottom: 10,
+                              left: 10,
+                              right: 10,
+                              display: 'flex',
+                              gap: 0.5,
+                              alignItems: 'flex-end',
+                            }}
+                          >
+                            {[40, 60, 35, 80, 55].map((height, i) => (
+                              <Box
+                                key={i}
+                                component={motion.div}
+                                animate={{
+                                  height: [`${height * 0.5}%`, `${height}%`, `${height * 0.5}%`],
+                                }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: 'easeInOut',
+                                  delay: i * 0.1,
+                                }}
+                                sx={{
+                                  flex: 1,
+                                  bgcolor: alpha('#FFFFFF', 0.4),
+                                  borderRadius: 0.5,
+                                  minHeight: '20%',
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      {/* Quiz Card - Bottom Left */}
+                      <Box
+                        component={motion.div}
+                        animate={{
+                          y: [0, -18, 0],
+                          rotate: [0, 3, 0],
+                        }}
+                        transition={{
+                          duration: 3.8,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                          delay: 0.8,
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          bottom: '25%',
+                          left: '18%',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 75,
+                            height: 75,
+                            background: `linear-gradient(135deg, ${theme.palette.info.main} 0%, ${theme.palette.info.dark} 100%)`,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 15px 40px rgba(0, 0, 0, 0.3)',
+                          }}
+                        >
+                          <QuizIcon
+                            sx={{
+                              fontSize: 38,
+                              color: '#FFFFFF',
+                            }}
+                          />
+                        </Box>
+                      </Box>
+
+                      {/* Small floating particles */}
+                      {[...Array(6)].map((_, i) => (
+                        <Box
+                          key={i}
+                          component={motion.div}
+                          animate={{
+                            y: [0, -30, 0],
+                            opacity: [0.3, 0.8, 0.3],
+                          }}
+                          transition={{
+                            duration: 3 + i * 0.5,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                            delay: i * 0.3,
+                          }}
+                          sx={{
+                            position: 'absolute',
+                            width: 8 + i * 2,
+                            height: 8 + i * 2,
+                            borderRadius: '50%',
+                            bgcolor: '#FFFFFF',
+                            opacity: 0.4,
+                            top: `${20 + i * 12}%`,
+                            left: `${15 + i * 10}%`,
+                            boxShadow: '0 4px 12px rgba(255, 255, 255, 0.4)',
+                          }}
+                        />
+                      ))}
                     </Box>
                   </Box>
                 )}
