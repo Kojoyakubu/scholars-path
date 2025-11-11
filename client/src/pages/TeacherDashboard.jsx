@@ -96,6 +96,12 @@ import {
   ViewList,
   CalendarToday,
   Edit,
+  ExpandMore,
+  ExpandLess,
+  Refresh,
+  PlayArrow,
+  MenuBook,
+  PendingActions,
 } from '@mui/icons-material';
 
 // 🎯 Animation Variants
@@ -131,6 +137,253 @@ const getDisplayName = (user) => {
   if (!user) return 'Teacher';
   const name = user.name || user.fullName || 'Teacher';
   return name.split(' ')[0];
+};
+
+// 🎯 Modern Teacher Dashboard Banner
+const TeacherDashboardBanner = ({ 
+  user, 
+  collapsed, 
+  setCollapsed, 
+  onRefresh, 
+  refreshing,
+  stats,
+}) => {
+  const theme = useTheme();
+
+  return (
+    <Box
+      component={motion.div}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      sx={{ position: 'relative', overflow: 'hidden', mb: 3 }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          background: `linear-gradient(135deg, 
+            ${alpha(theme.palette.primary.main, 0.95)} 0%, 
+            ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
+          backdropFilter: 'blur(20px)',
+          borderRadius: 4,
+          p: 4,
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden',
+          border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
+          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            width: '300px',
+            height: '300px',
+            borderRadius: '50%',
+            background: alpha('#FFFFFF', 0.05),
+            top: '-150px',
+            right: '-50px',
+          },
+        }}
+      >
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              {!collapsed && (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
+                  <Avatar
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      bgcolor: alpha('#FFFFFF', 0.2),
+                      border: `3px solid ${alpha('#FFFFFF', 0.4)}`,
+                      fontSize: '2rem',
+                      fontWeight: 700,
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                    }}
+                  >
+                    {(user?.name || user?.fullName || 'T')[0].toUpperCase()}
+                  </Avatar>
+                </motion.div>
+              )}
+              <Box>
+                <Typography
+                  variant={collapsed ? 'h5' : 'h3'}
+                  sx={{
+                    fontWeight: 800,
+                    textShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                    mb: collapsed ? 0 : 0.5,
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {collapsed 
+                    ? 'Teacher Dashboard' 
+                    : `Welcome back, ${getDisplayName(user)}! 👋`
+                  }
+                </Typography>
+                {!collapsed && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: alpha('#FFFFFF', 0.95),
+                        fontWeight: 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      Ready to inspire and educate today
+                      <School sx={{ fontSize: 20 }} />
+                    </Typography>
+                  </motion.div>
+                )}
+              </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton
+                onClick={onRefresh}
+                disabled={refreshing}
+                sx={{
+                  color: 'white',
+                  bgcolor: alpha('#FFFFFF', 0.15),
+                  '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
+                  '&:disabled': { bgcolor: alpha('#FFFFFF', 0.1) },
+                }}
+              >
+                <Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+              </IconButton>
+              <IconButton
+                onClick={() => setCollapsed(!collapsed)}
+                sx={{
+                  color: 'white',
+                  bgcolor: alpha('#FFFFFF', 0.15),
+                  '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
+                }}
+              >
+                {collapsed ? <ExpandMore /> : <ExpandLess />}
+              </IconButton>
+            </Box>
+          </Box>
+
+          {!collapsed && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap' }}>
+                <Chip
+                  icon={<Article />}
+                  label={`${stats?.lessonNotes || 0} Lesson Notes`}
+                  sx={{
+                    bgcolor: alpha('#FFFFFF', 0.2),
+                    color: 'white',
+                    fontWeight: 600,
+                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
+                    '& .MuiChip-icon': { color: 'white' },
+                  }}
+                />
+                <Chip
+                  icon={<Preview />}
+                  label={`${stats?.draftNotes || 0} Draft Notes`}
+                  sx={{
+                    bgcolor: alpha('#FFFFFF', 0.2),
+                    color: 'white',
+                    fontWeight: 600,
+                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
+                    '& .MuiChip-icon': { color: 'white' },
+                  }}
+                />
+                <Chip
+                  icon={<Quiz />}
+                  label={`${stats?.quizzes || 0} AI Quizzes`}
+                  sx={{
+                    bgcolor: alpha('#FFFFFF', 0.2),
+                    color: 'white',
+                    fontWeight: 600,
+                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
+                    '& .MuiChip-icon': { color: 'white' },
+                  }}
+                />
+              </Box>
+            </motion.div>
+          )}
+        </Box>
+      </Paper>
+
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </Box>
+  );
+};
+
+// 🚀 Quick Action Card Component
+const QuickActionCard = ({ title, description, icon: Icon, color, onClick, badge }) => {
+  const theme = useTheme();
+  
+  return (
+    <Card
+      component={motion.div}
+      whileHover={{ scale: 1.02, y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      sx={{
+        cursor: 'pointer',
+        borderRadius: 3,
+        background: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
+        border: `1px solid ${alpha(color, 0.15)}`,
+        transition: 'all 0.3s ease',
+        position: 'relative',
+        overflow: 'hidden',
+        '&:hover': {
+          boxShadow: `0 12px 32px ${alpha(color, 0.2)}`,
+          border: `1px solid ${alpha(color, 0.3)}`,
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '100px',
+          height: '100px',
+          background: `radial-gradient(circle at top right, ${alpha(color, 0.1)}, transparent)`,
+          pointerEvents: 'none',
+        },
+      }}
+    >
+      <CardContent sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+          <Avatar
+            sx={{
+              width: 48,
+              height: 48,
+              bgcolor: alpha(color, 0.15),
+              color: color,
+            }}
+          >
+            {badge ? (
+              <Badge badgeContent={badge} color="error">
+                <Icon />
+              </Badge>
+            ) : (
+              <Icon />
+            )}
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, color: theme.palette.text.primary }}>
+              {title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {description}
+            </Typography>
+          </Box>
+          <PlayArrow sx={{ color: alpha(color, 0.5) }} />
+        </Box>
+      </CardContent>
+    </Card>
+  );
 };
 
 // 🎴 Modern Section Card Component
@@ -758,6 +1011,8 @@ function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [bannerCollapsed, setBannerCollapsed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Initialization (all preserved)
   useEffect(() => {
@@ -867,6 +1122,16 @@ function TeacherDashboard() {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      dispatch(getMyLessonNotes()),
+      dispatch(getDraftLearnerNotes()),
+      dispatch(getTeacherAnalytics()),
+    ]);
+    setTimeout(() => setRefreshing(false), 1000);
+  };
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
@@ -888,78 +1153,73 @@ function TeacherDashboard() {
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default, pb: 6 }}>
-      {/* Hero Section (preserved) */}
-      <Box
-        sx={{
-          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-          color: 'white',
-          py: { xs: 4, md: 6 },
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-            opacity: 0.4,
-          },
-        }}
-      >
-        <Container maxWidth="lg">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" spacing={2}>
-              <Box sx={{ position: 'relative', zIndex: 1 }}>
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontWeight: 800,
-                    mb: 1,
-                    textShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                  }}
-                >
-                  Welcome back, {getDisplayName(user)}! 👋
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    opacity: 0.95,
-                    fontWeight: 400,
-                    textShadow: '0 1px 5px rgba(0,0,0,0.1)',
-                  }}
-                >
-                  Create engaging lessons and track your impact
-                </Typography>
-              </Box>
-              <Avatar
-                sx={{
-                  width: { xs: 64, md: 80 },
-                  height: { xs: 64, md: 80 },
-                  bgcolor: 'white',
-                  color: theme.palette.primary.main,
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                  position: 'relative',
-                  zIndex: 1,
-                }}
-              >
-                {getDisplayName(user).charAt(0)}
-              </Avatar>
-            </Stack>
-          </motion.div>
-        </Container>
-      </Box>
+    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+      <Container maxWidth="xl" sx={{ mt: 3, pb: 6 }}>
+        
+        {/* 🎨 NEW MODERN BANNER */}
+        <TeacherDashboardBanner
+          user={user}
+          collapsed={bannerCollapsed}
+          setCollapsed={setBannerCollapsed}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+          stats={{
+            lessonNotes: lessonNotes?.length || 0,
+            draftNotes: draftLearnerNotes?.length || 0,
+            quizzes: teacherAnalytics?.totalQuizzes || 0,
+          }}
+        />
 
-      <Container maxWidth="lg" sx={{ mt: -3 }}>
-        {/* Analytics Cards (preserved) */}
+        {/* 🚀 NEW QUICK ACTIONS SECTION */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
+            Quick Actions
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <QuickActionCard
+                title="Create Lesson"
+                description="Generate AI-powered lesson notes"
+                icon={AddCircle}
+                color={theme.palette.primary.main}
+                onClick={() => setActiveTab(0)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <QuickActionCard
+                title="Review Drafts"
+                description={`${draftLearnerNotes?.length || 0} notes pending`}
+                icon={Preview}
+                color={theme.palette.secondary.main}
+                onClick={() => setActiveTab(2)}
+                badge={draftLearnerNotes?.length > 0 ? draftLearnerNotes.length : null}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <QuickActionCard
+                title="Create Quiz"
+                description="AI-generated assessments"
+                icon={Quiz}
+                color={theme.palette.warning.main}
+                onClick={() => setIsAiQuizModalOpen(true)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <QuickActionCard
+                title="View Analytics"
+                description="Track your performance"
+                icon={Assessment}
+                color={theme.palette.success.main}
+                onClick={() => setActiveTab(3)}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* 📊 ANALYTICS OVERVIEW */}
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
+          Overview
+        </Typography>
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <StatCard
             icon={Article}
