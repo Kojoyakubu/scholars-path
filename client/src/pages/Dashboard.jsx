@@ -647,25 +647,25 @@ function Dashboard() {
   // 🔄 Fetch children when parent selection changes (preserved logic)
   useEffect(() => {
     if (selections.level && !selections.class) {
-      dispatch(fetchChildren({ parentEntity: 'levels', parentId: selections.level, childEntity: 'classes' }));
+      dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
     }
   }, [dispatch, selections.level, selections.class]);
 
   useEffect(() => {
     if (selections.class && !selections.subject) {
-      dispatch(fetchChildren({ parentEntity: 'classes', parentId: selections.class, childEntity: 'subjects' }));
+      dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
     }
   }, [dispatch, selections.class, selections.subject]);
 
   useEffect(() => {
     if (selections.subject && !selections.strand) {
-      dispatch(fetchChildren({ parentEntity: 'subjects', parentId: selections.subject, childEntity: 'strands' }));
+      dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
     }
   }, [dispatch, selections.subject, selections.strand]);
 
   useEffect(() => {
     if (selections.strand && !selections.subStrand) {
-      dispatch(fetchChildren({ parentEntity: 'strands', parentId: selections.strand, childEntity: 'sub-strands' }));
+      dispatch(fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: selections.strand }));
     }
   }, [dispatch, selections.strand, selections.subStrand]);
 
@@ -684,21 +684,28 @@ function Dashboard() {
     const { name, value } = e.target;
     setSelections((prev) => {
       const next = { ...prev, [name]: value };
+      
       // Cascading reset logic
-      const resetMap = {
-        level: ['class', 'subject', 'strand', 'subStrand'],
-        class: ['subject', 'strand', 'subStrand'],
-        subject: ['strand', 'subStrand'],
-        strand: ['subStrand'],
-      };
-      if (resetMap[name]) {
-        resetMap[name].forEach((k) => (next[k] = ''));
-        dispatch(clearChildren({ entities: resetMap[name] }));
+      if (name === 'level') {
+        next.class = '';
+        next.subject = '';
+        next.strand = '';
+        next.subStrand = '';
+      } else if (name === 'class') {
+        next.subject = '';
+        next.strand = '';
+        next.subStrand = '';
+      } else if (name === 'subject') {
+        next.strand = '';
+        next.subStrand = '';
+      } else if (name === 'strand') {
+        next.subStrand = '';
       }
+      
       setContentLoaded(false);
       return next;
     });
-  }, [dispatch]);
+  }, []);
 
   // 📥 Download handlers (preserved logic)
   const handleDownloadPdf = useCallback((note) => {
