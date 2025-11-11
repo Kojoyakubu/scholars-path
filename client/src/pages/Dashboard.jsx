@@ -886,7 +886,7 @@ function Dashboard() {
           </motion.div>
         )}
 
-        {/* Curriculum Selection - Enhanced Design */}
+        {/* Curriculum Selection - Enhanced Design - ALWAYS VISIBLE */}
         <motion.div
           variants={fadeInUp}
           initial="hidden"
@@ -904,7 +904,7 @@ function Dashboard() {
               >
                 <SchoolIcon sx={{ fontSize: 28 }} />
               </Avatar>
-              <Box>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                   Select Your Study Path
                 </Typography>
@@ -912,6 +912,14 @@ function Dashboard() {
                   Choose your curriculum to access learning materials
                 </Typography>
               </Box>
+              {selections.subStrand && (
+                <Chip
+                  icon={<CheckCircleIcon />}
+                  label="Selection Complete"
+                  color="success"
+                  sx={{ fontWeight: 600 }}
+                />
+              )}
             </Box>
 
             <Divider sx={{ mb: 3 }} />
@@ -1011,6 +1019,46 @@ function Dashboard() {
             {isLoading && (
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                 <CircularProgress size={32} />
+              </Box>
+            )}
+
+            {/* Selection Progress Indicator */}
+            {(selections.level || selections.class || selections.subject || selections.strand) && !selections.subStrand && (
+              <Box sx={{ mt: 3 }}>
+                <Paper
+                  sx={{
+                    p: 3,
+                    bgcolor: alpha(theme.palette.info.main, 0.05),
+                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                    borderRadius: 2,
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Avatar
+                      sx={{
+                        bgcolor: theme.palette.info.main,
+                        width: 40,
+                        height: 40,
+                      }}
+                    >
+                      <SchoolIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {!selections.class && 'Select a class to continue'}
+                        {selections.class && !selections.subject && 'Select a subject to continue'}
+                        {selections.subject && !selections.strand && 'Select a strand to continue'}
+                        {selections.strand && !selections.subStrand && 'Select a sub-strand to view materials'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {selections.level && `Level: ${safeLevels.find(l => l._id === selections.level)?.name || ''}`}
+                        {selections.class && ` • Class: ${safeClasses.find(c => c._id === selections.class)?.name || ''}`}
+                        {selections.subject && ` • Subject: ${safeSubjects.find(s => s._id === selections.subject)?.name || ''}`}
+                        {selections.strand && ` • Strand: ${safeStrands.find(s => s._id === selections.strand)?.name || ''}`}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
               </Box>
             )}
           </SectionCard>
