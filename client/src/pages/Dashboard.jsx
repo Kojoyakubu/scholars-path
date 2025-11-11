@@ -547,6 +547,13 @@ function Dashboard() {
     subStrands = [], 
     isLoading: isCurriculumLoading = false 
   } = curriculumState || {};
+
+  // Ensure all curriculum arrays are actually arrays
+  const safeLevels = Array.isArray(levels) ? levels : [];
+  const safeClasses = Array.isArray(classes) ? classes : [];
+  const safeSubjects = Array.isArray(subjects) ? subjects : [];
+  const safeStrands = Array.isArray(strands) ? strands : [];
+  const safeSubStrands = Array.isArray(subStrands) ? subStrands : [];
   
   const { 
     notes = [], 
@@ -555,6 +562,11 @@ function Dashboard() {
     isLoading: isStudentLoading = false, 
     aiInsights = null 
   } = studentState || {};
+
+  // Ensure all student arrays are actually arrays
+  const safeNotes = Array.isArray(notes) ? notes : [];
+  const safeQuizzes = Array.isArray(quizzes) ? quizzes : [];
+  const safeResources = Array.isArray(resources) ? resources : [];
   
   const isLoading = isCurriculumLoading || isStudentLoading;
 
@@ -576,9 +588,9 @@ function Dashboard() {
 
   // Calculate stats
   const stats = {
-    notes: getArrayLength(notes),
-    quizzes: getArrayLength(quizzes),
-    resources: getArrayLength(resources),
+    notes: getArrayLength(safeNotes),
+    quizzes: getArrayLength(safeQuizzes),
+    resources: getArrayLength(safeResources),
     progress: selections.subStrand ? 75 : 0, // Example progress
   };
 
@@ -873,7 +885,7 @@ function Dashboard() {
                     label="Level"
                     disabled={isLoading}
                   >
-                    {Array.isArray(levels) && levels.map((level) => (
+                    {safeLevels.map((level) => (
                       <MenuItem key={level._id} value={level._id}>
                         {level.name}
                       </MenuItem>
@@ -892,7 +904,7 @@ function Dashboard() {
                       label="Class"
                       disabled={isLoading}
                     >
-                      {Array.isArray(classes) && classes.map((cls) => (
+                      {safeClasses.map((cls) => (
                         <MenuItem key={cls._id} value={cls._id}>
                           {cls.name}
                         </MenuItem>
@@ -912,7 +924,7 @@ function Dashboard() {
                       label="Subject"
                       disabled={isLoading}
                     >
-                      {Array.isArray(subjects) && subjects.map((subject) => (
+                      {safeSubjects.map((subject) => (
                         <MenuItem key={subject._id} value={subject._id}>
                           {subject.name}
                         </MenuItem>
@@ -932,7 +944,7 @@ function Dashboard() {
                       label="Strand"
                       disabled={isLoading}
                     >
-                      {Array.isArray(strands) && strands.map((strand) => (
+                      {safeStrands.map((strand) => (
                         <MenuItem key={strand._id} value={strand._id}>
                           {strand.name}
                         </MenuItem>
@@ -952,7 +964,7 @@ function Dashboard() {
                       label="Sub-Strand"
                       disabled={isLoading}
                     >
-                      {Array.isArray(subStrands) && subStrands.map((subStrand) => (
+                      {safeSubStrands.map((subStrand) => (
                         <MenuItem key={subStrand._id} value={subStrand._id}>
                           {subStrand.name}
                         </MenuItem>
@@ -998,13 +1010,13 @@ function Dashboard() {
                         <Typography variant="h5" sx={{ fontWeight: 700 }}>
                           Study Notes
                         </Typography>
-                        {getArrayLength(notes) > 0 && (
+                        {getArrayLength(safeNotes) > 0 && (
                           <Typography variant="caption" color="text.secondary">
-                            {getArrayLength(notes)} note{getArrayLength(notes) > 1 ? 's' : ''} available
+                            {getArrayLength(safeNotes)} note{getArrayLength(safeNotes) > 1 ? 's' : ''} available
                           </Typography>
                         )}
                       </Box>
-                      {getArrayLength(notes) > 0 && (
+                      {getArrayLength(safeNotes) > 0 && (
                         <Chip
                           icon={<PlayArrowIcon />}
                           label="Start Learning"
@@ -1016,9 +1028,9 @@ function Dashboard() {
 
                     <Divider sx={{ mb: 3 }} />
 
-                    {Array.isArray(notes) && notes.length > 0 ? (
+                    {safeNotes.length > 0 ? (
                       <Stack spacing={3}>
-                        {notes.map((note) => (
+                        {safeNotes.map((note) => (
                           <Card
                             key={note._id}
                             component={motion.div}
@@ -1209,9 +1221,9 @@ function Dashboard() {
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
                           Quizzes
                         </Typography>
-                        {getArrayLength(quizzes) > 0 && (
+                        {getArrayLength(safeQuizzes) > 0 && (
                           <Typography variant="caption" color="text.secondary">
-                            {getArrayLength(quizzes)} quiz{getArrayLength(quizzes) > 1 ? 'zes' : ''} ready
+                            {getArrayLength(safeQuizzes)} quiz{getArrayLength(safeQuizzes) > 1 ? 'zes' : ''} ready
                           </Typography>
                         )}
                       </Box>
@@ -1219,9 +1231,9 @@ function Dashboard() {
 
                     <Divider sx={{ mb: 3 }} />
 
-                    {Array.isArray(quizzes) && quizzes.length > 0 ? (
+                    {safeQuizzes.length > 0 ? (
                       <Stack spacing={2}>
-                        {quizzes.map((quiz, index) => (
+                        {safeQuizzes.map((quiz, index) => (
                           <Card
                             key={quiz._id}
                             component={motion.div}
