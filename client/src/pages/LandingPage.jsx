@@ -722,13 +722,20 @@ const LandingPage = () => {
                   <Box 
                     sx={{ 
                       mb: 4,
+                      display: 'inline-block',
+                      p: 2,
+                      borderRadius: 3,
+                      bgcolor: alpha('#FFFFFF', 0.15),
+                      backdropFilter: 'blur(20px)',
+                      border: `2px solid ${alpha('#FFFFFF', 0.25)}`,
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
                     }}
                   >
                     <Logo 
-                      height={100}
                       sx={{
-                        height: { xs: 60, sm: 80, md: 100 },
+                        height: { xs: 70, sm: 90, md: 110 },
                         width: 'auto',
+                        maxWidth: '100%',
                       }}
                     />
                   </Box>
