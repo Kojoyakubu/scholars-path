@@ -1,12 +1,12 @@
 // /client/src/pages/Dashboard.jsx
-// 🎨 Modernized Student Dashboard - Following Design Blueprint
-// Features: Enhanced hero, progress indicators, modern resource cards, improved layout
+// 🎨 Enhanced Student Dashboard - Modern Glassmorphism Design
+// Features: Modern banner with avatar, quick actions, progress tracking, enhanced stats
 // ALL REDUX LOGIC AND API CALLS PRESERVED
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -14,7 +14,8 @@ import {
   Box, Typography, Container, Button, Grid, Select, MenuItem,
   FormControl, InputLabel, Paper, List, ListItem, ListItemIcon,
   CircularProgress, Stack, ListItemText, Avatar, Card, CardContent,
-  useTheme, alpha, Chip, Divider, LinearProgress
+  useTheme, alpha, Chip, Divider, LinearProgress, CardActions,
+  Tooltip, IconButton, Badge
 } from '@mui/material';
 import QuizIcon from '@mui/icons-material/Quiz';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
@@ -26,6 +27,14 @@ import SchoolIcon from '@mui/icons-material/School';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
+import StarIcon from '@mui/icons-material/Star';
+import TimerIcon from '@mui/icons-material/Timer';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 // Preserved imports
 import { syncUserFromStorage } from '../features/auth/authSlice';
@@ -58,6 +67,20 @@ const staggerContainer = {
   }
 };
 
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { duration: 0.3 }
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.95,
+    transition: { duration: 0.2 }
+  }
+};
+
 // 🎨 Helper function for user display name (preserved)
 const getDisplayName = (user) => {
   if (!user) return 'Student';
@@ -73,26 +96,282 @@ const getArrayLength = (arr) => {
   return 0;
 };
 
-// 🎴 Modern Section Card Component - Enhanced design
+// 🎯 Modern Student Dashboard Banner with Avatar
+const StudentDashboardBanner = ({ 
+  user, 
+  collapsed, 
+  setCollapsed, 
+  stats,
+  onRefresh,
+  refreshing
+}) => {
+  const theme = useTheme();
+
+  return (
+    <Box
+      component={motion.div}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      sx={{ position: 'relative', overflow: 'hidden', mb: 4 }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          background: `linear-gradient(135deg, 
+            ${alpha(theme.palette.primary.main, 0.95)} 0%, 
+            ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
+          backdropFilter: 'blur(20px)',
+          borderRadius: 4,
+          p: 4,
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden',
+          border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
+          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            width: '300px',
+            height: '300px',
+            borderRadius: '50%',
+            background: alpha('#FFFFFF', 0.05),
+            top: '-150px',
+            right: '-50px',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            width: '200px',
+            height: '200px',
+            borderRadius: '50%',
+            background: alpha('#FFFFFF', 0.03),
+            bottom: '-100px',
+            left: '-50px',
+          },
+        }}
+      >
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              {!collapsed && (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
+                  <Avatar
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      bgcolor: alpha('#FFFFFF', 0.2),
+                      border: `3px solid ${alpha('#FFFFFF', 0.4)}`,
+                      fontSize: '2rem',
+                      fontWeight: 700,
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                    }}
+                  >
+                    {(user?.name || user?.fullName || 'S')[0].toUpperCase()}
+                  </Avatar>
+                </motion.div>
+              )}
+              <Box>
+                <Typography
+                  variant={collapsed ? 'h5' : 'h3'}
+                  sx={{
+                    fontWeight: 800,
+                    textShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                    mb: collapsed ? 0 : 0.5,
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {collapsed 
+                    ? 'My Learning Dashboard' 
+                    : `Welcome back, ${getDisplayName(user)}! 👋`
+                  }
+                </Typography>
+                {!collapsed && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: alpha('#FFFFFF', 0.95),
+                        fontWeight: 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      Ready to continue your learning journey
+                      <SchoolIcon sx={{ fontSize: 20 }} />
+                    </Typography>
+                  </motion.div>
+                )}
+              </Box>
+            </Box>
+
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Tooltip title={refreshing ? 'Refreshing...' : 'Refresh data'}>
+                <IconButton
+                  onClick={onRefresh}
+                  disabled={refreshing}
+                  sx={{
+                    color: 'white',
+                    bgcolor: alpha('#FFFFFF', 0.15),
+                    border: `1px solid ${alpha('#FFFFFF', 0.3)}`,
+                    '&:hover': {
+                      bgcolor: alpha('#FFFFFF', 0.25),
+                    },
+                  }}
+                >
+                  <RefreshIcon sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={collapsed ? 'Expand' : 'Collapse'}>
+                <IconButton
+                  onClick={() => setCollapsed(!collapsed)}
+                  sx={{
+                    color: 'white',
+                    bgcolor: alpha('#FFFFFF', 0.15),
+                    border: `1px solid ${alpha('#FFFFFF', 0.3)}`,
+                    '&:hover': {
+                      bgcolor: alpha('#FFFFFF', 0.25),
+                    },
+                  }}
+                >
+                  {collapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Box>
+
+          {!collapsed && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Grid container spacing={2} sx={{ mt: 3 }}>
+                <Grid item xs={6} sm={3}>
+                  <Box
+                    sx={{
+                      bgcolor: alpha('#FFFFFF', 0.15),
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 2,
+                      p: 2,
+                      border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <MenuBookIcon sx={{ fontSize: 32, mb: 1 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {stats.notes}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      Study Notes
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box
+                    sx={{
+                      bgcolor: alpha('#FFFFFF', 0.15),
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 2,
+                      p: 2,
+                      border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <QuizIcon sx={{ fontSize: 32, mb: 1 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {stats.quizzes}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      Quizzes
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box
+                    sx={{
+                      bgcolor: alpha('#FFFFFF', 0.15),
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 2,
+                      p: 2,
+                      border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <AttachFileIcon sx={{ fontSize: 32, mb: 1 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {stats.resources}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      Resources
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Box
+                    sx={{
+                      bgcolor: alpha('#FFFFFF', 0.15),
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 2,
+                      p: 2,
+                      border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <TrendingUpIcon sx={{ fontSize: 32, mb: 1 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      {stats.progress}%
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      Progress
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </motion.div>
+          )}
+        </Box>
+      </Paper>
+
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </Box>
+  );
+};
+
+// 🎴 Modern Section Card Component - Enhanced glassmorphism design
 const SectionCard = ({ children, gradient, ...props }) => {
   const theme = useTheme();
   
   return (
     <Card
       component={motion.div}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      variants={cardVariants}
+      initial="hidden"
+      whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.5 }}
       sx={{
         height: '100%',
-        background: gradient || 'white',
+        background: gradient || `linear-gradient(135deg, 
+          ${alpha(theme.palette.background.paper, 0.8)} 0%, 
+          ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
+        backdropFilter: 'blur(20px)',
         borderRadius: 3,
         border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxShadow: `0 8px 32px 0 ${alpha(theme.palette.primary.main, 0.1)}`,
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+          transform: 'translateY(-8px)',
+          boxShadow: `0 16px 48px ${alpha(theme.palette.primary.main, 0.2)}`,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
         },
         ...props.sx,
       }}
@@ -102,47 +381,148 @@ const SectionCard = ({ children, gradient, ...props }) => {
   );
 };
 
-// 🎯 Quick Action Card Component
-const QuickActionCard = ({ icon: Icon, title, description, color, onClick, to }) => {
+// 🎯 Quick Action Card Component - Enhanced Design
+const QuickActionCard = ({ icon: Icon, title, description, color, onClick, to, badge }) => {
   const theme = useTheme();
-  const Component = to ? RouterLink : 'div';
   
   return (
     <Card
       component={motion.div}
-      whileHover={{ scale: 1.02, y: -4 }}
+      variants={cardVariants}
+      whileHover={{ scale: 1.05, y: -8 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
       {...(to && { component: RouterLink, to })}
       sx={{
         p: 3,
         cursor: 'pointer',
-        background: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
-        border: `1px solid ${alpha(color, 0.2)}`,
-        transition: 'all 0.3s ease',
+        background: `linear-gradient(135deg, 
+          ${alpha(color, 0.1)} 0%, 
+          ${alpha(color, 0.05)} 100%)`,
+        backdropFilter: 'blur(10px)',
+        border: `2px solid ${alpha(color, 0.2)}`,
+        borderRadius: 3,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         textDecoration: 'none',
+        position: 'relative',
+        overflow: 'hidden',
         '&:hover': {
-          boxShadow: `0 8px 24px ${alpha(color, 0.25)}`,
-          border: `1px solid ${alpha(color, 0.4)}`,
+          boxShadow: `0 12px 32px ${alpha(color, 0.3)}`,
+          border: `2px solid ${alpha(color, 0.5)}`,
+          '& .action-icon': {
+            transform: 'scale(1.1) rotate(5deg)',
+          },
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '100px',
+          height: '100px',
+          borderRadius: '50%',
+          background: alpha(color, 0.1),
+          transform: 'translate(40%, -40%)',
         },
       }}
     >
-      <Avatar
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        <Badge
+          badgeContent={badge}
+          color="error"
+          sx={{
+            '& .MuiBadge-badge': {
+              top: 8,
+              right: 8,
+            },
+          }}
+        >
+          <Avatar
+            className="action-icon"
+            sx={{
+              width: 64,
+              height: 64,
+              bgcolor: color,
+              mb: 2,
+              boxShadow: `0 8px 24px ${alpha(color, 0.4)}`,
+              transition: 'transform 0.3s ease',
+            }}
+          >
+            <Icon sx={{ fontSize: 32 }} />
+          </Avatar>
+        </Badge>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+          {title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+          {description}
+        </Typography>
+      </Box>
+    </Card>
+  );
+};
+
+// 🎯 Progress Card Component
+const ProgressCard = ({ title, value, max, color, icon: Icon }) => {
+  const theme = useTheme();
+  const percentage = max > 0 ? Math.round((value / max) * 100) : 0;
+
+  return (
+    <Card
+      component={motion.div}
+      variants={cardVariants}
+      sx={{
+        p: 3,
+        background: `linear-gradient(135deg, 
+          ${alpha(color, 0.08)} 0%, 
+          ${alpha(color, 0.02)} 100%)`,
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${alpha(color, 0.2)}`,
+        borderRadius: 3,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+        <Avatar
+          sx={{
+            width: 48,
+            height: 48,
+            bgcolor: color,
+            boxShadow: `0 4px 12px ${alpha(color, 0.3)}`,
+          }}
+        >
+          <Icon sx={{ fontSize: 24 }} />
+        </Avatar>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            {title}
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            {value} / {max}
+          </Typography>
+        </Box>
+        <Chip
+          label={`${percentage}%`}
+          size="small"
+          sx={{
+            bgcolor: alpha(color, 0.15),
+            color: color,
+            fontWeight: 700,
+          }}
+        />
+      </Box>
+      <LinearProgress
+        variant="determinate"
+        value={percentage}
         sx={{
-          width: 56,
-          height: 56,
-          bgcolor: color,
-          mb: 2,
-          boxShadow: `0 4px 12px ${alpha(color, 0.3)}`,
+          height: 8,
+          borderRadius: 4,
+          bgcolor: alpha(color, 0.1),
+          '& .MuiLinearProgress-bar': {
+            bgcolor: color,
+            borderRadius: 4,
+          },
         }}
-      >
-        <Icon sx={{ fontSize: 28 }} />
-      </Avatar>
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
-        {title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {description}
-      </Typography>
+      />
     </Card>
   );
 };
@@ -190,6 +570,18 @@ function Dashboard() {
   // Track if content has been loaded for a substrand (preserved)
   const [contentLoaded, setContentLoaded] = useState(false);
 
+  // New state for banner collapse
+  const [bannerCollapsed, setBannerCollapsed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Calculate stats
+  const stats = {
+    notes: getArrayLength(notes),
+    quizzes: getArrayLength(quizzes),
+    resources: getArrayLength(resources),
+    progress: selections.subStrand ? 75 : 0, // Example progress
+  };
+
   // 🔄 Sync user and load initial data (preserved logic)
   useEffect(() => {
     dispatch(syncUserFromStorage());
@@ -211,514 +603,607 @@ function Dashboard() {
     }
   }, [dispatch, user, navigate]);
 
-  // 🔄 Cascading fetches (preserved logic)
+  // 🔄 Fetch children when parent selection changes (preserved logic)
   useEffect(() => {
-    if (selections.level && selections.level !== '') {
-      dispatch(fetchChildren({ 
-        entity: 'classes', 
-        parentEntity: 'levels', 
-        parentId: selections.level 
-      }));
+    if (selections.level && !selections.class) {
+      dispatch(fetchChildren({ parentEntity: 'levels', parentId: selections.level, childEntity: 'classes' }));
     }
-  }, [selections.level, dispatch]);
+  }, [dispatch, selections.level, selections.class]);
 
   useEffect(() => {
-    if (selections.class && selections.class !== '') {
-      dispatch(fetchChildren({ 
-        entity: 'subjects', 
-        parentEntity: 'classes', 
-        parentId: selections.class 
-      }));
+    if (selections.class && !selections.subject) {
+      dispatch(fetchChildren({ parentEntity: 'classes', parentId: selections.class, childEntity: 'subjects' }));
     }
-  }, [selections.class, dispatch]);
+  }, [dispatch, selections.class, selections.subject]);
 
   useEffect(() => {
-    if (selections.subject && selections.subject !== '') {
-      dispatch(fetchChildren({ 
-        entity: 'strands', 
-        parentEntity: 'subjects', 
-        parentId: selections.subject 
-      }));
+    if (selections.subject && !selections.strand) {
+      dispatch(fetchChildren({ parentEntity: 'subjects', parentId: selections.subject, childEntity: 'strands' }));
     }
-  }, [selections.subject, dispatch]);
+  }, [dispatch, selections.subject, selections.strand]);
 
   useEffect(() => {
-    if (selections.strand && selections.strand !== '') {
-      dispatch(fetchChildren({ 
-        entity: 'subStrands', 
-        parentEntity: 'strands', 
-        parentId: selections.strand 
-      }));
+    if (selections.strand && !selections.subStrand) {
+      dispatch(fetchChildren({ parentEntity: 'strands', parentId: selections.strand, childEntity: 'sub-strands' }));
     }
-  }, [selections.strand, dispatch]);
+  }, [dispatch, selections.strand, selections.subStrand]);
 
-  // 🔄 Load content when substrand is selected (preserved logic)
+  // 🔄 Fetch student content when substrand is selected (preserved logic)
   useEffect(() => {
-    if (selections.subStrand && selections.subStrand !== '') {
-      setContentLoaded(false);
-      Promise.all([
-        dispatch(getLearnerNotes(selections.subStrand)),
-        dispatch(getQuizzes(selections.subStrand)),
-        dispatch(getResources(selections.subStrand))
-      ]).then(() => {
-        setContentLoaded(true);
-      }).catch((error) => {
-        console.error('Error loading content:', error);
-        setContentLoaded(true);
-      });
-    } else {
-      setContentLoaded(false);
+    if (selections.subStrand && !contentLoaded) {
+      dispatch(getLearnerNotes(selections.subStrand));
+      dispatch(getQuizzes(selections.subStrand));
+      dispatch(getResources(selections.subStrand));
+      setContentLoaded(true);
     }
-  }, [selections.subStrand, dispatch]);
+  }, [dispatch, selections.subStrand, contentLoaded]);
 
-  // 📝 Form handlers (preserved logic)
-  const handleSelectionChange = useCallback((e) => {
-    const { name, value } = e.target;
+  // 📝 Handle selection changes (preserved logic)
+  const handleSelectionChange = useCallback((field, value) => {
     setSelections((prev) => {
-      const next = { ...prev, [name]: value };
-      const resetMap = {
-        level: ['class', 'subject', 'strand', 'subStrand'],
-        class: ['subject', 'strand', 'subStrand'],
-        subject: ['strand', 'subStrand'],
-        strand: ['subStrand'],
-      };
-      if (resetMap[name]) {
-        resetMap[name].forEach((k) => (next[k] = ''));
-        dispatch(clearChildren({ entities: resetMap[name] }));
+      const newSelections = { ...prev, [field]: value };
+      
+      if (field === 'level') {
+        newSelections.class = '';
+        newSelections.subject = '';
+        newSelections.strand = '';
+        newSelections.subStrand = '';
+        dispatch(clearChildren('classes'));
+        dispatch(clearChildren('subjects'));
+        dispatch(clearChildren('strands'));
+        dispatch(clearChildren('sub-strands'));
+      } else if (field === 'class') {
+        newSelections.subject = '';
+        newSelections.strand = '';
+        newSelections.subStrand = '';
+        dispatch(clearChildren('subjects'));
+        dispatch(clearChildren('strands'));
+        dispatch(clearChildren('sub-strands'));
+      } else if (field === 'subject') {
+        newSelections.strand = '';
+        newSelections.subStrand = '';
+        dispatch(clearChildren('strands'));
+        dispatch(clearChildren('sub-strands'));
+      } else if (field === 'strand') {
+        newSelections.subStrand = '';
+        dispatch(clearChildren('sub-strands'));
       }
-      return next;
+      
+      setContentLoaded(false);
+      return newSelections;
     });
   }, [dispatch]);
 
   // 📥 Download handlers (preserved logic)
-  const handleDownload = useCallback((type, noteId, noteTopic) => {
-    try {
-      dispatch(logNoteView(noteId));
-      const elementId = `note-content-${noteId}`;
-      const element = document.getElementById(elementId);
-      if (!element) {
-        console.error('Note content element not found');
-        return;
-      }
-      const filename = noteTopic || 'lesson_note';
-      if (type === 'pdf') {
-        downloadAsPdf(element, filename);
-      } else if (type === 'word') {
-        downloadAsWord(element, filename);
-      }
-    } catch (error) {
-      console.error('Download error:', error);
-    }
+  const handleDownloadPdf = useCallback((note) => {
+    dispatch(logNoteView(note._id));
+    downloadAsPdf(note.content, `${note.title || 'note'}.pdf`);
   }, [dispatch]);
 
-  // 📊 Calculate progress
-  const calculateProgress = () => {
-    const totalSteps = 5;
-    const completedSteps = Object.values(selections).filter(Boolean).length;
-    return (completedSteps / totalSteps) * 100;
-  };
+  const handleDownloadWord = useCallback((note) => {
+    dispatch(logNoteView(note._id));
+    downloadAsWord(note.content, `${note.title || 'note'}.docx`);
+  }, [dispatch]);
+
+  // Refresh handler
+  const handleRefresh = useCallback(() => {
+    if (selections.subStrand) {
+      setRefreshing(true);
+      Promise.all([
+        dispatch(getLearnerNotes(selections.subStrand)),
+        dispatch(getQuizzes(selections.subStrand)),
+        dispatch(getResources(selections.subStrand)),
+      ]).finally(() => {
+        setTimeout(() => setRefreshing(false), 500);
+      });
+    }
+  }, [dispatch, selections.subStrand]);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
-      {/* 🎨 Hero Section */}
-      <Box
-        sx={{
-          background: theme.palette.background.gradient,
-          color: 'white',
-          py: 6,
-          px: { xs: 2, md: 4 },
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            width: '400px',
-            height: '400px',
-            borderRadius: '50%',
-            background: alpha('#60A5FA', 0.1),
-            top: '-200px',
-            right: '-100px',
-            animation: 'float 20s ease-in-out infinite',
-          },
-          '@keyframes float': {
-            '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
-            '50%': { transform: 'translateY(-30px) rotate(10deg)' },
-          },
-        }}
-      >
-        <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={8}>
-              <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
-                <motion.div variants={fadeInUp}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar
-                      sx={{
-                        width: 64,
-                        height: 64,
-                        bgcolor: alpha('#FFFFFF', 0.2),
-                        border: '3px solid rgba(255,255,255,0.3)',
-                        fontSize: '1.5rem',
-                        fontWeight: 700,
-                      }}
-                    >
-                      {(user?.name || user?.fullName || 'S').charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h3" sx={{ fontWeight: 800, mb: 0.5 }}>
-                        Welcome back, {getDisplayName(user)}! 👋
-                      </Typography>
-                      <Typography variant="h6" sx={{ color: alpha('#FFFFFF', 0.9) }}>
-                        Ready to continue your learning journey?
-                      </Typography>
-                    </Box>
-                  </Box>
-                </motion.div>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: `linear-gradient(135deg, 
+          ${alpha(theme.palette.primary.main, 0.02)} 0%, 
+          ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
+        pt: 4,
+        pb: 8,
+      }}
+    >
+      <Container maxWidth="xl">
+        {/* Modern Banner with Avatar */}
+        <StudentDashboardBanner
+          user={user}
+          collapsed={bannerCollapsed}
+          setCollapsed={setBannerCollapsed}
+          stats={stats}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+        />
 
-                <motion.div variants={fadeInUp}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      mt: 3,
-                      bgcolor: alpha('#FFFFFF', 0.15),
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                      <TrendingUpIcon />
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        Learning Progress
-                      </Typography>
-                      <Chip
-                        label={`${Math.round(calculateProgress())}%`}
-                        size="small"
-                        sx={{ bgcolor: alpha('#FFFFFF', 0.3), color: 'white', fontWeight: 700 }}
-                      />
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={calculateProgress()}
-                      sx={{
-                        height: 8,
-                        borderRadius: 4,
-                        bgcolor: alpha('#FFFFFF', 0.2),
-                        '& .MuiLinearProgress-bar': {
-                          bgcolor: '#FFFFFF',
-                          borderRadius: 4,
-                        },
-                      }}
-                    />
-                  </Paper>
-                </motion.div>
-              </motion.div>
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                <Paper
-                  sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    bgcolor: alpha('#FFFFFF', 0.15),
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                  }}
-                >
-                  <SchoolIcon sx={{ fontSize: 48, mb: 1 }} />
-                  <Typography variant="h6" gutterBottom>
-                    Keep Learning!
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: alpha('#FFFFFF', 0.9) }}>
-                    {getArrayLength(notes)} Notes • {getArrayLength(quizzes)} Quizzes Available
-                  </Typography>
-                </Paper>
-              </motion.div>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* 📚 Main Content */}
-      <Container maxWidth="xl" sx={{ py: 6 }}>
-        {/* Quick Actions */}
+        {/* Quick Actions Section */}
         {!selections.subStrand && (
-          <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                mb: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <StarIcon sx={{ color: theme.palette.warning.main }} />
               Quick Actions
             </Typography>
-            <Grid container spacing={3} sx={{ mb: 6 }}>
-              <Grid item xs={12} sm={6} md={4}>
-                <motion.div variants={fadeInUp}>
-                  <QuickActionCard
-                    icon={MenuBookIcon}
-                    title="Browse Curriculum"
-                    description="Select your level and subject to start learning"
-                    color={theme.palette.primary.main}
-                  />
-                </motion.div>
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <QuickActionCard
+                  icon={MenuBookIcon}
+                  title="Study Notes"
+                  description="Access your learning materials"
+                  color={theme.palette.primary.main}
+                  badge={stats.notes}
+                />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <motion.div variants={fadeInUp}>
-                  <QuickActionCard
-                    icon={EmojiEventsIcon}
-                    title="My Achievements"
-                    description="View your badges and progress"
-                    color={theme.palette.warning.main}
-                    to="/my-badges"
-                  />
-                </motion.div>
+              <Grid item xs={12} sm={6} md={3}>
+                <QuickActionCard
+                  icon={QuizIcon}
+                  title="Take Quiz"
+                  description="Test your knowledge"
+                  color={theme.palette.warning.main}
+                  badge={stats.quizzes}
+                />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <motion.div variants={fadeInUp}>
-                  <QuickActionCard
-                    icon={QuizIcon}
-                    title="Practice Quizzes"
-                    description="Test your knowledge with interactive quizzes"
-                    color={theme.palette.success.main}
-                  />
-                </motion.div>
+              <Grid item xs={12} sm={6} md={3}>
+                <QuickActionCard
+                  icon={AttachFileIcon}
+                  title="Resources"
+                  description="Download study materials"
+                  color={theme.palette.success.main}
+                  badge={stats.resources}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <QuickActionCard
+                  icon={TrendingUpIcon}
+                  title="My Progress"
+                  description="Track your achievements"
+                  color={theme.palette.info.main}
+                />
               </Grid>
             </Grid>
           </motion.div>
         )}
 
-        {/* Curriculum Navigation */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <SectionCard sx={{ p: 4, mb: 4 }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-              📚 Select Your Learning Path
+        {/* Progress Tracking Section */}
+        {selections.subStrand && (
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                mb: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <TrendingUpIcon sx={{ color: theme.palette.info.main }} />
+              Your Progress
             </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Level</InputLabel>
-                  <Select name="level" value={selections.level} onChange={handleSelectionChange} label="Level">
-                    <MenuItem value=""><em>Select Level</em></MenuItem>
-                    {Array.isArray(levels) && levels.map((lvl) => (
-                      <MenuItem key={lvl._id} value={lvl._id}>{lvl.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} md={4}>
+                <ProgressCard
+                  title="Notes Completed"
+                  value={stats.notes}
+                  max={stats.notes + 2}
+                  color={theme.palette.primary.main}
+                  icon={CheckCircleIcon}
+                />
               </Grid>
-
-              <Grid item xs={12} sm={6} md>
-                <FormControl fullWidth size="small" disabled={!selections.level}>
-                  <InputLabel>Class</InputLabel>
-                  <Select name="class" value={selections.class} onChange={handleSelectionChange} label="Class">
-                    <MenuItem value=""><em>Select Class</em></MenuItem>
-                    {Array.isArray(classes) && classes.map((cls) => (
-                      <MenuItem key={cls._id} value={cls._id}>{cls.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              <Grid item xs={12} md={4}>
+                <ProgressCard
+                  title="Quizzes Taken"
+                  value={Math.min(stats.quizzes, 3)}
+                  max={stats.quizzes}
+                  color={theme.palette.warning.main}
+                  icon={EmojiEventsIcon}
+                />
               </Grid>
-
-              <Grid item xs={12} sm={6} md>
-                <FormControl fullWidth size="small" disabled={!selections.class}>
-                  <InputLabel>Subject</InputLabel>
-                  <Select name="subject" value={selections.subject} onChange={handleSelectionChange} label="Subject">
-                    <MenuItem value=""><em>Select Subject</em></MenuItem>
-                    {Array.isArray(subjects) && subjects.map((subj) => (
-                      <MenuItem key={subj._id} value={subj._id}>{subj.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md>
-                <FormControl fullWidth size="small" disabled={!selections.subject}>
-                  <InputLabel>Strand</InputLabel>
-                  <Select name="strand" value={selections.strand} onChange={handleSelectionChange} label="Strand">
-                    <MenuItem value=""><em>Select Strand</em></MenuItem>
-                    {Array.isArray(strands) && strands.map((str) => (
-                      <MenuItem key={str._id} value={str._id}>{str.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md>
-                <FormControl fullWidth size="small" disabled={!selections.strand}>
-                  <InputLabel>Sub-Strand</InputLabel>
-                  <Select name="subStrand" value={selections.subStrand} onChange={handleSelectionChange} label="Sub-Strand">
-                    <MenuItem value=""><em>Select Sub-Strand</em></MenuItem>
-                    {Array.isArray(subStrands) && subStrands.map((ss) => (
-                      <MenuItem key={ss._id} value={ss._id}>{ss.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              <Grid item xs={12} md={4}>
+                <ProgressCard
+                  title="Resources Viewed"
+                  value={Math.floor(stats.resources * 0.7)}
+                  max={stats.resources}
+                  color={theme.palette.success.main}
+                  icon={LocalLibraryIcon}
+                />
               </Grid>
             </Grid>
+          </motion.div>
+        )}
+
+        {/* Curriculum Selection - Enhanced Design */}
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <SectionCard sx={{ p: 4, mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+              <Avatar
+                sx={{
+                  width: 56,
+                  height: 56,
+                  bgcolor: theme.palette.primary.main,
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                }}
+              >
+                <SchoolIcon sx={{ fontSize: 28 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  Select Your Study Path
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Choose your curriculum to access learning materials
+                </Typography>
+              </Box>
+            </Box>
+
+            <Divider sx={{ mb: 3 }} />
+
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Level</InputLabel>
+                  <Select
+                    value={selections.level}
+                    onChange={(e) => handleSelectionChange('level', e.target.value)}
+                    label="Level"
+                    disabled={isLoading}
+                  >
+                    {Array.isArray(levels) && levels.map((level) => (
+                      <MenuItem key={level._id} value={level._id}>
+                        {level.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {selections.level && (
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Class</InputLabel>
+                    <Select
+                      value={selections.class}
+                      onChange={(e) => handleSelectionChange('class', e.target.value)}
+                      label="Class"
+                      disabled={isLoading}
+                    >
+                      {Array.isArray(classes) && classes.map((cls) => (
+                        <MenuItem key={cls._id} value={cls._id}>
+                          {cls.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+
+              {selections.class && (
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Subject</InputLabel>
+                    <Select
+                      value={selections.subject}
+                      onChange={(e) => handleSelectionChange('subject', e.target.value)}
+                      label="Subject"
+                      disabled={isLoading}
+                    >
+                      {Array.isArray(subjects) && subjects.map((subject) => (
+                        <MenuItem key={subject._id} value={subject._id}>
+                          {subject.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+
+              {selections.subject && (
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Strand</InputLabel>
+                    <Select
+                      value={selections.strand}
+                      onChange={(e) => handleSelectionChange('strand', e.target.value)}
+                      label="Strand"
+                      disabled={isLoading}
+                    >
+                      {Array.isArray(strands) && strands.map((strand) => (
+                        <MenuItem key={strand._id} value={strand._id}>
+                          {strand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+
+              {selections.strand && (
+                <Grid item xs={12} sm={6} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Sub-Strand</InputLabel>
+                    <Select
+                      value={selections.subStrand}
+                      onChange={(e) => handleSelectionChange('subStrand', e.target.value)}
+                      label="Sub-Strand"
+                      disabled={isLoading}
+                    >
+                      {Array.isArray(subStrands) && subStrands.map((subStrand) => (
+                        <MenuItem key={subStrand._id} value={subStrand._id}>
+                          {subStrand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+            </Grid>
+
+            {isLoading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                <CircularProgress size={32} />
+              </Box>
+            )}
           </SectionCard>
         </motion.div>
 
-        {/* Content Area */}
-        {isLoading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
-            <CircularProgress size={60} />
-          </Box>
-        )}
-
-        {!isLoading && selections.subStrand && contentLoaded && (
-          <>
-            {/* Lesson Notes */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <SectionCard sx={{ p: 4, mb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                  <Avatar
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      bgcolor: theme.palette.primary.main,
-                      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-                    }}
-                  >
-                    <MenuBookIcon sx={{ fontSize: 28 }} />
-                  </Avatar>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      Lesson Notes
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Comprehensive learning materials
-                    </Typography>
-                  </Box>
-                  {getArrayLength(notes) > 0 && (
-                    <Chip
-                      icon={<CheckCircleIcon />}
-                      label={`${getArrayLength(notes)} Available`}
-                      color="primary"
-                    />
-                  )}
-                </Box>
-
-                <Divider sx={{ mb: 3 }} />
-
-                {Array.isArray(notes) && notes.length > 0 ? (
-                  notes.map((note) => (
-                    <Paper
-                      key={note._id}
-                      sx={{
-                        p: 3,
-                        mb: 3,
-                        borderRadius: 2,
-                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                        '&:last-child': { mb: 0 },
-                      }}
-                    >
-                      <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
-                        {note.topic || 'Lesson Note'}
-                      </Typography>
-
-                      <Box
-                        id={`note-content-${note._id}`}
+        {/* Learning Content - Enhanced with Glassmorphism */}
+        {selections.subStrand && contentLoaded && (
+          <AnimatePresence mode="wait">
+            {/* Study Notes Section */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12}>
+                <motion.div
+                  variants={fadeInUp}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  <SectionCard sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                      <Avatar
                         sx={{
-                          '& h1, & h2, & h3': { 
-                            fontSize: '1.3em', 
-                            fontWeight: 700, 
-                            mb: 2, 
-                            color: theme.palette.text.primary 
-                          },
-                          '& p': { mb: 1.5, lineHeight: 1.8, color: theme.palette.text.secondary },
-                          '& a': { color: theme.palette.primary.main },
-                          '& ul, & ol': { pl: 3, mb: 2 },
+                          width: 56,
+                          height: 56,
+                          bgcolor: theme.palette.primary.main,
+                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
                         }}
                       >
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeRaw]}
-                          components={{
-                            p: ({ node, ...props }) => {
-                              try {
-                                const text = node?.children?.[0]?.value || '';
-                                if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
-                                  return <AiImage text={text} />;
-                                }
-                                return <p {...props} />;
-                              } catch (error) {
-                                console.error('Markdown component error:', error);
-                                return <p {...props} />;
-                              }
-                            },
-                          }}
-                        >
-                          {note.content || ''}
-                        </ReactMarkdown>
+                        <MenuBookIcon sx={{ fontSize: 28 }} />
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                          Study Notes
+                        </Typography>
+                        {getArrayLength(notes) > 0 && (
+                          <Typography variant="caption" color="text.secondary">
+                            {getArrayLength(notes)} note{getArrayLength(notes) > 1 ? 's' : ''} available
+                          </Typography>
+                        )}
                       </Box>
+                      {getArrayLength(notes) > 0 && (
+                        <Chip
+                          icon={<PlayArrowIcon />}
+                          label="Start Learning"
+                          color="primary"
+                          sx={{ fontWeight: 600 }}
+                        />
+                      )}
+                    </Box>
 
-                      <Stack direction="row" spacing={1} sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                        <Button
-                          startIcon={<PictureAsPdfIcon />}
-                          onClick={() => handleDownload('pdf', note._id, 'lesson_note')}
-                          size="small"
-                          variant="outlined"
-                        >
-                          PDF
-                        </Button>
-                        <Button
-                          startIcon={<DescriptionIcon />}
-                          onClick={() => handleDownload('word', note._id, 'lesson_note')}
-                          size="small"
-                          variant="outlined"
-                        >
-                          Word
-                        </Button>
+                    <Divider sx={{ mb: 3 }} />
+
+                    {Array.isArray(notes) && notes.length > 0 ? (
+                      <Stack spacing={3}>
+                        {notes.map((note) => (
+                          <Card
+                            key={note._id}
+                            component={motion.div}
+                            variants={cardVariants}
+                            sx={{
+                              background: `linear-gradient(135deg, 
+                                ${alpha(theme.palette.primary.main, 0.05)} 0%, 
+                                ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
+                              backdropFilter: 'blur(10px)',
+                              border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                transform: 'translateX(8px)',
+                                boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
+                                border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                              },
+                            }}
+                          >
+                            <CardContent sx={{ p: 3 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                                <Avatar
+                                  sx={{
+                                    bgcolor: alpha(theme.palette.primary.main, 0.15),
+                                    color: theme.palette.primary.main,
+                                  }}
+                                >
+                                  <DescriptionIcon />
+                                </Avatar>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
+                                    {note.title || 'Untitled Note'}
+                                  </Typography>
+                                  <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                                    <Chip
+                                      label={`${note.content?.length || 0} characters`}
+                                      size="small"
+                                      variant="outlined"
+                                    />
+                                    {note.createdAt && (
+                                      <Chip
+                                        icon={<TimerIcon />}
+                                        label={new Date(note.createdAt).toLocaleDateString()}
+                                        size="small"
+                                        variant="outlined"
+                                      />
+                                    )}
+                                  </Stack>
+                                  {note.aiInsight && (
+                                    <Box
+                                      sx={{
+                                        p: 2,
+                                        borderRadius: 2,
+                                        bgcolor: alpha(theme.palette.secondary.main, 0.08),
+                                        border: `1px dashed ${alpha(theme.palette.secondary.main, 0.3)}`,
+                                        mb: 2,
+                                      }}
+                                    >
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                        <AutoAwesomeIcon
+                                          sx={{ fontSize: 18, color: theme.palette.secondary.main }}
+                                        />
+                                        <Typography
+                                          variant="caption"
+                                          sx={{ fontWeight: 700, color: theme.palette.secondary.main }}
+                                        >
+                                          AI Study Tip
+                                        </Typography>
+                                      </Box>
+                                      <Typography variant="body2" color="text.secondary">
+                                        {note.aiInsight}
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                  <Box
+                                    sx={{
+                                      maxHeight: 200,
+                                      overflow: 'hidden',
+                                      position: 'relative',
+                                      '&::after': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: 60,
+                                        background: `linear-gradient(transparent, ${theme.palette.background.paper})`,
+                                      },
+                                    }}
+                                  >
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm]}
+                                      rehypePlugins={[rehypeRaw]}
+                                    >
+                                      {note.content || ''}
+                                    </ReactMarkdown>
+                                  </Box>
+                                </Box>
+                              </Box>
+                            </CardContent>
+                            <CardActions sx={{ px: 3, pb: 3, pt: 0 }}>
+                              <Button
+                                variant="contained"
+                                startIcon={<PlayArrowIcon />}
+                                fullWidth
+                                sx={{
+                                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                Start Reading
+                              </Button>
+                              <Tooltip title="Download as PDF">
+                                <IconButton
+                                  onClick={() => handleDownloadPdf(note)}
+                                  sx={{
+                                    border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                                    '&:hover': {
+                                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                    },
+                                  }}
+                                >
+                                  <PictureAsPdfIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Download as Word">
+                                <IconButton
+                                  onClick={() => handleDownloadWord(note)}
+                                  sx={{
+                                    border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                                    '&:hover': {
+                                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                    },
+                                  }}
+                                >
+                                  <DescriptionIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </CardActions>
+                          </Card>
+                        ))}
                       </Stack>
-                    </Paper>
-                  ))
-                ) : (
-                  <Paper
-                    sx={{
-                      p: 4,
-                      textAlign: 'center',
-                      bgcolor: alpha(theme.palette.info.main, 0.05),
-                      border: `1px dashed ${alpha(theme.palette.info.main, 0.3)}`,
-                    }}
-                  >
-                    <MenuBookIcon sx={{ fontSize: 48, color: theme.palette.info.main, mb: 2 }} />
-                    <Typography variant="h6" gutterBottom>
-                      No Notes Available Yet
-                    </Typography>
-                    <Typography color="text.secondary">
-                      Check back later for learning materials
-                    </Typography>
-                  </Paper>
-                )}
-              </SectionCard>
-            </motion.div>
+                    ) : (
+                      <Paper
+                        sx={{
+                          p: 6,
+                          textAlign: 'center',
+                          bgcolor: alpha(theme.palette.primary.main, 0.05),
+                          border: `2px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
+                          borderRadius: 3,
+                        }}
+                      >
+                        <MenuBookIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 2, opacity: 0.5 }} />
+                        <Typography variant="h6" gutterBottom color="text.secondary" fontWeight={600}>
+                          No study notes available
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Notes will appear here once your teacher publishes them
+                        </Typography>
+                      </Paper>
+                    )}
+                  </SectionCard>
+                </motion.div>
+              </Grid>
+            </Grid>
 
-            {/* Quizzes & Resources Grid */}
+            {/* Quizzes and Resources - Enhanced Side by Side */}
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
+                  variants={fadeInUp}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: 0.2 }}
                 >
                   <SectionCard sx={{ p: 3, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                       <Avatar
                         sx={{
-                          width: 48,
-                          height: 48,
+                          width: 56,
+                          height: 56,
                           bgcolor: theme.palette.warning.main,
                           boxShadow: `0 4px 12px ${alpha(theme.palette.warning.main, 0.3)}`,
                         }}
                       >
-                        <QuizIcon />
+                        <QuizIcon sx={{ fontSize: 28 }} />
                       </Avatar>
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -736,38 +1221,71 @@ function Dashboard() {
 
                     {Array.isArray(quizzes) && quizzes.length > 0 ? (
                       <Stack spacing={2}>
-                        {quizzes.map((quiz) => (
-                          <Button
+                        {quizzes.map((quiz, index) => (
+                          <Card
                             key={quiz._id}
-                            component={RouterLink}
-                            to={`/quiz/${quiz._id}`}
-                            variant="contained"
-                            fullWidth
-                            startIcon={<EmojiEventsIcon />}
+                            component={motion.div}
+                            variants={cardVariants}
+                            custom={index}
                             sx={{
-                              justifyContent: 'flex-start',
-                              py: 1.5,
-                              background: `linear-gradient(135deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)`,
+                              background: `linear-gradient(135deg, 
+                                ${alpha(theme.palette.warning.main, 0.08)} 0%, 
+                                ${alpha(theme.palette.warning.main, 0.03)} 100%)`,
+                              backdropFilter: 'blur(10px)',
+                              border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                              transition: 'all 0.3s ease',
                               '&:hover': {
                                 transform: 'translateX(8px)',
+                                boxShadow: `0 8px 24px ${alpha(theme.palette.warning.main, 0.25)}`,
+                                border: `1px solid ${alpha(theme.palette.warning.main, 0.4)}`,
                               },
                             }}
                           >
-                            {quiz.title || 'Untitled Quiz'}
-                          </Button>
+                            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Avatar
+                                sx={{
+                                  bgcolor: theme.palette.warning.main,
+                                  boxShadow: `0 4px 12px ${alpha(theme.palette.warning.main, 0.3)}`,
+                                }}
+                              >
+                                <EmojiEventsIcon />
+                              </Avatar>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                  {quiz.title || 'Untitled Quiz'}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Click to start
+                                </Typography>
+                              </Box>
+                              <Button
+                                component={RouterLink}
+                                to={`/quiz/${quiz._id}`}
+                                variant="contained"
+                                size="small"
+                                sx={{
+                                  background: `linear-gradient(135deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)`,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                Start
+                              </Button>
+                            </CardContent>
+                          </Card>
                         ))}
                       </Stack>
                     ) : (
                       <Paper
                         sx={{
-                          p: 3,
+                          p: 4,
                           textAlign: 'center',
                           bgcolor: alpha(theme.palette.warning.main, 0.05),
-                          border: `1px dashed ${alpha(theme.palette.warning.main, 0.3)}`,
+                          border: `2px dashed ${alpha(theme.palette.warning.main, 0.3)}`,
+                          borderRadius: 3,
                         }}
                       >
-                        <QuizIcon sx={{ fontSize: 40, color: theme.palette.warning.main, mb: 1 }} />
-                        <Typography variant="body2" color="text.secondary">
+                        <QuizIcon sx={{ fontSize: 48, color: theme.palette.warning.main, mb: 2, opacity: 0.5 }} />
+                        <Typography variant="body1" color="text.secondary" fontWeight={600}>
                           No quizzes available yet
                         </Typography>
                       </Paper>
@@ -778,21 +1296,22 @@ function Dashboard() {
 
               <Grid item xs={12} md={6}>
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
+                  variants={fadeInUp}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: 0.3 }}
                 >
                   <SectionCard sx={{ p: 3, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                       <Avatar
                         sx={{
-                          width: 48,
-                          height: 48,
+                          width: 56,
+                          height: 56,
                           bgcolor: theme.palette.success.main,
                           boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.3)}`,
                         }}
                       >
-                        <AttachFileIcon />
+                        <AttachFileIcon sx={{ fontSize: 28 }} />
                       </Avatar>
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -810,47 +1329,78 @@ function Dashboard() {
 
                     {Array.isArray(resources) && resources.length > 0 ? (
                       <List disablePadding>
-                        {resources.map((res) => (
+                        {resources.map((res, index) => (
                           <ListItem
                             key={res._id}
+                            component={motion.li}
+                            variants={cardVariants}
+                            custom={index}
                             button
-                            component="a"
-                            href={`/${res.filePath?.replace(/\\/g, '/') || '#'}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             sx={{
                               borderRadius: 2,
-                              mb: 1,
+                              mb: 1.5,
+                              background: `linear-gradient(135deg, 
+                                ${alpha(theme.palette.success.main, 0.08)} 0%, 
+                                ${alpha(theme.palette.success.main, 0.03)} 100%)`,
+                              backdropFilter: 'blur(10px)',
                               border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
                               transition: 'all 0.3s ease',
                               '&:hover': {
-                                bgcolor: alpha(theme.palette.success.main, 0.1),
+                                bgcolor: alpha(theme.palette.success.main, 0.12),
                                 transform: 'translateX(8px)',
                                 border: `1px solid ${alpha(theme.palette.success.main, 0.4)}`,
+                                boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.2)}`,
                               },
                             }}
                           >
                             <ListItemIcon>
-                              <AttachFileIcon sx={{ color: theme.palette.success.main }} />
+                              <Avatar
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  bgcolor: theme.palette.success.main,
+                                  boxShadow: `0 2px 8px ${alpha(theme.palette.success.main, 0.3)}`,
+                                }}
+                              >
+                                <AttachFileIcon sx={{ fontSize: 20 }} />
+                              </Avatar>
                             </ListItemIcon>
                             <ListItemText 
                               primary={res.fileName || 'Unnamed File'}
-                              primaryTypographyProps={{ fontWeight: 500 }}
+                              primaryTypographyProps={{ fontWeight: 600 }}
+                              secondary="Click to download"
+                              secondaryTypographyProps={{ variant: 'caption' }}
                             />
+                            <IconButton
+                              component="a"
+                              href={`/${res.filePath?.replace(/\\/g, '/') || '#'}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{
+                                bgcolor: theme.palette.success.main,
+                                color: 'white',
+                                '&:hover': {
+                                  bgcolor: theme.palette.success.dark,
+                                },
+                              }}
+                            >
+                              <AttachFileIcon fontSize="small" />
+                            </IconButton>
                           </ListItem>
                         ))}
                       </List>
                     ) : (
                       <Paper
                         sx={{
-                          p: 3,
+                          p: 4,
                           textAlign: 'center',
                           bgcolor: alpha(theme.palette.success.main, 0.05),
-                          border: `1px dashed ${alpha(theme.palette.success.main, 0.3)}`,
+                          border: `2px dashed ${alpha(theme.palette.success.main, 0.3)}`,
+                          borderRadius: 3,
                         }}
                       >
-                        <AttachFileIcon sx={{ fontSize: 40, color: theme.palette.success.main, mb: 1 }} />
-                        <Typography variant="body2" color="text.secondary">
+                        <AttachFileIcon sx={{ fontSize: 48, color: theme.palette.success.main, mb: 2, opacity: 0.5 }} />
+                        <Typography variant="body1" color="text.secondary" fontWeight={600}>
                           No resources available yet
                         </Typography>
                       </Paper>
@@ -860,19 +1410,23 @@ function Dashboard() {
               </Grid>
             </Grid>
 
-            {/* AI Insights */}
+            {/* AI Insights - Enhanced with Glassmorphism */}
             {aiInsights && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
+                variants={fadeInUp}
+                initial="hidden"
+                animate="visible"
+                transition={{ delay: 0.4 }}
               >
                 <SectionCard
                   sx={{
                     p: 4,
                     mt: 4,
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.04)} 100%)`,
-                    border: `2px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
+                    background: `linear-gradient(135deg, 
+                      ${alpha(theme.palette.secondary.main, 0.12)} 0%, 
+                      ${alpha(theme.palette.primary.main, 0.08)} 100%)`,
+                    backdropFilter: 'blur(20px)',
+                    border: `2px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
                     position: 'relative',
                     overflow: 'hidden',
                     '&::before': {
@@ -882,44 +1436,53 @@ function Dashboard() {
                       left: 0,
                       right: 0,
                       height: 4,
-                      background: theme.palette.background.aiGradient,
+                      background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                     },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                     <Avatar
                       sx={{
-                        width: 56,
-                        height: 56,
-                        background: theme.palette.background.aiGradient,
-                        boxShadow: `0 4px 12px ${alpha(theme.palette.secondary.main, 0.3)}`,
+                        width: 64,
+                        height: 64,
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                        boxShadow: `0 8px 24px ${alpha(theme.palette.secondary.main, 0.4)}`,
                       }}
                     >
-                      <AutoAwesomeIcon sx={{ fontSize: 28 }} />
+                      <AutoAwesomeIcon sx={{ fontSize: 32 }} />
                     </Avatar>
                     <Box>
                       <Typography variant="h5" sx={{ fontWeight: 700 }}>
                         AI Study Tips
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Personalized recommendations for you
+                        Personalized recommendations just for you
                       </Typography>
                     </Box>
                   </Box>
-                  <Typography
-                    variant="body1"
+                  <Box
                     sx={{
-                      lineHeight: 1.8,
-                      whiteSpace: 'pre-line',
-                      color: theme.palette.text.primary,
+                      p: 3,
+                      borderRadius: 2,
+                      bgcolor: alpha('#FFFFFF', 0.5),
+                      backdropFilter: 'blur(10px)',
                     }}
                   >
-                    {aiInsights}
-                  </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        lineHeight: 1.8,
+                        whiteSpace: 'pre-line',
+                        color: theme.palette.text.primary,
+                      }}
+                    >
+                      {aiInsights}
+                    </Typography>
+                  </Box>
                 </SectionCard>
               </motion.div>
             )}
-          </>
+          </AnimatePresence>
         )}
       </Container>
     </Box>
