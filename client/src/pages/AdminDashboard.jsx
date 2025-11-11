@@ -45,6 +45,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import BookIcon from '@mui/icons-material/Book';
 
 // Import other admin components
 import AdminCurriculum from './AdminCurriculum';
@@ -339,6 +340,287 @@ const AIInsightCard = ({ insight, index }) => {
   );
 };
 
+// 🎯 Modern Dashboard Banner Component
+const ModernDashboardBanner = ({ 
+  user, 
+  tab, 
+  setTab, 
+  collapsed, 
+  setCollapsed, 
+  onRefresh, 
+  refreshing,
+  stats,
+}) => {
+  const theme = useTheme();
+
+  return (
+    <>
+      {/* Modern Header Banner */}
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        sx={{
+          position: 'relative',
+          overflow: 'hidden',
+          mb: 3,
+        }}
+      >
+        {/* Glass Banner */}
+        <Paper
+          elevation={0}
+          sx={{
+            background: `linear-gradient(135deg, 
+              ${alpha(theme.palette.primary.main, 0.95)} 0%, 
+              ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
+            backdropFilter: 'blur(20px)',
+            borderRadius: 4,
+            p: 4,
+            color: 'white',
+            position: 'relative',
+            overflow: 'hidden',
+            border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              width: '300px',
+              height: '300px',
+              borderRadius: '50%',
+              background: alpha('#FFFFFF', 0.05),
+              top: '-150px',
+              right: '-50px',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              width: '200px',
+              height: '200px',
+              borderRadius: '50%',
+              background: alpha('#FFFFFF', 0.03),
+              bottom: '-100px',
+              left: '-50px',
+            },
+          }}
+        >
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <motion.div
+              animate={{ height: collapsed ? 'auto' : 'auto' }}
+              transition={{ duration: 0.3 }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  {!collapsed && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          bgcolor: alpha('#FFFFFF', 0.2),
+                          border: `3px solid ${alpha('#FFFFFF', 0.4)}`,
+                          fontSize: '2rem',
+                          fontWeight: 700,
+                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                        }}
+                      >
+                        {(user?.name || user?.fullName || 'A').charAt(0).toUpperCase()}
+                      </Avatar>
+                    </motion.div>
+                  )}
+                  <Box>
+                    <Typography
+                      variant={collapsed ? 'h5' : 'h3'}
+                      sx={{
+                        fontWeight: 800,
+                        textShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                        mb: collapsed ? 0 : 0.5,
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      {collapsed 
+                        ? 'Admin Dashboard' 
+                        : `Welcome back, ${user?.name || user?.fullName || 'Admin'}! 👋`
+                      }
+                    </Typography>
+                    {!collapsed && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: alpha('#FFFFFF', 0.95),
+                            fontWeight: 400,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          Here's what's happening with Scholar's Path today
+                          <TrendingUpIcon sx={{ fontSize: 20 }} />
+                        </Typography>
+                      </motion.div>
+                    )}
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    onClick={onRefresh}
+                    disabled={refreshing}
+                    sx={{
+                      color: 'white',
+                      bgcolor: alpha('#FFFFFF', 0.15),
+                      '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
+                      '&:disabled': { bgcolor: alpha('#FFFFFF', 0.1) },
+                    }}
+                  >
+                    <RefreshIcon 
+                      sx={{ 
+                        animation: refreshing ? 'spin 1s linear infinite' : 'none',
+                      }} 
+                    />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => setCollapsed(!collapsed)}
+                    sx={{
+                      color: 'white',
+                      bgcolor: alpha('#FFFFFF', 0.15),
+                      '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
+                    }}
+                  >
+                    {collapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                  </IconButton>
+                </Box>
+              </Box>
+
+              {!collapsed && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      gap: 2, 
+                      mt: 3,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <Chip
+                      icon={<PeopleIcon />}
+                      label={`${stats?.totalUsers || 0} Total Users`}
+                      sx={{
+                        bgcolor: alpha('#FFFFFF', 0.2),
+                        color: 'white',
+                        fontWeight: 600,
+                        '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
+                        '& .MuiChip-icon': { color: 'white' },
+                      }}
+                    />
+                    <Chip
+                      icon={<SchoolIcon />}
+                      label={`${stats?.totalSchools || 0} Schools`}
+                      sx={{
+                        bgcolor: alpha('#FFFFFF', 0.2),
+                        color: 'white',
+                        fontWeight: 600,
+                        '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
+                        '& .MuiChip-icon': { color: 'white' },
+                      }}
+                    />
+                    <Chip
+                      icon={<PendingActionsIcon />}
+                      label={`${stats?.pendingUsers || 0} Pending Actions`}
+                      sx={{
+                        bgcolor: stats?.pendingUsers > 0 ? alpha('#FFA726', 0.9) : alpha('#FFFFFF', 0.2),
+                        color: 'white',
+                        fontWeight: 600,
+                        '&:hover': { 
+                          bgcolor: stats?.pendingUsers > 0 ? alpha('#FFA726', 1) : alpha('#FFFFFF', 0.3)
+                        },
+                        '& .MuiChip-icon': { color: 'white' },
+                      }}
+                    />
+                  </Box>
+                </motion.div>
+              )}
+            </motion.div>
+          </Box>
+        </Paper>
+
+        {/* Modern Tab Navigation */}
+        <Paper
+          elevation={0}
+          sx={{
+            mt: 2,
+            borderRadius: 3,
+            overflow: 'hidden',
+            background: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          }}
+        >
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              minHeight: 60,
+              '& .MuiTabs-indicator': {
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+                background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              },
+              '& .MuiTab-root': {
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                minHeight: 60,
+                px: 3,
+                textTransform: 'none',
+                color: theme.palette.text.secondary,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  color: theme.palette.primary.main,
+                  background: alpha(theme.palette.primary.main, 0.05),
+                },
+                '&.Mui-selected': {
+                  color: theme.palette.primary.main,
+                  fontWeight: 700,
+                },
+              },
+            }}
+          >
+            <Tab icon={<BarChartIcon />} iconPosition="start" label="Dashboard" />
+            <Tab icon={<PeopleIcon />} iconPosition="start" label="Users" />
+            <Tab icon={<SchoolIcon />} iconPosition="start" label="Schools" />
+            <Tab icon={<BookIcon />} iconPosition="start" label="Curriculum" />
+            <Tab icon={<TrendingUpIcon />} iconPosition="start" label="Analytics" />
+          </Tabs>
+        </Paper>
+      </Box>
+
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </>
+  );
+};
+
 // 🎨 Main Admin Dashboard Component
 const AdminDashboard = () => {
   const theme = useTheme();
@@ -510,109 +792,8 @@ const AdminDashboard = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
-      {/* 🎨 Collapsible Hero Header Section */}
-      <Box
-        component={motion.div}
-        animate={{ 
-          height: bannerCollapsed ? 80 : 'auto',
-          paddingTop: bannerCollapsed ? 2 : 6,
-          paddingBottom: bannerCollapsed ? 2 : 6,
-        }}
-        transition={{ duration: 0.3 }}
-        sx={{
-          background: theme.palette.background.gradient,
-          color: 'white',
-          px: { xs: 2, md: 4 },
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            width: '400px',
-            height: '400px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-            top: '-100px',
-            right: '-100px',
-            pointerEvents: 'none',
-          },
-        }}
-      >
-        <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              {!bannerCollapsed && (
-                <Avatar
-                  sx={{
-                    width: 72,
-                    height: 72,
-                    bgcolor: alpha('#FFFFFF', 0.2),
-                    border: '3px solid rgba(255,255,255,0.3)',
-                    fontSize: '2rem',
-                    fontWeight: 700,
-                  }}
-                >
-                  {(user?.name || user?.fullName || 'A').charAt(0).toUpperCase()}
-                </Avatar>
-              )}
-              <Box>
-                <Typography
-                  variant={bannerCollapsed ? 'h5' : 'h3'}
-                  sx={{
-                    fontWeight: 800,
-                    textShadow: '0 2px 20px rgba(0,0,0,0.1)',
-                    mb: bannerCollapsed ? 0 : 0.5,
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  {bannerCollapsed ? 'Admin Dashboard' : `Welcome back, ${user?.name || user?.fullName || 'Admin'}! 👋`}
-                </Typography>
-                {!bannerCollapsed && (
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: alpha('#FFFFFF', 0.9),
-                      fontWeight: 400,
-                    }}
-                  >
-                    Here's what's happening with Scholar's Path today
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Tooltip title="Refresh data">
-                <IconButton
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  sx={{
-                    color: 'white',
-                    bgcolor: alpha('#FFFFFF', 0.1),
-                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.2) },
-                  }}
-                >
-                  <RefreshIcon sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={bannerCollapsed ? 'Expand' : 'Collapse'}>
-                <IconButton
-                  onClick={() => setBannerCollapsed(!bannerCollapsed)}
-                  sx={{
-                    color: 'white',
-                    bgcolor: alpha('#FFFFFF', 0.1),
-                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.2) },
-                  }}
-                >
-                  {bannerCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Box>
-        </Container>
-      </Box>
-
       {/* 📊 Main Content Area */}
-      <Container maxWidth="xl" sx={{ mt: -4, pb: 6 }}>
+      <Container maxWidth="xl" sx={{ mt: 3, pb: 6 }}>
         {/* Error Alert */}
         {isError && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
@@ -628,39 +809,17 @@ const AdminDashboard = () => {
           </motion.div>
         )}
 
-        {/* 📑 Navigation Tabs */}
-        <Paper
-          sx={{
-            borderRadius: 3,
-            mb: 3,
-            overflow: 'hidden',
-          }}
-        >
-          <Tabs
-            value={tab}
-            onChange={(_, v) => setTab(v)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              px: 2,
-              '& .MuiTab-root': {
-                fontWeight: 600,
-                fontSize: '1rem',
-                minHeight: 64,
-                px: 3,
-              },
-              '& .Mui-selected': {
-                color: theme.palette.primary.main,
-              },
-            }}
-          >
-            <Tab icon={<BarChartIcon />} iconPosition="start" label="Dashboard" />
-            <Tab icon={<PeopleIcon />} iconPosition="start" label="Users" />
-            <Tab icon={<SchoolIcon />} iconPosition="start" label="Schools" />
-            <Tab label="📚 Curriculum" />
-            <Tab label="📈 Analytics" />
-          </Tabs>
-        </Paper>
+        {/* Modern Dashboard Banner with Tabs */}
+        <ModernDashboardBanner
+          user={user}
+          tab={tab}
+          setTab={setTab}
+          collapsed={bannerCollapsed}
+          setCollapsed={setBannerCollapsed}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+          stats={stats}
+        />
 
         {/* 📊 Dashboard Tab Content */}
         <TabPanel value={tab} index={0}>
@@ -940,20 +1099,6 @@ const AdminDashboard = () => {
           <AdminAnalytics />
         </TabPanel>
       </Container>
-
-      {/* CSS for spin animation */}
-      <style>
-        {`
-          @keyframes spin {
-            from {
-              transform: rotate(0deg);
-            }
-            to {
-              transform: rotate(360deg);
-            }
-          }
-        `}
-      </style>
     </Box>
   );
 };
