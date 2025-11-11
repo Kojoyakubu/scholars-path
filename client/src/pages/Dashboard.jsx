@@ -680,38 +680,23 @@ function Dashboard() {
   }, [dispatch, selections.subStrand, contentLoaded]);
 
   // 📝 Handle selection changes (preserved logic)
-  const handleSelectionChange = useCallback((field, value) => {
+  const handleSelectionChange = useCallback((e) => {
+    const { name, value } = e.target;
     setSelections((prev) => {
-      const newSelections = { ...prev, [field]: value };
-      
-      if (field === 'level') {
-        newSelections.class = '';
-        newSelections.subject = '';
-        newSelections.strand = '';
-        newSelections.subStrand = '';
-        dispatch(clearChildren('classes'));
-        dispatch(clearChildren('subjects'));
-        dispatch(clearChildren('strands'));
-        dispatch(clearChildren('sub-strands'));
-      } else if (field === 'class') {
-        newSelections.subject = '';
-        newSelections.strand = '';
-        newSelections.subStrand = '';
-        dispatch(clearChildren('subjects'));
-        dispatch(clearChildren('strands'));
-        dispatch(clearChildren('sub-strands'));
-      } else if (field === 'subject') {
-        newSelections.strand = '';
-        newSelections.subStrand = '';
-        dispatch(clearChildren('strands'));
-        dispatch(clearChildren('sub-strands'));
-      } else if (field === 'strand') {
-        newSelections.subStrand = '';
-        dispatch(clearChildren('sub-strands'));
+      const next = { ...prev, [name]: value };
+      // Cascading reset logic
+      const resetMap = {
+        level: ['class', 'subject', 'strand', 'subStrand'],
+        class: ['subject', 'strand', 'subStrand'],
+        subject: ['strand', 'subStrand'],
+        strand: ['subStrand'],
+      };
+      if (resetMap[name]) {
+        resetMap[name].forEach((k) => (next[k] = ''));
+        dispatch(clearChildren({ entities: resetMap[name] }));
       }
-      
       setContentLoaded(false);
-      return newSelections;
+      return next;
     });
   }, [dispatch]);
 
@@ -917,8 +902,9 @@ function Dashboard() {
                 <FormControl fullWidth size="small">
                   <InputLabel>Level</InputLabel>
                   <Select
+                    name="level"
                     value={selections.level}
-                    onChange={(e) => handleSelectionChange('level', e.target.value)}
+                    onChange={handleSelectionChange}
                     label="Level"
                     disabled={isLoading}
                   >
@@ -935,8 +921,9 @@ function Dashboard() {
                 <FormControl fullWidth size="small" disabled={!selections.level}>
                   <InputLabel>Class</InputLabel>
                   <Select
+                    name="class"
                     value={safeClasses.some(c => c?._id === selections.class) ? selections.class : ''}
-                    onChange={(e) => handleSelectionChange('class', e.target.value)}
+                    onChange={handleSelectionChange}
                     label="Class"
                     disabled={isLoading || !selections.level}
                   >
@@ -959,8 +946,9 @@ function Dashboard() {
                 <FormControl fullWidth size="small" disabled={!selections.class}>
                   <InputLabel>Subject</InputLabel>
                   <Select
+                    name="subject"
                     value={safeSubjects.some(s => s?._id === selections.subject) ? selections.subject : ''}
-                    onChange={(e) => handleSelectionChange('subject', e.target.value)}
+                    onChange={handleSelectionChange}
                     label="Subject"
                     disabled={isLoading || !selections.class}
                   >
@@ -983,8 +971,9 @@ function Dashboard() {
                 <FormControl fullWidth size="small" disabled={!selections.subject}>
                   <InputLabel>Strand</InputLabel>
                   <Select
+                    name="strand"
                     value={safeStrands.some(s => s?._id === selections.strand) ? selections.strand : ''}
-                    onChange={(e) => handleSelectionChange('strand', e.target.value)}
+                    onChange={handleSelectionChange}
                     label="Strand"
                     disabled={isLoading || !selections.subject}
                   >
@@ -1007,8 +996,9 @@ function Dashboard() {
                 <FormControl fullWidth size="small" disabled={!selections.strand}>
                   <InputLabel>Sub-Strand</InputLabel>
                   <Select
+                    name="subStrand"
                     value={safeSubStrands.some(s => s?._id === selections.subStrand) ? selections.subStrand : ''}
-                    onChange={(e) => handleSelectionChange('subStrand', e.target.value)}
+                    onChange={handleSelectionChange}
                     label="Sub-Strand"
                     disabled={isLoading || !selections.strand}
                   >
