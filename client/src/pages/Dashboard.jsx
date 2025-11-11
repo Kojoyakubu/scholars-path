@@ -537,6 +537,10 @@ function Dashboard() {
   const { user } = useSelector((state) => state.auth);
   const curriculumState = useSelector((state) => state.curriculum);
   const studentState = useSelector((state) => state.student);
+
+  // Debug logging
+  console.log('Curriculum State:', curriculumState);
+  console.log('Student State:', studentState);
   
   // Safely destructure with defaults (preserved)
   const { 
@@ -548,12 +552,49 @@ function Dashboard() {
     isLoading: isCurriculumLoading = false 
   } = curriculumState || {};
 
-  // Ensure all curriculum arrays are actually arrays
-  const safeLevels = Array.isArray(levels) ? levels : [];
-  const safeClasses = Array.isArray(classes) ? classes : [];
-  const safeSubjects = Array.isArray(subjects) ? subjects : [];
-  const safeStrands = Array.isArray(strands) ? strands : [];
-  const safeSubStrands = Array.isArray(subStrands) ? subStrands : [];
+  // Debug logging for arrays
+  console.log('Levels:', levels);
+  console.log('Classes:', classes);
+  console.log('Subjects:', subjects);
+
+  // Ensure all curriculum arrays are actually arrays and handle various data structures
+  const safeLevels = (() => {
+    if (!levels) return [];
+    if (Array.isArray(levels)) return levels;
+    if (typeof levels === 'object' && levels.data && Array.isArray(levels.data)) return levels.data;
+    return [];
+  })();
+
+  const safeClasses = (() => {
+    if (!classes) return [];
+    if (Array.isArray(classes)) return classes;
+    if (typeof classes === 'object' && classes.data && Array.isArray(classes.data)) return classes.data;
+    return [];
+  })();
+
+  const safeSubjects = (() => {
+    if (!subjects) return [];
+    if (Array.isArray(subjects)) return subjects;
+    if (typeof subjects === 'object' && subjects.data && Array.isArray(subjects.data)) return subjects.data;
+    return [];
+  })();
+
+  const safeStrands = (() => {
+    if (!strands) return [];
+    if (Array.isArray(strands)) return strands;
+    if (typeof strands === 'object' && strands.data && Array.isArray(strands.data)) return strands.data;
+    return [];
+  })();
+
+  const safeSubStrands = (() => {
+    if (!subStrands) return [];
+    if (Array.isArray(subStrands)) return subStrands;
+    if (typeof subStrands === 'object' && subStrands.data && Array.isArray(subStrands.data)) return subStrands.data;
+    return [];
+  })();
+
+  console.log('Safe Levels:', safeLevels);
+  console.log('Safe Classes:', safeClasses);
   
   const { 
     notes = [], 
@@ -875,9 +916,9 @@ function Dashboard() {
 
             <Divider sx={{ mb: 3 }} />
 
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth>
+                <FormControl fullWidth size="small">
                   <InputLabel>Level</InputLabel>
                   <Select
                     value={selections.level}
@@ -885,94 +926,86 @@ function Dashboard() {
                     label="Level"
                     disabled={isLoading}
                   >
-                    {safeLevels.map((level) => (
-                      <MenuItem key={level._id} value={level._id}>
-                        {level.name}
+                    {(safeLevels || []).map((level) => (
+                      <MenuItem key={level?._id} value={level?._id}>
+                        {level?.name || 'Unnamed Level'}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
 
-              {selections.level && (
-                <Grid item xs={12} sm={6} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Class</InputLabel>
-                    <Select
-                      value={selections.class}
-                      onChange={(e) => handleSelectionChange('class', e.target.value)}
-                      label="Class"
-                      disabled={isLoading}
-                    >
-                      {safeClasses.map((cls) => (
-                        <MenuItem key={cls._id} value={cls._id}>
-                          {cls.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
+              <Grid item xs={12} sm={6} md={4}>
+                <FormControl fullWidth size="small" disabled={!selections.level}>
+                  <InputLabel>Class</InputLabel>
+                  <Select
+                    value={selections.class}
+                    onChange={(e) => handleSelectionChange('class', e.target.value)}
+                    label="Class"
+                    disabled={isLoading || !selections.level}
+                  >
+                    {(safeClasses || []).map((cls) => (
+                      <MenuItem key={cls?._id} value={cls?._id}>
+                        {cls?.name || 'Unnamed Class'}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-              {selections.class && (
-                <Grid item xs={12} sm={6} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Subject</InputLabel>
-                    <Select
-                      value={selections.subject}
-                      onChange={(e) => handleSelectionChange('subject', e.target.value)}
-                      label="Subject"
-                      disabled={isLoading}
-                    >
-                      {safeSubjects.map((subject) => (
-                        <MenuItem key={subject._id} value={subject._id}>
-                          {subject.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
+              <Grid item xs={12} sm={6} md={4}>
+                <FormControl fullWidth size="small" disabled={!selections.class}>
+                  <InputLabel>Subject</InputLabel>
+                  <Select
+                    value={selections.subject}
+                    onChange={(e) => handleSelectionChange('subject', e.target.value)}
+                    label="Subject"
+                    disabled={isLoading || !selections.class}
+                  >
+                    {(safeSubjects || []).map((subject) => (
+                      <MenuItem key={subject?._id} value={subject?._id}>
+                        {subject?.name || 'Unnamed Subject'}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-              {selections.subject && (
-                <Grid item xs={12} sm={6} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Strand</InputLabel>
-                    <Select
-                      value={selections.strand}
-                      onChange={(e) => handleSelectionChange('strand', e.target.value)}
-                      label="Strand"
-                      disabled={isLoading}
-                    >
-                      {safeStrands.map((strand) => (
-                        <MenuItem key={strand._id} value={strand._id}>
-                          {strand.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
+              <Grid item xs={12} sm={6} md={4}>
+                <FormControl fullWidth size="small" disabled={!selections.subject}>
+                  <InputLabel>Strand</InputLabel>
+                  <Select
+                    value={selections.strand}
+                    onChange={(e) => handleSelectionChange('strand', e.target.value)}
+                    label="Strand"
+                    disabled={isLoading || !selections.subject}
+                  >
+                    {(safeStrands || []).map((strand) => (
+                      <MenuItem key={strand?._id} value={strand?._id}>
+                        {strand?.name || 'Unnamed Strand'}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-              {selections.strand && (
-                <Grid item xs={12} sm={6} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Sub-Strand</InputLabel>
-                    <Select
-                      value={selections.subStrand}
-                      onChange={(e) => handleSelectionChange('subStrand', e.target.value)}
-                      label="Sub-Strand"
-                      disabled={isLoading}
-                    >
-                      {safeSubStrands.map((subStrand) => (
-                        <MenuItem key={subStrand._id} value={subStrand._id}>
-                          {subStrand.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
+              <Grid item xs={12} sm={6} md={4}>
+                <FormControl fullWidth size="small" disabled={!selections.strand}>
+                  <InputLabel>Sub-Strand</InputLabel>
+                  <Select
+                    value={selections.subStrand}
+                    onChange={(e) => handleSelectionChange('subStrand', e.target.value)}
+                    label="Sub-Strand"
+                    disabled={isLoading || !selections.strand}
+                  >
+                    {(safeSubStrands || []).map((subStrand) => (
+                      <MenuItem key={subStrand?._id} value={subStrand?._id}>
+                        {subStrand?.name || 'Unnamed Sub-Strand'}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
             </Grid>
 
             {isLoading && (
