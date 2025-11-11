@@ -935,20 +935,20 @@ function Dashboard() {
                 <FormControl fullWidth size="small" disabled={!selections.level}>
                   <InputLabel>Class</InputLabel>
                   <Select
-                    value={selections.class}
+                    value={safeClasses.some(c => c?._id === selections.class) ? selections.class : ''}
                     onChange={(e) => handleSelectionChange('class', e.target.value)}
                     label="Class"
                     disabled={isLoading || !selections.level}
                   >
-                    {safeClasses && safeClasses.length > 0 ? (
+                    {safeClasses.length > 0 ? (
                       safeClasses.map((cls) => (
                         <MenuItem key={cls?._id || Math.random()} value={cls?._id || ''}>
                           {cls?.name || 'Unnamed Class'}
                         </MenuItem>
                       ))
                     ) : (
-                      <MenuItem value="" disabled>
-                        {isLoading ? 'Loading...' : 'No classes available'}
+                      <MenuItem value="">
+                        {isLoading ? 'Loading classes...' : 'Select a level first'}
                       </MenuItem>
                     )}
                   </Select>
@@ -959,20 +959,20 @@ function Dashboard() {
                 <FormControl fullWidth size="small" disabled={!selections.class}>
                   <InputLabel>Subject</InputLabel>
                   <Select
-                    value={selections.subject}
+                    value={safeSubjects.some(s => s?._id === selections.subject) ? selections.subject : ''}
                     onChange={(e) => handleSelectionChange('subject', e.target.value)}
                     label="Subject"
                     disabled={isLoading || !selections.class}
                   >
-                    {safeSubjects && safeSubjects.length > 0 ? (
+                    {safeSubjects.length > 0 ? (
                       safeSubjects.map((subject) => (
                         <MenuItem key={subject?._id || Math.random()} value={subject?._id || ''}>
                           {subject?.name || 'Unnamed Subject'}
                         </MenuItem>
                       ))
                     ) : (
-                      <MenuItem value="" disabled>
-                        {isLoading ? 'Loading...' : 'No subjects available'}
+                      <MenuItem value="">
+                        {isLoading ? 'Loading subjects...' : 'Select a class first'}
                       </MenuItem>
                     )}
                   </Select>
@@ -983,20 +983,20 @@ function Dashboard() {
                 <FormControl fullWidth size="small" disabled={!selections.subject}>
                   <InputLabel>Strand</InputLabel>
                   <Select
-                    value={selections.strand}
+                    value={safeStrands.some(s => s?._id === selections.strand) ? selections.strand : ''}
                     onChange={(e) => handleSelectionChange('strand', e.target.value)}
                     label="Strand"
                     disabled={isLoading || !selections.subject}
                   >
-                    {safeStrands && safeStrands.length > 0 ? (
+                    {safeStrands.length > 0 ? (
                       safeStrands.map((strand) => (
                         <MenuItem key={strand?._id || Math.random()} value={strand?._id || ''}>
                           {strand?.name || 'Unnamed Strand'}
                         </MenuItem>
                       ))
                     ) : (
-                      <MenuItem value="" disabled>
-                        {isLoading ? 'Loading...' : 'No strands available'}
+                      <MenuItem value="">
+                        {isLoading ? 'Loading strands...' : 'Select a subject first'}
                       </MenuItem>
                     )}
                   </Select>
@@ -1007,20 +1007,20 @@ function Dashboard() {
                 <FormControl fullWidth size="small" disabled={!selections.strand}>
                   <InputLabel>Sub-Strand</InputLabel>
                   <Select
-                    value={selections.subStrand}
+                    value={safeSubStrands.some(s => s?._id === selections.subStrand) ? selections.subStrand : ''}
                     onChange={(e) => handleSelectionChange('subStrand', e.target.value)}
                     label="Sub-Strand"
                     disabled={isLoading || !selections.strand}
                   >
-                    {safeSubStrands && safeSubStrands.length > 0 ? (
+                    {safeSubStrands.length > 0 ? (
                       safeSubStrands.map((subStrand) => (
                         <MenuItem key={subStrand?._id || Math.random()} value={subStrand?._id || ''}>
                           {subStrand?.name || 'Unnamed Sub-Strand'}
                         </MenuItem>
                       ))
                     ) : (
-                      <MenuItem value="" disabled>
-                        {isLoading ? 'Loading...' : 'No sub-strands available'}
+                      <MenuItem value="">
+                        {isLoading ? 'Loading sub-strands...' : 'Select a strand first'}
                       </MenuItem>
                     )}
                   </Select>
