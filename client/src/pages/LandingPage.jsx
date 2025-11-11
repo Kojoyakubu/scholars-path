@@ -26,6 +26,7 @@ import { motion, useInView, useAnimation } from 'framer-motion';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../api/axios';
+import Logo from '../components/Logo'; // Import the Logo component
 
 // Icons
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -720,21 +721,14 @@ const LandingPage = () => {
                 <motion.div variants={fadeInUp}>
                   <Box 
                     sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 2, 
                       mb: 4,
                     }}
                   >
-                    {/* SVG Logo */}
-                    <Box
-                      component="img"
-                      src="/ScholarPath_Horizontal_A.svg"
-                      alt="Scholar's Path"
+                    <Logo 
+                      height={100}
                       sx={{
                         height: { xs: 60, sm: 80, md: 100 },
                         width: 'auto',
-                        filter: 'drop-shadow(0 8px 32px rgba(0, 0, 0, 0.2))',
                       }}
                     />
                   </Box>
@@ -960,14 +954,12 @@ const LandingPage = () => {
                         zIndex: 1,
                       }}
                     >
-                      <Box
-                        component="img"
-                        src="/ScholarPath_Horizontal_A.svg"
-                        alt="Scholar's Path"
+                      <Logo 
+                        height={100}
+                        white={true}
                         sx={{
-                          width: { xs: 250, sm: 300, md: 350 },
-                          height: 'auto',
-                          filter: 'brightness(0) invert(1) drop-shadow(0 8px 32px rgba(255, 255, 255, 0.3))',
+                          height: { xs: 60, sm: 75, md: 87.5 },
+                          width: 'auto',
                         }}
                       />
                     </Box>
