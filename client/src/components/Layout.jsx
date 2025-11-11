@@ -148,45 +148,98 @@ const Layout = ({ onLogout }) => {
       {/* Logo/Brand Section */}
       <Box
         sx={{
-          px: collapsed ? 1.5 : 3,
+          px: collapsed ? 1.5 : 2,
           py: 2.5,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
+          justifyContent: collapsed ? 'center' : 'flex-start',
           minHeight: 64,
         }}
       >
-        {!collapsed && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-              }}
-            >
-              <SchoolIcon sx={{ color: 'white', fontSize: 24 }} />
-            </Box>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 800,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Scholar's Path
-            </Typography>
+        {!collapsed ? (
+          // Horizontal Logo when expanded
+          <Box
+            component="svg"
+            width="220"
+            height="55"
+            viewBox="0 0 400 100"
+            xmlns="http://www.w3.org/2000/svg"
+            sx={{ ml: 1 }}
+          >
+            <defs>
+              <linearGradient id="logoIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: theme.palette.primary.main, stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: theme.palette.secondary.main, stopOpacity: 1 }} />
+              </linearGradient>
+              
+              <linearGradient id="logoTextGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style={{ stopColor: '#1E40AF', stopOpacity: 1 }} />
+                <stop offset="50%" style={{ stopColor: theme.palette.primary.main, stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#7C3AED', stopOpacity: 1 }} />
+              </linearGradient>
+              
+              <linearGradient id="logoCapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: '#F59E0B', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#EF4444', stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+            
+            {/* Icon Section */}
+            <g transform="translate(50, 50)">
+              <circle cx="0" cy="0" r="38" fill="url(#logoIconGrad)" opacity="0.1"/>
+              <circle cx="0" cy="0" r="36" fill="url(#logoIconGrad)" opacity="0.08"/>
+              
+              <g transform="translate(-15, -5)">
+                <path d="M 0 15 Q 7.5 10, 15 15 L 15 0 Q 7.5 -2, 0 0 Z" fill="url(#logoIconGrad)"/>
+                <path d="M 15 15 Q 22.5 10, 30 15 L 30 0 Q 22.5 -2, 15 0 Z" fill="url(#logoIconGrad)" opacity="0.8"/>
+                <line x1="15" y1="3" x2="15" y2="14" stroke="white" strokeWidth="0.5" opacity="0.4"/>
+                <line x1="7.5" y1="5" x2="7.5" y2="12" stroke="white" strokeWidth="0.3" opacity="0.3"/>
+                <line x1="22.5" y1="5" x2="22.5" y2="12" stroke="white" strokeWidth="0.3" opacity="0.3"/>
+              </g>
+              
+              <g transform="translate(-10, -22)">
+                <rect x="0" y="0" width="20" height="2" fill="url(#logoIconGrad)" rx="0.5"/>
+                <path d="M 10 -5 L 16 -2.5 L 10 0 L 4 -2.5 Z" fill="url(#logoCapGrad)"/>
+                <line x1="10" y1="-5" x2="13" y2="-8" stroke="url(#logoCapGrad)" strokeWidth="1.5" strokeLinecap="round"/>
+                <circle cx="13" cy="-8" r="1.5" fill="url(#logoCapGrad)"/>
+              </g>
+              
+              <g transform="translate(8, 10)">
+                <path d="M 0 0 Q 5 -10, 10 -18" 
+                      stroke="url(#logoIconGrad)" 
+                      strokeWidth="2.5" 
+                      fill="none" 
+                      strokeLinecap="round"
+                      opacity="0.5"/>
+                <circle cx="0" cy="0" r="2" fill="url(#logoIconGrad)" opacity="0.7"/>
+                <circle cx="5" cy="-5" r="2" fill="url(#logoIconGrad)" opacity="0.7"/>
+                <circle cx="8" cy="-12" r="1.5" fill="url(#logoIconGrad)" opacity="0.6"/>
+              </g>
+            </g>
+            
+            {/* Text Section */}
+            <g transform="translate(110, 50)">
+              <text x="0" y="0" 
+                    fontFamily="'Inter', 'Segoe UI', 'Arial', sans-serif" 
+                    fontSize="34" 
+                    fontWeight="800" 
+                    fill="url(#logoTextGrad)"
+                    letterSpacing="-1">
+                Scholar's Path
+              </text>
+              
+              <text x="2" y="20" 
+                    fontFamily="'Inter', 'Segoe UI', 'Arial', sans-serif" 
+                    fontSize="11" 
+                    fontWeight="600" 
+                    fill={theme.palette.text.secondary}
+                    letterSpacing="1">
+                EMPOWERING EDUCATION
+              </text>
+            </g>
           </Box>
-        )}
-        {collapsed && (
+        ) : (
+          // Icon only when collapsed
           <Box
             sx={{
               width: 40,
