@@ -45,6 +45,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import QuizIcon from '@mui/icons-material/Quiz';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import EmailIcon from '@mui/icons-material/Email';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 // 🎯 Animation Variants
 const fadeInUp = {
