@@ -537,10 +537,6 @@ function Dashboard() {
   const { user } = useSelector((state) => state.auth);
   const curriculumState = useSelector((state) => state.curriculum);
   const studentState = useSelector((state) => state.student);
-
-  // Debug logging
-  console.log('Curriculum State:', curriculumState);
-  console.log('Student State:', studentState);
   
   // Safely destructure with defaults (preserved)
   const { 
@@ -551,11 +547,6 @@ function Dashboard() {
     subStrands = [], 
     isLoading: isCurriculumLoading = false 
   } = curriculumState || {};
-
-  // Debug logging for arrays
-  console.log('Levels:', levels);
-  console.log('Classes:', classes);
-  console.log('Subjects:', subjects);
 
   // Ensure all curriculum arrays are actually arrays and handle various data structures
   const safeLevels = (() => {
@@ -592,9 +583,6 @@ function Dashboard() {
     if (typeof subStrands === 'object' && subStrands.data && Array.isArray(subStrands.data)) return subStrands.data;
     return [];
   })();
-
-  console.log('Safe Levels:', safeLevels);
-  console.log('Safe Classes:', safeClasses);
   
   const { 
     notes = [], 
@@ -952,11 +940,17 @@ function Dashboard() {
                     label="Class"
                     disabled={isLoading || !selections.level}
                   >
-                    {(safeClasses || []).map((cls) => (
-                      <MenuItem key={cls?._id} value={cls?._id}>
-                        {cls?.name || 'Unnamed Class'}
+                    {safeClasses && safeClasses.length > 0 ? (
+                      safeClasses.map((cls) => (
+                        <MenuItem key={cls?._id || Math.random()} value={cls?._id || ''}>
+                          {cls?.name || 'Unnamed Class'}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem value="" disabled>
+                        {isLoading ? 'Loading...' : 'No classes available'}
                       </MenuItem>
-                    ))}
+                    )}
                   </Select>
                 </FormControl>
               </Grid>
@@ -970,11 +964,17 @@ function Dashboard() {
                     label="Subject"
                     disabled={isLoading || !selections.class}
                   >
-                    {(safeSubjects || []).map((subject) => (
-                      <MenuItem key={subject?._id} value={subject?._id}>
-                        {subject?.name || 'Unnamed Subject'}
+                    {safeSubjects && safeSubjects.length > 0 ? (
+                      safeSubjects.map((subject) => (
+                        <MenuItem key={subject?._id || Math.random()} value={subject?._id || ''}>
+                          {subject?.name || 'Unnamed Subject'}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem value="" disabled>
+                        {isLoading ? 'Loading...' : 'No subjects available'}
                       </MenuItem>
-                    ))}
+                    )}
                   </Select>
                 </FormControl>
               </Grid>
@@ -988,11 +988,17 @@ function Dashboard() {
                     label="Strand"
                     disabled={isLoading || !selections.subject}
                   >
-                    {(safeStrands || []).map((strand) => (
-                      <MenuItem key={strand?._id} value={strand?._id}>
-                        {strand?.name || 'Unnamed Strand'}
+                    {safeStrands && safeStrands.length > 0 ? (
+                      safeStrands.map((strand) => (
+                        <MenuItem key={strand?._id || Math.random()} value={strand?._id || ''}>
+                          {strand?.name || 'Unnamed Strand'}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem value="" disabled>
+                        {isLoading ? 'Loading...' : 'No strands available'}
                       </MenuItem>
-                    ))}
+                    )}
                   </Select>
                 </FormControl>
               </Grid>
@@ -1006,11 +1012,17 @@ function Dashboard() {
                     label="Sub-Strand"
                     disabled={isLoading || !selections.strand}
                   >
-                    {(safeSubStrands || []).map((subStrand) => (
-                      <MenuItem key={subStrand?._id} value={subStrand?._id}>
-                        {subStrand?.name || 'Unnamed Sub-Strand'}
+                    {safeSubStrands && safeSubStrands.length > 0 ? (
+                      safeSubStrands.map((subStrand) => (
+                        <MenuItem key={subStrand?._id || Math.random()} value={subStrand?._id || ''}>
+                          {subStrand?.name || 'Unnamed Sub-Strand'}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem value="" disabled>
+                        {isLoading ? 'Loading...' : 'No sub-strands available'}
                       </MenuItem>
-                    ))}
+                    )}
                   </Select>
                 </FormControl>
               </Grid>
@@ -1051,10 +1063,10 @@ function Dashboard() {
                         {selections.strand && !selections.subStrand && 'Select a sub-strand to view materials'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {selections.level && `Level: ${safeLevels.find(l => l._id === selections.level)?.name || ''}`}
-                        {selections.class && ` • Class: ${safeClasses.find(c => c._id === selections.class)?.name || ''}`}
-                        {selections.subject && ` • Subject: ${safeSubjects.find(s => s._id === selections.subject)?.name || ''}`}
-                        {selections.strand && ` • Strand: ${safeStrands.find(s => s._id === selections.strand)?.name || ''}`}
+                        {selections.level && safeLevels.length > 0 && `Level: ${safeLevels.find(l => l?._id === selections.level)?.name || 'Selected'}`}
+                        {selections.class && safeClasses.length > 0 && ` • Class: ${safeClasses.find(c => c?._id === selections.class)?.name || 'Selected'}`}
+                        {selections.subject && safeSubjects.length > 0 && ` • Subject: ${safeSubjects.find(s => s?._id === selections.subject)?.name || 'Selected'}`}
+                        {selections.strand && safeStrands.length > 0 && ` • Strand: ${safeStrands.find(s => s?._id === selections.strand)?.name || 'Selected'}`}
                       </Typography>
                     </Box>
                   </Stack>
