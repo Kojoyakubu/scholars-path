@@ -726,27 +726,17 @@ const LandingPage = () => {
                       mb: 4,
                     }}
                   >
-                    <Avatar
+                    {/* SVG Logo */}
+                    <Box
+                      component="img"
+                      src="/ScholarPath_Horizontal_A.svg"
+                      alt="Scholar's Path"
                       sx={{
-                        width: 70,
-                        height: 70,
-                        background: `linear-gradient(135deg, ${alpha('#FFFFFF', 0.25)} 0%, ${alpha('#FFFFFF', 0.15)} 100%)`,
-                        backdropFilter: 'blur(10px)',
-                        border: `2px solid ${alpha('#FFFFFF', 0.3)}`,
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                        height: { xs: 60, sm: 80, md: 100 },
+                        width: 'auto',
+                        filter: 'drop-shadow(0 8px 32px rgba(0, 0, 0, 0.2))',
                       }}
-                    >
-                      <SchoolIcon sx={{ fontSize: 40, color: '#FFFFFF' }} />
-                    </Avatar>
-                    <Typography 
-                      variant="h3" 
-                      sx={{ 
-                        fontWeight: 900,
-                        textShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
-                      }}
-                    >
-                      Scholar's Path
-                    </Typography>
+                    />
                   </Box>
                 </motion.div>
 
@@ -954,17 +944,33 @@ const LandingPage = () => {
                         borderRadius: '50%',
                       }}
                     />
-                    <Avatar
+                    <Box
+                      component={motion.div}
+                      animate={{
+                        scale: [1, 1.05, 1],
+                        rotate: [0, 5, 0, -5, 0],
+                      }}
+                      transition={{
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
                       sx={{
-                        width: 150,
-                        height: 150,
-                        bgcolor: alpha('#FFFFFF', 0.2),
-                        backdropFilter: 'blur(10px)',
-                        border: `3px solid ${alpha('#FFFFFF', 0.3)}`,
+                        position: 'relative',
+                        zIndex: 1,
                       }}
                     >
-                      <SchoolIcon sx={{ fontSize: 80, color: '#FFFFFF' }} />
-                    </Avatar>
+                      <Box
+                        component="img"
+                        src="/ScholarPath_Horizontal_A.svg"
+                        alt="Scholar's Path"
+                        sx={{
+                          width: { xs: 250, sm: 300, md: 350 },
+                          height: 'auto',
+                          filter: 'brightness(0) invert(1) drop-shadow(0 8px 32px rgba(255, 255, 255, 0.3))',
+                        }}
+                      />
+                    </Box>
                   </Box>
                 )}
               </motion.div>
