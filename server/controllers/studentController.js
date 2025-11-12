@@ -32,45 +32,103 @@ const calculateQuizScore = (quiz, answers) => {
 // 🎓 Student Controllers
 // ============================================================================
 
-// @desc  Get learner notes for a sub-strand
-// @route GET /api/student/learner-notes
+// @desc  Get learner notes for a specific sub-strand (FIXED)
+// @route GET /api/student/notes/:subStrandId
+// @access Private/Student
 const getLearnerNotes = asyncHandler(async (req, res) => {
+  const { subStrandId } = req.params;
+  
+  console.log('📚 Fetching learner notes:', {
+    subStrandId,
+    school: req.user.school,
+    student: req.user._id
+  });
+
+  // Find published notes for this sub-strand from teachers at the same school
   const notes = await LearnerNote.find({
+    subStrand: subStrandId,
     school: req.user.school,
     status: 'published',
-  });
+  })
+  .populate('publishedBy', 'fullName email')
+  .populate('subStrand', 'name')
+  .sort({ createdAt: -1 });
+
+  console.log(`✅ Found ${notes.length} published notes for sub-strand ${subStrandId}`);
+  
   res.json(notes);
 });
 
-// @desc  Get quizzes for a sub-strand
+// @desc  Get quizzes for a specific sub-strand (FIXED)
 // @route GET /api/student/quizzes/:subStrandId
+// @access Private/Student
 const getQuizzes = asyncHandler(async (req, res) => {
-  const subStrand = await SubStrand.findById(req.params.subStrandId).populate({
+  const { subStrandId } = req.params;
+  
+  console.log('🧩 Fetching quizzes:', {
+    subStrandId,
+    school: req.user.school,
+  });
+
+  // First get the sub-strand to find the subject
+  const subStrand = await SubStrand.findById(subStrandId).populate({
     path: 'strand',
     select: 'subject',
   });
 
   if (!subStrand || !subStrand.strand || !subStrand.strand.subject) {
+    console.log('⚠️ Sub-strand not found or missing subject');
     return res.json([]);
   }
 
+  // Find quizzes for this subject at the same school
   const quizzes = await Quiz.find({
     subject: subStrand.strand.subject,
     school: req.user.school,
-  });
+    // Optionally filter by subStrand if Quiz model has that field:
+    // subStrand: subStrandId,
+  })
+  .populate('createdBy', 'fullName')
+  .sort({ createdAt: -1 });
+
+  console.log(`✅ Found ${quizzes.length} quizzes for subject ${subStrand.strand.subject}`);
+  
   res.json(quizzes);
 });
 
-// @desc  Get resources for a sub-strand
-// @route GET /api/student/resources
+// @desc  Get resources for a specific sub-strand (FIXED)
+// @route GET /api/student/resources/:subStrandId
+// @access Private/Student
 const getResources = asyncHandler(async (req, res) => {
-  const resources = await Resource.find({ school: req.user.school });
+  const { subStrandId } = req.params;
+  
+  console.log('📘 Fetching resources:', {
+    subStrandId,
+    school: req.user.school,
+  });
+
+  // Find resources for this sub-strand at the same school
+  const resources = await Resource.find({
+    // If Resource model has subStrand field:
+    // subStrand: subStrandId,
+    school: req.user.school,
+  })
+  .populate('uploadedBy', 'fullName')
+  .sort({ createdAt: -1 });
+
+  console.log(`✅ Found ${resources.length} resources`);
+  
   res.json(resources);
 });
 
 // @desc  Get details of a single quiz (hide correct answers)
+// @route GET /api/student/quiz/:id
+// @access Private/Student
 const getQuizDetails = asyncHandler(async (req, res) => {
-  const quiz = await Quiz.findOne({ _id: req.params.id, school: req.user.school }).populate({
+  const quiz = await Quiz.findOne({ 
+    _id: req.params.id, 
+    school: req.user.school 
+  }).populate({
     path: 'questions',
     populate: { path: 'options', model: 'Option', select: '-isCorrect' },
   });
@@ -84,6 +142,8 @@ const getQuizDetails = asyncHandler(async (req, res) => {
 });
 
 // @desc  Submit a quiz and get AI-powered feedback
+// @route POST /api/student/quiz/:id/submit
+// @access Private/Student
 const submitQuiz = asyncHandler(async (req, res) => {
   const { answers } = req.body;
 
@@ -154,6 +214,8 @@ Keep it under 6 sentences, positive and constructive.`;
 });
 
 // @desc  Get badges earned by logged-in student
+// @route GET /api/student/badges
+// @access Private/Student
 const getMyBadges = asyncHandler(async (req, res) => {
   const myBadges = await StudentBadge.find({ student: req.user._id }).populate(
     'badge',
@@ -163,6 +225,8 @@ const getMyBadges = asyncHandler(async (req, res) => {
 });
 
 // @desc  Log that a student viewed a note
+// @route POST /api/student/notes/:id/view
+// @access Private/Student
 const logNoteView = asyncHandler(async (req, res) => {
   const note = await LearnerNote.findById(req.params.id);
   if (!note) {
@@ -189,12 +253,9 @@ const logNoteView = asyncHandler(async (req, res) => {
   }
 });
 
-// ============================================================================
-// ✅ NEW ROUTES TO FIX YOUR ERROR
-// ============================================================================
-
 // @desc  Get the most recent quiz assigned to a student
 // @route GET /api/student/quiz/current
+// @access Private/Student
 const getCurrentQuiz = asyncHandler(async (req, res) => {
   const quiz = await Quiz.findOne({ school: req.user.school })
     .sort({ createdAt: -1 })
@@ -210,6 +271,7 @@ const getCurrentQuiz = asyncHandler(async (req, res) => {
 
 // @desc  Generate AI insights after a quiz submission
 // @route POST /api/student/quiz/insights
+// @access Private/Student
 const getQuizInsights = asyncHandler(async (req, res) => {
   const { score, totalQuestions, subject, title } = req.body;
   const prompt = `
@@ -226,7 +288,7 @@ Focus on encouragement and next steps in learning.`;
     });
     res.json({ insight: result.text });
   } catch (err) {
-    res.json({ insight: 'Keep studying and you’ll improve with each quiz!' });
+    res.json({ insight: 'Keep studying and you will improve with each quiz!' });
   }
 });
 

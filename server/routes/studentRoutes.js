@@ -7,20 +7,33 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const {
   getCurrentQuiz,
   getQuizInsights,
+  getQuizDetails,
+  submitQuiz,
   getMyBadges,
   getResources,
   getLearnerNotes,
+  getQuizzes,
   logNoteView,
 } = require('../controllers/studentController');
 
 // --- Quizzes ---
 router.get('/quiz/current', protect, authorize('student'), getCurrentQuiz);
+router.get('/quiz/:id', protect, authorize('student'), getQuizDetails);
+router.post('/quiz/:id/submit', protect, authorize('student'), submitQuiz);
 router.post('/quiz/insights', protect, authorize('student'), getQuizInsights);
 
-// --- Learning Data ---
+// --- Learning Data (FIXED ROUTES) ---
+// ✅ THESE ARE THE ROUTES THE FRONTEND IS CALLING
+router.get('/notes/:subStrandId', protect, authorize('student'), getLearnerNotes);
+router.get('/quizzes/:subStrandId', protect, authorize('student'), getQuizzes);
+router.get('/resources/:subStrandId', protect, authorize('student'), getResources);
+
+// --- Badges & Analytics ---
 router.get('/badges', protect, authorize('student'), getMyBadges);
-router.get('/resources', protect, authorize('student'), getResources);
-router.get('/learner-notes', protect, authorize('student'), getLearnerNotes);
-router.post('/note-views/:id', protect, authorize('student'), logNoteView);
+router.get('/my-badges', protect, authorize('student'), getMyBadges); // Alias
+
+// --- Note Views ---
+router.post('/notes/:id/view', protect, authorize('student'), logNoteView);
+router.post('/note-views/:id', protect, authorize('student'), logNoteView); // Alias
 
 module.exports = router;
