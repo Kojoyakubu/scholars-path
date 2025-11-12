@@ -589,8 +589,19 @@ function Dashboard() {
     quizzes = [], 
     resources = [], 
     isLoading: isStudentLoading = false, 
-    aiInsights = null 
+    aiInsights = null,
+    error = null
   } = studentState || {};
+
+  // Log studentState for debugging
+  console.log('Student State:', {
+    notesCount: Array.isArray(notes) ? notes.length : 'not an array',
+    notes: notes,
+    quizzesCount: Array.isArray(quizzes) ? quizzes.length : 'not an array',
+    resourcesCount: Array.isArray(resources) ? resources.length : 'not an array',
+    isLoading: isStudentLoading,
+    error: error
+  });
 
   // Ensure all student arrays are actually arrays
   const safeNotes = Array.isArray(notes) ? notes : [];
@@ -673,40 +684,78 @@ function Dashboard() {
   useEffect(() => {
     // Only fetch if we have a valid subStrand ID
     if (selections.subStrand && selections.subStrand !== '') {
-      console.log('=== Fetching Student Content ===');
-      console.log('SubStrand ID:', selections.subStrand);
-      console.log('User:', user?.name || user?.fullName);
-      console.log('School:', user?.school || 'No school info');
-      console.log('================================');
+      console.log('╔════════════════════════════════════════════════════╗');
+      console.log('║      FETCHING STUDENT CONTENT                      ║');
+      console.log('╚════════════════════════════════════════════════════╝');
+      console.log('📍 SubStrand ID:', selections.subStrand);
+      console.log('👤 User Info:', {
+        name: user?.name || user?.fullName || 'Unknown',
+        role: user?.role,
+        school: user?.school,
+        schoolId: user?.schoolId,
+        id: user?._id || user?.id
+      });
+      console.log('🏫 Looking for notes from teachers at:', user?.school?.name || user?.school || 'Unknown School');
+      console.log('─────────────────────────────────────────────────────');
       
+      // Fetch notes
       dispatch(getLearnerNotes(selections.subStrand))
         .unwrap()
-        .then((data) => {
-          console.log('Notes fetched successfully:', data);
+        .then((response) => {
+          console.log('✅ NOTES RESPONSE:', response);
+          console.log('   - Type:', typeof response);
+          console.log('   - Is Array:', Array.isArray(response));
+          console.log('   - Count:', Array.isArray(response) ? response.length : 'N/A');
+          if (Array.isArray(response) && response.length > 0) {
+            console.log('   - Sample Note:', {
+              title: response[0]?.title,
+              subStrand: response[0]?.subStrand,
+              school: response[0]?.school,
+              status: response[0]?.status,
+              publishedBy: response[0]?.publishedBy || response[0]?.createdBy
+            });
+          } else {
+            console.log('   ⚠️ No notes returned - Check:');
+            console.log('      1. Teacher published notes for this sub-strand?');
+            console.log('      2. Teacher is from same school?');
+            console.log('      3. Notes marked as "published" not "draft"?');
+          }
         })
         .catch((error) => {
-          console.error('Error fetching notes:', error);
+          console.error('❌ ERROR FETCHING NOTES:', error);
+          console.error('   - Message:', error?.message);
+          console.error('   - Response:', error?.response);
+          console.error('   - Status:', error?.response?.status);
         });
       
+      // Fetch quizzes
       dispatch(getQuizzes(selections.subStrand))
         .unwrap()
-        .then((data) => {
-          console.log('Quizzes fetched successfully:', data);
+        .then((response) => {
+          console.log('✅ QUIZZES RESPONSE:', {
+            count: Array.isArray(response) ? response.length : 'N/A',
+            data: response
+          });
         })
         .catch((error) => {
-          console.error('Error fetching quizzes:', error);
+          console.error('❌ ERROR FETCHING QUIZZES:', error);
         });
       
+      // Fetch resources
       dispatch(getResources(selections.subStrand))
         .unwrap()
-        .then((data) => {
-          console.log('Resources fetched successfully:', data);
+        .then((response) => {
+          console.log('✅ RESOURCES RESPONSE:', {
+            count: Array.isArray(response) ? response.length : 'N/A',
+            data: response
+          });
         })
         .catch((error) => {
-          console.error('Error fetching resources:', error);
+          console.error('❌ ERROR FETCHING RESOURCES:', error);
         });
       
       setContentLoaded(true);
+      console.log('════════════════════════════════════════════════════');
     } else {
       // Reset content loaded when subStrand is cleared
       setContentLoaded(false);
