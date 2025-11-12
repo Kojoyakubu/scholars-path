@@ -585,7 +585,7 @@ function Dashboard() {
   })();
   
   const { 
-    notes = [], 
+    learnerNotes = [],
     quizzes = [], 
     resources = [], 
     isLoading: isStudentLoading = false, 
@@ -595,8 +595,8 @@ function Dashboard() {
 
   // Log studentState for debugging
   console.log('Student State:', {
-    notesCount: Array.isArray(notes) ? notes.length : 'not an array',
-    notes: notes,
+    notesCount: Array.isArray(learnerNotes) ? learnerNotes.length : 'not an array',
+    learnerNotes: learnerNotes,
     quizzesCount: Array.isArray(quizzes) ? quizzes.length : 'not an array',
     resourcesCount: Array.isArray(resources) ? resources.length : 'not an array',
     isLoading: isStudentLoading,
@@ -604,7 +604,7 @@ function Dashboard() {
   });
 
   // Ensure all student arrays are actually arrays
-  const safeNotes = Array.isArray(notes) ? notes : [];
+  const safeNotes = Array.isArray(learnerNotes) ? learnerNotes : [];
   const safeQuizzes = Array.isArray(quizzes) ? quizzes : [];
   const safeResources = Array.isArray(resources) ? resources : [];
   
@@ -698,8 +698,17 @@ function Dashboard() {
       console.log('🏫 Looking for notes from teachers at:', user?.school?.name || user?.school || 'Unknown School');
       console.log('─────────────────────────────────────────────────────');
       
+      // Double check the subStrand ID before calling
+      const subStrandId = selections.subStrand;
+      console.log('🔍 About to dispatch with:', {
+        subStrandId: subStrandId,
+        type: typeof subStrandId,
+        isValid: !!subStrandId && subStrandId !== '',
+        selectionsObject: selections
+      });
+      
       // Fetch notes
-      dispatch(getLearnerNotes(selections.subStrand))
+      dispatch(getLearnerNotes(subStrandId))
         .unwrap()
         .then((response) => {
           console.log('✅ NOTES RESPONSE:', response);
@@ -729,7 +738,7 @@ function Dashboard() {
         });
       
       // Fetch quizzes
-      dispatch(getQuizzes(selections.subStrand))
+      dispatch(getQuizzes(subStrandId))
         .unwrap()
         .then((response) => {
           console.log('✅ QUIZZES RESPONSE:', {
@@ -742,7 +751,7 @@ function Dashboard() {
         });
       
       // Fetch resources
-      dispatch(getResources(selections.subStrand))
+      dispatch(getResources(subStrandId))
         .unwrap()
         .then((response) => {
           console.log('✅ RESOURCES RESPONSE:', {

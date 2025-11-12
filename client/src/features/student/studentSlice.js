@@ -17,30 +17,30 @@ const initialState = {
 
 // --- Async Thunks ---
 
-// 🎓 Fetch learner's notes
-export const getLearnerNotes = createAsyncThunk('student/getLearnerNotes', async (_, thunkAPI) => {
+// 🎓 Fetch learner's notes for a specific sub-strand
+export const getLearnerNotes = createAsyncThunk('student/getLearnerNotes', async (subStrandId, thunkAPI) => {
   try {
-    return await studentService.getLearnerNotes();
+    return await studentService.getLearnerNotes(subStrandId);
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
-// 🧩 Fetch quizzes
-export const getQuizzes = createAsyncThunk('student/getQuizzes', async (_, thunkAPI) => {
+// 🧩 Fetch quizzes for a specific sub-strand
+export const getQuizzes = createAsyncThunk('student/getQuizzes', async (subStrandId, thunkAPI) => {
   try {
-    return await studentService.getQuizzes();
+    return await studentService.getQuizzes(subStrandId);
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
   }
 });
 
-// 📘 Fetch resources
-export const getResources = createAsyncThunk('student/getResources', async (_, thunkAPI) => {
+// 📘 Fetch resources for a specific sub-strand
+export const getResources = createAsyncThunk('student/getResources', async (subStrandId, thunkAPI) => {
   try {
-    return await studentService.getResources();
+    return await studentService.getResources(subStrandId);
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
