@@ -671,18 +671,47 @@ function Dashboard() {
 
   // 🔄 Fetch student content when substrand is selected (preserved logic)
   useEffect(() => {
-    // Only fetch if we have a valid subStrand ID and haven't loaded this content yet
+    // Only fetch if we have a valid subStrand ID
     if (selections.subStrand && selections.subStrand !== '') {
-      console.log('Fetching content for subStrand:', selections.subStrand);
-      dispatch(getLearnerNotes(selections.subStrand));
-      dispatch(getQuizzes(selections.subStrand));
-      dispatch(getResources(selections.subStrand));
+      console.log('=== Fetching Student Content ===');
+      console.log('SubStrand ID:', selections.subStrand);
+      console.log('User:', user?.name || user?.fullName);
+      console.log('School:', user?.school || 'No school info');
+      console.log('================================');
+      
+      dispatch(getLearnerNotes(selections.subStrand))
+        .unwrap()
+        .then((data) => {
+          console.log('Notes fetched successfully:', data);
+        })
+        .catch((error) => {
+          console.error('Error fetching notes:', error);
+        });
+      
+      dispatch(getQuizzes(selections.subStrand))
+        .unwrap()
+        .then((data) => {
+          console.log('Quizzes fetched successfully:', data);
+        })
+        .catch((error) => {
+          console.error('Error fetching quizzes:', error);
+        });
+      
+      dispatch(getResources(selections.subStrand))
+        .unwrap()
+        .then((data) => {
+          console.log('Resources fetched successfully:', data);
+        })
+        .catch((error) => {
+          console.error('Error fetching resources:', error);
+        });
+      
       setContentLoaded(true);
     } else {
       // Reset content loaded when subStrand is cleared
       setContentLoaded(false);
     }
-  }, [dispatch, selections.subStrand]); // Removed contentLoaded from dependencies
+  }, [dispatch, selections.subStrand, user]); // Added user to dependencies
 
   // 📝 Handle selection changes (preserved logic)
   const handleSelectionChange = useCallback((e) => {
