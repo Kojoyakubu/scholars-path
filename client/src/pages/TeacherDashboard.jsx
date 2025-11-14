@@ -28,9 +28,12 @@ import {
   resetTeacherState,
   generateAiQuiz,
   getTeacherAnalytics,
+  generateLessonBundle, // ✅ NEW: Bundle generation
 } from '../features/teacher/teacherSlice';
 import LessonNoteForm from '../components/LessonNoteForm';
 import AiQuizForm from '../components/AiQuizForm';
+import LessonBundleForm from '../components/LessonBundleForm'; // ✅ NEW
+import BundleResultViewer from '../components/BundleResultViewer'; // ✅ NEW
 
 // MUI Imports
 import {
@@ -1001,6 +1004,12 @@ function TeacherDashboard() {
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
   const [generatingNoteId, setGeneratingNoteId] = useState(null);
+  
+  // ✅ NEW: Bundle generation state
+  const [isBundleModalOpen, setIsBundleModalOpen] = useState(false);
+  const [viewBundleResult, setViewBundleResult] = useState(false);
+  const bundleResult = useSelector((state) => state.teacher.bundleResult);
+  
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -1114,6 +1123,64 @@ function TeacherDashboard() {
             severity: 'error',
           });
         });
+    },
+    [dispatch]
+  );
+
+  // ✅ NEW: Handle bundle generation submission
+  const handleGenerateBundleSubmit = useCallback(
+    (data) => {
+      dispatch(generateLessonBundle(data))
+        .unwrap()
+        .then((result) => {
+          setIsBundleModalOpen(false);
+          setViewBundleResult(true);
+          setSnackbar({
+            open: true,
+            message: 'Lesson bundle generated successfully! 🎉',
+            severity: 'success',
+          });
+        })
+        .catch((error) => {
+          setSnackbar({
+            open: true,
+            message: error || 'Failed to generate lesson bundle',
+            severity: 'error',
+          });
+        });
+    },
+    [dispatch]
+  );
+
+  // ✅ NEW: Handle publishing the bundle to students
+  const handlePublishBundle = useCallback(
+    (bundle) => {
+      // Publish the learner note (it's created as draft by default)
+      if (bundle.learnerNote?.id) {
+        dispatch(publishLearnerNote(bundle.learnerNote.id))
+          .unwrap()
+          .then(() => {
+            setSnackbar({
+              open: true,
+              message: 'Learner note published to students! 📚',
+              severity: 'success',
+            });
+          })
+          .catch((err) => {
+            console.error('Error publishing learner note:', err);
+          });
+      }
+      
+      setViewBundleResult(false);
+      setSnackbar({
+        open: true,
+        message: 'Lesson bundle is now available to students! ✨',
+        severity: 'success',
+      });
+      
+      // Refresh the lists
+      dispatch(getMyLessonNotes());
+      dispatch(getDraftLearnerNotes());
     },
     [dispatch]
   );
@@ -1462,6 +1529,44 @@ function TeacherDashboard() {
                     </Button>
                   </SectionCard>
                 </Grid>
+
+                {/* ✅ NEW: Generate Complete Lesson Bundle */}
+                <Grid item xs={12}>
+                  <SectionCard
+                    title="🚀 Generate Complete Lesson Bundle (All-in-One)"
+                    icon={<AutoAwesome />}
+                    color={theme.palette.secondary.main}
+                  >
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Generate Teacher Note + Learner Note + Quiz (4 types) in one click! Save hours of work.
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      startIcon={<AutoAwesome />}
+                      onClick={() => setIsBundleModalOpen(true)}
+                      disabled={!selections.subStrand || isLoading}
+                      sx={{
+                        py: 1.8,
+                        fontWeight: 700,
+                        fontSize: '1.05rem',
+                        textTransform: 'none',
+                        borderRadius: 2,
+                        background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                        boxShadow: '0 4px 14px rgba(102, 126, 234, 0.4)',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #5568d3 30%, #653a8b 90%)',
+                          boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
+                        },
+                        '&:disabled': {
+                          background: 'rgba(0, 0, 0, 0.12)',
+                        },
+                      }}
+                    >
+                      Generate Complete Bundle
+                    </Button>
+                  </SectionCard>
+                </Grid>
               </Grid>
             </Container>
           </TabPanel>
@@ -1700,6 +1805,25 @@ function TeacherDashboard() {
           onSubmit={handleGenerateAiQuizSubmit}
           isLoading={isLoading}
           curriculum={{ levels, classes, subjects }}
+        />
+        
+        {/* ✅ NEW: Bundle Generation Modals */}
+        <LessonBundleForm
+          open={isBundleModalOpen}
+          onClose={() => setIsBundleModalOpen(false)}
+          onSubmit={handleGenerateBundleSubmit}
+          subStrandName={
+            subStrands.find((s) => s._id === selections.subStrand)?.name || ''
+          }
+          subStrandId={selections.subStrand}
+          isLoading={isLoading}
+        />
+
+        <BundleResultViewer
+          open={viewBundleResult}
+          onClose={() => setViewBundleResult(false)}
+          bundleData={bundleResult}
+          onPublish={handlePublishBundle}
         />
         
         <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>

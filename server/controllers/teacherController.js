@@ -7,6 +7,8 @@ const axios = require('axios'); // ✅ BUG FIX: needed by searchImage
 const LessonNote = require('../models/lessonNoteModel');
 const LearnerNote = require('../models/learnerNoteModel');
 const Quiz = require('../models/quizModel');
+const Question = require('../models/questionModel');
+const Option = require('../models/optionModel');
 const Resource = require('../models/resourceModel');
 const NoteView = require('../models/noteViewModel');
 const QuizAttempt = require('../models/quizAttemptModel');
@@ -303,6 +305,248 @@ const searchImage = asyncHandler(async (req, res) => {
   res.json({ imageUrl });
 });
 
+/**
+ * @desc    Generate complete lesson bundle (Teacher Note + Learner Note + Quiz) with AI
+ * @route   POST /api/teacher/ai/generate-lesson-bundle
+ * @access  Private (Teacher)
+ */
+const generateLessonBundle = asyncHandler(async (req, res) => {
+  const {
+    subStrandId,
+    school,
+    term,
+    week,
+    dayDate,
+    duration,
+    classSize,
+    contentStandardCode,
+    indicatorCodes,
+    reference,
+    numQuestions = 20,
+  } = req.body;
+
+  // Validate subStrandId
+  if (!subStrandId || !mongoose.Types.ObjectId.isValid(subStrandId)) {
+    res.status(400);
+    throw new Error('Valid subStrandId is required');
+  }
+
+  // Validate required fields
+  if (!school || !term || !week || !dayDate || !duration || !classSize || !contentStandardCode || !indicatorCodes || !reference) {
+    res.status(400);
+    throw new Error('All curriculum fields are required');
+  }
+
+  // Fetch full curriculum hierarchy
+  const subStrand = await SubStrand.findById(subStrandId).populate({
+    path: 'strand',
+    populate: {
+      path: 'subject',
+      populate: { path: 'class' },
+    },
+  });
+
+  if (!subStrand) {
+    res.status(404);
+    throw new Error('Sub-strand not found');
+  }
+
+  // Build curriculum details object
+  const curriculumDetails = {
+    school,
+    term,
+    week,
+    dayDate,
+    duration,
+    classSize,
+    contentStandardCode,
+    indicatorCodes,
+    reference,
+    subStrandName: subStrand.name,
+    strandName: subStrand.strand?.name || 'N/A',
+    subjectName: subStrand.strand?.subject?.name || 'N/A',
+    className: subStrand.strand?.subject?.class?.name || 'N/A',
+  };
+
+  console.log('🤖 Starting AI Lesson Bundle Generation...');
+  console.log(`📚 Topic: ${curriculumDetails.subStrandName}`);
+  console.log(`🏫 Class: ${curriculumDetails.className}`);
+  console.log(`📖 Subject: ${curriculumDetails.subjectName}`);
+
+  // PIPELINE STEP 1: Generate Teacher Note (HTML)
+  console.log('🤖 [1/3] Generating Teacher Lesson Note (HTML)...');
+  const {
+    text: teacherNoteHTML,
+    provider: p1,
+    model: m1,
+    timestamp: t1,
+  } = await aiService.generateTeacherLessonNoteHTML(curriculumDetails);
+
+  // PIPELINE STEP 2: Generate Learner Note (HTML)
+  console.log('🤖 [2/3] Generating Learner Note (HTML)...');
+  const {
+    text: learnerNoteHTML,
+    provider: p2,
+    model: m2,
+    timestamp: t2,
+  } = await aiService.generateLearnerNoteHTML(teacherNoteHTML, curriculumDetails);
+
+  // PIPELINE STEP 3: Generate Structured Quiz (JSON)
+  console.log('🤖 [3/3] Generating Structured Quiz (4 types)...');
+  const {
+    quiz: structuredQuiz,
+    provider: p3,
+    model: m3,
+    timestamp: t3,
+  } = await aiService.generateStructuredQuizJSON({
+    ...curriculumDetails,
+    numQuestions,
+  });
+
+  console.log('💾 Saving to MongoDB...');
+
+  // Save Lesson Note to DB
+  const lessonNote = await LessonNote.create({
+    teacher: req.user.id,
+    school: req.user.school,
+    subStrand: subStrandId,
+    content: teacherNoteHTML,
+    aiProvider: p1,
+    aiModel: m1,
+    aiGeneratedAt: new Date(t1),
+  });
+
+  // Save Learner Note to DB (as draft)
+  const learnerNote = await LearnerNote.create({
+    author: req.user.id,
+    school: req.user.school,
+    subStrand: subStrandId,
+    content: learnerNoteHTML,
+    status: 'draft', // Teacher can publish later
+    aiProvider: p2,
+    aiModel: m2,
+    aiGeneratedAt: new Date(t2),
+  });
+
+  // Create Quiz document
+  const quizDoc = await Quiz.create({
+    title: `${subStrand.name} - ${curriculumDetails.className}`,
+    subject: subStrand.strand.subject._id,
+    teacher: req.user.id,
+    school: req.user.school,
+    aiProvider: p3,
+    aiModel: m3,
+    aiGeneratedAt: new Date(t3),
+  });
+
+  // Save all quiz questions (MCQ, True/False, Short Answer, Essay)
+  const savedQuestionIds = [];
+
+  // Save MCQ questions
+  for (const mcq of structuredQuiz.mcq || []) {
+    const qDoc = await Question.create({
+      text: mcq.question,
+      difficultyLevel: 'Medium',
+      topicTags: [subStrand.name, 'MCQ'],
+    });
+
+    // Create 4 options for each MCQ
+    for (let i = 0; i < mcq.options.length; i++) {
+      await Option.create({
+        question: qDoc._id,
+        text: mcq.options[i],
+        isCorrect: i === mcq.correctIndex,
+      });
+    }
+
+    savedQuestionIds.push(qDoc._id);
+  }
+
+  // Save True/False questions (stored as questions with 2 options)
+  for (const tf of structuredQuiz.trueFalse || []) {
+    const qDoc = await Question.create({
+      text: tf.statement,
+      difficultyLevel: 'Easy',
+      topicTags: [subStrand.name, 'True/False'],
+    });
+
+    await Option.create({
+      question: qDoc._id,
+      text: 'True',
+      isCorrect: tf.answer === true,
+    });
+
+    await Option.create({
+      question: qDoc._id,
+      text: 'False',
+      isCorrect: tf.answer === false,
+    });
+
+    savedQuestionIds.push(qDoc._id);
+  }
+
+  // Save Short Answer questions (no options needed)
+  for (const sa of structuredQuiz.shortAnswer || []) {
+    const qDoc = await Question.create({
+      text: sa.question,
+      difficultyLevel: 'Medium',
+      topicTags: [subStrand.name, 'Short Answer'],
+    });
+
+    savedQuestionIds.push(qDoc._id);
+  }
+
+  // Save Essay questions (no options needed)
+  for (const essay of structuredQuiz.essay || []) {
+    const qDoc = await Question.create({
+      text: essay.question,
+      difficultyLevel: 'Hard',
+      topicTags: [subStrand.name, 'Essay'],
+    });
+
+    savedQuestionIds.push(qDoc._id);
+  }
+
+  console.log(`✅ Bundle Generation Complete!`);
+  console.log(`   📝 Teacher Note: ${lessonNote._id}`);
+  console.log(`   📖 Learner Note: ${learnerNote._id}`);
+  console.log(`   ❓ Quiz: ${quizDoc._id} (${savedQuestionIds.length} questions)`);
+
+  // Return combined response
+  res.status(201).json({
+    success: true,
+    message: 'Lesson bundle generated successfully!',
+    lessonNote: {
+      id: lessonNote._id,
+      content: lessonNote.content,
+      subStrand: subStrand.name,
+      createdAt: lessonNote.createdAt,
+    },
+    learnerNote: {
+      id: learnerNote._id,
+      content: learnerNote.content,
+      status: learnerNote.status,
+      createdAt: learnerNote.createdAt,
+    },
+    quiz: {
+      id: quizDoc._id,
+      title: quizDoc.title,
+      totalQuestions: savedQuestionIds.length,
+      breakdown: {
+        mcq: (structuredQuiz.mcq || []).length,
+        trueFalse: (structuredQuiz.trueFalse || []).length,
+        shortAnswer: (structuredQuiz.shortAnswer || []).length,
+        essay: (structuredQuiz.essay || []).length,
+      },
+      // Include the actual quiz data for frontend display
+      mcq: structuredQuiz.mcq || [],
+      trueFalse: structuredQuiz.trueFalse || [],
+      shortAnswer: structuredQuiz.shortAnswer || [],
+      essay: structuredQuiz.essay || [],
+    },
+  });
+});
+
 module.exports = {
   generateLessonNote,
   getMyLessonNotes,
@@ -316,4 +560,5 @@ module.exports = {
   publishLearnerNote,
   deleteLearnerNote,
   searchImage,
+  generateLessonBundle, // ✅ NEW: Bundle orchestrator
 };

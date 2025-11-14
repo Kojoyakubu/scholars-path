@@ -337,11 +337,412 @@ Example:
   return { quiz: parsed, provider, model, task: 'quiz', timestamp };
 }
 
-// ✅ EXPORT THE NEW FUNCTION
+// ========================
+// 🎓 NEW: HTML-Based Bundle Generation Functions
+// ========================
+
+/**
+ * Generate NaCCA-compliant Teacher Lesson Note in HTML format.
+ * This is for the new "bundle" endpoint that generates everything at once.
+ */
+async function generateTeacherLessonNoteHTML(details = {}) {
+  const { 
+    school, 
+    className, 
+    subjectName, 
+    strandName, 
+    subStrandName, 
+    week, 
+    term, 
+    duration, 
+    classSize, 
+    reference, 
+    contentStandardCode, 
+    indicatorCodes, 
+    dayDate, 
+    preferredModel, 
+    preferredProvider 
+  } = details;
+
+  const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
+  
+  const prompt = `
+You are a Ghanaian master teacher and curriculum expert. Generate a professionally formatted HTML lesson note following Ghana's NaCCA (National Council for Curriculum and Assessment) structure.
+
+CRITICAL RULES:
+1. Return ONLY valid HTML - no markdown, no code blocks, no explanations
+2. Start directly with HTML tags - no introductory text
+3. Use proper HTML tags: <h2>, <h3>, <p>, <table>, <ul>, <li>, <strong>, <br>
+4. The layout must be clean, professional, and ready to display in a web browser
+5. Use the "Transformation Logic" to convert the "Official NaCCA Indicator" into learner-centric "Performance Indicators"
+6. Derive the Week Ending (Friday date) from the provided Day/Date
+
+---
+TRANSFORMATION LOGIC EXAMPLE:
+- IF Official Indicator: "Discuss the fourth-generation computers"
+- THEN Performance Indicator: "The learner can identify the features of fourth-generation computers."
+- THEN Another: "The learner can explain the advantages of fourth-generation computers."
+---
+
+Generate HTML following this structure:
+
+<div class="lesson-note">
+  <h2>Teacher Lesson Note</h2>
+  
+  <div class="teacher-info">
+    <h3>Teacher Information</h3>
+    <table border="1" cellpadding="8" style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td><strong>School:</strong></td>
+        <td>${school}</td>
+        <td><strong>Term:</strong></td>
+        <td>${term}</td>
+      </tr>
+      <tr>
+        <td><strong>Week:</strong></td>
+        <td>${week}</td>
+        <td><strong>Week Ending:</strong></td>
+        <td>[AI: Compute Friday from ${dayDate}]</td>
+      </tr>
+      <tr>
+        <td><strong>Class:</strong></td>
+        <td>${className}</td>
+        <td><strong>Class Size:</strong></td>
+        <td>${classSize}</td>
+      </tr>
+      <tr>
+        <td><strong>Subject:</strong></td>
+        <td>${subjectName}</td>
+        <td><strong>Day/Date:</strong></td>
+        <td>${dayDate}</td>
+      </tr>
+      <tr>
+        <td><strong>Strand:</strong></td>
+        <td>${strandName}</td>
+        <td><strong>Duration:</strong></td>
+        <td>${duration}</td>
+      </tr>
+      <tr>
+        <td colspan="4"><strong>Sub-Strand:</strong> ${subStrandName}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="curriculum-standards">
+    <h3>Curriculum Standards</h3>
+    <p><strong>Content Standard Code:</strong> ${contentStandardCode}</p>
+    <p><strong>Official Indicator(s):</strong><br>${officialIndicatorText}</p>
+    <p><strong>Performance Indicator(s):</strong><br>[AI: Generate 2-3 learner-centric indicators using Transformation Logic]</p>
+    <p><strong>Core Competencies:</strong><br>[AI: List 3-4 relevant NaCCA core competencies]</p>
+    <p><strong>Teaching & Learning Materials:</strong><br>[AI: Suggest realistic materials for this topic]</p>
+    <p><strong>Reference:</strong> ${reference}</p>
+  </div>
+
+  <div class="lesson-phases">
+    <h3>Lesson Phases</h3>
+    <table border="1" cellpadding="10" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background-color: #f0f0f0;">
+          <th style="width: 25%;">Phase 1: Starter<br>(Preparing the Brain)</th>
+          <th style="width: 50%;">Phase 2: Main<br>(New Learning & Assessment)</th>
+          <th style="width: 25%;">Phase 3: Plenary<br>(Reflection)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="vertical-align: top;">
+          <td>
+            <p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>
+            <p><strong>Engaging Activity:</strong><br>[AI: Short task to capture interest]</p>
+            <p><strong>Introduction:</strong><br>[AI: State lesson objective clearly]</p>
+          </td>
+          <td>
+            <p><strong>Activity 1:</strong><br>[AI: Introduce main topic with explanation]</p>
+            <p><strong>Activity 2:</strong><br>[AI: Practical task - individual, pair, or group work]</p>
+            <p><strong>Evaluation:</strong><br>[AI: 2-3 questions to check understanding]</p>
+            <p><strong>Assignment:</strong><br>[AI: Short take-home task]</p>
+          </td>
+          <td>
+            <p><strong>Recap:</strong><br>[AI: Summarize key ideas]</p>
+            <p><strong>Learner Reflection:</strong><br>[AI: Questions to help learners reflect]</p>
+            <p><strong>Real-Life Application:</strong><br>[AI: Link lesson to everyday Ghanaian life]</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="signatures">
+    <p><strong>Facilitator:</strong> ..................................................</p>
+    <p><strong>Vetted By:</strong> ..................................................</p>
+    <p><strong>Signature:</strong> ..................................................</p>
+    <p><strong>Date:</strong> ..................................................</p>
+  </div>
+</div>
+
+REMEMBER: Return ONLY the HTML above, filled with appropriate content. No markdown, no code fences, no explanations.
+`;
+
+  const { text, provider, model, timestamp } = await generateTextCore({ 
+    prompt, 
+    task: 'teacherLessonNoteHTML', 
+    temperature: 0.4, 
+    preferredProvider, 
+    providerModelOverride: preferredModel 
+  });
+
+  return { text, provider, model, task: 'teacherLessonNoteHTML', timestamp };
+}
+
+/**
+ * Generate Student-Friendly Learner Note in HTML format.
+ * Transforms the teacher note into engaging, simple content for learners.
+ */
+async function generateLearnerNoteHTML(teacherNoteHTML, details = {}) {
+  if (!teacherNoteHTML || typeof teacherNoteHTML !== 'string') {
+    throw new Error('Teacher note HTML must be provided as a non-empty string.');
+  }
+
+  const { subStrandName = 'Topic', className = 'Class' } = details;
+
+  const prompt = `
+You are a friendly Ghanaian teacher creating an engaging study note for ${className} students.
+
+Transform the formal teacher's lesson note below into a rich, student-friendly HTML study guide.
+
+CRITICAL RULES:
+1. Return ONLY valid HTML - no markdown, no code blocks, no explanations
+2. Start directly with HTML tags - no introductory text
+3. Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <br>
+4. Make it engaging and easy to understand for Ghanaian students
+
+GUIDELINES:
+1. **Main Heading:** Use "${subStrandName}" as the main topic heading
+2. **Detailed Explanations:** Read the teacher's Phase 2 section and explain key concepts in detail with:
+   - Simple definitions
+   - Clear explanations
+   - Local Ghanaian examples (use familiar contexts)
+   - Step-by-step breakdowns where needed
+3. **Visuals:** 
+   - When an image would help, write: <p><em>[Image suggestion: Brief description of helpful image]</em></p>
+   - When a diagram would help, write: <p><em>[Diagram: Brief description]</em></p>
+4. **Structure:** Use HTML headings (<h2>, <h3>), paragraphs (<p>), lists (<ul>, <li>), and bold/italic for emphasis
+5. **Engagement:** End with a "Check Your Understanding" section with 2-3 simple questions
+6. **Tone:** Friendly, encouraging, age-appropriate for ${className}
+
+Generate HTML following this structure:
+
+<div class="learner-note">
+  <h2>${subStrandName}</h2>
+  
+  <div class="introduction">
+    <p>[AI: Engaging introduction explaining what students will learn]</p>
+  </div>
+
+  <div class="main-content">
+    <h3>[AI: First Key Concept]</h3>
+    <p>[AI: Clear explanation with examples]</p>
+    <p><em>[Image suggestion: if helpful]</em></p>
+    
+    <h3>[AI: Second Key Concept]</h3>
+    <p>[AI: Clear explanation with Ghanaian examples]</p>
+    <ul>
+      <li>[AI: Key point 1]</li>
+      <li>[AI: Key point 2]</li>
+      <li>[AI: Key point 3]</li>
+    </ul>
+
+    [AI: Continue with more concepts as needed]
+  </div>
+
+  <div class="practice">
+    <h3>✍️ Check Your Understanding</h3>
+    <ol>
+      <li>[AI: Simple question 1]</li>
+      <li>[AI: Simple question 2]</li>
+      <li>[AI: Simple question 3 - optional]</li>
+    </ol>
+  </div>
+
+  <div class="real-life">
+    <h3>🌍 In Real Life</h3>
+    <p>[AI: How this topic relates to everyday life in Ghana]</p>
+  </div>
+</div>
+
+TEACHER'S LESSON NOTE (for your reference):
+---
+${teacherNoteHTML}
+---
+
+REMEMBER: Return ONLY the HTML above, filled with student-friendly content. No markdown, no code fences, no explanations.
+`;
+
+  const { text, provider, model, timestamp } = await generateTextCore({ 
+    prompt, 
+    task: 'learnerNoteHTML', 
+    temperature: 0.45, 
+    preferredProvider: details.preferredProvider, 
+    providerModelOverride: details.preferredModel 
+  });
+
+  return { text, provider, model, task: 'learnerNoteHTML', timestamp };
+}
+
+/**
+ * Generate Structured Quiz with 4 Question Types in JSON format.
+ * Returns: MCQ (multiple choice), True/False, Short Answer, Essay questions.
+ */
+async function generateStructuredQuizJSON(details = {}) {
+  const { 
+    topic, 
+    subStrandName, 
+    className, 
+    subjectName, 
+    numQuestions = 20,
+    preferredProvider, 
+    preferredModel 
+  } = details;
+
+  const topicText = topic || subStrandName || 'the current topic';
+
+  const prompt = `
+You are an expert WAEC examiner creating a comprehensive quiz for ${className} students in ${subjectName}.
+
+Topic: "${topicText}"
+
+Generate a structured quiz with FOUR question types. Return ONLY valid JSON with NO additional text, explanations, or markdown.
+
+REQUIRED JSON STRUCTURE:
+{
+  "mcq": [
+    {
+      "question": "string - the question text",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctIndex": 0,
+      "explanation": "string - brief explanation of correct answer"
+    }
+  ],
+  "trueFalse": [
+    {
+      "statement": "string - a statement that is true or false",
+      "answer": true,
+      "explanation": "string - why it's true or false"
+    }
+  ],
+  "shortAnswer": [
+    {
+      "question": "string - question requiring 1-3 sentence answer",
+      "expectedAnswer": "string - sample correct answer"
+    }
+  ],
+  "essay": [
+    {
+      "question": "string - essay question requiring detailed response",
+      "markingGuide": "string - key points students should cover"
+    }
+  ]
+}
+
+REQUIREMENTS:
+1. **MCQ:** Generate at least ${Math.min(20, numQuestions)} multiple-choice questions with 4 options each
+2. **True/False:** Generate 5-10 true/false statements
+3. **Short Answer:** Generate 5-10 questions requiring brief answers
+4. **Essay:** Generate 3-5 questions requiring detailed explanations
+
+QUALITY STANDARDS:
+- All questions must be appropriate for ${className} level
+- Questions should cover different aspects of "${topicText}"
+- Use clear, simple English suitable for Ghanaian students
+- Include local/Ghanaian contexts where relevant
+- For MCQ: Make distractors plausible but clearly distinguishable from correct answer
+- For True/False: Make statements clear and unambiguous
+- For Short Answer: Questions should be answerable in 2-3 sentences
+- For Essay: Questions should require analysis, explanation, or application
+
+CRITICAL: Return ONLY the JSON object. No markdown code fences, no explanations, no additional text.
+`;
+
+  const { text, provider, model, timestamp } = await generateTextCore({ 
+    prompt, 
+    task: 'structuredQuiz', 
+    temperature: 0.3, 
+    jsonNeeded: true, 
+    preferredProvider, 
+    providerModelOverride: preferredModel 
+  });
+
+  const parsed = parseJsonStrict(text);
+
+  // Validate structure
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Quiz must be a valid JSON object.');
+  }
+
+  if (!Array.isArray(parsed.mcq)) {
+    throw new Error('Quiz must include "mcq" array.');
+  }
+
+  if (!Array.isArray(parsed.trueFalse)) {
+    throw new Error('Quiz must include "trueFalse" array.');
+  }
+
+  if (!Array.isArray(parsed.shortAnswer)) {
+    throw new Error('Quiz must include "shortAnswer" array.');
+  }
+
+  if (!Array.isArray(parsed.essay)) {
+    throw new Error('Quiz must include "essay" array.');
+  }
+
+  // Validate MCQ structure
+  for (const mcq of parsed.mcq) {
+    if (!mcq.question || !Array.isArray(mcq.options) || mcq.options.length !== 4) {
+      throw new Error('Each MCQ must have a question and exactly 4 options.');
+    }
+    if (typeof mcq.correctIndex !== 'number' || mcq.correctIndex < 0 || mcq.correctIndex > 3) {
+      throw new Error('Each MCQ must have a valid correctIndex (0-3).');
+    }
+  }
+
+  // Validate True/False structure
+  for (const tf of parsed.trueFalse) {
+    if (!tf.statement || typeof tf.answer !== 'boolean') {
+      throw new Error('Each True/False must have a statement and boolean answer.');
+    }
+  }
+
+  // Validate Short Answer structure
+  for (const sa of parsed.shortAnswer) {
+    if (!sa.question || !sa.expectedAnswer) {
+      throw new Error('Each Short Answer must have a question and expectedAnswer.');
+    }
+  }
+
+  // Validate Essay structure
+  for (const essay of parsed.essay) {
+    if (!essay.question || !essay.markingGuide) {
+      throw new Error('Each Essay must have a question and markingGuide.');
+    }
+  }
+
+  return { 
+    quiz: parsed, 
+    provider, 
+    model, 
+    task: 'structuredQuiz', 
+    timestamp 
+  };
+}
+
+// ✅ EXPORT ALL FUNCTIONS (existing + new)
 module.exports = {
   generateTextCore,
   generateGhanaianLessonNote,
   generateLearnerFriendlyNote,
   generateWaecQuiz,
-  getLandingInsights, // ✅ Add the new function here
+  getLandingInsights,
+  // 🎓 New HTML-based bundle functions
+  generateTeacherLessonNoteHTML,
+  generateLearnerNoteHTML,
+  generateStructuredQuizJSON,
 };

@@ -15,6 +15,7 @@ const {
   uploadResource,
   getTeacherAnalytics,
   searchImage,
+  generateLessonBundle, // ✅ NEW: Bundle orchestrator
 } = require('../controllers/teacherController');
 
 const { protect, authorize } = require('../middleware/authMiddleware');
@@ -30,6 +31,9 @@ router.post('/ai/generate-learner-note', protect, authorize('teacher'), generate
 router.get('/learner-notes/drafts', protect, authorize('teacher'), getDraftLearnerNotes);
 router.put('/learner-notes/:id/publish', protect, authorize('teacher'), publishLearnerNote);
 router.delete('/learner-notes/:id', protect, authorize('teacher'), deleteLearnerNote);
+
+// --- AI Lesson Bundle (All-in-One Generation) ---
+router.post('/ai/generate-lesson-bundle', protect, authorize('teacher'), generateLessonBundle);
 
 // --- Quizzes ---
 router.post('/quizzes', protect, authorize('teacher'), createQuiz);

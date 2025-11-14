@@ -7,7 +7,8 @@ const initialState = {
   quizzes: [],
   currentNote: null,
   analytics: {},
-  aiInsights: null, // ✅ new
+  aiInsights: null,
+  bundleResult: null, // ✅ NEW: Store the complete lesson bundle
   isLoading: false,
   isError: false,
   isSuccess: false,
@@ -38,6 +39,7 @@ export const publishLearnerNote = createTeacherThunk('publishLearnerNote', teach
 export const deleteLearnerNote = createTeacherThunk('deleteLearnerNote', teacherService.deleteLearnerNote);
 export const generateAiQuiz = createTeacherThunk('generateAiQuiz', teacherService.generateAiQuiz);
 export const getAiInsights = createTeacherThunk('getAiInsights', teacherService.getAiInsights); // new
+export const generateLessonBundle = createTeacherThunk('generateLessonBundle', teacherService.generateLessonBundle); // ✅ NEW: Bundle generation
 
 export const teacherSlice = createSlice({
   name: 'teacher',
@@ -113,6 +115,13 @@ export const teacherSlice = createSlice({
       // 🧠 AI Insights fulfilled
       .addCase(getAiInsights.fulfilled, (state, action) => {
         state.aiInsights = action.payload;
+      })
+
+      // 🎓 NEW: Lesson Bundle fulfilled
+      .addCase(generateLessonBundle.fulfilled, (state, action) => {
+        state.bundleResult = action.payload;
+        state.isSuccess = true;
+        state.message = 'Lesson bundle generated successfully!';
       })
 
       // Generic loaders

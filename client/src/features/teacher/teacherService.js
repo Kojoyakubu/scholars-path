@@ -67,6 +67,12 @@ const getAiInsights = async () => {
   }
 };
 
+// ✅ NEW: Generate complete lesson bundle (Teacher Note + Learner Note + Quiz)
+const generateLessonBundle = async (bundleData) => {
+  const response = await api.post('/api/teacher/ai/generate-lesson-bundle', bundleData);
+  return response.data;
+};
+
 const teacherService = {
   getMyLessonNotes,
   generateLessonNote,
@@ -79,6 +85,7 @@ const teacherService = {
   deleteLearnerNote,
   generateAiQuiz,
   getAiInsights,
+  generateLessonBundle, // ✅ NEW: Bundle generation
 };
 
 export default teacherService;
