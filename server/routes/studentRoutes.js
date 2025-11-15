@@ -9,6 +9,7 @@ const {
   getQuizInsights,
   getQuizDetails,
   submitQuiz,
+  submitAutoGradedQuiz,
   getMyBadges,
   getResources,
   getLearnerNotes,
@@ -20,6 +21,7 @@ const {
 router.get('/quiz/current', protect, authorize('student'), getCurrentQuiz);
 router.get('/quiz/:id', protect, authorize('student'), getQuizDetails);
 router.post('/quiz/:id/submit', protect, authorize('student'), submitQuiz);
+router.post('/quiz/:id/submit-auto-graded', protect, authorize('student'), submitAutoGradedQuiz);
 router.post('/quiz/insights', protect, authorize('student'), getQuizInsights);
 
 // --- Learning Data (FIXED ROUTES) ---

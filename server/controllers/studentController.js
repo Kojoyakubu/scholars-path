@@ -316,3 +316,110 @@ module.exports = {
   getCurrentQuiz,
   getQuizInsights,
 };
+// @desc  Submit auto-graded section (MCQs and True/False only)
+// @route POST /api/student/quiz/:id/submit-auto-graded
+// @access Private/Student
+const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
+  const { answers, score: clientScore } = req.body;
+
+  if (!answers || typeof answers !== 'object') {
+    res.status(400);
+    throw new Error('Answers must be an object.');
+  }
+
+  const quiz = await Quiz.findById(req.params.id).populate({
+    path: 'questions',
+    populate: { path: 'options', model: 'Option' },
+  });
+
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found.');
+  }
+
+  // Filter only auto-graded questions (MCQ and True/False)
+  const autoGradedQuestions = quiz.questions.filter(q => 
+    q.type === 'mcq' || q.type === 'true-false'
+  );
+
+  // Calculate score for auto-graded questions only
+  let correct = 0;
+  autoGradedQuestions.forEach((question) => {
+    const userAnswer = answers[question._id];
+    if (userAnswer === question.correctAnswer) {
+      correct++;
+    }
+  });
+
+  const totalAutoGraded = autoGradedQuestions.length;
+  const percentage = totalAutoGraded > 0 ? Math.round((correct / totalAutoGraded) * 100) : 0;
+
+  // Convert answers object to array format for storage
+  const answersArray = Object.keys(answers).map(questionId => ({
+    questionId,
+    selectedOption: answers[questionId]
+  }));
+
+  // Create quiz attempt for auto-graded section only
+  const attempt = await QuizAttempt.create({
+    quiz: quiz._id,
+    student: req.user._id,
+    school: req.user.school,
+    score: correct,
+    totalQuestions: totalAutoGraded,
+    answers: answersArray,
+    questionType: 'auto-graded', // Flag to indicate this is only the auto-graded section
+  });
+
+  // Asynchronously award badges
+  checkAndAwardQuizBadges(req.user._id, attempt);
+
+  // 🧠 Generate personalized AI feedback for auto-graded section
+  let feedback = '';
+  try {
+    const prompt = `
+You are a Ghanaian educational coach.
+Provide short motivational feedback for a student after completing the auto-graded section (MCQs and True/False) of a quiz.
+
+Subject: ${quiz.subject || 'N/A'}
+Quiz Title: ${quiz.title || 'Untitled'}
+Auto-Graded Questions Answered: ${totalAutoGraded}
+Score: ${correct}
+Performance: ${percentage}%
+
+Keep it under 6 sentences, positive and constructive. Mention that they should also attempt the written questions in their exercise book.`;
+
+    const result = await aiService.generateTextCore({
+      prompt,
+      task: 'quizFeedback',
+      temperature: 0.6,
+      preferredProvider: 'claude',
+    });
+
+    feedback = result.text;
+  } catch (err) {
+    console.error('AI feedback failed:', err.message);
+    feedback = 'Good effort on the auto-graded questions! Remember to complete the written questions in your exercise book.';
+  }
+
+  res.status(200).json({
+    message: 'Auto-graded section submitted successfully!',
+    score: correct,
+    totalQuestions: totalAutoGraded,
+    percentage,
+    feedback,
+  });
+});
+
+module.exports = {
+  getLearnerNotes,
+  getQuizzes,
+  getResources,
+  getQuizDetails,
+  submitQuiz,
+  submitAutoGradedQuiz,
+  getMyBadges,
+  logNoteView,
+  getCurrentQuiz,
+  getQuizInsights,
+};
