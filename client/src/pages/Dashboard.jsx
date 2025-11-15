@@ -1212,7 +1212,7 @@ function Dashboard() {
         </motion.div>
 
         {/* Learning Content - Enhanced with Glassmorphism */}
-        {selections.subStrand && contentLoaded && (
+        {selections.subStrand && contentLoaded ? (
           <AnimatePresence mode="wait">
             {/* Study Notes Section */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -1723,7 +1723,19 @@ function Dashboard() {
               </motion.div>
             )}
           </AnimatePresence>
-          )}
+        ) : safeNotes.length > 0 ? (
+          <Box sx={{ my: 4 }}>
+            <SectionCard sx={{ p: 4, textAlign: 'center' }}>
+              <MenuBookIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 2, opacity: 0.5 }} />
+              <Typography variant="h6" gutterBottom fontWeight={600}>
+                {getArrayLength(safeNotes)} Study Note{getArrayLength(safeNotes) > 1 ? 's' : ''} Available
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Please select a topic from the dropdown above to view your study materials
+              </Typography>
+            </SectionCard>
+          </Box>
+        ) : null}
 
 
         {/* ✅ Note Viewing Modal */}
