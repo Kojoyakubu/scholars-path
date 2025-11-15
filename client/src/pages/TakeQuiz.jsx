@@ -1,5 +1,6 @@
 // /client/src/pages/TakeQuiz.jsx
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -57,6 +58,7 @@ const AIInsightsCard = ({ title, content }) => {
 
 const TakeQuiz = () => {
   const theme = useTheme();
+  const { id } = useParams(); // Get quiz ID from URL
   const { user } = useSelector((state) => state.auth || {});
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
@@ -69,18 +71,22 @@ const TakeQuiz = () => {
   const [aiInsights, setAiInsights] = useState('');
   const [aiError, setAiError] = useState('');
 
-  // Load quiz questions
+  // Load quiz questions using ID from URL
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const res = await api.get('/api/student/quiz/current');
+        console.log('Fetching quiz with ID:', id);
+        const res = await api.get(`/api/student/quiz/${id}`);
+        console.log('Quiz data received:', res.data);
         setQuestions(res.data.questions || []);
       } catch (err) {
         console.error('Failed to load quiz', err);
       }
     };
-    fetchQuiz();
-  }, []);
+    if (id) {
+      fetchQuiz();
+    }
+  }, [id]);
 
   const handleAnswer = (questionId, option) => {
     setAnswers((prev) => ({ ...prev, [questionId]: option }));
