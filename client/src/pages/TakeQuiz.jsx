@@ -96,14 +96,20 @@ const TakeQuiz = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      // Evaluate
-      let correct = 0;
-      questions.forEach((q) => {
-        if (answers[q._id] === q.correctAnswer) correct++;
+      // Send answers to backend for scoring
+      const answerArray = Object.keys(answers).map(questionId => ({
+        questionId,
+        selectedOption: answers[questionId]
+      }));
+
+      const res = await api.post(`/api/student/quiz/${id}/submit`, {
+        answers: answerArray
       });
+
+      // Backend returns the score and details
+      const { score: scorePercent, correctCount: correct, wrongCount: wrong } = res.data;
       const total = questions.length;
-      const wrong = total - correct;
-      const scorePercent = Math.round((correct / total) * 100);
+      
       setCorrectCount(correct);
       setWrongCount(wrong);
       setScore(scorePercent);
@@ -111,18 +117,21 @@ const TakeQuiz = () => {
 
       // Fetch AI feedback based on performance
       try {
-        const res = await api.post('/api/student/quiz/insights', {
+        const aiRes = await api.post('/api/student/quiz/insights', {
           name: user?.fullName,
           score: scorePercent,
           totalQuestions: total,
           correctCount: correct,
           wrongCount: wrong,
         });
-        setAiInsights(res?.data?.insight || res?.data?.message || '');
+        setAiInsights(aiRes?.data?.insight || aiRes?.data?.message || '');
       } catch (aiErr) {
         console.error('AI feedback error', aiErr);
         setAiError(aiErr?.response?.data?.message || aiErr?.message);
       }
+    } catch (err) {
+      console.error('Submit error:', err);
+      alert('Failed to submit quiz. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -153,19 +162,25 @@ const TakeQuiz = () => {
               Question {current + 1} of {questions.length}
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
-              {currentQ?.question}
+              {currentQ?.text || currentQ?.question || currentQ?.questionText}
             </Typography>
             <Stack spacing={1}>
-              {currentQ?.options?.map((opt, i) => (
-                <Button
-                  key={i}
-                  variant={answers[currentQ._id] === opt ? 'contained' : 'outlined'}
-                  color="primary"
-                  onClick={() => handleAnswer(currentQ._id, opt)}
-                >
-                  {opt}
-                </Button>
-              ))}
+              {currentQ?.options?.map((opt, i) => {
+                // Handle both string options and object options
+                const optionText = typeof opt === 'string' ? opt : opt?.text;
+                const optionValue = typeof opt === 'string' ? opt : opt?._id;
+                
+                return (
+                  <Button
+                    key={i}
+                    variant={answers[currentQ._id] === optionValue ? 'contained' : 'outlined'}
+                    color="primary"
+                    onClick={() => handleAnswer(currentQ._id, optionValue)}
+                  >
+                    {optionText}
+                  </Button>
+                );
+              })}
             </Stack>
 
             <Stack direction="row" justifyContent="space-between" sx={{ mt: 3 }}>
