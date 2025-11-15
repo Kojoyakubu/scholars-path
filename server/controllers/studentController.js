@@ -130,7 +130,13 @@ const getQuizDetails = asyncHandler(async (req, res) => {
     school: req.user.school 
   }).populate({
     path: 'questions',
-    populate: { path: 'options', model: 'Option', select: '-isCorrect' },
+    options: { sort: { createdAt: 1 } },
+    populate: { 
+      path: 'options', 
+      model: 'Option', 
+      select: '-isCorrect',
+      options: { sort: { createdAt: 1 } }
+    },
   });
 
   if (!quiz) {
@@ -138,7 +144,14 @@ const getQuizDetails = asyncHandler(async (req, res) => {
     throw new Error('Quiz not found or unavailable for your school.');
   }
 
-  res.json(quiz);
+  // Convert to JSON to include virtuals
+  const quizJSON = quiz.toJSON();
+  
+  console.log('Quiz found:', quizJSON._id);
+  console.log('Questions count:', quizJSON.questions?.length);
+  console.log('First question has options:', quizJSON.questions?.[0]?.options?.length);
+
+  res.json(quizJSON);
 });
 
 // @desc  Submit a quiz and get AI-powered feedback
