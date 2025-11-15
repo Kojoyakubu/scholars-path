@@ -11,7 +11,11 @@ const questionSchema = new mongoose.Schema(
     topicTags: [{ type: String }],
     quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', index: true }, // ✅ ADDED: Link to quiz
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
 // Virtual link to options
