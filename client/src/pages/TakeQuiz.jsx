@@ -78,6 +78,9 @@ const TakeQuiz = () => {
         console.log('Fetching quiz with ID:', id);
         const res = await api.get(`/api/student/quiz/${id}`);
         console.log('Quiz data received:', res.data);
+        console.log('Questions array:', res.data.questions);
+        console.log('First question:', res.data.questions?.[0]);
+        console.log('First question options:', res.data.questions?.[0]?.options);
         setQuestions(res.data.questions || []);
       } catch (err) {
         console.error('Failed to load quiz', err);
@@ -164,11 +167,21 @@ const TakeQuiz = () => {
             <Typography variant="body1" sx={{ mb: 2 }}>
               {currentQ?.text || currentQ?.question || currentQ?.questionText}
             </Typography>
+            
+            {/* Debug info */}
+            {(!currentQ?.options || currentQ?.options?.length === 0) && (
+              <Typography variant="body2" color="error" sx={{ mb: 2 }}>
+                No options loaded. Check console for details.
+              </Typography>
+            )}
+            
             <Stack spacing={1}>
               {currentQ?.options?.map((opt, i) => {
                 // Handle both string options and object options
                 const optionText = typeof opt === 'string' ? opt : opt?.text;
                 const optionValue = typeof opt === 'string' ? opt : opt?._id;
+                
+                console.log('Rendering option', i, ':', { opt, optionText, optionValue });
                 
                 return (
                   <Button
@@ -176,8 +189,9 @@ const TakeQuiz = () => {
                     variant={answers[currentQ._id] === optionValue ? 'contained' : 'outlined'}
                     color="primary"
                     onClick={() => handleAnswer(currentQ._id, optionValue)}
+                    fullWidth
                   >
-                    {optionText}
+                    {optionText || `Option ${i + 1}`}
                   </Button>
                 );
               })}
