@@ -626,6 +626,9 @@ function Dashboard() {
   const [bannerCollapsed, setBannerCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // ✅ State for viewing notes
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
   // Calculate stats
   const stats = {
     notes: getArrayLength(safeNotes),
@@ -799,16 +802,59 @@ function Dashboard() {
     });
   }, []);
 
-  // 📥 Download handlers (preserved logic)
+
+  // ✅ FIXED: Download handlers
   const handleDownloadPdf = useCallback((note) => {
     dispatch(logNoteView(note._id));
-    downloadAsPdf(note.content, `${note.title || 'note'}.pdf`);
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.id = 'temp-note-content';
+    tempDiv.innerHTML = note.content;
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    document.body.appendChild(tempDiv);
+    
+    const noteName = note.subStrand?.name || 'note';
+    downloadAsPdf('temp-note-content', noteName);
+    
+    setTimeout(() => {
+      if (document.body.contains(tempDiv)) {
+        document.body.removeChild(tempDiv);
+      }
+    }, 1000);
   }, [dispatch]);
 
   const handleDownloadWord = useCallback((note) => {
     dispatch(logNoteView(note._id));
-    downloadAsWord(note.content, `${note.title || 'note'}.docx`);
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.id = 'temp-note-content-word';
+    tempDiv.innerHTML = note.content;
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    document.body.appendChild(tempDiv);
+    
+    const noteName = note.subStrand?.name || 'note';
+    downloadAsWord('temp-note-content-word', noteName);
+    
+    setTimeout(() => {
+      if (document.body.contains(tempDiv)) {
+        document.body.removeChild(tempDiv);
+      }
+    }, 1000);
   }, [dispatch]);
+
+  // ✅ NEW: Handle viewing note in modal
+  const handleViewNote = useCallback((note) => {
+    dispatch(logNoteView(note._id));
+    setSelectedNote(note);
+    setNoteModalOpen(true);
+  }, [dispatch]);
+
+  const handleCloseNoteModal = useCallback(() => {
+    setNoteModalOpen(false);
+    setSelectedNote(null);
+  }, []);
 
   // Refresh handler
   const handleRefresh = useCallback(() => {
@@ -1316,7 +1362,7 @@ function Dashboard() {
                               <Button
                                 variant="contained"
                                 startIcon={<PlayArrowIcon />}
-                                fullWidth
+                                onClick={() => handleViewNote(note)}
                                 sx={{
                                   background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                                   fontWeight: 600,
@@ -1677,10 +1723,167 @@ function Dashboard() {
               </motion.div>
             )}
           </AnimatePresence>
-        )}
+          )}
+
+
+        {/* ✅ Note Viewing Modal */}
+        <AnimatePresence>
+          {noteModalOpen && selectedNote && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <Box
+                sx={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  bgcolor: 'rgba(0, 0, 0, 0.8)',
+                  zIndex: 9999,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  p: 2,
+                }}
+                onClick={handleCloseNoteModal}
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh' }}
+                >
+                  <Paper
+                    elevation={24}
+                    sx={{
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      maxHeight: '90vh',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                        p: 3,
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ bgcolor: 'white', color: 'primary.main' }}>
+                          <MenuBookIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h5" fontWeight={700}>
+                            {selectedNote.subStrand?.name || 'Study Note'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            {selectedNote.author?.fullName || 'Teacher'} • {new Date(selectedNote.createdAt).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <IconButton
+                        onClick={handleCloseNoteModal}
+                        sx={{
+                          color: 'white',
+                          '&:hover': { bgcolor: alpha('#fff', 0.1) },
+                        }}
+                      >
+                        <Box sx={{ fontSize: 28 }}>×</Box>
+                      </IconButton>
+                    </Box>
+                    <Box
+                      sx={{
+                        p: 4,
+                        overflow: 'auto',
+                        flexGrow: 1,
+                        bgcolor: 'background.paper',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          '& h1': { fontSize: '2rem', fontWeight: 700, mb: 2, mt: 3 },
+                          '& h2': { fontSize: '1.5rem', fontWeight: 600, mb: 2, mt: 2.5 },
+                          '& h3': { fontSize: '1.25rem', fontWeight: 600, mb: 1.5, mt: 2 },
+                          '& p': { mb: 2, lineHeight: 1.8 },
+                          '& ul, & ol': { mb: 2, pl: 3 },
+                          '& li': { mb: 1 },
+                          '& strong': { fontWeight: 700, color: 'primary.main' },
+                          '& table': { 
+                            width: '100%', 
+                            borderCollapse: 'collapse', 
+                            mb: 2,
+                            '& th, & td': { 
+                              border: '1px solid', 
+                              borderColor: 'divider', 
+                              p: 1.5 
+                            },
+                            '& th': { 
+                              bgcolor: 'primary.main', 
+                              color: 'white', 
+                              fontWeight: 600 
+                            }
+                          }
+                        }}
+                      >
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeRaw]}
+                        >
+                          {selectedNote.content}
+                        </ReactMarkdown>
+                      </Box>
+                    </Box>
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: alpha(theme.palette.primary.main, 0.05),
+                        borderTop: `1px solid ${theme.palette.divider}`,
+                        display: 'flex',
+                        gap: 2,
+                        justifyContent: 'flex-end',
+                      }}
+                    >
+                      <Button
+                        variant="outlined"
+                        startIcon={<PictureAsPdfIcon />}
+                        onClick={() => handleDownloadPdf(selectedNote)}
+                      >
+                        Download PDF
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<DescriptionIcon />}
+                        onClick={() => handleDownloadWord(selectedNote)}
+                      >
+                        Download Word
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={handleCloseNoteModal}
+                      >
+                        Close
+                      </Button>
+                    </Box>
+                  </Paper>
+                </motion.div>
+              </Box>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </Container>
     </Box>
   );
-}
+};
 
 export default Dashboard;
