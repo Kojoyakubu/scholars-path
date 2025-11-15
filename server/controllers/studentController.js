@@ -51,7 +51,7 @@ const getLearnerNotes = asyncHandler(async (req, res) => {
     school: req.user.school,
     status: 'published',
   })
-  .populate('publishedBy', 'fullName email')
+  .populate('author', 'fullName email')
   .populate('subStrand', 'name')
   .sort({ createdAt: -1 });
 
