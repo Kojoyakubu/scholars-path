@@ -9,6 +9,7 @@ const questionSchema = new mongoose.Schema(
       default: 'Medium',
     },
     topicTags: [{ type: String }],
+    quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', index: true }, // ✅ ADDED: Link to quiz
   },
   { timestamps: true }
 );

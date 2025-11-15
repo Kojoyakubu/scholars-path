@@ -10,6 +10,7 @@ const learnerNoteSchema = new mongoose.Schema(
     aiProvider: { type: String },
     aiModel: { type: String },
     aiGeneratedAt: { type: Date },
+    quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' }, // ✅ ADDED: Link to quiz
   },
   { timestamps: true }
 );

@@ -2,7 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
-const axios = require('axios'); // ✅ BUG FIX: needed by searchImage
+const axios = require('axios');
 
 const LessonNote = require('../models/lessonNoteModel');
 const LearnerNote = require('../models/learnerNoteModel');
@@ -29,7 +29,6 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('A valid Sub-strand ID is required.');
   }
 
-  // Populate the full curriculum hierarchy to get all necessary names
   const subStrand = await SubStrand.findById(subStrandId).populate({
     path: 'strand',
     populate: {
@@ -43,7 +42,6 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Sub-strand not found');
   }
 
-  // Assemble safe AI details (with fallbacks)
   const aiDetails = {
     ...noteDetails,
     subStrandName: subStrand?.name ?? 'N/A',
@@ -52,7 +50,6 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     className: noteDetails.class || subStrand?.strand?.subject?.class?.name || 'N/A',
   };
 
-  // 🔗 New aiService returns { text, provider, model, ... }
   const { text: aiText, provider, model, timestamp } =
     await aiService.generateGhanaianLessonNote(aiDetails);
 
@@ -61,10 +58,6 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: subStrandId,
     content: aiText,
-    // Optionally store metadata if your schema supports it:
-    // aiProvider: provider,
-    // aiModel: model,
-    // aiGeneratedAt: new Date(timestamp),
   });
 
   res.status(201).json(lessonNote);
@@ -95,7 +88,6 @@ const getLessonNoteById = asyncHandler(async (req, res) => {
     throw new Error('Lesson note not found');
   }
 
-  // Authorization: Ensure the note belongs to the teacher or the user is an admin.
   if (note.teacher.toString() !== req.user.id.toString() && req.user.role !== 'admin') {
     res.status(403);
     throw new Error('Not authorized to view this note');
@@ -117,7 +109,6 @@ const deleteLessonNote = asyncHandler(async (req, res) => {
     throw new Error('Lesson note not found');
   }
 
-  // Only the author can delete
   if (note.teacher.toString() !== req.user.id.toString()) {
     res.status(403);
     throw new Error('Not authorized to delete this note');
@@ -141,7 +132,6 @@ const generateLearnerNote = asyncHandler(async (req, res) => {
     throw new Error('Lesson note not found or you are not the author.');
   }
 
-  // 🔗 New aiService returns { text, provider, model, ... }
   const { text: learnerText, provider, model, timestamp } =
     await aiService.generateLearnerFriendlyNote(lessonNote.content, {
       preferredProvider,
@@ -153,17 +143,13 @@ const generateLearnerNote = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: lessonNote.subStrand,
     content: learnerText,
-    // Optionally store metadata if schema supports:
-    // aiProvider: provider,
-    // aiModel: model,
-    // aiGeneratedAt: new Date(timestamp),
   });
 
   res.status(201).json(learnerNote);
 });
 
 /**
- * @desc    Create a new quiz (manual create; AI generation lives in quizController)
+ * @desc    Create a new quiz (manual create)
  * @route   POST /api/teacher/create-quiz
  * @access  Private (Teacher)
  */
@@ -267,7 +253,7 @@ const publishLearnerNote = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Delete a draft learner note
+ * @desc    Delete a learner note
  * @route   DELETE /api/teacher/learner-notes/:id
  * @access  Private (Teacher)
  */
@@ -275,22 +261,22 @@ const deleteLearnerNote = asyncHandler(async (req, res) => {
   const note = await LearnerNote.findOne({ _id: req.params.id, author: req.user.id });
   if (!note) {
     res.status(404);
-    throw new Error('Draft note not found.');
+    throw new Error('Note not found.');
   }
   await note.deleteOne();
-  res.json({ message: 'Draft note deleted successfully!', id: note._id });
+  res.json({ message: 'Note deleted successfully!', id: req.params.id });
 });
 
 /**
- * @desc    Search for an image using the Pexels API
+ * @desc    Search for an image using Pexels API
  * @route   GET /api/teacher/search-image
- * @access  Private
+ * @access  Private (Teacher)
  */
 const searchImage = asyncHandler(async (req, res) => {
   const { query } = req.query;
   if (!query) {
     res.status(400);
-    throw new Error('Search query is required.');
+    throw new Error('Query parameter is required.');
   }
 
   const response = await axios.get(
@@ -422,7 +408,7 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: subStrandId,
     content: learnerNoteHTML,
-    status: 'draft', // Teacher can publish later
+    status: 'draft',
     aiProvider: p2,
     aiModel: m2,
     aiGeneratedAt: new Date(t2),
@@ -442,12 +428,13 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   // Save all quiz questions (MCQ, True/False, Short Answer, Essay)
   const savedQuestionIds = [];
 
-  // Save MCQ questions
+  // ✅ FIXED: Save MCQ questions with quiz reference
   for (const mcq of structuredQuiz.mcq || []) {
     const qDoc = await Question.create({
       text: mcq.question,
       difficultyLevel: 'Medium',
       topicTags: [subStrand.name, 'MCQ'],
+      quiz: quizDoc._id, // ✅ ADDED: Link to quiz
     });
 
     // Create 4 options for each MCQ
@@ -462,12 +449,13 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     savedQuestionIds.push(qDoc._id);
   }
 
-  // Save True/False questions (stored as questions with 2 options)
+  // ✅ FIXED: Save True/False questions with quiz reference
   for (const tf of structuredQuiz.trueFalse || []) {
     const qDoc = await Question.create({
       text: tf.statement,
       difficultyLevel: 'Easy',
       topicTags: [subStrand.name, 'True/False'],
+      quiz: quizDoc._id, // ✅ ADDED: Link to quiz
     });
 
     await Option.create({
@@ -485,27 +473,33 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     savedQuestionIds.push(qDoc._id);
   }
 
-  // Save Short Answer questions (no options needed)
+  // ✅ FIXED: Save Short Answer questions with quiz reference
   for (const sa of structuredQuiz.shortAnswer || []) {
     const qDoc = await Question.create({
       text: sa.question,
       difficultyLevel: 'Medium',
       topicTags: [subStrand.name, 'Short Answer'],
+      quiz: quizDoc._id, // ✅ ADDED: Link to quiz
     });
 
     savedQuestionIds.push(qDoc._id);
   }
 
-  // Save Essay questions (no options needed)
+  // ✅ FIXED: Save Essay questions with quiz reference
   for (const essay of structuredQuiz.essay || []) {
     const qDoc = await Question.create({
       text: essay.question,
       difficultyLevel: 'Hard',
       topicTags: [subStrand.name, 'Essay'],
+      quiz: quizDoc._id, // ✅ ADDED: Link to quiz
     });
 
     savedQuestionIds.push(qDoc._id);
   }
+
+  // ✅ ADDED: Link quiz to learner note
+  learnerNote.quiz = quizDoc._id;
+  await learnerNote.save();
 
   console.log(`✅ Bundle Generation Complete!`);
   console.log(`   📝 Teacher Note: ${lessonNote._id}`);
@@ -560,5 +554,5 @@ module.exports = {
   publishLearnerNote,
   deleteLearnerNote,
   searchImage,
-  generateLessonBundle, // ✅ NEW: Bundle orchestrator
+  generateLessonBundle,
 };

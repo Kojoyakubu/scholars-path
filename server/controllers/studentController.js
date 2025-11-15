@@ -8,6 +8,7 @@ const QuizAttempt = require('../models/quizAttemptModel');
 const SubStrand = require('../models/subStrandModel');
 const StudentBadge = require('../models/studentBadgeModel');
 const NoteView = require('../models/noteViewModel');
+const User = require('../models/userModel');
 const { checkAndAwardQuizBadges } = require('../services/badgeService');
 const aiService = require('../services/aiService');
 
@@ -32,7 +33,7 @@ const calculateQuizScore = (quiz, answers) => {
 // 🎓 Student Controllers
 // ============================================================================
 
-// @desc  Get learner notes for a specific sub-strand (FIXED)
+// @desc  Get learner notes for a specific sub-strand
 // @route GET /api/student/notes/:subStrandId
 // @access Private/Student
 const getLearnerNotes = asyncHandler(async (req, res) => {
@@ -59,7 +60,50 @@ const getLearnerNotes = asyncHandler(async (req, res) => {
   res.json(notes);
 });
 
-// @desc  Get quizzes for a specific sub-strand (FIXED)
+// ✅ NEW: Get all published learner notes accessible to the student
+// @desc  Get all published learner notes for student's class
+// @route GET /api/student/learner-notes/published
+// @access Private/Student
+const getPublishedLearnerNotes = asyncHandler(async (req, res) => {
+  const student = await User.findById(req.user.id).populate('class');
+
+  if (!student || !student.class) {
+    res.status(400);
+    throw new Error('Student class information not found');
+  }
+
+  // Get all published learner notes for the student's school
+  const publishedNotes = await LearnerNote.find({
+    status: 'published',
+    school: student.school,
+  })
+    .populate({
+      path: 'subStrand',
+      populate: {
+        path: 'strand',
+        populate: {
+          path: 'subject',
+          populate: {
+            path: 'class',
+          },
+        },
+      },
+    })
+    .populate('quiz', 'title')
+    .populate('author', 'fullName')
+    .sort({ createdAt: -1 });
+
+  // Filter notes for student's class
+  const classNotes = publishedNotes.filter(note => {
+    return note.subStrand?.strand?.subject?.class?._id?.toString() === student.class._id.toString();
+  });
+
+  console.log(`✅ Found ${classNotes.length} published notes for class ${student.class.name}`);
+
+  res.json(classNotes);
+});
+
+// @desc  Get quizzes for a specific sub-strand
 // @route GET /api/student/quizzes/:subStrandId
 // @access Private/Student
 const getQuizzes = asyncHandler(async (req, res) => {
@@ -85,8 +129,6 @@ const getQuizzes = asyncHandler(async (req, res) => {
   const quizzes = await Quiz.find({
     subject: subStrand.strand.subject,
     school: req.user.school,
-    // Optionally filter by subStrand if Quiz model has that field:
-    // subStrand: subStrandId,
   })
   .populate('createdBy', 'fullName')
   .sort({ createdAt: -1 });
@@ -96,7 +138,7 @@ const getQuizzes = asyncHandler(async (req, res) => {
   res.json(quizzes);
 });
 
-// @desc  Get resources for a specific sub-strand (FIXED)
+// @desc  Get resources for a specific sub-strand
 // @route GET /api/student/resources/:subStrandId
 // @access Private/Student
 const getResources = asyncHandler(async (req, res) => {
@@ -109,8 +151,6 @@ const getResources = asyncHandler(async (req, res) => {
 
   // Find resources for this sub-strand at the same school
   const resources = await Resource.find({
-    // If Resource model has subStrand field:
-    // subStrand: subStrandId,
     school: req.user.school,
   })
   .populate('uploadedBy', 'fullName')
@@ -294,6 +334,7 @@ Focus on encouragement and next steps in learning.`;
 
 module.exports = {
   getLearnerNotes,
+  getPublishedLearnerNotes, // ✅ NEW: Added published notes endpoint
   getQuizzes,
   getResources,
   getQuizDetails,
