@@ -19,7 +19,7 @@ import Dashboard from './pages/Dashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import LessonNoteView from './pages/LessonNoteView';
-import Quiz from './pages/Quiz';
+import TakeQuiz from './pages/TakeQuiz';
 
 // Routes
 import PrivateRoute from './components/PrivateRoute';
@@ -72,7 +72,7 @@ const App = () => {
             {/* Student Dashboard */}
             <Route element={<RoleRoute allowedRoles={['student']} />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/quiz/:id" element={<Quiz />} />
+              <Route path="/quiz/:id" element={<TakeQuiz />} />
             </Route>
 
           </Route>
