@@ -287,11 +287,18 @@ const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
   console.log('Is answers an object?', answers && typeof answers === 'object');
   console.log('Is answers null?', answers === null);
   console.log('Is answers array?', Array.isArray(answers));
+  console.log('Number of answers provided:', answers ? Object.keys(answers).length : 0);
 
-  if (!answers || typeof answers !== 'object') {
-    console.log('❌ VALIDATION FAILED: Answers must be an object');
+  // Modified validation to accept empty objects (student might have skipped all questions)
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+    console.log('❌ VALIDATION FAILED: Answers must be a non-array object');
     res.status(400);
-    throw new Error('Answers must be an object.');
+    throw new Error('Answers must be an object (not an array).');
+  }
+
+  // Allow empty answers object (student gets 0%)
+  if (Object.keys(answers).length === 0) {
+    console.log('⚠️ WARNING: No answers provided, student will score 0%');
   }
 
   console.log('✅ Validation passed, fetching quiz...');
