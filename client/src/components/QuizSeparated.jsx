@@ -280,6 +280,20 @@ const QuizSeparated = () => {
     setLoading(true);
     
     try {
+      console.log('=== DEBUG: ALL ANSWERS IN STATE ===');
+      console.log('Total answers in state:', Object.keys(answers).length);
+      console.log('All answers:', answers);
+      
+      console.log('\n=== DEBUG: AUTO-GRADED QUESTIONS ===');
+      console.log('Total auto-graded questions:', autoGradedQuestions.length);
+      autoGradedQuestions.forEach((q, index) => {
+        console.log(`Question ${index + 1} ID:`, q._id);
+        console.log(`  Has answer?`, answers[q._id] ? 'YES' : 'NO');
+        if (answers[q._id]) {
+          console.log(`  Answer:`, answers[q._id]);
+        }
+      });
+      
       // Only send auto-graded answers for scoring
       const autoGradedAnswers = {};
       autoGradedQuestions.forEach(q => {
@@ -288,9 +302,10 @@ const QuizSeparated = () => {
         }
       });
       
-      console.log('=== SUBMITTING TO BACKEND ===');
+      console.log('\n=== SUBMITTING TO BACKEND ===');
       console.log('Quiz ID:', id);
       console.log('Answers being sent:', autoGradedAnswers);
+      console.log('Number of answers being sent:', Object.keys(autoGradedAnswers).length);
       console.log('Total auto-graded questions:', autoGradedQuestions.length);
       
       // Backend will calculate the score and return it
@@ -472,7 +487,10 @@ const QuizSeparated = () => {
                 <Button
                   variant="outlined"
                   startIcon={<MenuBookIcon />}
-                  onClick={() => setActiveTab(1)}
+                  onClick={() => {
+                    setActiveTab(1);
+                    setCurrentQuestionIndex(0); // Reset to first manual question
+                  }}
                   size="large"
                 >
                   View Written Questions
@@ -630,16 +648,24 @@ const QuizSeparated = () => {
                       </Avatar>
                       <Box sx={{ flex: 1 }}>
                         <Chip
-                          label={(currentQuestion?.type || 'MCQ').toUpperCase().replace('-', ' ')}
+                          label={(currentQuestion?.questionType || currentQuestion?.type || 'WRITTEN').toUpperCase().replace('-', ' ')}
                           size="small"
                           color="primary"
                           sx={{ mb: 2 }}
                         />
                         <Typography variant="h6" fontWeight={600}>
-                          {currentQuestion?.questionText || currentQuestion?.text || 'Question'}
+                          {currentQuestion?.questionText || currentQuestion?.text || currentQuestion?.question || 'No question text found'}
                         </Typography>
                       </Box>
                     </Box>
+
+                    {/* Debug info for manual questions */}
+                    {activeTab === 1 && (
+                      <Box sx={{ display: 'none' }}>
+                        {console.log('Current manual question:', currentQuestion)}
+                        {console.log('Question keys:', currentQuestion ? Object.keys(currentQuestion) : 'No question')}
+                      </Box>
+                    )}
 
                     <Divider sx={{ my: 3 }} />
 
