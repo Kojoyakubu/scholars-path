@@ -371,16 +371,25 @@ const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
     selectedOption: answers[questionId]
   }));
 
+  console.log('\n=== CREATING QUIZ ATTEMPT ===');
+  console.log('User object:', req.user);
+  console.log('User ID (_id):', req.user._id);
+  console.log('User ID (id):', req.user.id);
+  console.log('School:', req.user.school);
+
   // Create quiz attempt for auto-graded section only
+  // Use req.user.id (not req.user._id) because that's what the auth middleware sets
   const attempt = await QuizAttempt.create({
     quiz: quiz._id,
-    student: req.user._id,
+    student: req.user.id || req.user._id,  // Try both for compatibility
     school: req.user.school,
     score: correct,
     totalQuestions: totalAutoGraded,
     answers: answersArray,
     questionType: 'auto-graded',
   });
+
+  console.log('✅ Quiz attempt created:', attempt._id);
 
   // Asynchronously award badges
   checkAndAwardQuizBadges(req.user._id, attempt);
