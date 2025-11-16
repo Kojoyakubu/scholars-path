@@ -107,9 +107,17 @@ const QuizSeparated = () => {
           return false;
         }) || [];
         
-        const manual = data.questions?.filter(q => 
-          q.type === 'short-answer' || q.type === 'essay'
-        ) || [];
+        const manual = data.questions?.filter(q => {
+          // Questions with explicit type
+          if (q.type === 'short-answer' || q.type === 'essay') {
+            return true;
+          }
+          // Questions without type AND without options = written questions
+          if (!q.type && (!q.options || q.options.length === 0)) {
+            return true;
+          }
+          return false;
+        }) || [];
         
         // Check for questions without type that also don't have options (might be written questions)
         const uncategorized = data.questions?.filter(q => {
@@ -685,7 +693,8 @@ const QuizSeparated = () => {
                     {/* Manual Section - Show questions and answers */}
                     {activeTab === 1 && (
                       <Box>
-                        {currentQuestion?.type === 'short-answer' && (
+                        {/* Handle both typed and untyped written questions */}
+                        {(currentQuestion?.type === 'short-answer' || currentQuestion?.type === 'essay' || (!currentQuestion?.type && (!currentQuestion?.options || currentQuestion?.options?.length === 0))) && (
                           <Box>
                             <Alert severity="warning" sx={{ mb: 2 }}>
                               <Typography variant="body2">
@@ -698,29 +707,16 @@ const QuizSeparated = () => {
                                 <Typography variant="subtitle2" fontWeight={700} color="success.main" gutterBottom>
                                   ✓ Suggested Answer:
                                 </Typography>
-                                <Typography variant="body1">
+                                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                                   {currentQuestion.correctAnswer}
                                 </Typography>
                               </Paper>
                             )}
-                          </Box>
-                        )}
-
-                        {currentQuestion?.type === 'essay' && (
-                          <Box>
-                            <Alert severity="warning" sx={{ mb: 2 }}>
-                              <Typography variant="body2">
-                                ✍️ Write your essay in your exercise book
-                              </Typography>
-                            </Alert>
                             
-                            {showAnswers && currentQuestion.correctAnswer && (
-                              <Paper sx={{ p: 3, bgcolor: alpha(theme.palette.success.main, 0.1), border: `2px solid ${theme.palette.success.main}` }}>
-                                <Typography variant="subtitle2" fontWeight={700} color="success.main" gutterBottom>
-                                  ✓ Suggested Answer / Key Points:
-                                </Typography>
-                                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                                  {currentQuestion.correctAnswer}
+                            {showAnswers && !currentQuestion.correctAnswer && (
+                              <Paper sx={{ p: 3, bgcolor: alpha(theme.palette.info.main, 0.1), border: `2px dashed ${theme.palette.info.main}` }}>
+                                <Typography variant="body2" color="text.secondary">
+                                  No model answer provided for this question. Check your work with your teacher.
                                 </Typography>
                               </Paper>
                             )}
