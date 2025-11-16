@@ -93,9 +93,17 @@ const QuizSeparated = () => {
         setQuiz(data);
         
         // Separate questions by type
-        const autoGraded = data.questions?.filter(q => 
-          q.type === 'mcq' || q.type === 'true-false'
-        ) || [];
+        // If question has no type field, treat questions with options as MCQ
+        const autoGraded = data.questions?.filter(q => {
+          if (q.type === 'mcq' || q.type === 'true-false') {
+            return true;
+          }
+          // Fallback: if no type but has options, treat as MCQ
+          if (!q.type && q.options && q.options.length > 0) {
+            return true;
+          }
+          return false;
+        }) || [];
         
         const manual = data.questions?.filter(q => 
           q.type === 'short-answer' || q.type === 'essay'
@@ -105,6 +113,8 @@ const QuizSeparated = () => {
         setManualQuestions(manual);
         
         console.log(`Separated: ${autoGraded.length} auto-graded, ${manual.length} manual questions`);
+        console.log('Auto-graded questions:', autoGraded);
+        console.log('Manual questions:', manual);
         
         // Initialize timer if quiz has time limit (only for auto-graded section)
         if (data.timeLimit && autoGraded.length > 0) {
@@ -513,13 +523,13 @@ const QuizSeparated = () => {
                       </Avatar>
                       <Box sx={{ flex: 1 }}>
                         <Chip
-                          label={currentQuestion?.type?.toUpperCase().replace('-', ' ')}
+                          label={(currentQuestion?.type || 'MCQ').toUpperCase().replace('-', ' ')}
                           size="small"
                           color="primary"
                           sx={{ mb: 2 }}
                         />
                         <Typography variant="h6" fontWeight={600}>
-                          {currentQuestion?.questionText}
+                          {currentQuestion?.questionText || currentQuestion?.text || 'Question'}
                         </Typography>
                       </Box>
                     </Box>
@@ -529,38 +539,44 @@ const QuizSeparated = () => {
                     {/* Answer Options - Auto-graded Section */}
                     {activeTab === 0 && (
                       <>
-                        {currentQuestion?.type === 'mcq' && (
+                        {(currentQuestion?.type === 'mcq' || (!currentQuestion?.type && currentQuestion?.options)) && (
                           <FormControl component="fieldset" fullWidth>
                             <RadioGroup
                               value={answers[currentQuestion._id] || ''}
                               onChange={(e) => handleAnswerChange(currentQuestion._id, e.target.value)}
                             >
-                              {currentQuestion.options?.map((option, index) => (
-                                <Paper
-                                  key={index}
-                                  elevation={0}
-                                  sx={{
-                                    p: 2,
-                                    mb: 2,
-                                    border: `2px solid ${answers[currentQuestion._id] === option ? theme.palette.primary.main : theme.palette.divider}`,
-                                    borderRadius: 2,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                      bgcolor: alpha(theme.palette.primary.main, 0.05),
-                                      borderColor: theme.palette.primary.main,
-                                    },
-                                  }}
-                                  onClick={() => handleAnswerChange(currentQuestion._id, option)}
-                                >
-                                  <FormControlLabel
-                                    value={option}
-                                    control={<Radio />}
-                                    label={option}
-                                    sx={{ width: '100%', m: 0 }}
-                                  />
-                                </Paper>
-                              ))}
+                              {currentQuestion.options?.map((option, index) => {
+                                // Handle both string options and object options
+                                const optionText = typeof option === 'string' ? option : option?.text;
+                                const optionValue = typeof option === 'string' ? option : (option?._id || option?.text);
+                                
+                                return (
+                                  <Paper
+                                    key={index}
+                                    elevation={0}
+                                    sx={{
+                                      p: 2,
+                                      mb: 2,
+                                      border: `2px solid ${answers[currentQuestion._id] === optionValue ? theme.palette.primary.main : theme.palette.divider}`,
+                                      borderRadius: 2,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s',
+                                      '&:hover': {
+                                        bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                        borderColor: theme.palette.primary.main,
+                                      },
+                                    }}
+                                    onClick={() => handleAnswerChange(currentQuestion._id, optionValue)}
+                                  >
+                                    <FormControlLabel
+                                      value={optionValue}
+                                      control={<Radio />}
+                                      label={optionText}
+                                      sx={{ width: '100%', m: 0 }}
+                                    />
+                                  </Paper>
+                                );
+                              })}
                             </RadioGroup>
                           </FormControl>
                         )}
