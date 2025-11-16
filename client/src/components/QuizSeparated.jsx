@@ -89,6 +89,8 @@ const QuizSeparated = () => {
         const data = response.data;
         
         console.log('Quiz data loaded:', data);
+        console.log('Total questions:', data.questions?.length);
+        console.log('Sample question structure:', data.questions?.[0]);
         
         setQuiz(data);
         
@@ -109,12 +111,23 @@ const QuizSeparated = () => {
           q.type === 'short-answer' || q.type === 'essay'
         ) || [];
         
+        // Check for questions without type that also don't have options (might be written questions)
+        const uncategorized = data.questions?.filter(q => {
+          const isAutoGraded = autoGraded.includes(q);
+          const isManual = manual.includes(q);
+          return !isAutoGraded && !isManual;
+        }) || [];
+        
         setAutoGradedQuestions(autoGraded);
         setManualQuestions(manual);
         
         console.log(`Separated: ${autoGraded.length} auto-graded, ${manual.length} manual questions`);
-        console.log('Auto-graded questions:', autoGraded);
-        console.log('Manual questions:', manual);
+        console.log('Uncategorized questions:', uncategorized.length);
+        if (uncategorized.length > 0) {
+          console.log('Sample uncategorized question:', uncategorized[0]);
+        }
+        console.log('Auto-graded sample:', autoGraded[0]);
+        console.log('Manual sample:', manual[0]);
         
         // Initialize timer if quiz has time limit (only for auto-graded section)
         if (data.timeLimit && autoGraded.length > 0) {
@@ -185,15 +198,65 @@ const QuizSeparated = () => {
     let correct = 0;
     let total = autoGradedQuestions.length;
 
-    autoGradedQuestions.forEach((question) => {
+    console.log('=== SCORING DEBUG ===');
+    console.log('Total questions to score:', total);
+    console.log('User answers:', answers);
+
+    autoGradedQuestions.forEach((question, index) => {
       const userAnswer = answers[question._id];
       
-      if (question.type === 'mcq' || question.type === 'true-false') {
+      console.log(`\nQuestion ${index + 1}:`, question.text?.substring(0, 50) + '...');
+      console.log('User answered:', userAnswer);
+      
+      if (!userAnswer) {
+        console.log('  ❌ No answer provided');
+        return; // Skip unanswered questions
+      }
+      
+      // Method 1: Check if question has correctAnswer field
+      if (question.correctAnswer) {
+        console.log('  Using correctAnswer field:', question.correctAnswer);
         if (userAnswer === question.correctAnswer) {
           correct++;
+          console.log('  ✅ CORRECT');
+        } else {
+          console.log('  ❌ WRONG');
+        }
+      } 
+      // Method 2: Check if options have isCorrect flag (most common)
+      else if (question.options && Array.isArray(question.options)) {
+        console.log('  Options:', question.options.length);
+        
+        const correctOption = question.options.find(opt => {
+          if (typeof opt === 'object' && opt.isCorrect === true) {
+            return true;
+          }
+          return false;
+        });
+        
+        if (correctOption) {
+          console.log('  Correct option found:', correctOption);
+          
+          // Check if user's answer matches the correct option
+          const correctValue = correctOption._id || correctOption.text;
+          console.log('  Comparing:', userAnswer, '===', correctValue);
+          
+          if (userAnswer === correctValue || userAnswer === correctOption.text) {
+            correct++;
+            console.log('  ✅ CORRECT');
+          } else {
+            console.log('  ❌ WRONG - Answer doesn\'t match');
+          }
+        } else {
+          console.log('  ⚠️ No correct option found (no isCorrect flag)');
         }
       }
     });
+
+    console.log('\n=== FINAL SCORE ===');
+    console.log('Correct:', correct);
+    console.log('Total:', total);
+    console.log('Percentage:', Math.round((correct / total) * 100) + '%');
 
     return {
       correct,
