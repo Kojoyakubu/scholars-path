@@ -275,12 +275,26 @@ Keep it under 6 sentences, positive and constructive.`;
 // @route POST /api/student/quiz/:id/submit-auto-graded
 // @access Private/Student
 const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
+  console.log('\n=== RECEIVED QUIZ SUBMISSION ===');
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  console.log('Quiz ID from params:', req.params.id);
+  console.log('User:', req.user?._id);
+  
   const { answers, score: clientScore } = req.body;
 
+  console.log('Extracted answers:', answers);
+  console.log('Type of answers:', typeof answers);
+  console.log('Is answers an object?', answers && typeof answers === 'object');
+  console.log('Is answers null?', answers === null);
+  console.log('Is answers array?', Array.isArray(answers));
+
   if (!answers || typeof answers !== 'object') {
+    console.log('❌ VALIDATION FAILED: Answers must be an object');
     res.status(400);
     throw new Error('Answers must be an object.');
   }
+
+  console.log('✅ Validation passed, fetching quiz...');
 
   const quiz = await Quiz.findById(req.params.id).populate({
     path: 'questions',
@@ -288,9 +302,13 @@ const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
   });
 
   if (!quiz) {
+    console.log('❌ Quiz not found with ID:', req.params.id);
     res.status(404);
     throw new Error('Quiz not found.');
   }
+
+  console.log('✅ Quiz found:', quiz._id);
+  console.log('Quiz has', quiz.questions?.length, 'questions');
 
   // All questions in the quiz are considered auto-gradable
   // since we separated objective (MCQ/True-False) from subjective (Short Answer/Essay)
