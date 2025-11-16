@@ -1,4 +1,4 @@
-// /server/controllers/studentController.js
+// /server/controllers/studentController.js - ENHANCED WITH DEBUGGING
 
 const asyncHandler = require('express-async-handler');
 const LearnerNote = require('../models/learnerNoteModel');
@@ -32,7 +32,7 @@ const calculateQuizScore = (quiz, answers) => {
 // 🎓 Student Controllers
 // ============================================================================
 
-// @desc  Get learner notes for a specific sub-strand (FIXED)
+// @desc  Get learner notes for a specific sub-strand (ENHANCED WITH DEBUGGING)
 // @route GET /api/student/notes/:subStrandId
 // @access Private/Student
 const getLearnerNotes = asyncHandler(async (req, res) => {
@@ -40,23 +40,72 @@ const getLearnerNotes = asyncHandler(async (req, res) => {
   
   console.log('📚 Fetching learner notes:', {
     subStrandId,
-    school: req.user.school,
-    student: req.user._id
+    school: req.user.school?._id || req.user.school,
+    schoolName: req.user.school?.name,
+    student: req.user._id,
+    studentName: req.user.fullName
   });
 
-  // Find published notes for this sub-strand from teachers at the same school
-  const notes = await LearnerNote.find({
-    subStrand: subStrandId,
-    school: req.user.school,
-    status: 'published',
-  })
-  .populate('author', 'fullName email')
-  .populate('subStrand', 'name')
-  .sort({ createdAt: -1 });
+  try {
+    // Get school ID (handle both populated and non-populated)
+    const schoolId = req.user.school?._id || req.user.school;
+    
+    if (!schoolId) {
+      console.log('❌ No school ID found for user');
+      return res.json([]);
+    }
 
-  console.log(`✅ Found ${notes.length} published notes for sub-strand ${subStrandId}`);
-  
-  res.json(notes);
+    // Find published notes
+    const notes = await LearnerNote.find({
+      subStrand: subStrandId,
+      school: schoolId,
+      status: 'published',
+    })
+    .populate('author', 'fullName email')
+    .populate('subStrand', 'name')
+    .sort({ createdAt: -1 });
+
+    console.log(`✅ Found ${notes.length} published notes`);
+    
+    // If no notes found, check why
+    if (notes.length === 0) {
+      console.log('🔍 Debugging why no notes found...');
+      
+      // Check if ANY notes exist for this substrand (any status)
+      const allSubstrandNotes = await LearnerNote.find({ subStrand: subStrandId });
+      console.log(`   - Total notes for substrand (any status): ${allSubstrandNotes.length}`);
+      
+      if (allSubstrandNotes.length > 0) {
+        console.log(`   - Statuses:`, allSubstrandNotes.map(n => n.status));
+      }
+      
+      // Check if ANY notes exist for this school
+      const schoolNotes = await LearnerNote.find({ school: schoolId });
+      console.log(`   - Total notes for school: ${schoolNotes.length}`);
+      
+      // Check published notes for this school
+      const publishedSchoolNotes = await LearnerNote.find({ 
+        school: schoolId, 
+        status: 'published' 
+      });
+      console.log(`   - Published notes for school: ${publishedSchoolNotes.length}`);
+      
+      if (publishedSchoolNotes.length > 0) {
+        console.log(`   - SubStrands with published notes:`, 
+          publishedSchoolNotes.map(n => n.subStrand?.toString()).filter(Boolean)
+        );
+      }
+    }
+    
+    res.json(notes);
+    
+  } catch (error) {
+    console.error('❌ Error fetching learner notes:', error);
+    res.status(500).json({ 
+      message: 'Error fetching notes', 
+      error: error.message 
+    });
+  }
 });
 
 // @desc  Get quizzes for a specific sub-strand (FIXED)
@@ -85,8 +134,6 @@ const getQuizzes = asyncHandler(async (req, res) => {
   const quizzes = await Quiz.find({
     subject: subStrand.strand.subject,
     school: req.user.school,
-    // Optionally filter by subStrand if Quiz model has that field:
-    // subStrand: subStrandId,
   })
   .populate('teacher', 'fullName')
   .sort({ createdAt: -1 });
@@ -109,8 +156,6 @@ const getResources = asyncHandler(async (req, res) => {
 
   // Find resources for this sub-strand at the same school
   const resources = await Resource.find({
-    // If Resource model has subStrand field:
-    // subStrand: subStrandId,
     school: req.user.school,
   })
   .populate('teacher', 'fullName')
@@ -226,6 +271,101 @@ Keep it under 6 sentences, positive and constructive.`;
   });
 });
 
+// @desc  Submit auto-graded section (MCQs and True/False only)
+// @route POST /api/student/quiz/:id/submit-auto-graded
+// @access Private/Student
+const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
+  const { answers, score: clientScore } = req.body;
+
+  if (!answers || typeof answers !== 'object') {
+    res.status(400);
+    throw new Error('Answers must be an object.');
+  }
+
+  const quiz = await Quiz.findById(req.params.id).populate({
+    path: 'questions',
+    populate: { path: 'options', model: 'Option' },
+  });
+
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found.');
+  }
+
+  // Filter only auto-graded questions (MCQ and True/False)
+  const autoGradedQuestions = quiz.questions.filter(q => 
+    q.type === 'mcq' || q.type === 'true-false'
+  );
+
+  // Calculate score for auto-graded questions only
+  let correct = 0;
+  autoGradedQuestions.forEach((question) => {
+    const userAnswer = answers[question._id];
+    if (userAnswer === question.correctAnswer) {
+      correct++;
+    }
+  });
+
+  const totalAutoGraded = autoGradedQuestions.length;
+  const percentage = totalAutoGraded > 0 ? Math.round((correct / totalAutoGraded) * 100) : 0;
+
+  // Convert answers object to array format for storage
+  const answersArray = Object.keys(answers).map(questionId => ({
+    questionId,
+    selectedOption: answers[questionId]
+  }));
+
+  // Create quiz attempt for auto-graded section only
+  const attempt = await QuizAttempt.create({
+    quiz: quiz._id,
+    student: req.user._id,
+    school: req.user.school,
+    score: correct,
+    totalQuestions: totalAutoGraded,
+    answers: answersArray,
+    questionType: 'auto-graded',
+  });
+
+  // Asynchronously award badges
+  checkAndAwardQuizBadges(req.user._id, attempt);
+
+  // 🧠 Generate personalized AI feedback for auto-graded section
+  let feedback = '';
+  try {
+    const prompt = `
+You are a Ghanaian educational coach.
+Provide short motivational feedback for a student after completing the auto-graded section (MCQs and True/False) of a quiz.
+
+Subject: ${quiz.subject || 'N/A'}
+Quiz Title: ${quiz.title || 'Untitled'}
+Auto-Graded Questions Answered: ${totalAutoGraded}
+Score: ${correct}
+Performance: ${percentage}%
+
+Keep it under 6 sentences, positive and constructive. Mention that they should also attempt the written questions in their exercise book.`;
+
+    const result = await aiService.generateTextCore({
+      prompt,
+      task: 'quizFeedback',
+      temperature: 0.6,
+      preferredProvider: 'claude',
+    });
+
+    feedback = result.text;
+  } catch (err) {
+    console.error('AI feedback failed:', err.message);
+    feedback = 'Good effort on the auto-graded questions! Remember to complete the written questions in your exercise book.';
+  }
+
+  res.status(200).json({
+    message: 'Auto-graded section submitted successfully!',
+    score: correct,
+    totalQuestions: totalAutoGraded,
+    percentage,
+    feedback,
+  });
+});
+
 // @desc  Get badges earned by logged-in student
 // @route GET /api/student/badges
 // @access Private/Student
@@ -303,112 +443,6 @@ Focus on encouragement and next steps in learning.`;
   } catch (err) {
     res.json({ insight: 'Keep studying and you will improve with each quiz!' });
   }
-});
-
-module.exports = {
-  getLearnerNotes,
-  getQuizzes,
-  getResources,
-  getQuizDetails,
-  submitQuiz,
-  getMyBadges,
-  logNoteView,
-  getCurrentQuiz,
-  getQuizInsights,
-};
-// @desc  Submit auto-graded section (MCQs and True/False only)
-// @route POST /api/student/quiz/:id/submit-auto-graded
-// @access Private/Student
-const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
-  const { answers, score: clientScore } = req.body;
-
-  if (!answers || typeof answers !== 'object') {
-    res.status(400);
-    throw new Error('Answers must be an object.');
-  }
-
-  const quiz = await Quiz.findById(req.params.id).populate({
-    path: 'questions',
-    populate: { path: 'options', model: 'Option' },
-  });
-
-  if (!quiz) {
-    res.status(404);
-    throw new Error('Quiz not found.');
-  }
-
-  // Filter only auto-graded questions (MCQ and True/False)
-  const autoGradedQuestions = quiz.questions.filter(q => 
-    q.type === 'mcq' || q.type === 'true-false'
-  );
-
-  // Calculate score for auto-graded questions only
-  let correct = 0;
-  autoGradedQuestions.forEach((question) => {
-    const userAnswer = answers[question._id];
-    if (userAnswer === question.correctAnswer) {
-      correct++;
-    }
-  });
-
-  const totalAutoGraded = autoGradedQuestions.length;
-  const percentage = totalAutoGraded > 0 ? Math.round((correct / totalAutoGraded) * 100) : 0;
-
-  // Convert answers object to array format for storage
-  const answersArray = Object.keys(answers).map(questionId => ({
-    questionId,
-    selectedOption: answers[questionId]
-  }));
-
-  // Create quiz attempt for auto-graded section only
-  const attempt = await QuizAttempt.create({
-    quiz: quiz._id,
-    student: req.user._id,
-    school: req.user.school,
-    score: correct,
-    totalQuestions: totalAutoGraded,
-    answers: answersArray,
-    questionType: 'auto-graded', // Flag to indicate this is only the auto-graded section
-  });
-
-  // Asynchronously award badges
-  checkAndAwardQuizBadges(req.user._id, attempt);
-
-  // 🧠 Generate personalized AI feedback for auto-graded section
-  let feedback = '';
-  try {
-    const prompt = `
-You are a Ghanaian educational coach.
-Provide short motivational feedback for a student after completing the auto-graded section (MCQs and True/False) of a quiz.
-
-Subject: ${quiz.subject || 'N/A'}
-Quiz Title: ${quiz.title || 'Untitled'}
-Auto-Graded Questions Answered: ${totalAutoGraded}
-Score: ${correct}
-Performance: ${percentage}%
-
-Keep it under 6 sentences, positive and constructive. Mention that they should also attempt the written questions in their exercise book.`;
-
-    const result = await aiService.generateTextCore({
-      prompt,
-      task: 'quizFeedback',
-      temperature: 0.6,
-      preferredProvider: 'claude',
-    });
-
-    feedback = result.text;
-  } catch (err) {
-    console.error('AI feedback failed:', err.message);
-    feedback = 'Good effort on the auto-graded questions! Remember to complete the written questions in your exercise book.';
-  }
-
-  res.status(200).json({
-    message: 'Auto-graded section submitted successfully!',
-    score: correct,
-    totalQuestions: totalAutoGraded,
-    percentage,
-    feedback,
-  });
 });
 
 module.exports = {

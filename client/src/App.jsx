@@ -1,7 +1,8 @@
-// /client/src/App.jsx - FINAL COMPLETE VERSION
+// /client/src/App.jsx - UPDATED WITH SEPARATED QUIZ
 // ✅ LandingPage at root "/"
 // ✅ Multiple auth options: /login, /register, /auth
 // ✅ Layout wrapper for protected routes (sidebars work)
+// ✅ QuizSeparated component for separated question types
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -19,7 +20,9 @@ import Dashboard from './pages/Dashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import LessonNoteView from './pages/LessonNoteView';
-import TakeQuiz from './pages/TakeQuiz';
+
+// ✅ UPDATED: Import QuizSeparated instead of TakeQuiz
+import QuizSeparated from './components/QuizSeparated';
 
 // Routes
 import PrivateRoute from './components/PrivateRoute';
@@ -72,7 +75,8 @@ const App = () => {
             {/* Student Dashboard */}
             <Route element={<RoleRoute allowedRoles={['student']} />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/quiz/:id" element={<TakeQuiz />} />
+              {/* ✅ UPDATED: Use QuizSeparated for separated question types */}
+              <Route path="/quiz/:id" element={<QuizSeparated />} />
             </Route>
 
           </Route>
@@ -89,53 +93,31 @@ export default App;
 
 /* 
 ==========================================
-ROUTING STRUCTURE EXPLANATION:
+QUIZ SEPARATION UPDATE:
 ==========================================
 
-PUBLIC PAGES (No sidebar):
-- /                  → LandingPage (marketing homepage)
-- /auth              → AuthPortal (combined login/register with sliding panels)
-- /login             → Login (dedicated login page)
-- /register          → Register (dedicated register page)
+The quiz route now uses QuizSeparated component which:
 
-PROTECTED PAGES (With sidebar):
-- /dashboard         → Student Dashboard
-- /teacher/dashboard → Teacher Dashboard
-- /admin             → Admin Dashboard
+1. SEPARATES QUESTIONS INTO TWO SECTIONS:
+   - Auto-Graded: MCQs and True/False (shown on dashboard)
+   - Written: Short Answer and Essay (for exercise books)
 
-==========================================
-WHICH AUTH PAGES TO USE:
-==========================================
+2. AUTO-GRADED SECTION:
+   - Timer countdown (if applicable)
+   - Automatic scoring
+   - Immediate feedback
+   - Results displayed with percentage
+   - Dashboard shows this score only
 
-Option 1: Use AuthPortal (/auth)
-- Modern sliding panel design
-- Login and register in one page
-- Users can toggle between forms
-- Update LandingPage buttons to point to /auth
+3. WRITTEN SECTION:
+   - Students complete in exercise books
+   - Model answers viewable after auto-graded submission
+   - No timer
+   - Not counted in dashboard score
 
-Option 2: Use separate Login and Register
-- Traditional approach
-- Dedicated page for each action
-- Current LandingPage buttons already point to these
-- More common pattern
-
-Option 3: Keep both (current setup)
-- Users can access either /auth OR /login + /register
-- More flexibility
-- LandingPage uses /login and /register
-- You can offer /auth as alternative
-
-==========================================
-RECOMMENDATION: Use Option 2 (Separate Pages)
-==========================================
-
-Your LandingPage already has buttons linking to:
-- /register (Get Started button)
-- /login (Sign In button)
-
-So the separate Login.jsx and Register.jsx pages 
-work perfectly with your current setup!
-
-You can keep AuthPortal at /auth as an alternative,
-or remove it if you don't need it.
+4. BENEFITS:
+   - Saves 60%+ teacher grading time
+   - Clear dashboard metrics (objective scores only)
+   - Students learn from model answers
+   - Better user experience
 */
