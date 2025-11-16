@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../api/axios';
 import {
   Box,
   Container,
@@ -83,20 +84,10 @@ const QuizSeparated = () => {
     const fetchQuiz = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
         
-        const response = await fetch(`http://localhost:5000/api/student/quiz/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to load quiz');
-        }
-
-        const data = await response.json();
+        const response = await api.get(`/api/student/quiz/${id}`);
+        const data = response.data;
+        
         console.log('Quiz data loaded:', data);
         
         setQuiz(data);
@@ -209,8 +200,6 @@ const QuizSeparated = () => {
 
     // Send results to backend
     try {
-      const token = localStorage.getItem('token');
-      
       // Only send auto-graded answers for scoring
       const autoGradedAnswers = {};
       autoGradedQuestions.forEach(q => {
@@ -219,17 +208,10 @@ const QuizSeparated = () => {
         }
       });
       
-      await fetch(`http://localhost:5000/api/student/quiz/${id}/submit-auto-graded`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          answers: autoGradedAnswers,
-          score: scoreData.percentage,
-          completedAt: new Date().toISOString()
-        })
+      await api.post(`/api/student/quiz/${id}/submit-auto-graded`, {
+        answers: autoGradedAnswers,
+        score: scoreData.percentage,
+        completedAt: new Date().toISOString()
       });
     } catch (err) {
       console.error('Error submitting auto-graded quiz:', err);
