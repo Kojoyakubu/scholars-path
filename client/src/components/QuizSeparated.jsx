@@ -47,6 +47,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GradingIcon from '@mui/icons-material/Grading';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { toast } from 'react-hot-toast';
 
 // Animation variants
 const fadeInUp = {
