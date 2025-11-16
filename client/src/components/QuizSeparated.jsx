@@ -50,7 +50,6 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GradingIcon from '@mui/icons-material/Grading';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 
 // Animation variants
 const fadeInUp = {
