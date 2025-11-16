@@ -273,13 +273,10 @@ const QuizSeparated = () => {
     };
   };
 
-  // Submit auto-graded section
+  // Submit auto-graded section - backend will calculate the score
   const handleSubmitAutoGraded = async () => {
-    const scoreData = calculateAutoGradedScore();
-    setScore(scoreData);
-    setAutoGradedSubmitted(true);
-
-    // Send results to backend
+    setLoading(true);
+    
     try {
       // Only send auto-graded answers for scoring
       const autoGradedAnswers = {};
@@ -289,13 +286,40 @@ const QuizSeparated = () => {
         }
       });
       
-      await api.post(`/api/student/quiz/${id}/submit-auto-graded`, {
+      console.log('=== SUBMITTING TO BACKEND ===');
+      console.log('Quiz ID:', id);
+      console.log('Answers being sent:', autoGradedAnswers);
+      console.log('Total auto-graded questions:', autoGradedQuestions.length);
+      
+      // Backend will calculate the score and return it
+      const response = await api.post(`/api/student/quiz/${id}/submit-auto-graded`, {
         answers: autoGradedAnswers,
-        score: scoreData.percentage,
         completedAt: new Date().toISOString()
       });
+
+      console.log('=== BACKEND RESPONSE ===');
+      console.log('Score:', response.data.score);
+      console.log('Total Questions:', response.data.totalQuestions);
+      console.log('Percentage:', response.data.percentage);
+      console.log('Feedback:', response.data.feedback);
+      
+      // Use the score calculated by the backend
+      const scoreData = {
+        correct: response.data.score,
+        total: response.data.totalQuestions,
+        percentage: response.data.percentage,
+        feedback: response.data.feedback
+      };
+      
+      setScore(scoreData);
+      setAutoGradedSubmitted(true);
+      
+      toast.success('Quiz submitted successfully!');
     } catch (err) {
       console.error('Error submitting auto-graded quiz:', err);
+      toast.error(err.response?.data?.message || 'Failed to submit quiz');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -418,6 +442,17 @@ const QuizSeparated = () => {
                 <Typography variant="body2">
                   This quiz also has {manualQuestions.length} short answer/essay question(s). 
                   Complete them in your exercise book, then view the answers below.
+                </Typography>
+              </Alert>
+            )}
+
+            {score?.feedback && (
+              <Alert severity="success" sx={{ mb: 3, textAlign: 'left' }}>
+                <Typography variant="body2" fontWeight={600} gutterBottom>
+                  💬 Teacher's Feedback
+                </Typography>
+                <Typography variant="body2">
+                  {score.feedback}
                 </Typography>
               </Alert>
             )}

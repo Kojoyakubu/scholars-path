@@ -292,21 +292,52 @@ const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
     throw new Error('Quiz not found.');
   }
 
-  // Filter only auto-graded questions (MCQ and True/False)
-  const autoGradedQuestions = quiz.questions.filter(q => 
-    q.type === 'mcq' || q.type === 'true-false'
-  );
+  // All questions in the quiz are considered auto-gradable
+  // since we separated objective (MCQ/True-False) from subjective (Short Answer/Essay)
+  const autoGradedQuestions = quiz.questions;
 
-  // Calculate score for auto-graded questions only
+  console.log('\n=== BACKEND SCORING DEBUG ===');
+  console.log(`Total questions to grade: ${autoGradedQuestions.length}`);
+
+  // Calculate score by checking if the selected option has isCorrect: true
   let correct = 0;
   autoGradedQuestions.forEach((question) => {
-    const userAnswer = answers[question._id];
-    if (userAnswer === question.correctAnswer) {
-      correct++;
+    const userAnswerOptionId = answers[question._id.toString()];
+    
+    console.log(`\nQuestion: ${question.text.substring(0, 50)}...`);
+    console.log(`User selected option ID: ${userAnswerOptionId}`);
+    console.log(`Question has ${question.options?.length || 0} options`);
+    
+    if (!userAnswerOptionId) {
+      console.log('⚠️ No answer provided for this question');
+      return;
+    }
+
+    // Find the selected option and check if it's correct
+    const selectedOption = question.options.find(
+      opt => opt._id.toString() === userAnswerOptionId
+    );
+
+    if (selectedOption) {
+      console.log(`Selected option text: "${selectedOption.text}"`);
+      console.log(`Is correct: ${selectedOption.isCorrect}`);
+      
+      if (selectedOption.isCorrect === true) {
+        correct++;
+        console.log('✅ Answer is CORRECT');
+      } else {
+        console.log('❌ Answer is INCORRECT');
+      }
+    } else {
+      console.log('⚠️ Selected option not found in question options');
     }
   });
 
   const totalAutoGraded = autoGradedQuestions.length;
+  console.log(`\n=== FINAL BACKEND SCORE ===`);
+  console.log(`Correct: ${correct}`);
+  console.log(`Total: ${totalAutoGraded}`);
+  console.log(`Percentage: ${totalAutoGraded > 0 ? Math.round((correct / totalAutoGraded) * 100) : 0}%\n`);
   const percentage = totalAutoGraded > 0 ? Math.round((correct / totalAutoGraded) * 100) : 0;
 
   // Convert answers object to array format for storage
