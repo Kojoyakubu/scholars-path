@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+
 import api from '../api/axios';
 import {
   Box,
@@ -47,7 +49,6 @@ import HomeIcon from '@mui/icons-material/Home';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GradingIcon from '@mui/icons-material/Grading';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { toast } from 'react-hot-toast';
 
 // Animation variants
 const fadeInUp = {
@@ -315,10 +316,9 @@ const QuizSeparated = () => {
       setScore(scoreData);
       setAutoGradedSubmitted(true);
       
-      toast.success('Quiz submitted successfully!');
     } catch (err) {
       console.error('Error submitting auto-graded quiz:', err);
-      toast.error(err.response?.data?.message || 'Failed to submit quiz');
+      alert('Failed to submit quiz. Please try again.');
     } finally {
       setLoading(false);
     }
