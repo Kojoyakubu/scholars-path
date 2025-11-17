@@ -15,11 +15,13 @@ const {
   getLearnerNotes,
   getQuizzes,
   logNoteView,
+  getQuizAnswers, // ✅ ADDED: New function for answer key
 } = require('../controllers/studentController');
 
 // --- Quizzes ---
 router.get('/quiz/current', protect, authorize('student'), getCurrentQuiz);
 router.get('/quiz/:id', protect, authorize('student'), getQuizDetails);
+router.get('/quiz/:id/answers', protect, authorize('student'), getQuizAnswers); // ✅ ADDED: New route for answer key
 router.post('/quiz/:id/submit', protect, authorize('student'), submitQuiz);
 router.post('/quiz/:id/submit-auto-graded', protect, authorize('student'), submitAutoGradedQuiz);
 router.post('/quiz/insights', protect, authorize('student'), getQuizInsights);

@@ -1,6 +1,6 @@
 // /client/src/pages/TakeQuiz.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -10,7 +10,16 @@ import {
   Stack,
   CircularProgress,
   useTheme,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
 } from '@mui/material';
+import {
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  ArrowBack as ArrowBackIcon,
+} from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import api from '../api/axios';
@@ -56,8 +65,133 @@ const AIInsightsCard = ({ title, content }) => {
   );
 };
 
+// Answer Key Card Component
+const AnswerKeyCard = ({ question, index }) => {
+  const theme = useTheme();
+  
+  return (
+    <Card 
+      sx={{ 
+        mb: 3, 
+        borderRadius: 2,
+        border: `1px solid ${theme.palette.divider}`,
+      }}
+      component={motion.div}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      <CardContent>
+        {/* Question Header */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+          <Chip 
+            label={`Question ${index + 1}`} 
+            size="small" 
+            sx={{ mr: 2, fontWeight: 600 }}
+          />
+          {question.isCorrect ? (
+            <Chip 
+              icon={<CheckCircleIcon />} 
+              label="Correct" 
+              color="success" 
+              size="small" 
+            />
+          ) : (
+            <Chip 
+              icon={<CancelIcon />} 
+              label="Incorrect" 
+              color="error" 
+              size="small" 
+            />
+          )}
+        </Box>
+
+        {/* Question Text */}
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+          {question.text}
+        </Typography>
+
+        {/* Options */}
+        <Stack spacing={1.5}>
+          {question.options?.map((option, idx) => {
+            const isCorrect = option.isCorrect;
+            const isUserAnswer = question.userAnswer === option._id.toString();
+            
+            let bgColor = 'transparent';
+            let borderColor = theme.palette.divider;
+            let icon = null;
+            
+            if (isCorrect) {
+              bgColor = 'rgba(46, 125, 50, 0.08)'; // Light green
+              borderColor = theme.palette.success.main;
+              icon = <CheckCircleIcon sx={{ color: 'success.main', fontSize: 20 }} />;
+            }
+            
+            if (isUserAnswer && !isCorrect) {
+              bgColor = 'rgba(211, 47, 47, 0.08)'; // Light red
+              borderColor = theme.palette.error.main;
+              icon = <CancelIcon sx={{ color: 'error.main', fontSize: 20 }} />;
+            }
+
+            return (
+              <Box
+                key={idx}
+                sx={{
+                  p: 2,
+                  borderRadius: 1.5,
+                  border: `2px solid ${borderColor}`,
+                  bgcolor: bgColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                }}
+              >
+                {icon && <Box>{icon}</Box>}
+                <Typography 
+                  variant="body1"
+                  sx={{ 
+                    flex: 1,
+                    fontWeight: (isCorrect || isUserAnswer) ? 600 : 400 
+                  }}
+                >
+                  {option.text}
+                </Typography>
+                {isUserAnswer && !isCorrect && (
+                  <Chip label="Your answer" size="small" color="error" variant="outlined" />
+                )}
+                {isCorrect && (
+                  <Chip label="Correct answer" size="small" color="success" variant="outlined" />
+                )}
+              </Box>
+            );
+          })}
+        </Stack>
+
+        {/* Explanation */}
+        {question.explanation && (
+          <>
+            <Divider sx={{ my: 3 }} />
+            <Box sx={{ bgcolor: 'rgba(0, 51, 102, 0.04)', p: 2.5, borderRadius: 1.5 }}>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ color: '#003366', fontWeight: 700, mb: 1 }}
+              >
+                ✨ Explanation
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {question.explanation}
+              </Typography>
+            </Box>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 const TakeQuiz = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { id } = useParams(); // Get quiz ID from URL
   const { user } = useSelector((state) => state.auth || {});
   const [questions, setQuestions] = useState([]);
@@ -70,6 +204,9 @@ const TakeQuiz = () => {
   const [wrongCount, setWrongCount] = useState(0);
   const [aiInsights, setAiInsights] = useState('');
   const [aiError, setAiError] = useState('');
+  const [showAnswerKey, setShowAnswerKey] = useState(false);
+  const [answerKey, setAnswerKey] = useState(null);
+  const [isLoadingAnswers, setIsLoadingAnswers] = useState(false);
 
   // Load quiz questions using ID from URL
   useEffect(() => {
@@ -140,6 +277,25 @@ const TakeQuiz = () => {
     }
   };
 
+  const handleViewAnswers = async () => {
+    setIsLoadingAnswers(true);
+    try {
+      const res = await api.get(`/api/student/quiz/${id}/answers`);
+      console.log('Answer key received:', res.data);
+      setAnswerKey(res.data);
+      setShowAnswerKey(true);
+    } catch (err) {
+      console.error('Failed to load answer key:', err);
+      alert('Failed to load answer key. Please try again.');
+    } finally {
+      setIsLoadingAnswers(false);
+    }
+  };
+
+  const handleBackToResults = () => {
+    setShowAnswerKey(false);
+  };
+
   if (!questions.length) {
     return (
       <Box textAlign="center" mt={10}>
@@ -159,7 +315,8 @@ const TakeQuiz = () => {
           Take Quiz
         </Typography>
 
-        {!showResult ? (
+        {/* Quiz Taking View */}
+        {!showResult && !showAnswerKey && (
           <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
             <Typography variant="h6" gutterBottom>
               Question {current + 1} of {questions.length}
@@ -221,7 +378,10 @@ const TakeQuiz = () => {
               )}
             </Stack>
           </Paper>
-        ) : (
+        )}
+
+        {/* Results View */}
+        {showResult && !showAnswerKey && (
           <Paper
             elevation={3}
             sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}
@@ -257,7 +417,90 @@ const TakeQuiz = () => {
                 )}
               </>
             )}
+
+            {/* View Answers Button */}
+            <Box sx={{ mt: 4 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                onClick={handleViewAnswers}
+                disabled={isLoadingAnswers}
+                sx={{ minWidth: 200 }}
+              >
+                {isLoadingAnswers ? 'Loading...' : 'View Answers & Explanations'}
+              </Button>
+            </Box>
+
+            {/* Back to Dashboard Button */}
+            <Box sx={{ mt: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/dashboard')}
+              >
+                Back to Dashboard
+              </Button>
+            </Box>
           </Paper>
+        )}
+
+        {/* Answer Key View */}
+        {showAnswerKey && answerKey && (
+          <Box component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            {/* Header */}
+            <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={handleBackToResults}
+                sx={{ mb: 2 }}
+              >
+                Back to Results
+              </Button>
+              
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                Answer Key with Explanations
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Review your answers and the correct solutions below
+              </Typography>
+              
+              <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Chip 
+                  label={`Score: ${answerKey.attemptPercentage}%`} 
+                  color="primary" 
+                  sx={{ fontWeight: 600 }}
+                />
+                <Chip 
+                  label={`Correct: ${answerKey.attemptScore}/${answerKey.attemptTotal}`} 
+                  color="success" 
+                />
+                <Chip 
+                  label={`Incorrect: ${answerKey.attemptTotal - answerKey.attemptScore}`} 
+                  color="error" 
+                />
+              </Box>
+            </Paper>
+
+            {/* Questions with Answers */}
+            {answerKey.questions?.map((question, index) => (
+              <AnswerKeyCard 
+                key={question._id || index} 
+                question={question} 
+                index={index} 
+              />
+            ))}
+
+            {/* Back Button at bottom */}
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleBackToResults}
+              >
+                Back to Results
+              </Button>
+            </Box>
+          </Box>
         )}
       </Container>
     </Box>

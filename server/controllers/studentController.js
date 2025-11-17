@@ -243,9 +243,9 @@ Provide short motivational feedback for a student after a quiz.
 
 Subject: ${quiz.subject || 'N/A'}
 Quiz Title: ${quiz.title || 'Untitled'}
-Total Questions: ${quiz.questions.length}
+Questions: ${quiz.questions.length}
 Score: ${score}
-Performance: ${((score / quiz.questions.length) * 100).toFixed(1)}%
+Percentage: ${Math.round((score / quiz.questions.length) * 100)}%
 
 Keep it under 6 sentences, positive and constructive.`;
 
@@ -259,25 +259,25 @@ Keep it under 6 sentences, positive and constructive.`;
     feedback = result.text;
   } catch (err) {
     console.error('AI feedback failed:', err.message);
-    feedback = 'Good effort! Keep practicing to improve.';
+    feedback = 'Good effort! Keep practicing and you will improve.';
   }
 
   res.status(200).json({
     message: 'Quiz submitted successfully!',
-    score: attempt.score,
-    totalQuestions: attempt.totalQuestions,
-    percentage: ((score / quiz.questions.length) * 100).toFixed(1),
+    score,
+    totalQuestions: quiz.questions.length,
+    percentage: Math.round((score / quiz.questions.length) * 100),
     feedback,
   });
 });
 
-// @desc  Submit auto-graded section (MCQs and True/False only)
+// @desc  Submit auto-graded quiz (MCQ + True/False only)
 // @route POST /api/student/quiz/:id/submit-auto-graded
 // @access Private/Student
 const submitAutoGradedQuiz = asyncHandler(async (req, res) => {
-  console.log('\n=== RECEIVED QUIZ SUBMISSION ===');
-  console.log('Request body:', JSON.stringify(req.body, null, 2));
-  console.log('Quiz ID from params:', req.params.id);
+  console.log('=== SUBMIT AUTO-GRADED QUIZ DEBUG ===');
+  console.log('Request body:', req.body);
+  console.log('Quiz ID:', req.params.id);
   console.log('User:', req.user?._id);
   
   const { answers, score: clientScore } = req.body;
@@ -428,6 +428,8 @@ Keep it under 6 sentences, positive and constructive. Mention that they should a
     totalQuestions: totalAutoGraded,
     percentage,
     feedback,
+    correctCount: correct,
+    wrongCount: totalAutoGraded - correct,
   });
 });
 
@@ -510,6 +512,92 @@ Focus on encouragement and next steps in learning.`;
   }
 });
 
+// ✅ NEW FUNCTION: Get quiz answer key with explanations (after submission)
+// @desc  Get quiz answer key with explanations (after submission)
+// @route GET /api/student/quiz/:id/answers
+// @access Private/Student
+const getQuizAnswers = asyncHandler(async (req, res) => {
+  const quizId = req.params.id;
+  
+  console.log('📝 Fetching answer key for quiz:', quizId);
+  console.log('Student:', req.user.id || req.user._id);
+  
+  // Verify that the student has submitted this quiz
+  const attempt = await QuizAttempt.findOne({ 
+    quiz: quizId,
+    student: req.user.id || req.user._id 
+  }).sort({ createdAt: -1 });
+
+  if (!attempt) {
+    console.log('❌ No quiz attempt found');
+    res.status(403);
+    throw new Error('You must submit the quiz before viewing the answer key.');
+  }
+
+  console.log('✅ Quiz attempt found:', attempt._id);
+
+  // Get quiz with ALL details including correct answers and explanations
+  const quiz = await Quiz.findOne({ 
+    _id: quizId, 
+    school: req.user.school 
+  }).populate({
+    path: 'questions',
+    options: { sort: { createdAt: 1 } },
+    populate: { 
+      path: 'options', 
+      model: 'Option',
+      // Include isCorrect field for answer key
+      options: { sort: { createdAt: 1 } }
+    },
+  });
+
+  if (!quiz) {
+    console.log('❌ Quiz not found');
+    res.status(404);
+    throw new Error('Quiz not found');
+  }
+
+  console.log('✅ Quiz found:', quiz._id);
+  console.log('Questions:', quiz.questions?.length);
+
+  // Convert to JSON to include virtuals
+  const quizJSON = quiz.toJSON();
+  
+  // Add user's answers to each question
+  const answersMap = {};
+  attempt.answers.forEach(ans => {
+    answersMap[ans.questionId.toString()] = ans.selectedOption;
+  });
+
+  console.log('User answers map:', answersMap);
+
+  // Enhance questions with user's answer and correctness info
+  const questionsWithAnswers = quizJSON.questions.map(question => {
+    const userAnswer = answersMap[question._id.toString()];
+    const correctOption = question.options.find(opt => opt.isCorrect);
+    const userSelectedOption = question.options.find(opt => opt._id.toString() === userAnswer);
+    
+    return {
+      ...question,
+      userAnswer,
+      userSelectedOption: userSelectedOption || null,
+      correctOptionId: correctOption?._id,
+      isCorrect: userAnswer === correctOption?._id.toString(),
+    };
+  });
+
+  console.log('✅ Answer key prepared with', questionsWithAnswers.length, 'questions');
+
+  res.json({
+    quizId: quiz._id,
+    quizTitle: quiz.title,
+    questions: questionsWithAnswers,
+    attemptScore: attempt.score,
+    attemptTotal: attempt.totalQuestions,
+    attemptPercentage: Math.round((attempt.score / attempt.totalQuestions) * 100)
+  });
+});
+
 module.exports = {
   getLearnerNotes,
   getQuizzes,
@@ -521,4 +609,5 @@ module.exports = {
   logNoteView,
   getCurrentQuiz,
   getQuizInsights,
+  getQuizAnswers, // ✅ ADDED: Export new function
 };

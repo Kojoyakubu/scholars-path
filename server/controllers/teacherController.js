@@ -428,10 +428,11 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   // Save all quiz questions (MCQ, True/False, Short Answer, Essay)
   const savedQuestionIds = [];
 
-  // ✅ FIXED: Save MCQ questions with quiz reference
+  // ✅ FIXED: Save MCQ questions with quiz reference AND explanations
   for (const mcq of structuredQuiz.mcq || []) {
     const qDoc = await Question.create({
       text: mcq.question,
+      explanation: mcq.explanation || '', // ✅ ADDED: Save explanation
       difficultyLevel: 'Medium',
       topicTags: [subStrand.name, 'MCQ'],
       quiz: quizDoc._id, // ✅ ADDED: Link to quiz
@@ -449,10 +450,11 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     savedQuestionIds.push(qDoc._id);
   }
 
-  // ✅ FIXED: Save True/False questions with quiz reference
+  // ✅ FIXED: Save True/False questions with quiz reference AND explanations
   for (const tf of structuredQuiz.trueFalse || []) {
     const qDoc = await Question.create({
       text: tf.statement,
+      explanation: tf.explanation || '', // ✅ ADDED: Save explanation
       difficultyLevel: 'Easy',
       topicTags: [subStrand.name, 'True/False'],
       quiz: quizDoc._id, // ✅ ADDED: Link to quiz

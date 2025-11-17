@@ -1,30 +1,29 @@
 const mongoose = require('mongoose');
 
-const quizSchema = new mongoose.Schema(
+const questionSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true, trim: true },
-    subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
-    teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    school: { type: mongoose.Schema.Types.ObjectId, ref: 'School', index: true },
-    aiProvider: { type: String },
-    aiModel: { type: String },
-    aiGeneratedAt: { type: Date },
+    text: { type: String, required: true },
+    explanation: { type: String }, // ✅ Explanation for the correct answer
+    difficultyLevel: {
+      type: String,
+      enum: ['Easy', 'Medium', 'Hard'],
+      default: 'Medium',
+    },
+    topicTags: [{ type: String }],
+    quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', index: true }, // ✅ ADDED: Link to quiz
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
-quizSchema.virtual('questions', {
-  ref: 'Question',
+// Virtual link to options
+questionSchema.virtual('options', {
+  ref: 'Option',
   localField: '_id',
-  foreignField: 'quiz',
+  foreignField: 'question',
 });
 
-quizSchema.pre('deleteOne', { document: true, query: false }, async function (next) {
-  await Promise.all([
-    mongoose.model('Question').deleteMany({ quiz: this._id }),
-    mongoose.model('QuizAttempt').deleteMany({ quiz: this._id }),
-  ]);
-  next();
-});
-
-module.exports = mongoose.model('Quiz', quizSchema);
+module.exports = mongoose.model('Question', questionSchema);
