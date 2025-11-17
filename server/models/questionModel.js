@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const questionSchema = new mongoose.Schema(
   {
     text: { type: String, required: true },
-    explanation: { type: String }, // ✅ ADDED: Explanation for the correct answer
+    explanation: { type: String }, // ✅ Explanation for the correct answer
     difficultyLevel: {
       type: String,
       enum: ['Easy', 'Medium', 'Hard'],
@@ -26,4 +26,5 @@ questionSchema.virtual('options', {
   foreignField: 'question',
 });
 
-module.exports = mongoose.model('Question', questionSchema);
+// ✅ FIX: Check if model exists before creating to prevent OverwriteModelError
+module.exports = mongoose.models.Question || mongoose.model('Question', questionSchema);
