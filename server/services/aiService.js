@@ -108,8 +108,8 @@ async function generateTextCore({
   const geminiModels = [
     providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? GEMINI_FAST : GEMINI_MAIN),
     GEMINI_FAST,
-    'gemini-1.5-pro',
-    'gemini-1.5-flash',
+    'gemini-2.5-pro',
+    'gemini-2.5-flash',
     'gemini-pro',
   ];
   const uniqueGeminiModels = [...new Set(geminiModels)];
