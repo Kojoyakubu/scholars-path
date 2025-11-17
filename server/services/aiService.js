@@ -103,11 +103,28 @@ async function generateTextCore({
   let text = '';
   let raw = null;
   const MAX_RETRIES = 2;
+  
+  // ✅ FIXED: Define fallback models for Gemini
+  const geminiModels = [
+    providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? GEMINI_FAST : GEMINI_MAIN),
+    GEMINI_FAST,
+    'gemini-1.5-pro',
+    'gemini-1.5-flash',
+    'gemini-pro',
+  ];
+  const uniqueGeminiModels = [...new Set(geminiModels)];
+  
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
     try {
       if (provider === 'gemini') {
         if (!gemini) throw new Error('Gemini not configured.');
-        const modelName = providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? GEMINI_FAST : GEMINI_MAIN);
+        
+        // ✅ FIXED: Use different model on each retry
+        const modelIndex = Math.min(attempt, uniqueGeminiModels.length - 1);
+        const modelName = uniqueGeminiModels[modelIndex];
+        
+        console.log(`🤖 Attempt ${attempt + 1}: Using Gemini model: ${modelName}`);
+        
         const model = gemini.getGenerativeModel({
           model: modelName,
           safetySettings: [
@@ -125,6 +142,8 @@ async function generateTextCore({
         text = response?.text?.() || '';
         raw = response;
         modelUsed = `Gemini:${modelName}`;
+        
+        console.log(`✅ Success with ${modelName}`);
       }
       if (provider === 'openai') {
         if (!openai) throw new Error('OpenAI not configured.');
@@ -165,8 +184,14 @@ async function generateTextCore({
         raw,
       };
     } catch (err) {
+      console.log(`❌ Attempt ${attempt + 1} failed: ${err.message}`);
+      
       if (attempt === MAX_RETRIES) {
-        throw new Error(`[${provider}] ${err.message || 'Unknown AI error'}`);
+        // ✅ FIXED: Better error message showing what was tried
+        const errorMsg = provider === 'gemini' 
+          ? `[Gemini] All models failed: ${uniqueGeminiModels.join(', ')}. Error: ${err.message}`
+          : `[${provider}] ${err.message || 'Unknown AI error'}`;
+        throw new Error(errorMsg);
       }
       await sleep(250 * (attempt + 1));
     }
