@@ -383,6 +383,138 @@ const QuizSeparated = () => {
 
   // Results screen for auto-graded section
   if (autoGradedSubmitted && activeTab === 0) {
+    // If showing answers, render answer view instead of results
+    if (showMCQAnswers) {
+      return (
+        <Container maxWidth="md">
+          <Box sx={{ py: 4 }}>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => {
+                console.log('Back to Results clicked');
+                setShowMCQAnswers(false);
+              }}
+              sx={{ mb: 3 }}
+              variant="outlined"
+            >
+              Back to Results
+            </Button>
+            
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                📝 Answer Key with Explanations
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Review your answers and see the correct solutions
+              </Typography>
+            </Paper>
+            
+            {autoGradedQuestions.map((question, index) => {
+              const userAnswer = answers[question._id];
+              const correctOption = question.options?.find(opt => opt.isCorrect);
+              const isCorrect = userAnswer === correctOption?._id;
+
+              return (
+                <Paper key={question._id} sx={{ p: 3, mb: 3, borderLeft: `4px solid ${isCorrect ? theme.palette.success.main : theme.palette.error.main}` }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                    {isCorrect ? (
+                      <CheckCircleIcon sx={{ color: 'success.main', fontSize: 28 }} />
+                    ) : (
+                      <CancelIcon sx={{ color: 'error.main', fontSize: 28 }} />
+                    )}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body1" fontWeight={600} gutterBottom>
+                        Question {index + 1}
+                      </Typography>
+                      <Typography variant="body1" paragraph>
+                        {question.text}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  <Box sx={{ mt: 2 }}>
+                    {question.options?.map((option) => {
+                      const isUserAnswer = option._id === userAnswer;
+                      const isCorrectAnswer = option.isCorrect;
+                      
+                      return (
+                        <Box
+                          key={option._id}
+                          sx={{
+                            p: 2,
+                            mb: 1,
+                            borderRadius: 1,
+                            border: '2px solid',
+                            borderColor: isCorrectAnswer 
+                              ? 'success.main' 
+                              : isUserAnswer 
+                                ? 'error.main' 
+                                : 'divider',
+                            bgcolor: isCorrectAnswer 
+                              ? alpha(theme.palette.success.main, 0.1)
+                              : isUserAnswer 
+                                ? alpha(theme.palette.error.main, 0.1)
+                                : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2
+                          }}
+                        >
+                          {isCorrectAnswer && <CheckCircleIcon sx={{ color: 'success.main' }} />}
+                          {isUserAnswer && !isCorrectAnswer && <CancelIcon sx={{ color: 'error.main' }} />}
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2">
+                              {option.text}
+                            </Typography>
+                            {isUserAnswer && !isCorrectAnswer && (
+                              <Chip 
+                                label="Your answer" 
+                                size="small" 
+                                color="error" 
+                                sx={{ mt: 1 }} 
+                              />
+                            )}
+                            {isCorrectAnswer && (
+                              <Chip 
+                                label="Correct answer" 
+                                size="small" 
+                                color="success" 
+                                sx={{ mt: 1 }} 
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+
+                  {question.explanation && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      <Typography variant="body2" fontWeight={600}>💡 Explanation:</Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>{question.explanation}</Typography>
+                    </Alert>
+                  )}
+                </Paper>
+              );
+            })}
+            
+            <Button
+              variant="outlined"
+              fullWidth
+              size="large"
+              onClick={() => setShowMCQAnswers(false)}
+              sx={{ mt: 2 }}
+            >
+              Back to Results
+            </Button>
+          </Box>
+        </Container>
+      );
+    }
+    
+    // Otherwise show results screen
     return (
       <Container maxWidth="md">
         <motion.div
@@ -518,143 +650,6 @@ const QuizSeparated = () => {
             </Stack>
           </Paper>
         </motion.div>
-      </Container>
-    );
-  }
-
-  // Answer explanations view
-  console.log('Checking answer view condition:');
-  console.log('- showMCQAnswers:', showMCQAnswers);
-  console.log('- autoGradedSubmitted:', autoGradedSubmitted);  
-  console.log('- activeTab:', activeTab);
-  
-  if (showMCQAnswers && autoGradedSubmitted) {
-    console.log('✅ Showing MCQ answers view');
-    return (
-      <Container maxWidth="md">
-        <Box sx={{ py: 4 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => {
-              console.log('Back to Results clicked');
-              setShowMCQAnswers(false);
-            }}
-            sx={{ mb: 3 }}
-            variant="outlined"
-          >
-            Back to Results
-          </Button>
-          
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h5" fontWeight={700} gutterBottom>
-              📝 Answer Key with Explanations
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Review your answers and see the correct solutions
-            </Typography>
-          </Paper>
-          
-          {autoGradedQuestions.map((question, index) => {
-            const userAnswer = answers[question._id];
-            const correctOption = question.options?.find(opt => opt.isCorrect);
-            const isCorrect = userAnswer === correctOption?._id;
-
-            return (
-              <Paper key={question._id} sx={{ p: 3, mb: 3, borderLeft: `4px solid ${isCorrect ? theme.palette.success.main : theme.palette.error.main}` }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
-                  {isCorrect ? (
-                    <CheckCircleIcon sx={{ color: 'success.main', fontSize: 28 }} />
-                  ) : (
-                    <CancelIcon sx={{ color: 'error.main', fontSize: 28 }} />
-                  )}
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body1" fontWeight={600} gutterBottom>
-                      Question {index + 1}
-                    </Typography>
-                    <Typography variant="body1" paragraph>
-                      {question.text}
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                <Divider sx={{ my: 2 }} />
-                
-                <Box sx={{ mt: 2 }}>
-                  {question.options?.map((option) => {
-                    const isUserAnswer = option._id === userAnswer;
-                    const isCorrectAnswer = option.isCorrect;
-                    
-                    return (
-                      <Box
-                        key={option._id}
-                        sx={{
-                          p: 2,
-                          mb: 1,
-                          borderRadius: 1,
-                          border: '2px solid',
-                          borderColor: isCorrectAnswer 
-                            ? 'success.main' 
-                            : isUserAnswer 
-                              ? 'error.main' 
-                              : 'divider',
-                          bgcolor: isCorrectAnswer 
-                            ? alpha(theme.palette.success.main, 0.1)
-                            : isUserAnswer 
-                              ? alpha(theme.palette.error.main, 0.1)
-                              : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2
-                        }}
-                      >
-                        {isCorrectAnswer && <CheckCircleIcon sx={{ color: 'success.main' }} />}
-                        {isUserAnswer && !isCorrectAnswer && <CancelIcon sx={{ color: 'error.main' }} />}
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="body2">
-                            {option.text}
-                          </Typography>
-                          {isUserAnswer && !isCorrectAnswer && (
-                            <Chip 
-                              label="Your answer" 
-                              size="small" 
-                              color="error" 
-                              sx={{ mt: 1 }} 
-                            />
-                          )}
-                          {isCorrectAnswer && (
-                            <Chip 
-                              label="Correct answer" 
-                              size="small" 
-                              color="success" 
-                              sx={{ mt: 1 }} 
-                            />
-                          )}
-                        </Box>
-                      </Box>
-                    );
-                  })}
-                </Box>
-
-                {question.explanation && (
-                  <Alert severity="info" sx={{ mt: 2 }}>
-                    <Typography variant="body2" fontWeight={600}>💡 Explanation:</Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}>{question.explanation}</Typography>
-                  </Alert>
-                )}
-              </Paper>
-            );
-          })}
-          
-          <Button
-            variant="outlined"
-            fullWidth
-            size="large"
-            onClick={() => setShowMCQAnswers(false)}
-            sx={{ mt: 2 }}
-          >
-            Back to Results
-          </Button>
-        </Box>
       </Container>
     );
   }
