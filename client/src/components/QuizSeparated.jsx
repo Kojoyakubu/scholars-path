@@ -50,6 +50,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GradingIcon from '@mui/icons-material/Grading';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 // Animation variants
 const fadeInUp = {
@@ -480,7 +481,13 @@ const QuizSeparated = () => {
                 variant="contained"
                 size="large"
                 startIcon={<VisibilityIcon />}
-                onClick={() => setShowMCQAnswers(true)}
+                onClick={() => {
+                  console.log('View Answers button clicked!');
+                  console.log('Current state - autoGradedSubmitted:', autoGradedSubmitted);
+                  console.log('Current state - activeTab:', activeTab);
+                  setShowMCQAnswers(true);
+                  console.log('Set showMCQAnswers to true');
+                }}
                 color="primary"
               >
                 View Answers & Explanations
@@ -516,13 +523,22 @@ const QuizSeparated = () => {
   }
 
   // Answer explanations view
-  if (showMCQAnswers && autoGradedSubmitted && activeTab === 0) {
+  console.log('Checking answer view condition:');
+  console.log('- showMCQAnswers:', showMCQAnswers);
+  console.log('- autoGradedSubmitted:', autoGradedSubmitted);  
+  console.log('- activeTab:', activeTab);
+  
+  if (showMCQAnswers && autoGradedSubmitted) {
+    console.log('✅ Showing MCQ answers view');
     return (
       <Container maxWidth="md">
         <Box sx={{ py: 4 }}>
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => setShowMCQAnswers(false)}
+            onClick={() => {
+              console.log('Back to Results clicked');
+              setShowMCQAnswers(false);
+            }}
             sx={{ mb: 3 }}
             variant="outlined"
           >
@@ -902,21 +918,17 @@ const QuizSeparated = () => {
                               </Typography>
                             </Alert>
                             
-                            {showAnswers && currentQuestion.correctAnswer && (
+                            {showAnswers && (
                               <Paper sx={{ p: 3, bgcolor: alpha(theme.palette.success.main, 0.1), border: `2px solid ${theme.palette.success.main}` }}>
                                 <Typography variant="subtitle2" fontWeight={700} color="success.main" gutterBottom>
                                   ✓ Suggested Answer:
                                 </Typography>
                                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                                  {currentQuestion.correctAnswer}
-                                </Typography>
-                              </Paper>
-                            )}
-                            
-                            {showAnswers && !currentQuestion.correctAnswer && (
-                              <Paper sx={{ p: 3, bgcolor: alpha(theme.palette.info.main, 0.1), border: `2px dashed ${theme.palette.info.main}` }}>
-                                <Typography variant="body2" color="text.secondary">
-                                  No model answer provided for this question. Check your work with your teacher.
+                                  {currentQuestion.correctAnswer || 
+                                   currentQuestion.suggestedAnswer || 
+                                   currentQuestion.answer ||
+                                   currentQuestion.modelAnswer ||
+                                   "No suggested answer provided for this question. Check your work with your teacher."}
                                 </Typography>
                               </Paper>
                             )}
