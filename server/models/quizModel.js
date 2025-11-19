@@ -1,29 +1,54 @@
 const mongoose = require('mongoose');
 
-const questionSchema = new mongoose.Schema(
+const quizSchema = new mongoose.Schema(
   {
-    text: { type: String, required: true },
-    explanation: { type: String }, // ✅ Explanation for the correct answer
-    difficultyLevel: {
+    title: {
       type: String,
-      enum: ['Easy', 'Medium', 'Hard'],
-      default: 'Medium',
+      required: [true, 'Quiz title is required'],
+      trim: true,
     },
-    topicTags: [{ type: String }],
-    quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', index: true }, // ✅ ADDED: Link to quiz
+    subject: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subject',
+      required: [true, 'Subject is required'],
+      index: true,
+    },
+    teacher: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Teacher is required'],
+      index: true,
+    },
+    school: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'School',
+      required: [true, 'School is required'],
+      index: true,
+    },
+    aiProvider: {
+      type: String,
+      trim: true,
+    },
+    aiModel: {
+      type: String,
+      trim: true,
+    },
+    aiGeneratedAt: {
+      type: Date,
+    },
   },
-  { 
+  {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
   }
 );
 
-// Virtual link to options
-questionSchema.virtual('options', {
-  ref: 'Option',
+// Virtual to get all questions for this quiz
+quizSchema.virtual('questions', {
+  ref: 'Question',
   localField: '_id',
-  foreignField: 'question',
+  foreignField: 'quiz',
 });
 
-module.exports = mongoose.model('Question', questionSchema);
+module.exports = mongoose.models.Quiz || mongoose.model('Quiz', quizSchema);
