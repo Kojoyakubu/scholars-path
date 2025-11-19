@@ -566,7 +566,7 @@ const getQuizAnswers = asyncHandler(async (req, res) => {
   // Add user's answers to each question
   const answersMap = {};
   attempt.answers.forEach(ans => {
-    answersMap[ans.questionId.toString()] = ans.selectedOption;
+    answersMap[ans.questionId.toString()] = ans.selectedOptionId?.toString();
   });
 
   console.log('User answers map:', answersMap);
@@ -609,5 +609,5 @@ module.exports = {
   logNoteView,
   getCurrentQuiz,
   getQuizInsights,
-  getQuizAnswers, // ✅ ADDED: Export new function
+  getQuizAnswers,
 };
