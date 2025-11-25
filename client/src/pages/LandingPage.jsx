@@ -178,7 +178,7 @@ const LandingPage = () => {
                 }}
               >
                 <img
-                  src="https://www.svgrepo.com/show/305773/learning.svg"
+                  src="/school-students-digital-art-style-education-day.jpg"
                   alt="Student learning on Scholar's Path - AI-powered education platform for Ghana"
                   style={{ width: "100%", borderRadius: 20, objectFit: "contain", maxHeight: "500px" }}
                   loading="lazy"
