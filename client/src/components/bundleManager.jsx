@@ -405,4 +405,4 @@ function BundleManager() {
   );
 }
 
-export default bundleManager;
+export default BundleManager;
