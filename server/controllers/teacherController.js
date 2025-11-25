@@ -13,6 +13,7 @@ const Resource = require('../models/resourceModel');
 const NoteView = require('../models/noteViewModel');
 const QuizAttempt = require('../models/quizAttemptModel');
 const SubStrand = require('../models/subStrandModel');
+const LessonBundle = require('../models/lessonBundleModel');
 
 const aiService = require('../services/aiService');
 
@@ -503,7 +504,31 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   learnerNote.quiz = quizDoc._id;
   await learnerNote.save();
 
+  // ✅ NEW: Create the Lesson Bundle (saves references, makes it reusable)
+  const lessonBundle = await LessonBundle.create({
+    teacher: req.user.id,
+    school: req.user.school,
+    subStrand: subStrandId,
+    title: `${subStrand.name} - ${curriculumDetails.className}`,
+    description: `Generated for ${school}, Term ${term}, Week ${week}`,
+    status: 'published', // Auto-publish bundles
+    lessonNote: lessonNote._id,
+    learnerNote: learnerNote._id,
+    quiz: quizDoc._id,
+    generationContext: curriculumDetails,
+    aiProvider: p1, // Use first provider as representative
+    aiModel: m1,
+    aiGeneratedAt: new Date(t1),
+    tags: [
+      curriculumDetails.className,
+      curriculumDetails.subjectName,
+      curriculumDetails.strandName,
+      subStrand.name,
+    ].filter(Boolean),
+  });
+
   console.log(`✅ Bundle Generation Complete!`);
+  console.log(`   📦 Bundle ID: ${lessonBundle._id}`);
   console.log(`   📝 Teacher Note: ${lessonNote._id}`);
   console.log(`   📖 Learner Note: ${learnerNote._id}`);
   console.log(`   ❓ Quiz: ${quizDoc._id} (${savedQuestionIds.length} questions)`);
@@ -512,6 +537,13 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: 'Lesson bundle generated successfully!',
+    bundle: {
+      id: lessonBundle._id,
+      title: lessonBundle.title,
+      description: lessonBundle.description,
+      status: lessonBundle.status,
+      createdAt: lessonBundle.createdAt,
+    },
     lessonNote: {
       id: lessonNote._id,
       content: lessonNote.content,
@@ -543,6 +575,291 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get all lesson bundles for the logged-in teacher
+ * @route   GET /api/teacher/bundles
+ * @access  Private (Teacher)
+ */
+const getMyBundles = asyncHandler(async (req, res) => {
+  const { status, search } = req.query;
+  
+  // Build query
+  const query = { teacher: req.user.id };
+  
+  // Filter by status if provided
+  if (status && ['draft', 'published', 'archived'].includes(status)) {
+    query.status = status;
+  }
+  
+  // Search by title/description if provided
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { tags: { $in: [new RegExp(search, 'i')] } },
+    ];
+  }
+  
+  const bundles = await LessonBundle.find(query)
+    .populate('subStrand', 'name')
+    .populate('lessonNote', 'content createdAt')
+    .populate('learnerNote', 'content status createdAt')
+    .populate('quiz', 'title')
+    .sort({ createdAt: -1 });
+    
+  res.json(bundles);
+});
+
+/**
+ * @desc    Get a single bundle by ID with full details
+ * @route   GET /api/teacher/bundles/:id
+ * @access  Private (Teacher)
+ */
+const getBundleById = asyncHandler(async (req, res) => {
+  const bundle = await LessonBundle.findById(req.params.id)
+    .populate('subStrand', 'name')
+    .populate('lessonNote', 'content createdAt')
+    .populate('learnerNote', 'content status createdAt')
+    .populate({
+      path: 'quiz',
+      populate: {
+        path: 'subject',
+        select: 'name',
+      },
+    })
+    .populate('resources', 'fileName filePath fileType');
+    
+  if (!bundle) {
+    res.status(404);
+    throw new Error('Bundle not found');
+  }
+  
+  // Check authorization
+  if (bundle.teacher.toString() !== req.user.id.toString() && req.user.role !== 'admin') {
+    res.status(403);
+    throw new Error('Not authorized to view this bundle');
+  }
+  
+  // Fetch quiz questions for the bundle
+  const questions = await Question.find({ quiz: bundle.quiz._id })
+    .populate('question', 'text isCorrect')
+    .sort({ createdAt: 1 });
+    
+  // Group questions by type
+  const quizData = {
+    mcq: [],
+    trueFalse: [],
+    shortAnswer: [],
+    essay: [],
+  };
+  
+  for (const question of questions) {
+    const options = await Option.find({ question: question._id });
+    
+    if (question.topicTags.includes('MCQ')) {
+      quizData.mcq.push({
+        question: question.text,
+        explanation: question.explanation,
+        options: options.map(o => o.text),
+        correctIndex: options.findIndex(o => o.isCorrect),
+      });
+    } else if (question.topicTags.includes('True/False')) {
+      const correctOption = options.find(o => o.isCorrect);
+      quizData.trueFalse.push({
+        statement: question.text,
+        explanation: question.explanation,
+        answer: correctOption ? correctOption.text === 'True' : false,
+      });
+    } else if (question.topicTags.includes('Short Answer')) {
+      quizData.shortAnswer.push({
+        question: question.text,
+      });
+    } else if (question.topicTags.includes('Essay')) {
+      quizData.essay.push({
+        question: question.text,
+      });
+    }
+  }
+  
+  res.json({
+    ...bundle.toObject(),
+    quizData,
+  });
+});
+
+/**
+ * @desc    Update bundle metadata (title, description, status, tags)
+ * @route   PUT /api/teacher/bundles/:id
+ * @access  Private (Teacher)
+ */
+const updateBundle = asyncHandler(async (req, res) => {
+  const bundle = await LessonBundle.findById(req.params.id);
+  
+  if (!bundle) {
+    res.status(404);
+    throw new Error('Bundle not found');
+  }
+  
+  // Check authorization
+  if (bundle.teacher.toString() !== req.user.id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to update this bundle');
+  }
+  
+  // Update allowed fields
+  const { title, description, status, tags } = req.body;
+  
+  if (title) bundle.title = title;
+  if (description !== undefined) bundle.description = description;
+  if (status && ['draft', 'published', 'archived'].includes(status)) {
+    bundle.status = status;
+  }
+  if (tags && Array.isArray(tags)) bundle.tags = tags;
+  
+  await bundle.save();
+  
+  res.json({
+    success: true,
+    message: 'Bundle updated successfully',
+    bundle,
+  });
+});
+
+/**
+ * @desc    Delete a lesson bundle (cascade deletes all components)
+ * @route   DELETE /api/teacher/bundles/:id
+ * @access  Private (Teacher)
+ */
+const deleteBundle = asyncHandler(async (req, res) => {
+  const bundle = await LessonBundle.findById(req.params.id);
+  
+  if (!bundle) {
+    res.status(404);
+    throw new Error('Bundle not found');
+  }
+  
+  // Check authorization
+  if (bundle.teacher.toString() !== req.user.id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to delete this bundle');
+  }
+  
+  // The pre-remove middleware will handle cascade deletion
+  await bundle.deleteOne();
+  
+  res.json({
+    success: true,
+    message: 'Bundle and all associated content deleted successfully',
+    id: req.params.id,
+  });
+});
+
+/**
+ * @desc    Duplicate a bundle (creates a new copy with all components)
+ * @route   POST /api/teacher/bundles/:id/duplicate
+ * @access  Private (Teacher)
+ */
+const duplicateBundle = asyncHandler(async (req, res) => {
+  const originalBundle = await LessonBundle.findById(req.params.id)
+    .populate('lessonNote')
+    .populate('learnerNote')
+    .populate('quiz');
+    
+  if (!originalBundle) {
+    res.status(404);
+    throw new Error('Bundle not found');
+  }
+  
+  // Check authorization
+  if (originalBundle.teacher.toString() !== req.user.id.toString() && req.user.role !== 'admin') {
+    res.status(403);
+    throw new Error('Not authorized to duplicate this bundle');
+  }
+  
+  console.log(`📋 Duplicating bundle: ${originalBundle._id}`);
+  
+  // Duplicate lesson note
+  const newLessonNote = await LessonNote.create({
+    teacher: req.user.id,
+    school: req.user.school,
+    subStrand: originalBundle.subStrand,
+    content: originalBundle.lessonNote.content,
+    aiProvider: originalBundle.lessonNote.aiProvider,
+    aiModel: originalBundle.lessonNote.aiModel,
+  });
+  
+  // Duplicate learner note
+  const newLearnerNote = await LearnerNote.create({
+    author: req.user.id,
+    school: req.user.school,
+    subStrand: originalBundle.subStrand,
+    content: originalBundle.learnerNote.content,
+    status: 'draft', // Always start as draft
+    aiProvider: originalBundle.learnerNote.aiProvider,
+    aiModel: originalBundle.learnerNote.aiModel,
+  });
+  
+  // Duplicate quiz
+  const newQuiz = await Quiz.create({
+    title: `${originalBundle.quiz.title} (Copy)`,
+    subject: originalBundle.quiz.subject,
+    teacher: req.user.id,
+    school: req.user.school,
+    aiProvider: originalBundle.quiz.aiProvider,
+    aiModel: originalBundle.quiz.aiModel,
+  });
+  
+  // Duplicate all questions and options
+  const originalQuestions = await Question.find({ quiz: originalBundle.quiz._id });
+  
+  for (const originalQuestion of originalQuestions) {
+    const newQuestion = await Question.create({
+      text: originalQuestion.text,
+      explanation: originalQuestion.explanation,
+      difficultyLevel: originalQuestion.difficultyLevel,
+      topicTags: originalQuestion.topicTags,
+      quiz: newQuiz._id,
+    });
+    
+    // Duplicate options
+    const originalOptions = await Option.find({ question: originalQuestion._id });
+    for (const originalOption of originalOptions) {
+      await Option.create({
+        question: newQuestion._id,
+        text: originalOption.text,
+        isCorrect: originalOption.isCorrect,
+      });
+    }
+  }
+  
+  // Link quiz to learner note
+  newLearnerNote.quiz = newQuiz._id;
+  await newLearnerNote.save();
+  
+  // Create new bundle
+  const newBundle = await LessonBundle.create({
+    teacher: req.user.id,
+    school: req.user.school,
+    subStrand: originalBundle.subStrand,
+    title: `${originalBundle.title} (Copy)`,
+    description: originalBundle.description,
+    status: 'draft', // Always start as draft
+    lessonNote: newLessonNote._id,
+    learnerNote: newLearnerNote._id,
+    quiz: newQuiz._id,
+    generationContext: originalBundle.generationContext,
+    tags: originalBundle.tags,
+  });
+  
+  console.log(`✅ Bundle duplicated successfully: ${newBundle._id}`);
+  
+  res.status(201).json({
+    success: true,
+    message: 'Bundle duplicated successfully',
+    bundle: newBundle,
+  });
+});
+
 module.exports = {
   generateLessonNote,
   getMyLessonNotes,
@@ -557,4 +874,9 @@ module.exports = {
   deleteLearnerNote,
   searchImage,
   generateLessonBundle,
+  getMyBundles,
+  getBundleById,
+  updateBundle,
+  deleteBundle,
+  duplicateBundle,
 };

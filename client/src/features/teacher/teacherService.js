@@ -73,6 +73,33 @@ const generateLessonBundle = async (bundleData) => {
   return response.data;
 };
 
+// ✅ NEW: Bundle CRUD operations
+const getMyBundles = async (params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  const response = await api.get(`/api/teacher/bundles${queryString ? `?${queryString}` : ''}`);
+  return response.data;
+};
+
+const getBundleById = async (bundleId) => {
+  const response = await api.get(`/api/teacher/bundles/${bundleId}`);
+  return response.data;
+};
+
+const updateBundle = async ({ bundleId, bundleData }) => {
+  const response = await api.put(`/api/teacher/bundles/${bundleId}`, bundleData);
+  return response.data;
+};
+
+const deleteBundle = async (bundleId) => {
+  const response = await api.delete(`/api/teacher/bundles/${bundleId}`);
+  return response.data;
+};
+
+const duplicateBundle = async (bundleId) => {
+  const response = await api.post(`/api/teacher/bundles/${bundleId}/duplicate`);
+  return response.data;
+};
+
 const teacherService = {
   getMyLessonNotes,
   generateLessonNote,
@@ -86,6 +113,11 @@ const teacherService = {
   generateAiQuiz,
   getAiInsights,
   generateLessonBundle, // ✅ NEW: Bundle generation
+  getMyBundles,
+  getBundleById,
+  updateBundle,
+  deleteBundle,
+  duplicateBundle,
 };
 
 export default teacherService;

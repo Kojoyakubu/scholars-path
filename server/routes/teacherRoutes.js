@@ -16,6 +16,11 @@ const {
   getTeacherAnalytics,
   searchImage,
   generateLessonBundle, // ✅ NEW: Bundle orchestrator
+  getMyBundles,
+  getBundleById,
+  updateBundle,
+  deleteBundle,
+  duplicateBundle,
 } = require('../controllers/teacherController');
 
 const { protect, authorize } = require('../middleware/authMiddleware');
@@ -34,6 +39,13 @@ router.delete('/learner-notes/:id', protect, authorize('teacher'), deleteLearner
 
 // --- AI Lesson Bundle (All-in-One Generation) ---
 router.post('/ai/generate-lesson-bundle', protect, authorize('teacher'), generateLessonBundle);
+
+// --- Lesson Bundles (CRUD) ---
+router.get('/bundles', protect, authorize('teacher'), getMyBundles);
+router.get('/bundles/:id', protect, authorize('teacher', 'admin', 'school_admin'), getBundleById);
+router.put('/bundles/:id', protect, authorize('teacher'), updateBundle);
+router.delete('/bundles/:id', protect, authorize('teacher'), deleteBundle);
+router.post('/bundles/:id/duplicate', protect, authorize('teacher'), duplicateBundle);
 
 // --- Quizzes ---
 router.post('/quizzes', protect, authorize('teacher'), createQuiz);

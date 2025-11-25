@@ -5,7 +5,9 @@ const initialState = {
   lessonNotes: [],
   draftLearnerNotes: [],
   quizzes: [],
+  bundles: [], // ✅ NEW: List of all lesson bundles
   currentNote: null,
+  currentBundle: null, // ✅ NEW: Currently viewed bundle
   analytics: {},
   aiInsights: null,
   bundleResult: null, // ✅ NEW: Store the complete lesson bundle
@@ -40,6 +42,13 @@ export const deleteLearnerNote = createTeacherThunk('deleteLearnerNote', teacher
 export const generateAiQuiz = createTeacherThunk('generateAiQuiz', teacherService.generateAiQuiz);
 export const getAiInsights = createTeacherThunk('getAiInsights', teacherService.getAiInsights); // new
 export const generateLessonBundle = createTeacherThunk('generateLessonBundle', teacherService.generateLessonBundle); // ✅ NEW: Bundle generation
+
+// ✅ NEW: Bundle CRUD operations
+export const getMyBundles = createTeacherThunk('getMyBundles', teacherService.getMyBundles);
+export const getBundleById = createTeacherThunk('getBundleById', teacherService.getBundleById);
+export const updateBundle = createTeacherThunk('updateBundle', teacherService.updateBundle);
+export const deleteBundle = createTeacherThunk('deleteBundle', teacherService.deleteBundle);
+export const duplicateBundle = createTeacherThunk('duplicateBundle', teacherService.duplicateBundle);
 
 export const teacherSlice = createSlice({
   name: 'teacher',
@@ -120,8 +129,46 @@ export const teacherSlice = createSlice({
       // 🎓 NEW: Lesson Bundle fulfilled
       .addCase(generateLessonBundle.fulfilled, (state, action) => {
         state.bundleResult = action.payload;
+        // Also add to bundles list
+        if (action.payload.bundle) {
+          state.bundles.unshift(action.payload.bundle);
+        }
         state.isSuccess = true;
         state.message = 'Lesson bundle generated successfully!';
+      })
+
+      // ✅ NEW: Bundle CRUD cases
+      .addCase(getMyBundles.fulfilled, (state, action) => {
+        state.bundles = action.payload;
+        state.isSuccess = true;
+      })
+      .addCase(getBundleById.fulfilled, (state, action) => {
+        state.currentBundle = action.payload;
+        state.isSuccess = true;
+      })
+      .addCase(updateBundle.fulfilled, (state, action) => {
+        const index = state.bundles.findIndex(b => b._id === action.payload.bundle._id);
+        if (index !== -1) {
+          state.bundles[index] = action.payload.bundle;
+        }
+        if (state.currentBundle?._id === action.payload.bundle._id) {
+          state.currentBundle = action.payload.bundle;
+        }
+        state.isSuccess = true;
+        state.message = action.payload.message;
+      })
+      .addCase(deleteBundle.fulfilled, (state, action) => {
+        state.bundles = state.bundles.filter(b => b._id !== action.payload.id);
+        if (state.currentBundle?._id === action.payload.id) {
+          state.currentBundle = null;
+        }
+        state.isSuccess = true;
+        state.message = action.payload.message;
+      })
+      .addCase(duplicateBundle.fulfilled, (state, action) => {
+        state.bundles.unshift(action.payload.bundle);
+        state.isSuccess = true;
+        state.message = action.payload.message;
       })
 
       // Generic loaders
