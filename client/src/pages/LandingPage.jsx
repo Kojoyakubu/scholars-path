@@ -178,9 +178,9 @@ const LandingPage = () => {
                 }}
               >
                 <img
-                  src="https://cdn3d.iconscout.com/3d/premium/thumb/studying-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--education-boy-student-learning-pack-people-illustrations-6533693.png"
-                  alt="Student learning on Scholar's Path"
-                  style={{ width: "100%", borderRadius: 20 }}
+                  src="https://illustrations.popsy.co/amber/online-learning.svg"
+                  alt="Student learning on Scholar's Path - AI-powered education platform for Ghana"
+                  style={{ width: "100%", borderRadius: 20, objectFit: "contain", maxHeight: "500px" }}
                   loading="lazy"
                 />
               </Paper>
