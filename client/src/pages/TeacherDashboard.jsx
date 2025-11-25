@@ -35,7 +35,7 @@ import LessonNoteForm from '../components/LessonNoteForm';
 import AiQuizForm from '../components/AiQuizForm';
 import LessonBundleForm from '../components/LessonBundleForm'; // ✅ NEW
 import BundleResultViewer from '../components/BundleResultViewer'; // ✅ NEW
-import BundleManager from '../components/BundleManager';
+import BundleManager from '../components/bundleManager';
 
 // MUI Imports
 import {
