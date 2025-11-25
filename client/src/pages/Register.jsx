@@ -213,7 +213,7 @@ const Register = () => {
               }}
             >
               <img
-                src="https://illustrations.popsy.co/amber/student-going-to-school.svg"
+                src="/undraw_online-test_cqv0.svg"
                 alt="Welcome to Scholar's Path"
                 style={{
                   width: '100%',
