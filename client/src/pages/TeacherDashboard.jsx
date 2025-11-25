@@ -965,26 +965,6 @@ const DraftNoteListItem = ({ note, onPreview, onPublish, onDelete }) => {
 
 // 📑 Tab Panel Component
 
-{/* ========================================
-    📦 MY BUNDLES TAB
-======================================== */}
-<TabPanel value={activeTab} index={3}>
-  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-    <Paper elevation={0} sx={{ p: 3, background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`, backdropFilter: 'blur(10px)', border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Box>
-          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
-            📦 My Lesson Bundles
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage your saved lesson bundles – complete packages with notes, quizzes, and resources.
-          </Typography>
-        </Box>
-      </Stack>
-      <BundleManager />
-    </Paper>
-  </motion.div>
-</TabPanel>
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -1383,6 +1363,11 @@ function TeacherDashboard() {
                 }
                 iconPosition="start"
                 label="Draft Learner Notes"
+              />
+              <Tab
+                icon={<Folder sx={{ mr: 1 }} />}
+                iconPosition="start"
+                label="My Bundles"
               />
             </Tabs>
           </Box>
@@ -1806,6 +1791,39 @@ function TeacherDashboard() {
                 </Paper>
               )}
             </Box>
+          </TabPanel>
+
+          {/* Tab Panel 3: My Bundles */}
+          <TabPanel value={activeTab} index={3}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 3,
+                }}
+              >
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+                  <Box>
+                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
+                      📦 My Lesson Bundles
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Manage your saved lesson bundles – complete packages with notes, quizzes, and resources
+                    </Typography>
+                  </Box>
+                </Stack>
+                <BundleManager />
+              </Paper>
+            </motion.div>
           </TabPanel>
         </Paper>
 
