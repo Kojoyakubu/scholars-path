@@ -192,9 +192,26 @@ const Login = () => {
               justifyContent: 'center',
             }}
           >
-            <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)' }}> {/* ✅ FIXED */}
-              [Hero Illustration]
-            </Typography>
+            <Box
+              sx={{
+                borderRadius: 3,
+                overflow: 'hidden',
+                mb: 6,
+                background: alpha('#ffffff', 0.1),
+                p: 2,
+              }}
+            >
+              <img
+                src="https://illustrations.popsy.co/amber/woman-working-on-laptop.svg"
+                alt="Welcome to Scholar's Path"
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  display: 'block',
+                  borderRadius: 12,
+                }}
+              />
+            </Box>
           </Paper>
 
           {/* Features List */}
