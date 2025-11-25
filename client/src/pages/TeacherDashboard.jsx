@@ -26,6 +26,7 @@ import {
   publishLearnerNote,
   deleteLearnerNote as deleteDraftLearnerNote,
   resetTeacherState,
+  getMyBundles,
   generateAiQuiz,
   getTeacherAnalytics,
   generateLessonBundle, // ✅ NEW: Bundle generation
@@ -34,6 +35,7 @@ import LessonNoteForm from '../components/LessonNoteForm';
 import AiQuizForm from '../components/AiQuizForm';
 import LessonBundleForm from '../components/LessonBundleForm'; // ✅ NEW
 import BundleResultViewer from '../components/BundleResultViewer'; // ✅ NEW
+import BundleManager from '../components/BundleManager';
 
 // MUI Imports
 import {
@@ -98,6 +100,7 @@ import {
   ViewModule,
   ViewList,
   CalendarToday,
+  Folder,
   Edit,
   ExpandMore,
   ExpandLess,
@@ -961,6 +964,28 @@ const DraftNoteListItem = ({ note, onPreview, onPublish, onDelete }) => {
 };
 
 // 📑 Tab Panel Component
+
+{/* ========================================
+    📦 MY BUNDLES TAB
+======================================== */}
+<TabPanel value={activeTab} index={3}>
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+    <Paper elevation={0} sx={{ p: 3, background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`, backdropFilter: 'blur(10px)', border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Box>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
+            📦 My Lesson Bundles
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Manage your saved lesson bundles – complete packages with notes, quizzes, and resources.
+          </Typography>
+        </Box>
+      </Stack>
+      <BundleManager />
+    </Paper>
+  </motion.div>
+</TabPanel>
+
 function TabPanel({ children, value, index, ...other }) {
   return (
     <div
@@ -1030,6 +1055,7 @@ function TeacherDashboard() {
     dispatch(getMyLessonNotes());
     dispatch(getDraftLearnerNotes());
     dispatch(getTeacherAnalytics());
+  dispatch(getMyBundles());
 
     return () => {
       dispatch(resetTeacherState());
