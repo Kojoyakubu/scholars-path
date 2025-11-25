@@ -54,7 +54,7 @@ import {
 
 /**
  * BundleManager Component
- * Complet CRUD interface for managing lesson bundles
+ * Complete CRUD interface for managing lesson bundles
  * Features: View, Edit, Delete, Duplicate, Filter, Search
  */
 function BundleManager() {
