@@ -1,9 +1,9 @@
 // /client/src/pages/LandingPage.jsx
-// ✨ Fully Rewritten Modern Landing Page
+// ✨ Modern Landing Page - FIXED ROUTES & IMPROVED
 // Clean • Focused • Professional • Ghana-friendly • High Conversion
 
 import { motion } from "framer-motion";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -26,6 +26,7 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 30 },
@@ -34,6 +35,15 @@ const fadeIn = {
 
 const LandingPage = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/register');
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+  };
 
   return (
     <Box
@@ -59,14 +69,23 @@ const LandingPage = () => {
           </Box>
 
           <Box sx={{ display: "flex", gap: 2 }}>
-            <Button component={RouterLink} to="/login" variant="text">
+            <Button 
+              component={RouterLink} 
+              to="/login" 
+              variant="text"
+              sx={{ textTransform: 'none' }}
+            >
               Login
             </Button>
             <Button
               component={RouterLink}
-              to="/signup"
+              to="/register"
               variant="contained"
-              sx={{ borderRadius: 2 }}
+              sx={{ 
+                borderRadius: 2,
+                textTransform: 'none',
+                boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.3)}`,
+              }}
             >
               Get Started
             </Button>
@@ -78,7 +97,12 @@ const LandingPage = () => {
       <Container maxWidth="lg" sx={{ py: 10 }}>
         <Grid container spacing={6} alignItems="center">
           <Grid item xs={12} md={6}>
-            <motion.div variants={fadeIn} initial="hidden" animate="visible">
+            <motion.div 
+              variants={fadeIn} 
+              initial="hidden" 
+              animate="visible"
+              transition={{ duration: 0.6 }}
+            >
               <Typography
                 variant="h2"
                 sx={{
@@ -99,25 +123,36 @@ const LandingPage = () => {
                 sx={{ mb: 4, maxWidth: 550 }}
               >
                 Generate curriculum-aligned lesson notes, quizzes, explanations,
-                and learning paths instantly. Optimized for Ghanaian schools.
+                and learning paths instantly. Optimized for Ghanaian schools, Teachers and Students.
               </Typography>
 
-              <Box sx={{ display: "flex", gap: 2 }}>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: 'wrap' }}>
                 <Button
-                  component={RouterLink}
-                  to="/signup"
+                  onClick={handleGetStarted}
                   variant="contained"
                   size="large"
-                  sx={{ borderRadius: 2 }}
+                  endIcon={<ArrowForwardIcon />}
+                  sx={{ 
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    px: 4,
+                    boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                    '&:hover': {
+                      boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
+                    }
+                  }}
                 >
                   Start Learning
                 </Button>
                 <Button
-                  component={RouterLink}
-                  to="/login"
+                  onClick={handleLogin}
                   variant="outlined"
                   size="large"
-                  sx={{ borderRadius: 2 }}
+                  sx={{ 
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    px: 4,
+                  }}
                 >
                   Teacher Login
                 </Button>
@@ -125,7 +160,7 @@ const LandingPage = () => {
             </motion.div>
           </Grid>
 
-          {/* Minimal Hero Illustration */}
+          {/* Hero Illustration */}
           <Grid item xs={12} md={6}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -144,8 +179,9 @@ const LandingPage = () => {
               >
                 <img
                   src="https://cdn3d.iconscout.com/3d/premium/thumb/studying-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--education-boy-student-learning-pack-people-illustrations-6533693.png"
-                  alt="learning"
+                  alt="Student learning on Scholar's Path"
                   style={{ width: "100%", borderRadius: 20 }}
+                  loading="lazy"
                 />
               </Paper>
             </motion.div>
@@ -155,7 +191,13 @@ const LandingPage = () => {
 
       {/* 🇬🇭 GHANA SECTION */}
       <Container maxWidth="lg" sx={{ py: 8 }}>
-        <motion.div variants={fadeIn} initial="hidden" whileInView="visible">
+        <motion.div 
+          variants={fadeIn} 
+          initial="hidden" 
+          whileInView="visible"
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
           <Paper
             elevation={0}
             sx={{
@@ -185,21 +227,31 @@ const LandingPage = () => {
                 "Low-Bandwidth Optimized",
                 "Teacher Friendly Tools",
               ].map((text, i) => (
-                <Grid item xs={12} md={3} key={i}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 3,
-                      borderRadius: 3,
-                      background: alpha("#fff", 0.8),
-                      backdropFilter: "blur(6px)",
-                    }}
+                <Grid item xs={12} sm={6} md={3} key={i}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
                   >
-                    <CheckCircleIcon
-                      sx={{ fontSize: 30, color: "primary.main", mb: 1 }}
-                    />
-                    <Typography variant="body1">{text}</Typography>
-                  </Paper>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 3,
+                        borderRadius: 3,
+                        background: alpha("#fff", 0.8),
+                        backdropFilter: "blur(6px)",
+                        height: '100%',
+                      }}
+                    >
+                      <CheckCircleIcon
+                        sx={{ fontSize: 30, color: "primary.main", mb: 1 }}
+                      />
+                      <Typography variant="body1" fontWeight={600}>
+                        {text}
+                      </Typography>
+                    </Paper>
+                  </motion.div>
                 </Grid>
               ))}
             </Grid>
@@ -243,6 +295,7 @@ const LandingPage = () => {
                 component={motion.div}
                 initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 sx={{
                   p: 3,
@@ -250,6 +303,11 @@ const LandingPage = () => {
                   background: alpha("#fff", 0.9),
                   border: `1px solid ${alpha("#000", 0.1)}`,
                   height: "100%",
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-8px)',
+                    boxShadow: `0 12px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
+                  }
                 }}
               >
                 <item.icon
@@ -280,19 +338,28 @@ const LandingPage = () => {
           What You Can Create
         </Typography>
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: 4,
-            background: alpha("#fff", 0.8),
-          }}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
         >
-          <img
-            src="https://cdn3d.iconscout.com/3d/premium/thumb/tablet-learning-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--elearning-study-online-course-education-pack-school-illustrations-6535902.png"
-            style={{ width: "100%", borderRadius: 16 }}
-          />
-        </Paper>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              borderRadius: 4,
+              background: alpha("#fff", 0.8),
+            }}
+          >
+            <img
+              src="https://cdn3d.iconscout.com/3d/premium/thumb/tablet-learning-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--elearning-study-online-course-education-pack-school-illustrations-6535902.png"
+              alt="Product preview"
+              style={{ width: "100%", borderRadius: 16 }}
+              loading="lazy"
+            />
+          </Paper>
+        </motion.div>
       </Container>
 
       {/* 💵 PRICING SECTION */}
@@ -310,6 +377,8 @@ const LandingPage = () => {
               title: "Free Plan",
               price: "GHS 0",
               features: ["Basic access", "Student dashboard", "Limited content"],
+              buttonText: "Get Started Free",
+              route: "/register",
             },
             {
               title: "Teacher Pro",
@@ -321,6 +390,8 @@ const LandingPage = () => {
                 "AI insights",
               ],
               popular: true,
+              buttonText: "Start Free Trial",
+              route: "/register",
             },
             {
               title: "School Plan",
@@ -331,6 +402,8 @@ const LandingPage = () => {
                 "Advanced analytics",
                 "Priority support",
               ],
+              buttonText: "Contact Sales",
+              route: "/register",
             },
           ].map((plan, i) => (
             <Grid item xs={12} md={4} key={i}>
@@ -338,19 +411,44 @@ const LandingPage = () => {
                 component={motion.div}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 sx={{
                   borderRadius: 4,
                   p: 3,
-                  border: `1px solid ${alpha("#000", 0.1)}`,
+                  border: plan.popular 
+                    ? `2px solid ${theme.palette.primary.main}` 
+                    : `1px solid ${alpha("#000", 0.1)}`,
                   background: plan.popular
                     ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
                     : "white",
                   color: plan.popular ? "white" : "inherit",
+                  position: 'relative',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
               >
-                <CardContent>
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                {plan.popular && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -12,
+                      right: 20,
+                      bgcolor: theme.palette.secondary.main,
+                      color: 'white',
+                      px: 2,
+                      py: 0.5,
+                      borderRadius: 2,
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    POPULAR
+                  </Box>
+                )}
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
                     {plan.title}
                   </Typography>
 
@@ -359,9 +457,10 @@ const LandingPage = () => {
                   </Typography>
 
                   {plan.features.map((f, idx) => (
-                    <Typography key={idx} sx={{ mb: 1 }}>
-                      • {f}
-                    </Typography>
+                    <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <CheckCircleIcon sx={{ fontSize: 18, mr: 1 }} />
+                      <Typography variant="body2">{f}</Typography>
+                    </Box>
                   ))}
                 </CardContent>
 
@@ -369,20 +468,75 @@ const LandingPage = () => {
                   <Button
                     fullWidth
                     variant="contained"
+                    component={RouterLink}
+                    to={plan.route}
                     sx={{
                       bgcolor: plan.popular ? "white" : "primary.main",
                       color: plan.popular ? "primary.main" : "white",
                       fontWeight: 700,
                       borderRadius: 2,
+                      textTransform: 'none',
+                      py: 1.5,
+                      '&:hover': {
+                        bgcolor: plan.popular ? alpha("#fff", 0.9) : "primary.dark",
+                      }
                     }}
                   >
-                    Choose Plan
+                    {plan.buttonText}
                   </Button>
                 </CardActions>
               </Card>
             </Grid>
           ))}
         </Grid>
+      </Container>
+
+      {/* 🎉 FINAL CTA */}
+      <Container maxWidth="md" sx={{ py: 10 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <Paper
+            elevation={0}
+            sx={{
+              p: 6,
+              borderRadius: 4,
+              textAlign: 'center',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              color: 'white',
+            }}
+          >
+            <Typography variant="h4" sx={{ fontWeight: 800, mb: 2 }}>
+              Ready to Transform Your Classroom?
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 4, opacity: 0.9 }}>
+              Join thousands of teachers and students already using Scholar's Path
+            </Typography>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={handleGetStarted}
+              endIcon={<ArrowForwardIcon />}
+              sx={{
+                bgcolor: 'white',
+                color: 'primary.main',
+                fontWeight: 700,
+                borderRadius: 2,
+                textTransform: 'none',
+                px: 4,
+                py: 1.5,
+                '&:hover': {
+                  bgcolor: alpha('#fff', 0.9),
+                }
+              }}
+            >
+              Get Started Free
+            </Button>
+          </Paper>
+        </motion.div>
       </Container>
 
       {/* 🦶 FOOTER */}
@@ -394,9 +548,85 @@ const LandingPage = () => {
         }}
       >
         <Container maxWidth="lg">
-          <Typography sx={{ textAlign: "center", opacity: 0.7 }}>
-            © {new Date().getFullYear()} Scholar's Path — Empowering the Future
-          </Typography>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <SchoolIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "primary.main" }}>
+                  Scholar's Path
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Empowering education through AI-powered learning tools designed for Ghanaian schools.
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={12} sm={4} md={2}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
+                Product
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
+                  Features
+                </Button>
+                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
+                  Pricing
+                </Button>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} sm={4} md={2}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
+                Company
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
+                  About Us
+                </Button>
+                <Button component={RouterLink} to="/login" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
+                  Contact
+                </Button>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} sm={4} md={2}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
+                Legal
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
+                  Privacy
+                </Button>
+                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
+                  Terms
+                </Button>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} md={2}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
+                Get Started
+              </Typography>
+              <Button
+                component={RouterLink}
+                to="/register"
+                variant="contained"
+                fullWidth
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                }}
+              >
+                Sign Up Free
+              </Button>
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mt: 4, pt: 3, borderTop: `1px solid ${alpha('#000', 0.1)}` }}>
+            <Typography variant="body2" sx={{ textAlign: "center", opacity: 0.7 }}>
+              © {new Date().getFullYear()} Scholar's Path — Empowering the Future
+            </Typography>
+          </Box>
         </Container>
       </Box>
     </Box>
