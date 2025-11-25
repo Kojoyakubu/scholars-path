@@ -41,12 +41,19 @@ const SelectClass = () => {
 
   // Load levels on mount
   useEffect(() => {
-    dispatch(fetchItems('levels'));
+    console.log('🔄 SelectClass: Loading levels...');
+    dispatch(fetchItems({ entity: 'levels' })); // ✅ FIXED: Changed from fetchItems('levels')
   }, [dispatch]);
+
+  // Debug: Log when levels are loaded
+  useEffect(() => {
+    console.log('📊 SelectClass: Levels loaded:', levels);
+  }, [levels]);
 
   // Load classes when level is selected
   useEffect(() => {
     if (selectedLevel) {
+      console.log('🔄 SelectClass: Loading classes for level:', selectedLevel);
       setIsLoadingClasses(true);
       dispatch(
         fetchChildren({
@@ -61,16 +68,25 @@ const SelectClass = () => {
     }
   }, [selectedLevel, dispatch]);
 
+  // Debug: Log when classes are loaded
+  useEffect(() => {
+    console.log('📊 SelectClass: Classes loaded:', classes);
+  }, [classes]);
+
   const handleLevelChange = (event) => {
+    console.log('✅ Level selected:', event.target.value);
     setSelectedLevel(event.target.value);
   };
 
   const handleClassChange = (event) => {
+    console.log('✅ Class selected:', event.target.value);
     setSelectedClass(event.target.value);
   };
 
   const handleContinue = () => {
     if (selectedLevel && selectedClass) {
+      console.log('💾 Saving selections:', { levelId: selectedLevel, classId: selectedClass });
+      
       // Save selections to localStorage
       localStorage.setItem(
         'studentClassSelection',
@@ -80,12 +96,17 @@ const SelectClass = () => {
         })
       );
 
+      console.log('🚀 Navigating to dashboard...');
       // Navigate to dashboard
       navigate('/student/dashboard');
     }
   };
 
   const isButtonDisabled = !selectedLevel || !selectedClass;
+
+  // Safe array checks
+  const safeLevels = Array.isArray(levels) ? levels : [];
+  const safeClasses = Array.isArray(classes) ? classes : [];
 
   return (
     <Box
@@ -171,13 +192,17 @@ const SelectClass = () => {
                   <MenuItem value="">
                     <em>Select your level</em>
                   </MenuItem>
-                  {Array.isArray(levels) &&
-                    levels.map((level) => (
-                      <MenuItem key={level._id} value={level._id}>
-                        {level.name}
-                      </MenuItem>
-                    ))}
+                  {safeLevels.map((level) => (
+                    <MenuItem key={level._id} value={level._id}>
+                      {level.name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {isLoading && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+                    <CircularProgress size={20} />
+                  </Box>
+                )}
               </FormControl>
 
               {/* Class Selection */}
@@ -204,12 +229,11 @@ const SelectClass = () => {
                   <MenuItem value="">
                     <em>Select your class</em>
                   </MenuItem>
-                  {Array.isArray(classes) &&
-                    classes.map((cls) => (
-                      <MenuItem key={cls._id} value={cls._id}>
-                        {cls.name}
-                      </MenuItem>
-                    ))}
+                  {safeClasses.map((cls) => (
+                    <MenuItem key={cls._id} value={cls._id}>
+                      {cls.name}
+                    </MenuItem>
+                  ))}
                 </Select>
                 {isLoadingClasses && (
                   <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
