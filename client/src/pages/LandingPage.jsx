@@ -154,7 +154,7 @@ const LandingPage = () => {
                     px: 4,
                   }}
                 >
-                  Teacher Login
+                  Login
                 </Button>
               </Box>
             </motion.div>

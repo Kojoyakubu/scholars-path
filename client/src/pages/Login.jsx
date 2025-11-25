@@ -1,5 +1,5 @@
 // /client/src/pages/Login.jsx
-// ✨ Enhanced Login Page - Modern Design
+// ✨ Enhanced Login Page - FIXED TEXT CONTRAST
 // Beautiful • User-friendly • Professional
 
 import { useState } from 'react';
@@ -133,7 +133,7 @@ const Login = () => {
           width: '40%',
           background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
           p: 6,
-          color: 'white',
+          color: 'white', // ✅ FIXED: Ensure all text is white
         }}
       >
         <motion.div
@@ -143,17 +143,36 @@ const Login = () => {
         >
           {/* Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 6 }}>
-            <School sx={{ fontSize: 40, mr: 2 }} />
-            <Typography variant="h4" sx={{ fontWeight: 800 }}>
+            <School sx={{ fontSize: 40, mr: 2, color: 'white' }} /> {/* ✅ Explicit white */}
+            <Typography
+              variant="h4"
+              sx={{ 
+                fontWeight: 800,
+                color: 'white', // ✅ FIXED: Explicit white color
+              }}
+            >
               Scholar's Path
             </Typography>
           </Box>
 
           {/* Tagline */}
-          <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 700, 
+              mb: 2,
+              color: 'white', // ✅ FIXED: Explicit white color
+            }}
+          >
             Scholar's Path
           </Typography>
-          <Typography variant="body1" sx={{ mb: 6, opacity: 0.9 }}>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              mb: 6, 
+              color: 'rgba(255, 255, 255, 0.9)', // ✅ FIXED: White with 90% opacity
+            }}
+          >
             Transform Education with AI
           </Typography>
 
@@ -173,7 +192,9 @@ const Login = () => {
               justifyContent: 'center',
             }}
           >
-            <Typography sx={{ opacity: 0.5 }}>[Hero Illustration]</Typography>
+            <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)' }}> {/* ✅ FIXED */}
+              [Hero Illustration]
+            </Typography>
           </Paper>
 
           {/* Features List */}
@@ -192,8 +213,13 @@ const Login = () => {
                     mb: 2,
                   }}
                 >
-                  <CheckCircle sx={{ mr: 2, fontSize: 20 }} />
-                  <Typography variant="body2">{feature}</Typography>
+                  <CheckCircle sx={{ mr: 2, fontSize: 20, color: 'white' }} /> {/* ✅ FIXED */}
+                  <Typography 
+                    variant="body2"
+                    sx={{ color: 'white' }} // ✅ FIXED: Explicit white color
+                  >
+                    {feature}
+                  </Typography>
                 </Box>
               </motion.div>
             ))}
