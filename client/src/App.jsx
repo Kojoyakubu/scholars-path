@@ -1,8 +1,9 @@
-// /client/src/App.jsx - UPDATED WITH SEPARATED QUIZ
+// /client/src/App.jsx - UPDATED WITH SELECT CLASS ROUTE
 // ✅ LandingPage at root "/"
 // ✅ Multiple auth options: /login, /register, /auth
 // ✅ Layout wrapper for protected routes (sidebars work)
 // ✅ QuizSeparated component for separated question types
+// ✅ NEW: SelectClass route for student class selection
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -20,6 +21,7 @@ import Dashboard from './pages/Dashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import LessonNoteView from './pages/LessonNoteView';
+import SelectClass from './pages/SelectClass';      // ✅ NEW: Class selection page
 
 // ✅ UPDATED: Import QuizSeparated instead of TakeQuiz
 import QuizSeparated from './components/QuizSeparated';
@@ -35,6 +37,7 @@ const App = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('studentClassSelection'); // ✅ NEW: Clear class selection
     dispatch({ type: 'auth/logout' }); // Adjust to match your auth slice action
     window.location.href = '/';
   };
@@ -72,8 +75,11 @@ const App = () => {
               <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
-            {/* Student Dashboard */}
+            {/* Student Routes */}
             <Route element={<RoleRoute allowedRoles={['student']} />}>
+              {/* ✅ NEW: Class selection MUST come BEFORE dashboard */}
+              <Route path="/student/select-class" element={<SelectClass />} />
+              <Route path="/student/dashboard" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
               {/* ✅ UPDATED: Use QuizSeparated for separated question types */}
               <Route path="/quiz/:id" element={<QuizSeparated />} />
@@ -91,12 +97,42 @@ const App = () => {
 
 export default App;
 
-/* 
-==========================================
-QUIZ SEPARATION UPDATE:
+/* ==========================================
+NEW CLASS SELECTION FLOW:
 ==========================================
 
-The quiz route now uses QuizSeparated component which:
+Students now follow this improved flow:
+
+1. LOGIN:
+   - Student logs in → redirected to dashboard
+
+2. CLASS SELECTION CHECK:
+   - Dashboard checks localStorage for 'studentClassSelection'
+   - If not found → redirect to /student/select-class
+   - If found → load subjects automatically
+
+3. SELECT CLASS PAGE (/student/select-class):
+   - Beautiful, modern UI
+   - Select Level (dropdown)
+   - Select Class (dropdown - loads after level selected)
+   - Click "Continue" → saves to localStorage → navigate to dashboard
+
+4. DASHBOARD:
+   - Auto-loads subjects for selected class
+   - Shows subject cards (no more Level/Class dropdowns)
+   - Click subject card → load strands
+   - Select strand → load sub-strands
+   - Select sub-strand → load content
+
+5. CHANGE CLASS:
+   - "Change Class" button in dashboard
+   - Clears localStorage → redirects to /student/select-class
+
+==========================================
+QUIZ SEPARATION (EXISTING):
+==========================================
+
+The quiz route uses QuizSeparated component which:
 
 1. SEPARATES QUESTIONS INTO TWO SECTIONS:
    - Auto-Graded: MCQs and True/False (shown on dashboard)

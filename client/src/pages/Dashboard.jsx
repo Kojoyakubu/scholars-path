@@ -35,6 +35,7 @@ import TimerIcon from '@mui/icons-material/Timer';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // Preserved imports
 import { syncUserFromStorage } from '../features/auth/authSlice';
@@ -611,13 +612,33 @@ function Dashboard() {
   const isLoading = isCurriculumLoading || isStudentLoading;
 
   // Component state (preserved)
-  const [selections, setSelections] = useState({
-    level: '', 
-    class: '', 
-    subject: '', 
-    strand: '', 
-    subStrand: '',
-  });
+  // Initialize selections from localStorage (level & class are pre-selected)
+  const getInitialSelections = () => {
+    try {
+      const saved = localStorage.getItem('studentClassSelection');
+      if (saved) {
+        const { levelId, classId } = JSON.parse(saved);
+        return {
+          level: levelId,
+          class: classId,
+          subject: '',
+          strand: '',
+          subStrand: '',
+        };
+      }
+    } catch (error) {
+      console.error('Error loading class selection:', error);
+    }
+    return {
+      level: '',
+      class: '',
+      subject: '',
+      strand: '',
+      subStrand: '',
+    };
+  };
+
+  const [selections, setSelections] = useState(getInitialSelections());
 
   // Track if content has been loaded for a substrand (preserved)
   const [contentLoaded, setContentLoaded] = useState(false);
@@ -645,7 +666,17 @@ function Dashboard() {
     };
   }, [dispatch]);
 
-  // 🔄 Navigate based on user role and fetch initial levels (preserved logic)
+  // Redirect to class selection if no level/class is set
+  useEffect(() => {
+    if (user && user.role === 'student') {
+      if (!selections.level || !selections.class) {
+        console.log('⚠️ No class selection found, redirecting to selection page');
+        navigate('/student/select-class');
+      }
+    }
+  }, [user, selections.level, selections.class, navigate]);
+
+// 🔄 Navigate based on user role and auto-fetch subjects for student
   useEffect(() => {
     if (!user) return;
     
@@ -654,23 +685,19 @@ function Dashboard() {
     } else if (user.role === 'teacher' || user.role === 'school_admin') {
       navigate('/teacher/dashboard');
     } else if (user.role === 'student') {
-      dispatch(fetchItems({ entity: 'levels' }));
+      // Auto-fetch subjects when student enters dashboard with pre-selected class
+      if (selections.class) {
+        console.log('📚 Auto-fetching subjects for class:', selections.class);
+        dispatch(fetchChildren({ 
+          entity: 'subjects', 
+          parentEntity: 'classes', 
+          parentId: selections.class 
+        }));
+      }
     }
-  }, [dispatch, user, navigate]);
+  }, [dispatch, user, navigate, selections.class]);
 
-  // 🔄 Fetch children when parent selection changes (preserved logic)
-  useEffect(() => {
-    if (selections.level && !selections.class) {
-      dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level }));
-    }
-  }, [dispatch, selections.level, selections.class]);
-
-  useEffect(() => {
-    if (selections.class && !selections.subject) {
-      dispatch(fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: selections.class }));
-    }
-  }, [dispatch, selections.class, selections.subject]);
-
+  // 🔄 Fetch children when selection changes (subject → strand → substrand)
   useEffect(() => {
     if (selections.subject && !selections.strand) {
       dispatch(fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: selections.subject }));
@@ -683,6 +710,7 @@ function Dashboard() {
     }
   }, [dispatch, selections.strand, selections.subStrand]);
 
+  
   // 🔄 Fetch student content when substrand is selected (preserved logic)
   useEffect(() => {
     // Only fetch if we have a valid subStrand ID
@@ -802,6 +830,34 @@ function Dashboard() {
     });
   }, []);
 
+  // Handle subject card click
+  const handleSubjectSelect = useCallback((subjectId) => {
+    setSelections((prev) => ({
+      ...prev,
+      subject: subjectId,
+      strand: '',
+      subStrand: '',
+    }));
+    setContentLoaded(false);
+  }, []);
+
+  // Handle "Change Class" button
+  const handleChangeClass = useCallback(() => {
+    localStorage.removeItem('studentClassSelection');
+    navigate('/student/select-class');
+  }, [navigate]);
+
+  // Handle back to subjects
+  const handleBackToSubjects = useCallback(() => {
+    setSelections((prev) => ({
+      ...prev,
+      subject: '',
+      strand: '',
+      subStrand: '',
+    }));
+    setContentLoaded(false);
+  }, []);
+
 
   // ✅ FIXED: Download handlers
   const handleDownloadPdf = useCallback((note) => {
@@ -892,324 +948,226 @@ function Dashboard() {
           refreshing={refreshing}
         />
 
-        {/* Quick Actions Section */}
-        {!selections.subStrand && (
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            <Typography
-              variant="h5"
+        {/* Subjects Grid - Only show if no subject is selected */}
+        {!selections.subject && selections.class && (
+          <motion.div variants={fadeInUp}>
+            <Paper
+              elevation={0}
               sx={{
-                fontWeight: 700,
-                mb: 3,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
+                p: 4,
+                borderRadius: 3,
+                background: alpha('#ffffff', 0.8),
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                mb: 4,
               }}
             >
-              <StarIcon sx={{ color: theme.palette.warning.main }} />
-              Quick Actions
-            </Typography>
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={3}>
-                <QuickActionCard
-                  icon={MenuBookIcon}
-                  title="Study Notes"
-                  description="Access your learning materials"
-                  color={theme.palette.primary.main}
-                  badge={stats.notes}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <QuickActionCard
-                  icon={QuizIcon}
-                  title="Take Quiz"
-                  description="Test your knowledge"
-                  color={theme.palette.warning.main}
-                  badge={stats.quizzes}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <QuickActionCard
-                  icon={AttachFileIcon}
-                  title="Resources"
-                  description="Download study materials"
-                  color={theme.palette.success.main}
-                  badge={stats.resources}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <QuickActionCard
-                  icon={TrendingUpIcon}
-                  title="My Progress"
-                  description="Track your achievements"
-                  color={theme.palette.info.main}
-                />
-              </Grid>
-            </Grid>
-          </motion.div>
-        )}
-
-        {/* Progress Tracking Section */}
-        {selections.subStrand && (
-          <motion.div
-            variants={fadeInUp}
-            initial="hidden"
-            animate="visible"
-          >
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                mb: 3,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <TrendingUpIcon sx={{ color: theme.palette.info.main }} />
-              Your Progress
-            </Typography>
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} md={4}>
-                <ProgressCard
-                  title="Notes Completed"
-                  value={stats.notes}
-                  max={stats.notes + 2}
-                  color={theme.palette.primary.main}
-                  icon={CheckCircleIcon}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <ProgressCard
-                  title="Quizzes Taken"
-                  value={Math.min(stats.quizzes, 3)}
-                  max={stats.quizzes}
-                  color={theme.palette.warning.main}
-                  icon={EmojiEventsIcon}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <ProgressCard
-                  title="Resources Viewed"
-                  value={Math.floor(stats.resources * 0.7)}
-                  max={stats.resources}
-                  color={theme.palette.success.main}
-                  icon={LocalLibraryIcon}
-                />
-              </Grid>
-            </Grid>
-          </motion.div>
-        )}
-
-        {/* Curriculum Selection - Enhanced Design - ALWAYS VISIBLE */}
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          animate="visible"
-        >
-          <SectionCard sx={{ p: 4, mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-              <Avatar
-                sx={{
-                  width: 56,
-                  height: 56,
-                  bgcolor: theme.palette.primary.main,
-                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-                }}
-              >
-                <SchoolIcon sx={{ fontSize: 28 }} />
-              </Avatar>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  Select Your Study Path
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Choose your curriculum to access learning materials
-                </Typography>
-              </Box>
-              {selections.subStrand && (
-                <Chip
-                  icon={<CheckCircleIcon />}
-                  label="Selection Complete"
-                  color="success"
-                  sx={{ fontWeight: 600 }}
-                />
-              )}
-            </Box>
-
-            <Divider sx={{ mb: 3 }} />
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Level</InputLabel>
-                  <Select
-                    name="level"
-                    value={selections.level}
-                    onChange={handleSelectionChange}
-                    label="Level"
-                    disabled={isLoading}
-                  >
-                    {(safeLevels || []).map((level) => (
-                      <MenuItem key={level?._id} value={level?._id}>
-                        {level?.name || 'Unnamed Level'}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth size="small" disabled={!selections.level}>
-                  <InputLabel>Class</InputLabel>
-                  <Select
-                    name="class"
-                    value={safeClasses.some(c => c?._id === selections.class) ? selections.class : ''}
-                    onChange={handleSelectionChange}
-                    label="Class"
-                    disabled={isLoading || !selections.level}
-                  >
-                    {safeClasses.length > 0 ? (
-                      safeClasses.map((cls) => (
-                        <MenuItem key={cls?._id || Math.random()} value={cls?._id || ''}>
-                          {cls?.name || 'Unnamed Class'}
-                        </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem value="">
-                        {isLoading ? 'Loading classes...' : 'Select a level first'}
-                      </MenuItem>
-                    )}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth size="small" disabled={!selections.class}>
-                  <InputLabel>Subject</InputLabel>
-                  <Select
-                    name="subject"
-                    value={safeSubjects.some(s => s?._id === selections.subject) ? selections.subject : ''}
-                    onChange={handleSelectionChange}
-                    label="Subject"
-                    disabled={isLoading || !selections.class}
-                  >
-                    {safeSubjects.length > 0 ? (
-                      safeSubjects.map((subject) => (
-                        <MenuItem key={subject?._id || Math.random()} value={subject?._id || ''}>
-                          {subject?.name || 'Unnamed Subject'}
-                        </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem value="">
-                        {isLoading ? 'Loading subjects...' : 'Select a class first'}
-                      </MenuItem>
-                    )}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth size="small" disabled={!selections.subject}>
-                  <InputLabel>Strand</InputLabel>
-                  <Select
-                    name="strand"
-                    value={safeStrands.some(s => s?._id === selections.strand) ? selections.strand : ''}
-                    onChange={handleSelectionChange}
-                    label="Strand"
-                    disabled={isLoading || !selections.subject}
-                  >
-                    {safeStrands.length > 0 ? (
-                      safeStrands.map((strand) => (
-                        <MenuItem key={strand?._id || Math.random()} value={strand?._id || ''}>
-                          {strand?.name || 'Unnamed Strand'}
-                        </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem value="">
-                        {isLoading ? 'Loading strands...' : 'Select a subject first'}
-                      </MenuItem>
-                    )}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth size="small" disabled={!selections.strand}>
-                  <InputLabel>Sub-Strand</InputLabel>
-                  <Select
-                    name="subStrand"
-                    value={safeSubStrands.some(s => s?._id === selections.subStrand) ? selections.subStrand : ''}
-                    onChange={handleSelectionChange}
-                    label="Sub-Strand"
-                    disabled={isLoading || !selections.strand}
-                  >
-                    {safeSubStrands.length > 0 ? (
-                      safeSubStrands.map((subStrand) => (
-                        <MenuItem key={subStrand?._id || Math.random()} value={subStrand?._id || ''}>
-                          {subStrand?.name || 'Unnamed Sub-Strand'}
-                        </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem value="">
-                        {isLoading ? 'Loading sub-strands...' : 'Select a strand first'}
-                      </MenuItem>
-                    )}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-
-            {isLoading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                <CircularProgress size={32} />
-              </Box>
-            )}
-
-            {/* Selection Progress Indicator */}
-            {(selections.level || selections.class || selections.subject || selections.strand) && !selections.subStrand && (
-              <Box sx={{ mt: 3 }}>
-                <Paper
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography
+                  variant="h5"
+                  fontWeight={700}
                   sx={{
-                    p: 3,
-                    bgcolor: alpha(theme.palette.info.main, 0.05),
-                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                    borderRadius: 2,
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar
+                  📚 Your Subjects
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleChangeClass}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    borderColor: alpha(theme.palette.primary.main, 0.3),
+                  }}
+                >
+                  Change Class
+                </Button>
+              </Box>
+
+              {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                  <CircularProgress />
+                </Box>
+              ) : safeSubjects.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 6 }}>
+                  <SchoolIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary">
+                    No subjects available
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Contact your teacher or administrator
+                  </Typography>
+                </Box>
+              ) : (
+                <Grid container spacing={3}>
+                  {safeSubjects.map((subject) => (
+                    <Grid item xs={12} sm={6} md={4} key={subject._id}>
+                      <motion.div
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Card
+                          onClick={() => handleSubjectSelect(subject._id)}
+                          sx={{
+                            height: '100%',
+                            cursor: 'pointer',
+                            borderRadius: 3,
+                            transition: 'all 0.3s ease',
+                            background: `linear-gradient(135deg, ${alpha(
+                              theme.palette.primary.main,
+                              0.05
+                            )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+                            border: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                            '&:hover': {
+                              border: `2px solid ${theme.palette.primary.main}`,
+                              boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
+                            },
+                          }}
+                        >
+                          <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                            <Box
+                              sx={{
+                                display: 'inline-flex',
+                                p: 2,
+                                borderRadius: '50%',
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                mb: 2,
+                              }}
+                            >
+                              <MenuBookIcon
+                                sx={{ fontSize: 40, color: 'primary.main' }}
+                              />
+                            </Box>
+                            <Typography variant="h6" fontWeight={600} gutterBottom>
+                              {subject.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Click to explore
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Paper>
+          </motion.div>
+        )}
+
+        {/* Show "Back to Subjects" button when subject is selected */}
+        {selections.subject && (
+          <Box sx={{ mb: 3 }}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={handleBackToSubjects}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                borderColor: alpha(theme.palette.primary.main, 0.3),
+              }}
+            >
+              Back to Subjects
+            </Button>
+          </Box>
+        )}
+
+        {/* Strand & SubStrand Selection - Only show when subject is selected */}
+        {selections.subject && (
+          <motion.div variants={fadeInUp}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 4,
+                borderRadius: 3,
+                background: alpha('#ffffff', 0.8),
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                mb: 4,
+              }}
+            >
+              <Typography
+                variant="h5"
+                fontWeight={700}
+                sx={{
+                  mb: 3,
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                🎯 Select Topic
+              </Typography>
+
+              <Grid container spacing={3}>
+                {/* Strand Dropdown */}
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Strand</InputLabel>
+                    <Select
+                      name="strand"
+                      value={selections.strand}
+                      onChange={handleSelectionChange}
+                      label="Strand"
                       sx={{
-                        bgcolor: theme.palette.info.main,
-                        width: 40,
-                        height: 40,
+                        borderRadius: 2,
+                        background: '#fff',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: alpha(theme.palette.primary.main, 0.2),
+                        },
                       }}
                     >
-                      <SchoolIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {!selections.class && 'Select a class to continue'}
-                        {selections.class && !selections.subject && 'Select a subject to continue'}
-                        {selections.subject && !selections.strand && 'Select a strand to continue'}
-                        {selections.strand && !selections.subStrand && 'Select a sub-strand to view materials'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {selections.level && safeLevels.length > 0 && `Level: ${safeLevels.find(l => l?._id === selections.level)?.name || 'Selected'}`}
-                        {selections.class && safeClasses.length > 0 && ` • Class: ${safeClasses.find(c => c?._id === selections.class)?.name || 'Selected'}`}
-                        {selections.subject && safeSubjects.length > 0 && ` • Subject: ${safeSubjects.find(s => s?._id === selections.subject)?.name || 'Selected'}`}
-                        {selections.strand && safeStrands.length > 0 && ` • Strand: ${safeStrands.find(s => s?._id === selections.strand)?.name || 'Selected'}`}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Paper>
-              </Box>
-            )}
-          </SectionCard>
-        </motion.div>
+                      <MenuItem value="">
+                        <em>Select strand</em>
+                      </MenuItem>
+                      {(safeStrands || []).map((strand) => (
+                        <MenuItem key={strand?._id} value={strand?._id}>
+                          {strand?.name || 'Unnamed Strand'}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                {/* Sub-Strand Dropdown */}
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth disabled={!selections.strand}>
+                    <InputLabel>Sub-Strand</InputLabel>
+                    <Select
+                      name="subStrand"
+                      value={selections.subStrand}
+                      onChange={handleSelectionChange}
+                      label="Sub-Strand"
+                      sx={{
+                        borderRadius: 2,
+                        background: '#fff',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: alpha(theme.palette.primary.main, 0.2),
+                        },
+                      }}
+                    >
+                      <MenuItem value="">
+                        <em>Select sub-strand</em>
+                      </MenuItem>
+                      {(safeSubStrands || []).map((subStrand) => (
+                        <MenuItem key={subStrand?._id} value={subStrand?._id}>
+                          {subStrand?.name || 'Unnamed Sub-Strand'}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Paper>
+          </motion.div>
+        )}
 
         {/* Learning Content - Enhanced with Glassmorphism */}
         {selections.subStrand && contentLoaded ? (
