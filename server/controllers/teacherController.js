@@ -642,7 +642,6 @@ const getBundleById = asyncHandler(async (req, res) => {
   
   // Fetch quiz questions for the bundle
   const questions = await Question.find({ quiz: bundle.quiz._id })
-    .populate('question', 'text isCorrect')
     .sort({ createdAt: 1 });
     
   // Group questions by type
