@@ -178,7 +178,7 @@ const LandingPage = () => {
                 }}
               >
                 <img
-                  src="https://illustrations.popsy.co/amber/online-learning.svg"
+                  src="https://www.svgrepo.com/show/490900/education.svg"
                   alt="Student learning on Scholar's Path - AI-powered education platform for Ghana"
                   style={{ width: "100%", borderRadius: 20, objectFit: "contain", maxHeight: "500px" }}
                   loading="lazy"
