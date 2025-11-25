@@ -41,6 +41,7 @@ import {
   CheckCircle,
   Archive,
   Folder,
+  Close,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -70,6 +71,7 @@ function BundleManager() {
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState(null);
   
   // Edit form state
@@ -120,8 +122,9 @@ function BundleManager() {
   };
   
   const handleView = (bundle) => {
-    // Navigate to bundle detail view or open dialog
+    setSelectedBundle(bundle);
     dispatch(getBundleById(bundle._id));
+    setViewDialogOpen(true);
     handleMenuClose();
   };
   
@@ -387,6 +390,145 @@ function BundleManager() {
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button onClick={confirmDelete} color="error" variant="contained">
             Delete Forever
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* View Bundle Dialog */}
+      <Dialog 
+        open={viewDialogOpen} 
+        onClose={() => setViewDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            maxHeight: '90vh',
+          }
+        }}
+      >
+        <DialogTitle>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">Bundle Details</Typography>
+            <IconButton onClick={() => setViewDialogOpen(false)} size="small">
+              <Close />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedBundle && (
+            <Stack spacing={3}>
+              {/* Bundle Info */}
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  {selectedBundle.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {selectedBundle.description || 'No description'}
+                </Typography>
+                
+                <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                  <Chip 
+                    label={selectedBundle.status} 
+                    size="small" 
+                    color={getStatusColor(selectedBundle.status)}
+                  />
+                  {selectedBundle.tags?.map((tag, idx) => (
+                    <Chip key={idx} label={tag} size="small" variant="outlined" />
+                  ))}
+                </Stack>
+              </Box>
+              
+              <Divider />
+              
+              {/* Components Summary */}
+              <Box>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                  📦 Bundle Components
+                </Typography>
+                <Stack spacing={1}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Article fontSize="small" color="primary" />
+                    <Typography variant="body2">Teacher Lesson Note</Typography>
+                  </Stack>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <School fontSize="small" color="secondary" />
+                    <Typography variant="body2">Learner Note (Status: {selectedBundle.learnerNote?.status || 'N/A'})</Typography>
+                  </Stack>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Quiz fontSize="small" color="success" />
+                    <Typography variant="body2">Quiz: {selectedBundle.quiz?.title || 'N/A'}</Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+              
+              <Divider />
+              
+              {/* Generation Context */}
+              {selectedBundle.generationContext && (
+                <Box>
+                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                    📋 Generation Details
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">School</Typography>
+                      <Typography variant="body2">{selectedBundle.generationContext.school}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Class</Typography>
+                      <Typography variant="body2">{selectedBundle.generationContext.className}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Subject</Typography>
+                      <Typography variant="body2">{selectedBundle.generationContext.subjectName}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Term / Week</Typography>
+                      <Typography variant="body2">Term {selectedBundle.generationContext.term}, Week {selectedBundle.generationContext.week}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="caption" color="text.secondary">Content Standard</Typography>
+                      <Typography variant="body2">{selectedBundle.generationContext.contentStandardCode}</Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+              
+              <Divider />
+              
+              {/* Metadata */}
+              <Box>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                  ℹ️ Metadata
+                </Typography>
+                <Stack spacing={0.5}>
+                  <Typography variant="body2">
+                    <strong>Created:</strong> {new Date(selectedBundle.createdAt).toLocaleString()}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Last Updated:</strong> {new Date(selectedBundle.updatedAt).toLocaleString()}
+                  </Typography>
+                  {selectedBundle.aiProvider && (
+                    <Typography variant="body2">
+                      <strong>AI Provider:</strong> {selectedBundle.aiProvider} ({selectedBundle.aiModel})
+                    </Typography>
+                  )}
+                </Stack>
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
+          <Button 
+            onClick={() => {
+              setViewDialogOpen(false);
+              handleEdit(selectedBundle);
+            }}
+            startIcon={<Edit />}
+            variant="outlined"
+          >
+            Edit
           </Button>
         </DialogActions>
       </Dialog>
