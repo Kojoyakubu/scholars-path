@@ -1,125 +1,113 @@
 // /client/src/pages/Login.jsx
-// 🎨 Modernized Login Page - Following Design Blueprint
-// Features: Split-screen layout, brand illustration, floating labels, social login ready
+// ✨ Enhanced Login Page - Modern Design
+// Beautiful • User-friendly • Professional
 
-import { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { login, reset } from '../features/auth/authSlice';
-
-// MUI Imports
+import { useDispatch, useSelector } from 'react-redux';
+import { motion } from 'framer-motion';
 import {
-  Button,
-  TextField,
   Box,
-  Typography,
   Container,
   Paper,
-  CircularProgress,
+  Typography,
+  TextField,
+  Button,
+  InputAdornment,
+  IconButton,
   Alert,
-  Collapse,
-  Link,
-  Grid,
+  CircularProgress,
+  Divider,
   useTheme,
   alpha,
-  Stack,
-  Divider,
+  Link,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
-import { motion } from 'framer-motion';
+import {
+  Visibility,
+  VisibilityOff,
+  School,
+  Email,
+  Lock,
+  ArrowForward,
+  CheckCircle,
+  LockOpen,
+} from '@mui/icons-material';
 
-// Icons
-import SchoolIcon from '@mui/icons-material/School';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { login } from '../features/auth/authSlice';
 
-// 🎯 Animation Variants
-const fadeIn = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.8 } },
-};
-
-const slideInRight = {
-  hidden: { opacity: 0, x: 50 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.6 } },
-};
-
-const slideInLeft = {
-  hidden: { opacity: 0, x: -50 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.6 } },
-};
-
-function Login() {
+const Login = () => {
   const theme = useTheme();
-  const [formData, setFormData] = useState({ email: '', password: '' });
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
+  const { isLoading, error } = useSelector((state) => state.auth);
 
-  const { user, isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  // 🔄 Handle authentication success and redirects (preserved logic)
-  useEffect(() => {
-    if (isError) {
-      console.log('❌ Login error:', message);
-    }
-
-    if (isSuccess && user) {
-      console.log('✅ Login successful, user:', user);
-      
-      // Determine target route based on role (preserved logic)
-      let targetRoute;
-      switch (user.role) {
-        case 'admin':
-          targetRoute = '/admin';
-          break;
-        case 'teacher':
-        case 'school_admin':
-          targetRoute = '/teacher/dashboard';
-          break;
-        case 'student':
-          targetRoute = '/dashboard';
-          break;
-        default:
-          targetRoute = '/dashboard';
-          console.warn('⚠️ Unknown role, defaulting to /dashboard');
-      }
-      
-      console.log('🚀 Redirecting to:', targetRoute);
-      
-      // Use replace instead of push to avoid going back to login (preserved logic)
-      navigate(targetRoute, { replace: true });
-    }
-
-    // Cleanup function (preserved logic)
-    return () => {
-      if (isSuccess) {
-        dispatch(reset());
-      }
-    };
-  }, [user, isError, isSuccess, message, navigate, dispatch]);
-
-  // 📝 Form handlers (preserved logic)
-  const onChange = useCallback((e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  }, []);
+    // Clear validation error when user types
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
 
-  const onSubmit = useCallback((e) => {
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Please enter a valid email';
+    }
+    
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('📤 Submitting login...');
-    dispatch(login(formData));
-  }, [dispatch, formData]);
+    
+    if (!validateForm()) {
+      return;
+    }
 
-  // 🔄 Show loading spinner during redirect (preserved logic)
-  if (isSuccess && user) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress size={60} />
-      </Box>
-    );
-  }
+    try {
+      const resultAction = await dispatch(login(formData));
+      
+      if (login.fulfilled.match(resultAction)) {
+        // Login successful
+        const user = resultAction.payload;
+        
+        // Navigate based on role
+        if (user.role === 'student') {
+          navigate('/student/select-class');
+        } else if (user.role === 'teacher' || user.role === 'school_admin') {
+          navigate('/teacher/dashboard');
+        } else if (user.role === 'admin') {
+          navigate('/admin');
+        }
+      }
+    } catch (err) {
+      console.error('Login failed:', err);
+    }
+  };
 
-  // Benefits to display on left panel
-  const benefits = [
+  const features = [
     'AI-Powered Learning Paths',
     'Real-Time Progress Tracking',
     'Collaborative Tools',
@@ -127,134 +115,132 @@ function Login() {
   ];
 
   return (
-    <motion.div 
-      initial="hidden" 
-      animate="visible" 
-      variants={fadeIn}
-      style={{ minHeight: '100vh', display: 'flex' }}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        background: `linear-gradient(135deg, ${alpha(
+          theme.palette.primary.main,
+          0.05
+        )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+      }}
     >
-      <Grid container sx={{ minHeight: '100vh' }}>
-        {/* 🎨 Left Panel - Brand & Benefits */}
-        <Grid
-          item
-          xs={12}
-          md={6}
-          component={motion.div}
-          variants={slideInLeft}
-          sx={{
-            background: theme.palette.background.gradient,
-            color: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            p: { xs: 4, md: 8 },
-            position: 'relative',
-            overflow: 'hidden',
-            // Animated background shapes
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              width: '400px',
-              height: '400px',
-              borderRadius: '50%',
-              background: alpha('#60A5FA', 0.1),
-              top: '-200px',
-              right: '-200px',
-              animation: 'float 15s ease-in-out infinite',
-            },
-            '@keyframes float': {
-              '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-30px)' },
-            },
-          }}
+      {/* Left Side - Branding */}
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'column',
+          width: '40%',
+          background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+          p: 6,
+          color: 'white',
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 500 }}>
-            {/* Logo & Title */}
-            <Box sx={{ mb: 4 }}>
-              <SchoolIcon sx={{ fontSize: 64, mb: 2 }} />
-              <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>
-                Scholar's Path
-              </Typography>
-              <Typography variant="h6" sx={{ color: alpha('#FFFFFF', 0.9) }}>
-                Transform Education with AI
-              </Typography>
-            </Box>
-
-            {/* Illustration Placeholder */}
-            <Box
-              sx={{
-                width: '100%',
-                height: 250,
-                bgcolor: alpha('#FFFFFF', 0.1),
-                borderRadius: 3,
-                backdropFilter: 'blur(10px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 4,
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-              }}
-            >
-              <Typography variant="body1" sx={{ color: alpha('#FFFFFF', 0.7) }}>
-                [Hero Illustration]
-              </Typography>
-            </Box>
-
-            {/* Benefits List */}
-            <Stack spacing={2} alignItems="flex-start" sx={{ textAlign: 'left' }}>
-              {benefits.map((benefit, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <CheckCircleIcon sx={{ color: theme.palette.success.light }} />
-                  <Typography variant="body1">{benefit}</Typography>
-                </Box>
-              ))}
-            </Stack>
+          {/* Logo */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 6 }}>
+            <School sx={{ fontSize: 40, mr: 2 }} />
+            <Typography variant="h4" sx={{ fontWeight: 800 }}>
+              Scholar's Path
+            </Typography>
           </Box>
-        </Grid>
 
-        {/* 📝 Right Panel - Login Form */}
-        <Grid
-          item
-          xs={12}
-          md={6}
-          component={motion.div}
-          variants={slideInRight}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: theme.palette.background.default,
-            p: { xs: 3, md: 4 },
-          }}
-        >
-          <Container component="main" maxWidth="sm">
+          {/* Tagline */}
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
+            Scholar's Path
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 6, opacity: 0.9 }}>
+            Transform Education with AI
+          </Typography>
+
+          {/* Illustration Placeholder */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              borderRadius: 3,
+              background: alpha('#ffffff', 0.1),
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${alpha('#ffffff', 0.2)}`,
+              mb: 6,
+              minHeight: 200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography sx={{ opacity: 0.5 }}>[Hero Illustration]</Typography>
+          </Paper>
+
+          {/* Features List */}
+          <Box>
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + index * 0.1 }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <CheckCircle sx={{ mr: 2, fontSize: 20 }} />
+                  <Typography variant="body2">{feature}</Typography>
+                </Box>
+              </motion.div>
+            ))}
+          </Box>
+        </motion.div>
+      </Box>
+
+      {/* Right Side - Login Form */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+        }}
+      >
+        <Container maxWidth="sm">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
             <Paper
               elevation={0}
               sx={{
-                p: { xs: 3, md: 5 },
+                p: { xs: 3, sm: 5 },
                 borderRadius: 3,
-                bgcolor: 'white',
-                border: `1px solid ${theme.palette.divider}`,
+                background: alpha('#ffffff', 0.9),
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
               }}
             >
-              {/* Form Header */}
+              {/* Header */}
               <Box sx={{ textAlign: 'center', mb: 4 }}>
                 <Box
                   sx={{
-                    width: 56,
-                    height: 56,
+                    display: 'inline-flex',
+                    p: 2,
                     borderRadius: '50%',
-                    background: theme.palette.background.gradient,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 16px',
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    mb: 2,
                   }}
                 >
-                  <LockOutlinedIcon sx={{ color: 'white', fontSize: 28 }} />
+                  <LockOpen sx={{ fontSize: 32, color: 'primary.main' }} />
                 </Box>
-                <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
                   Welcome Back
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -263,61 +249,151 @@ function Login() {
               </Box>
 
               {/* Error Alert */}
-              <Collapse in={isError}>
-                <Alert 
-                  severity="error" 
-                  sx={{ mb: 3 }}
-                  onClose={() => dispatch(reset())}
-                >
-                  {message}
+              {error && (
+                <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                  {error}
                 </Alert>
-              </Collapse>
+              )}
 
               {/* Login Form */}
-              <Box component="form" onSubmit={onSubmit} noValidate>
+              <form onSubmit={handleSubmit}>
+                {/* Email */}
                 <TextField
-                  margin="normal"
-                  required
                   fullWidth
-                  id="email"
                   label="Email Address"
                   name="email"
-                  autoComplete="email"
-                  autoFocus
+                  type="email"
                   value={formData.email}
-                  onChange={onChange}
+                  onChange={handleChange}
+                  error={!!validationErrors.email}
+                  helperText={validationErrors.email}
                   disabled={isLoading}
-                  sx={{ mb: 2 }}
-                />
-                
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  name="password"
-                  label="Password"
-                  type="password"
-                  id="password"
-                  autoComplete="current-password"
-                  value={formData.password}
-                  onChange={onChange}
-                  disabled={isLoading}
-                  sx={{ mb: 3 }}
+                  autoFocus
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    },
+                  }}
                 />
 
+                {/* Password */}
+                <TextField
+                  fullWidth
+                  label="Password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={handleChange}
+                  error={!!validationErrors.password}
+                  helperText={validationErrors.password}
+                  disabled={isLoading}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                          disabled={isLoading}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    },
+                  }}
+                />
+
+                {/* Remember Me & Forgot Password */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        disabled={isLoading}
+                        size="small"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="text.secondary">
+                        Remember me
+                      </Typography>
+                    }
+                  />
+                  <Link
+                    component={RouterLink}
+                    to="/forgot-password"
+                    variant="body2"
+                    sx={{
+                      color: 'primary.main',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    Forgot password?
+                  </Link>
+                </Box>
+
+                {/* Submit Button */}
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
-                  disabled={isLoading}
                   size="large"
-                  sx={{ mb: 2 }}
+                  disabled={isLoading}
+                  endIcon={
+                    isLoading ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <ArrowForward />
+                    )
+                  }
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    boxShadow: `0 4px 14px ${alpha(
+                      theme.palette.primary.main,
+                      0.3
+                    )}`,
+                    '&:hover': {
+                      boxShadow: `0 6px 20px ${alpha(
+                        theme.palette.primary.main,
+                        0.4
+                      )}`,
+                    },
+                  }}
                 >
-                  {isLoading ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    'Sign In'
-                  )}
+                  {isLoading ? 'Signing In...' : 'Sign In'}
                 </Button>
 
                 {/* Divider */}
@@ -327,31 +403,30 @@ function Login() {
                   </Typography>
                 </Divider>
 
-                {/* Social Login Placeholder */}
-                <Stack spacing={2}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    disabled
-                    sx={{
-                      py: 1.5,
-                      color: 'text.secondary',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    Continue with Google (Coming Soon)
-                  </Button>
-                </Stack>
+                {/* Google Sign In (Coming Soon) */}
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  disabled
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    color: 'text.secondary',
+                  }}
+                >
+                  Continue with Google (Coming Soon)
+                </Button>
 
-                {/* Footer Links */}
-                <Box sx={{ mt: 3, textAlign: 'center' }}>
+                {/* Sign Up Link */}
+                <Box sx={{ textAlign: 'center', mt: 3 }}>
                   <Typography variant="body2" color="text.secondary">
                     Don't have an account?{' '}
                     <Link
                       component={RouterLink}
                       to="/register"
                       sx={{
-                        color: theme.palette.primary.main,
+                        color: 'primary.main',
                         fontWeight: 600,
                         textDecoration: 'none',
                         '&:hover': {
@@ -363,13 +438,31 @@ function Login() {
                     </Link>
                   </Typography>
                 </Box>
-              </Box>
+              </form>
             </Paper>
-          </Container>
-        </Grid>
-      </Grid>
-    </motion.div>
+
+            {/* Mobile Logo */}
+            <Box
+              sx={{
+                display: { xs: 'flex', md: 'none' },
+                justifyContent: 'center',
+                alignItems: 'center',
+                mt: 3,
+              }}
+            >
+              <School sx={{ fontSize: 24, color: 'primary.main', mr: 1 }} />
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 800, color: 'primary.main' }}
+              >
+                Scholar's Path
+              </Typography>
+            </Box>
+          </motion.div>
+        </Container>
+      </Box>
+    </Box>
   );
-}
+};
 
 export default Login;

@@ -1,346 +1,259 @@
-// /client/src/pages/Register.jsx - FIXED VERSION
-// 🔧 Fixed: Ensures fullName is properly sent to backend
+// /client/src/pages/Register.jsx
+// ✨ Enhanced Register Page - Modern Design
+// Beautiful • User-friendly • Professional
 
-import { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { register, reset } from '../features/auth/authSlice';
-
-// MUI Imports
+import { useDispatch, useSelector } from 'react-redux';
+import { motion } from 'framer-motion';
 import {
-  Button,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  Link,
-  Grid,
   Box,
-  Typography,
   Container,
   Paper,
-  CircularProgress,
-  Alert,
-  Collapse,
-  useTheme,
-  alpha,
-  Stack,
-  Divider,
-  LinearProgress,
-  MenuItem,
-  Select,
+  Typography,
+  TextField,
+  Button,
   FormControl,
   InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
+  IconButton,
+  Alert,
+  CircularProgress,
+  Divider,
+  useTheme,
+  alpha,
+  Link,
 } from '@mui/material';
-import { motion } from 'framer-motion';
+import {
+  Visibility,
+  VisibilityOff,
+  School,
+  Person,
+  Email,
+  Lock,
+  ArrowForward,
+  CheckCircle,
+} from '@mui/icons-material';
 
-// Icons
-import SchoolIcon from '@mui/icons-material/School';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { register } from '../features/auth/authSlice';
 
-// 🎯 Animation Variants
-const fadeIn = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.8 } },
-};
-
-const slideInRight = {
-  hidden: { opacity: 0, x: 50 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.6 } },
-};
-
-const slideInLeft = {
-  hidden: { opacity: 0, x: -50 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.6 } },
-};
-
-// 🔒 Password Strength Indicator Component
-const PasswordStrength = ({ password }) => {
-  const getStrength = () => {
-    if (!password) return { strength: 0, label: '', color: '' };
-    
-    let strength = 0;
-    if (password.length >= 8) strength += 25;
-    if (password.length >= 12) strength += 25;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
-    if (/[0-9]/.test(password)) strength += 15;
-    if (/[^a-zA-Z0-9]/.test(password)) strength += 10;
-    
-    let label = 'Weak';
-    let color = 'error';
-    if (strength >= 70) {
-      label = 'Strong';
-      color = 'success';
-    } else if (strength >= 50) {
-      label = 'Medium';
-      color = 'warning';
-    }
-    
-    return { strength, label, color };
-  };
-
-  const { strength, label, color } = getStrength();
-
-  if (!password) return null;
-
-  return (
-    <Box sx={{ mt: 1 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-        <Typography variant="caption" color="text.secondary">
-          Password Strength
-        </Typography>
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            fontWeight: 600,
-            color: color === 'error' ? 'error.main' : color === 'warning' ? 'warning.main' : 'success.main'
-          }}
-        >
-          {label}
-        </Typography>
-      </Box>
-      <LinearProgress 
-        variant="determinate" 
-        value={strength} 
-        color={color}
-        sx={{ height: 6, borderRadius: 3 }}
-      />
-    </Box>
-  );
-};
-
-function Register() {
+const Register = () => {
   const theme = useTheme();
-  
-  // 🔧 FIXED: Initialize with proper field names
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    role: 'student', // Add role field
-  });
-  
-  const [notification, setNotification] = useState({ 
-    open: false, 
-    message: '', 
-    severity: 'info' 
-  });
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
+  
+  const { isLoading, error } = useSelector((state) => state.auth);
 
-  // Handle registration success and errors
-  useEffect(() => {
-    if (isError) {
-      console.error('Registration error:', message);
-      setNotification({ open: true, message: message, severity: 'error' });
-    }
-    if (isSuccess && message) {
-      setNotification({ open: true, message: message, severity: 'success' });
-      // Redirect to login after success
-      const timer = setTimeout(() => navigate('/login'), 3000);
-      return () => clearTimeout(timer);
-    }
-    return () => {
-      dispatch(reset());
-    };
-  }, [isError, isSuccess, message, navigate, dispatch]);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'student',
+  });
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  // Form handlers
-  const onChange = useCallback((e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log('Form change:', name, value); // Debug log
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  }, []);
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear validation error when user types
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
 
-  // 🔧 FIXED: Validate and log data before submitting
-  const onSubmit = useCallback((e) => {
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters';
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Please enter a valid email';
+    }
+    
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.fullName || !formData.fullName.trim()) {
-      setNotification({ 
-        open: true, 
-        message: 'Full Name is required', 
-        severity: 'error' 
-      });
-      return;
-    }
-    
-    if (!formData.email || !formData.email.trim()) {
-      setNotification({ 
-        open: true, 
-        message: 'Email is required', 
-        severity: 'error' 
-      });
-      return;
-    }
-    
-    if (!formData.password || formData.password.length < 6) {
-      setNotification({ 
-        open: true, 
-        message: 'Password must be at least 6 characters', 
-        severity: 'error' 
-      });
+    if (!validateForm()) {
       return;
     }
 
-    // Prepare data - make sure fullName is trimmed and not empty
-    const dataToSend = {
-      fullName: formData.fullName.trim(),
-      email: formData.email.trim().toLowerCase(),
-      password: formData.password,
-      role: formData.role,
-    };
+    try {
+      const resultAction = await dispatch(register(formData));
+      
+      if (register.fulfilled.match(resultAction)) {
+        // Registration successful
+        const user = resultAction.payload;
+        
+        // Navigate based on role
+        if (user.role === 'student') {
+          navigate('/student/select-class');
+        } else if (user.role === 'teacher') {
+          navigate('/teacher/dashboard');
+        } else if (user.role === 'admin') {
+          navigate('/admin');
+        }
+      }
+    } catch (err) {
+      console.error('Registration failed:', err);
+    }
+  };
 
-    console.log('📤 Submitting registration data:', dataToSend);
-    dispatch(register(dataToSend));
-  }, [dispatch, formData]);
-
-  // Benefits to display on left panel
-  const benefits = [
+  const features = [
     'Create Personalized Learning Paths',
     'Generate AI-Powered Quizzes',
     'Track Student Progress',
     'Access Comprehensive Curriculum',
   ];
 
-  // Role options
-  const roles = [
-    { value: 'student', label: 'Student' },
-    { value: 'teacher', label: 'Teacher (Requires Approval)' },
-    { value: 'school_admin', label: 'School Admin (Requires Approval)' },
-  ];
-
   return (
-    <motion.div 
-      initial="hidden" 
-      animate="visible" 
-      variants={fadeIn}
-      style={{ minHeight: '100vh', display: 'flex' }}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        background: `linear-gradient(135deg, ${alpha(
+          theme.palette.primary.main,
+          0.05
+        )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+      }}
     >
-      <Grid container sx={{ minHeight: '100vh' }}>
-        {/* 🎨 Left Panel - Brand & Benefits */}
-        <Grid
-          item
-          xs={12}
-          md={6}
-          component={motion.div}
-          variants={slideInLeft}
-          sx={{
-            background: theme.palette.background.gradient,
-            color: 'white',
-            display: { xs: 'none', md: 'flex' },
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            p: 8,
-            position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              width: '400px',
-              height: '400px',
-              borderRadius: '50%',
-              background: alpha('#60A5FA', 0.1),
-              top: '-200px',
-              right: '-200px',
-              animation: 'float 15s ease-in-out infinite',
-            },
-            '@keyframes float': {
-              '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-30px)' },
-            },
-          }}
+      {/* Left Side - Branding */}
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'column',
+          width: '40%',
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          p: 6,
+          color: 'white',
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 500 }}>
-            <Box sx={{ mb: 4 }}>
-              <SchoolIcon sx={{ fontSize: 64, mb: 2 }} />
-              <Typography variant="h3" sx={{ fontWeight: 800, mb: 1 }}>
-                Join Scholar's Path
-              </Typography>
-              <Typography variant="h6" sx={{ color: alpha('#FFFFFF', 0.9) }}>
-                Start Your Learning Journey Today
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                width: '100%',
-                height: 250,
-                bgcolor: alpha('#FFFFFF', 0.1),
-                borderRadius: 3,
-                backdropFilter: 'blur(10px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 4,
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-              }}
-            >
-              <Typography variant="body1" sx={{ color: alpha('#FFFFFF', 0.7) }}>
-                [Registration Illustration]
-              </Typography>
-            </Box>
-
-            <Stack spacing={2} alignItems="flex-start" sx={{ textAlign: 'left' }}>
-              {benefits.map((benefit, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <CheckCircleIcon sx={{ color: theme.palette.success.light }} />
-                  <Typography variant="body1">{benefit}</Typography>
-                </Box>
-              ))}
-            </Stack>
+          {/* Logo */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 6 }}>
+            <School sx={{ fontSize: 40, mr: 2 }} />
+            <Typography variant="h4" sx={{ fontWeight: 800 }}>
+              Scholar's Path
+            </Typography>
           </Box>
-        </Grid>
 
-        {/* 📝 Right Panel - Registration Form */}
-        <Grid
-          item
-          xs={12}
-          md={6}
-          component={motion.div}
-          variants={slideInRight}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: theme.palette.background.default,
-            p: { xs: 3, md: 4 },
-          }}
-        >
-          <Container component="main" maxWidth="sm">
+          {/* Tagline */}
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
+            Join Scholar's Path
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 6, opacity: 0.9 }}>
+            Start Your Learning Journey Today
+          </Typography>
+
+          {/* Illustration Placeholder */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              borderRadius: 3,
+              background: alpha('#ffffff', 0.1),
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${alpha('#ffffff', 0.2)}`,
+              mb: 6,
+              minHeight: 200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography sx={{ opacity: 0.5 }}>
+              [Registration Illustration]
+            </Typography>
+          </Paper>
+
+          {/* Features List */}
+          <Box>
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + index * 0.1 }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <CheckCircle sx={{ mr: 2, fontSize: 20 }} />
+                  <Typography variant="body2">{feature}</Typography>
+                </Box>
+              </motion.div>
+            ))}
+          </Box>
+        </motion.div>
+      </Box>
+
+      {/* Right Side - Registration Form */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+        }}
+      >
+        <Container maxWidth="sm">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
             <Paper
               elevation={0}
               sx={{
-                p: { xs: 3, md: 5 },
+                p: { xs: 3, sm: 5 },
                 borderRadius: 3,
-                bgcolor: 'white',
-                border: `1px solid ${theme.palette.divider}`,
+                background: alpha('#ffffff', 0.9),
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
               }}
             >
-              {/* Form Header */}
+              {/* Header */}
               <Box sx={{ textAlign: 'center', mb: 4 }}>
                 <Box
                   sx={{
-                    width: 56,
-                    height: 56,
+                    display: 'inline-flex',
+                    p: 2,
                     borderRadius: '50%',
-                    background: theme.palette.background.gradient,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 16px',
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    mb: 2,
                   }}
                 >
-                  <PersonAddIcon sx={{ color: 'white', fontSize: 28 }} />
+                  <Person sx={{ fontSize: 32, color: 'primary.main' }} />
                 </Box>
-                <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
                   Create Account
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -348,95 +261,154 @@ function Register() {
                 </Typography>
               </Box>
 
-              {/* Notification Alert */}
-              <Collapse in={notification.open}>
-                <Alert 
-                  severity={notification.severity} 
-                  sx={{ mb: 3 }}
-                  onClose={() => setNotification({ ...notification, open: false })}
-                >
-                  {notification.message}
+              {/* Error Alert */}
+              {error && (
+                <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                  {error}
                 </Alert>
-              </Collapse>
+              )}
 
               {/* Registration Form */}
-              <Box component="form" noValidate onSubmit={onSubmit}>
+              <form onSubmit={handleSubmit}>
+                {/* Full Name */}
                 <TextField
-                  name="fullName"
-                  required
                   fullWidth
                   label="Full Name"
-                  autoFocus
-                  value={formData.fullName}
-                  onChange={onChange}
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  error={!!validationErrors.name}
+                  helperText={validationErrors.name}
                   disabled={isLoading}
-                  sx={{ mb: 2 }}
-                  error={!formData.fullName && notification.open}
-                  helperText={!formData.fullName && notification.open ? 'Full Name is required' : ''}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    },
+                  }}
                 />
 
+                {/* Email */}
                 <TextField
-                  name="email"
-                  required
                   fullWidth
                   label="Email Address"
+                  name="email"
                   type="email"
-                  autoComplete="email"
                   value={formData.email}
-                  onChange={onChange}
+                  onChange={handleChange}
+                  error={!!validationErrors.email}
+                  helperText={validationErrors.email}
                   disabled={isLoading}
-                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    },
+                  }}
                 />
 
+                {/* Password */}
                 <TextField
-                  name="password"
-                  required
                   fullWidth
                   label="Password"
-                  type="password"
-                  autoComplete="new-password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={formData.password}
-                  onChange={onChange}
+                  onChange={handleChange}
+                  error={!!validationErrors.password}
+                  helperText={
+                    validationErrors.password || 'Minimum 6 characters'
+                  }
                   disabled={isLoading}
-                  sx={{ mb: 1 }}
-                  helperText="Minimum 6 characters"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                          disabled={isLoading}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    },
+                  }}
                 />
 
-                {/* Password Strength Indicator */}
-                <PasswordStrength password={formData.password} />
-
                 {/* Role Selection */}
-                <FormControl fullWidth sx={{ mt: 2, mb: 3 }}>
-                  <InputLabel id="role-label">Register As</InputLabel>
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>Register As</InputLabel>
                   <Select
-                    labelId="role-label"
                     name="role"
                     value={formData.role}
-                    onChange={onChange}
+                    onChange={handleChange}
                     label="Register As"
                     disabled={isLoading}
+                    sx={{ borderRadius: 2 }}
                   >
-                    {roles.map((role) => (
-                      <MenuItem key={role.value} value={role.value}>
-                        {role.label}
-                      </MenuItem>
-                    ))}
+                    <MenuItem value="student">Student</MenuItem>
+                    <MenuItem value="teacher">Teacher</MenuItem>
                   </Select>
                 </FormControl>
 
+                {/* Submit Button */}
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
-                  disabled={isLoading}
                   size="large"
-                  sx={{ mb: 2 }}
+                  disabled={isLoading}
+                  endIcon={
+                    isLoading ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <ArrowForward />
+                    )
+                  }
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    boxShadow: `0 4px 14px ${alpha(
+                      theme.palette.primary.main,
+                      0.3
+                    )}`,
+                    '&:hover': {
+                      boxShadow: `0 6px 20px ${alpha(
+                        theme.palette.primary.main,
+                        0.4
+                      )}`,
+                    },
+                  }}
                 >
-                  {isLoading ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    'Create Account'
-                  )}
+                  {isLoading ? 'Creating Account...' : 'Create Account'}
                 </Button>
 
                 {/* Divider */}
@@ -446,31 +418,30 @@ function Register() {
                   </Typography>
                 </Divider>
 
-                {/* Social Registration Placeholder */}
-                <Stack spacing={2}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    disabled
-                    sx={{
-                      py: 1.5,
-                      color: 'text.secondary',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    Sign up with Google (Coming Soon)
-                  </Button>
-                </Stack>
+                {/* Google Sign Up (Coming Soon) */}
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  disabled
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    color: 'text.secondary',
+                  }}
+                >
+                  Sign up with Google (Coming Soon)
+                </Button>
 
-                {/* Footer Links */}
-                <Box sx={{ mt: 3, textAlign: 'center' }}>
+                {/* Sign In Link */}
+                <Box sx={{ textAlign: 'center', mt: 3 }}>
                   <Typography variant="body2" color="text.secondary">
                     Already have an account?{' '}
                     <Link
                       component={RouterLink}
                       to="/login"
                       sx={{
-                        color: theme.palette.primary.main,
+                        color: 'primary.main',
                         fontWeight: 600,
                         textDecoration: 'none',
                         '&:hover': {
@@ -482,13 +453,31 @@ function Register() {
                     </Link>
                   </Typography>
                 </Box>
-              </Box>
+              </form>
             </Paper>
-          </Container>
-        </Grid>
-      </Grid>
-    </motion.div>
+
+            {/* Mobile Logo */}
+            <Box
+              sx={{
+                display: { xs: 'flex', md: 'none' },
+                justifyContent: 'center',
+                alignItems: 'center',
+                mt: 3,
+              }}
+            >
+              <School sx={{ fontSize: 24, color: 'primary.main', mr: 1 }} />
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 800, color: 'primary.main' }}
+              >
+                Scholar's Path
+              </Typography>
+            </Box>
+          </motion.div>
+        </Container>
+      </Box>
+    </Box>
   );
-}
+};
 
 export default Register;
