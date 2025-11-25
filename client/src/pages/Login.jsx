@@ -202,7 +202,7 @@ const Login = () => {
               }}
             >
               <img
-                src="https://illustrations.popsy.co/amber/remote-work.svg"
+                src="/hero-illustration.svg"
                 alt="Welcome to Scholar's Path"
                 style={{
                   width: '100%',
