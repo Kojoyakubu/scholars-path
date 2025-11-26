@@ -5,7 +5,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -983,6 +983,7 @@ function TabPanel({ children, value, index, ...other }) {
 function TeacherDashboard() {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Redux state (all preserved)
   const { user } = useSelector((state) => state.auth || {});
@@ -1021,12 +1022,21 @@ function TeacherDashboard() {
     severity: 'info',
   });
 
-  // NEW: Tab and view state
-  const [activeTab, setActiveTab] = useState(0);
+  // NEW: Tab and view state with URL sync
+  const tabFromUrl = parseInt(searchParams.get('tab')) || 0;
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [bannerCollapsed, setBannerCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Sync activeTab with URL parameter
+  useEffect(() => {
+    const tabParam = parseInt(searchParams.get('tab'));
+    if (!isNaN(tabParam) && tabParam >= 0 && tabParam <= 3 && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Initialization (all preserved)
   useEffect(() => {
@@ -1207,6 +1217,7 @@ function TeacherDashboard() {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    setSearchParams({ tab: newValue }, { replace: true });
   };
 
   // NEW: Filter notes based on search
