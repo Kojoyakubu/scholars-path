@@ -22,7 +22,6 @@ import {
   Container,
   Chip,
   Button,
-  ButtonGroup,
   IconButton,
   Tooltip,
   LinearProgress,
@@ -124,113 +123,110 @@ const StatCard = ({
           sx={{
             position: 'relative',
             overflow: 'hidden',
-            background: isActive 
-              ? `linear-gradient(135deg, ${alpha(color, 0.15)} 0%, ${alpha(color, 0.08)} 100%)`
-              : `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
-            border: isActive 
-              ? `2px solid ${alpha(color, 0.5)}`
-              : `1px solid ${alpha(color, 0.15)}`,
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            backgroundColor: theme.palette.common.white,
+            backgroundImage: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, transparent 65%)`,
+            borderRadius: 3,
+            height: '100%',
+            border: `1px solid ${alpha(theme.palette.divider, isActive ? 0.25 : 0.1)}`,
+            boxShadow: isActive
+              ? `0 25px 55px ${alpha(color, 0.25)}`
+              : '0 14px 30px rgba(15, 23, 42, 0.08)',
+            transition: 'transform 0.35s ease, box-shadow 0.35s ease, border 0.35s ease',
             cursor: onClick ? 'pointer' : 'default',
-            '&:hover': onClick ? {
-              transform: 'translateY(-8px) scale(1.02)',
-              boxShadow: `0 20px 40px ${alpha(color, 0.25)}`,
-              border: `2px solid ${alpha(color, 0.4)}`,
-              background: `linear-gradient(135deg, ${alpha(color, 0.12)} 0%, ${alpha(color, 0.04)} 100%)`,
-            } : {},
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '100px',
-              height: '100px',
-              background: `radial-gradient(circle at top right, ${alpha(color, 0.15)}, transparent)`,
-              pointerEvents: 'none',
-            },
+            '&:hover': onClick
+              ? {
+                  transform: 'translateY(-6px)',
+                  boxShadow: `0 28px 55px ${alpha(color, 0.22)}`,
+                  borderColor: alpha(color, 0.4),
+                }
+              : undefined,
           }}
         >
-          <CardContent sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box sx={{ flex: 1 }}>
+          <CardContent
+            sx={{
+              p: { xs: 2.5, md: 3 },
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                sx={{
+                  width: 54,
+                  height: 54,
+                  bgcolor: alpha(color, 0.12),
+                  color: color,
+                  border: `1px solid ${alpha(color, 0.3)}`,
+                  boxShadow: isHovered ? `0 10px 30px ${alpha(color, 0.25)}` : 'none',
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                <Icon sx={{ fontSize: 26 }} />
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
-                  variant="overline"
+                  variant="caption"
                   sx={{
                     color: theme.palette.text.secondary,
-                    fontWeight: 700,
-                    display: 'block',
-                    mb: 1,
+                    fontWeight: 600,
+                    letterSpacing: 0.4,
+                    textTransform: 'uppercase',
                   }}
                 >
                   {label}
                 </Typography>
                 <Typography
-                  variant="h3"
+                  variant="h4"
                   sx={{
                     fontWeight: 800,
-                    background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.7)} 100%)`,
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    mb: 1,
+                    mt: 0.5,
+                    color: theme.palette.text.primary,
                   }}
                 >
                   {value}
                 </Typography>
                 {subtitle && (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: theme.palette.text.secondary,
-                      display: 'block',
-                      mb: 1,
-                    }}
-                  >
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     {subtitle}
                   </Typography>
                 )}
-                {trendData && (
-                  <Chip
-                    icon={trendData.isPositive ? <TrendingUpIcon sx={{ fontSize: 16 }} /> : <TrendingDownIcon sx={{ fontSize: 16 }} />}
-                    label={`${trendData.isPositive ? '+' : '-'}${trendData.value}% ${trend || 'vs last period'}`}
-                    size="small"
-                    sx={{
-                      height: 24,
-                      bgcolor: alpha(trendData.isPositive ? theme.palette.success.main : theme.palette.error.main, 0.1),
-                      color: trendData.isPositive ? theme.palette.success.main : theme.palette.error.main,
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                    }}
-                  />
-                )}
-                {!trendData && trend && (
-                  <Chip
-                    icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
-                    label={trend}
-                    size="small"
-                    sx={{
-                      height: 24,
-                      bgcolor: alpha(theme.palette.success.main, 0.1),
-                      color: theme.palette.success.main,
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                    }}
-                  />
-                )}
               </Box>
-              <Avatar
-                sx={{
-                  width: 56,
-                  height: 56,
-                  background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.8)} 100%)`,
-                  boxShadow: `0 8px 24px ${alpha(color, 0.35)}`,
-                  transform: isHovered ? 'scale(1.1) rotate(5deg)' : 'scale(1) rotate(0deg)',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                <Icon sx={{ fontSize: 28 }} />
-              </Avatar>
-            </Box>
+            </Stack>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1}
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+            >
+              {trendData && (
+                <Chip
+                  icon={trendData.isPositive ? <TrendingUpIcon sx={{ fontSize: 16 }} /> : <TrendingDownIcon sx={{ fontSize: 16 }} />}
+                  label={`${trendData.isPositive ? '+' : '-'}${trendData.value}% ${trend || 'vs last period'}`}
+                  size="small"
+                  sx={{
+                    height: 26,
+                    bgcolor: alpha(trendData.isPositive ? theme.palette.success.main : theme.palette.error.main, 0.1),
+                    color: trendData.isPositive ? theme.palette.success.main : theme.palette.error.main,
+                    fontWeight: 600,
+                    fontSize: '0.78rem',
+                  }}
+                />
+              )}
+              {!trendData && trend && (
+                <Chip
+                  icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
+                  label={trend}
+                  size="small"
+                  sx={{
+                    height: 26,
+                    bgcolor: alpha(theme.palette.success.main, 0.1),
+                    color: theme.palette.success.main,
+                    fontWeight: 600,
+                    fontSize: '0.78rem',
+                  }}
+                />
+              )}
+            </Stack>
           </CardContent>
         </Card>
       </motion.div>
@@ -367,215 +363,162 @@ const ModernDashboardBanner = ({
           mb: 3,
         }}
       >
-        {/* Glass Banner */}
         <Paper
           elevation={0}
           sx={{
-            background: `linear-gradient(135deg, 
-              ${alpha(theme.palette.primary.main, 0.95)} 0%, 
-              ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
-            backdropFilter: 'blur(20px)',
             borderRadius: 4,
-            p: 4,
-            color: 'white',
-            position: 'relative',
-            overflow: 'hidden',
-            border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
-            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              width: '300px',
-              height: '300px',
-              borderRadius: '50%',
-              background: alpha('#FFFFFF', 0.05),
-              top: '-150px',
-              right: '-50px',
-            },
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              width: '200px',
-              height: '200px',
-              borderRadius: '50%',
-              background: alpha('#FFFFFF', 0.03),
-              bottom: '-100px',
-              left: '-50px',
-            },
+            p: { xs: 3, md: 4 },
+            background: 'linear-gradient(135deg, #EAF2FF 0%, #FFFFFF 80%)',
+            border: `1px solid ${alpha(theme.palette.primary.light, 0.3)}`,
+            boxShadow: '0 15px 40px rgba(15, 23, 42, 0.08)',
           }}
         >
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <motion.div
-              animate={{ height: collapsed ? 'auto' : 'auto' }}
-              transition={{ duration: 0.3 }}
+          <Stack spacing={collapsed ? 2 : 3}>
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              spacing={{ xs: 2, md: 4 }}
+              alignItems={{ xs: 'flex-start', md: 'center' }}
+              justifyContent="space-between"
             >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Stack direction="row" spacing={collapsed ? 2 : 3} alignItems="center" sx={{ width: '100%' }}>
+                {!collapsed && (
+                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+                    <Avatar
+                      sx={{
+                        width: 72,
+                        height: 72,
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: theme.palette.primary.main,
+                        border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                        fontSize: '1.8rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {(user?.name || user?.fullName || 'A').charAt(0).toUpperCase()}
+                    </Avatar>
+                  </motion.div>
+                )}
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant={collapsed ? 'h5' : 'h3'}
+                    sx={{
+                      fontWeight: 800,
+                      color: theme.palette.text.primary,
+                    }}
+                  >
+                    {collapsed
+                      ? 'Admin Dashboard'
+                      : `Welcome back, ${user?.name || user?.fullName || 'Admin'}!`
+                    }
+                  </Typography>
                   {!collapsed && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <Avatar
-                        sx={{
-                          width: 80,
-                          height: 80,
-                          bgcolor: alpha('#FFFFFF', 0.2),
-                          border: `3px solid ${alpha('#FFFFFF', 0.4)}`,
-                          fontSize: '2rem',
-                          fontWeight: 700,
-                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                        }}
-                      >
-                        {(user?.name || user?.fullName || 'A').charAt(0).toUpperCase()}
-                      </Avatar>
-                    </motion.div>
-                  )}
-                  <Box>
                     <Typography
-                      variant={collapsed ? 'h5' : 'h3'}
+                      variant="body1"
                       sx={{
-                        fontWeight: 800,
-                        textShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                        mb: collapsed ? 0 : 0.5,
-                        transition: 'all 0.3s ease',
+                        color: theme.palette.text.secondary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mt: 0.5,
                       }}
                     >
-                      {collapsed 
-                        ? 'Admin Dashboard' 
-                        : `Welcome back, ${user?.name || user?.fullName || 'Admin'}! 👋`
-                      }
+                      Here's what's happening with Scholar's Path today
+                      <TrendingUpIcon sx={{ fontSize: 20, color: theme.palette.success.main }} />
                     </Typography>
-                    {!collapsed && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                      >
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            color: alpha('#FFFFFF', 0.95),
-                            fontWeight: 400,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                          }}
-                        >
-                          Here's what's happening with Scholar's Path today
-                          <TrendingUpIcon sx={{ fontSize: 20 }} />
-                        </Typography>
-                      </motion.div>
-                    )}
-                  </Box>
+                  )}
                 </Box>
-
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <IconButton
-                    onClick={onRefresh}
-                    disabled={refreshing}
-                    sx={{
-                      color: 'white',
-                      bgcolor: alpha('#FFFFFF', 0.15),
-                      '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
-                      '&:disabled': { bgcolor: alpha('#FFFFFF', 0.1) },
-                    }}
-                  >
-                    <RefreshIcon 
-                      sx={{ 
-                        animation: refreshing ? 'spin 1s linear infinite' : 'none',
-                      }} 
-                    />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => setCollapsed(!collapsed)}
-                    sx={{
-                      color: 'white',
-                      bgcolor: alpha('#FFFFFF', 0.15),
-                      '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
-                    }}
-                  >
-                    {collapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                  </IconButton>
-                </Box>
-              </Box>
-
-              {!collapsed && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
+              </Stack>
+              <Stack direction="row" spacing={1}>
+                <IconButton
+                  onClick={onRefresh}
+                  disabled={refreshing}
+                  sx={{
+                    color: theme.palette.primary.main,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) },
+                    '&:disabled': { bgcolor: alpha(theme.palette.primary.main, 0.1), opacity: 0.5 },
+                  }}
                 >
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      gap: 2, 
-                      mt: 3,
-                      flexWrap: 'wrap',
+                  <RefreshIcon
+                    sx={{
+                      animation: refreshing ? 'spin 1s linear infinite' : 'none',
                     }}
-                  >
-                    <Chip
-                      icon={<PeopleIcon />}
-                      label={`${stats?.totalUsers || 0} Total Users`}
-                      sx={{
-                        bgcolor: alpha('#FFFFFF', 0.2),
-                        color: 'white',
-                        fontWeight: 600,
-                        '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
-                        '& .MuiChip-icon': { color: 'white' },
-                      }}
-                    />
-                    <Chip
-                      icon={<SchoolIcon />}
-                      label={`${stats?.totalSchools || 0} Schools`}
-                      sx={{
-                        bgcolor: alpha('#FFFFFF', 0.2),
-                        color: 'white',
-                        fontWeight: 600,
-                        '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
-                        '& .MuiChip-icon': { color: 'white' },
-                      }}
-                    />
-                    <Chip
-                      icon={<PendingActionsIcon />}
-                      label={`${stats?.pendingUsers || 0} Pending Actions`}
-                      sx={{
-                        bgcolor: stats?.pendingUsers > 0 ? alpha('#FFA726', 0.9) : alpha('#FFFFFF', 0.2),
-                        color: 'white',
-                        fontWeight: 600,
-                        '&:hover': { 
-                          bgcolor: stats?.pendingUsers > 0 ? alpha('#FFA726', 1) : alpha('#FFFFFF', 0.3)
-                        },
-                        '& .MuiChip-icon': { color: 'white' },
-                      }}
-                    />
-                  </Box>
-                </motion.div>
-              )}
-            </motion.div>
-          </Box>
+                  />
+                </IconButton>
+                <IconButton
+                  onClick={() => setCollapsed(!collapsed)}
+                  sx={{
+                    color: theme.palette.primary.main,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) },
+                  }}
+                >
+                  {collapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                </IconButton>
+              </Stack>
+            </Stack>
+
+            {!collapsed && (
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1.5}
+                  flexWrap="wrap"
+                >
+                  <Chip
+                    icon={<PeopleIcon />}
+                    label={`${stats?.totalUsers || 0} Total Users`}
+                    sx={{
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      color: theme.palette.primary.main,
+                      fontWeight: 600,
+                      '& .MuiChip-icon': { color: theme.palette.primary.main },
+                    }}
+                  />
+                  <Chip
+                    icon={<SchoolIcon />}
+                    label={`${stats?.totalSchools || 0} Schools`}
+                    sx={{
+                      bgcolor: alpha(theme.palette.info.main, 0.12),
+                      color: theme.palette.info.main,
+                      fontWeight: 600,
+                      '& .MuiChip-icon': { color: theme.palette.info.main },
+                    }}
+                  />
+                  <Chip
+                    icon={<PendingActionsIcon />}
+                    label={`${stats?.pendingUsers || 0} Pending Actions`}
+                    sx={{
+                      bgcolor: alpha(theme.palette.warning.main, 0.15),
+                      color: theme.palette.warning.main,
+                      fontWeight: 600,
+                      '& .MuiChip-icon': { color: theme.palette.warning.main },
+                    }}
+                  />
+                </Stack>
+              </motion.div>
+            )}
+          </Stack>
         </Paper>
 
-        {/* Modern Tab Navigation */}
         <Paper
           elevation={0}
           sx={{
             mt: 2,
             borderRadius: 3,
-            overflow: 'hidden',
-            background: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+            backgroundColor: theme.palette.common.white,
           }}
         >
           <Tabs
             value={tab}
             onChange={(_, v) => setTab(v)}
             variant="scrollable"
-            scrollButtons="auto"
+            scrollButtons
+            allowScrollButtonsMobile
             sx={{
-              minHeight: 60,
+              minHeight: 56,
+              px: { xs: 1, md: 2 },
               '& .MuiTabs-indicator': {
                 height: 3,
                 borderRadius: '3px 3px 0 0',
@@ -583,15 +526,14 @@ const ModernDashboardBanner = ({
               },
               '& .MuiTab-root': {
                 fontWeight: 600,
-                fontSize: '0.95rem',
-                minHeight: 60,
-                px: 3,
+                minHeight: 56,
+                px: { xs: 1, md: 2 },
                 textTransform: 'none',
                 color: theme.palette.text.secondary,
-                transition: 'all 0.3s ease',
+                borderRadius: 2,
                 '&:hover': {
                   color: theme.palette.primary.main,
-                  background: alpha(theme.palette.primary.main, 0.05),
+                  backgroundColor: alpha(theme.palette.primary.main, 0.06),
                 },
                 '&.Mui-selected': {
                   color: theme.palette.primary.main,
@@ -790,10 +732,52 @@ const AdminDashboard = () => {
     },
   ];
 
+  const timeRanges = [
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'quarter', label: 'Quarter' },
+    { value: 'year', label: 'Year' },
+  ];
+
+  const quickStats = [
+    {
+      id: 'active',
+      label: 'Active Today',
+      primary: `${stats?.activeToday || 0} users`,
+      helper: 'Logged in within 24h',
+      progress: Math.min(100, ((stats?.activeToday || 0) / Math.max(stats?.totalUsers || 1, 1)) * 100),
+      color: 'primary',
+    },
+    {
+      id: 'completion',
+      label: 'Completion Rate',
+      primary: `${stats?.completionRate?.toFixed(1) || 0}%`,
+      helper: 'Course progress',
+      progress: Number(stats?.completionRate) || 0,
+      color: 'info',
+    },
+    {
+      id: 'quiz',
+      label: 'Avg. Quiz Score',
+      primary: `${stats?.avgQuizPerformance?.toFixed(1) || 0}%`,
+      helper: 'Across latest quizzes',
+      progress: Math.min(100, stats?.avgQuizPerformance || 0),
+      color: stats?.avgQuizPerformance > 75 ? 'success' : stats?.avgQuizPerformance > 50 ? 'warning' : 'error',
+    },
+    {
+      id: 'response',
+      label: 'Response Time',
+      primary: stats?.avgResponseTime || '< 1s',
+      helper: 'Support replies',
+      progress: 85,
+      color: 'success',
+    },
+  ];
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#F5F7FB' }}>
       {/* 📊 Main Content Area */}
-      <Container maxWidth="xl" sx={{ mt: 3, pb: 6 }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
         {/* Error Alert */}
         {isError && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
@@ -833,36 +817,39 @@ const AdminDashboard = () => {
           ) : (
             <motion.div variants={staggerContainer} initial="initial" animate="animate">
               {/* Time Range Selector */}
-              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  Overview
-                </Typography>
-                <ButtonGroup variant="outlined" size="small">
-                  <Button
-                    onClick={() => setTimeRange('week')}
-                    variant={timeRange === 'week' ? 'contained' : 'outlined'}
-                  >
-                    Week
-                  </Button>
-                  <Button
-                    onClick={() => setTimeRange('month')}
-                    variant={timeRange === 'month' ? 'contained' : 'outlined'}
-                  >
-                    Month
-                  </Button>
-                  <Button
-                    onClick={() => setTimeRange('quarter')}
-                    variant={timeRange === 'quarter' ? 'contained' : 'outlined'}
-                  >
-                    Quarter
-                  </Button>
-                  <Button
-                    onClick={() => setTimeRange('year')}
-                    variant={timeRange === 'year' ? 'contained' : 'outlined'}
-                  >
-                    Year
-                  </Button>
-                </ButtonGroup>
+              <Box sx={{ mb: 3 }}>
+                <Stack
+                  direction={{ xs: 'column', md: 'row' }}
+                  spacing={2}
+                  alignItems={{ xs: 'flex-start', md: 'center' }}
+                  justifyContent="space-between"
+                >
+                  <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                      Overview
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Key platform signals at a glance
+                    </Typography>
+                  </Box>
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    {timeRanges.map((range) => (
+                      <Button
+                        key={range.value}
+                        onClick={() => setTimeRange(range.value)}
+                        variant={timeRange === range.value ? 'contained' : 'outlined'}
+                        size="small"
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: 'none',
+                          px: 2.5,
+                        }}
+                      >
+                        {range.label}
+                      </Button>
+                    ))}
+                  </Stack>
+                </Stack>
               </Box>
 
               {/* Stats Grid */}
@@ -873,82 +860,46 @@ const AdminDashboard = () => {
               </Grid>
 
               {/* Quick Stats Bar */}
-              <Paper
-                sx={{
-                  p: 3,
-                  mb: 3,
-                  borderRadius: 3,
-                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
-                }}
-              >
+              <Box sx={{ mb: 4 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   Quick Stats
                 </Typography>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Active Today
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        {stats?.activeToday || 0} users
-                      </Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={((stats?.activeToday || 0) / (stats?.totalUsers || 1)) * 100}
-                        sx={{ mt: 1, height: 6, borderRadius: 3 }}
-                      />
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Completion Rate
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        {stats?.completionRate?.toFixed(1) || 0}%
-                      </Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={stats?.completionRate || 0}
-                        sx={{ mt: 1, height: 6, borderRadius: 3 }}
-                      />
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Avg. Quiz Score
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        {stats?.avgQuizPerformance?.toFixed(1) || 0}%
-                      </Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={stats?.avgQuizPerformance || 0}
-                        sx={{ mt: 1, height: 6, borderRadius: 3 }}
-                        color={stats?.avgQuizPerformance > 75 ? 'success' : stats?.avgQuizPerformance > 50 ? 'warning' : 'error'}
-                      />
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Response Time
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        {stats?.avgResponseTime || '< 1s'}
-                      </Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={85}
-                        sx={{ mt: 1, height: 6, borderRadius: 3 }}
-                        color="success"
-                      />
-                    </Box>
-                  </Grid>
+                  {quickStats.map((item) => (
+                    <Grid item xs={12} sm={6} md={3} key={item.id}>
+                      <Paper
+                        sx={{
+                          p: 2.5,
+                          borderRadius: 3,
+                          border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                          backgroundColor: theme.palette.common.white,
+                          height: '100%',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary">
+                          {item.label}
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
+                          {item.primary}
+                        </Typography>
+                        {item.helper && (
+                          <Typography variant="body2" color="text.secondary">
+                            {item.helper}
+                          </Typography>
+                        )}
+                        {typeof item.progress === 'number' && (
+                          <LinearProgress
+                            variant="determinate"
+                            value={Math.min(100, Math.max(0, item.progress))}
+                            color={item.color}
+                            sx={{ mt: 1.5, height: 6, borderRadius: 3 }}
+                          />
+                        )}
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
-              </Paper>
+              </Box>
 
               {/* AI Insights Section */}
               <Box sx={{ mb: 2 }}>
