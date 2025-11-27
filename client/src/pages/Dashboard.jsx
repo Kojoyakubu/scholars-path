@@ -1109,7 +1109,9 @@ function Dashboard() {
                         <Card
                           onClick={() => handleSubjectSelect(subject._id)}
                           sx={{
-                            height: { xs: 110, sm: 120, md: 130 },
+                            width: '100%',
+                            minHeight: { xs: 120, sm: 130, md: 140 },
+                            maxHeight: { xs: 120, sm: 130, md: 140 },
                             cursor: 'pointer',
                             borderRadius: { xs: 2, md: 3 },
                             transition: 'all 0.25s ease',
@@ -1117,7 +1119,8 @@ function Dashboard() {
                             border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
                             boxShadow: '0px 2px 6px rgba(0,0,0,0.05)',
                             display: 'flex',
-                            alignItems: 'stretch',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
                             '&:hover': {
                               borderColor: theme.palette.primary.main,
                               boxShadow: `0 12px 30px ${alpha(theme.palette.primary.main, 0.18)}`,
@@ -1126,8 +1129,9 @@ function Dashboard() {
                         >
                           <CardContent
                             sx={{
-                              height: '100%',
-                              p: 2,
+                                width: '100%',
+                                flexGrow: 1,
+                                p: 2,
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
