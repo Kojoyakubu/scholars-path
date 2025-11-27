@@ -1109,13 +1109,15 @@ function Dashboard() {
                         <Card
                           onClick={() => handleSubjectSelect(subject._id)}
                           sx={{
-                            height: 120,
+                            height: { xs: 110, sm: 120, md: 130 },
                             cursor: 'pointer',
                             borderRadius: { xs: 2, md: 3 },
                             transition: 'all 0.25s ease',
                             background: alpha(theme.palette.primary.main, 0.04),
                             border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
                             boxShadow: '0px 2px 6px rgba(0,0,0,0.05)',
+                            display: 'flex',
+                            alignItems: 'stretch',
                             '&:hover': {
                               borderColor: theme.palette.primary.main,
                               boxShadow: `0 12px 30px ${alpha(theme.palette.primary.main, 0.18)}`,
@@ -1153,6 +1155,10 @@ function Dashboard() {
                               sx={{
                                 typography: { xs: 'body2', md: 'subtitle1' },
                                 fontWeight: 600,
+                                width: '100%',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
                               }}
                             >
                               {subject.name}
