@@ -167,77 +167,93 @@ const TeacherDashboardBanner = ({
       <Paper
         elevation={0}
         sx={{
+          background: `linear-gradient(135deg, 
+            ${alpha(theme.palette.primary.main, 0.95)} 0%, 
+            ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
+          backdropFilter: 'blur(20px)',
           borderRadius: 4,
-          p: { xs: 3, md: 4 },
-          background: 'linear-gradient(135deg, #E3F2FD 0%, #FFFFFF 70%)',
-          border: `1px solid ${alpha(theme.palette.primary.light, 0.4)}`,
-          boxShadow: '0 15px 40px rgba(15, 23, 42, 0.08)',
+          p: 4,
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden',
+          border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
+          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            width: '300px',
+            height: '300px',
+            borderRadius: '50%',
+            background: alpha('#FFFFFF', 0.05),
+            top: '-150px',
+            right: '-50px',
+          },
         }}
       >
-        <Stack spacing={collapsed ? 2 : 3}>
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            spacing={{ xs: 2, md: 4 }}
-            alignItems={{ xs: 'flex-start', md: 'center' }}
-            justifyContent="space-between"
-          >
-            <Stack direction="row" spacing={collapsed ? 2 : 3} alignItems="center" sx={{ width: '100%' }}>
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
               {!collapsed && (
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
                   <Avatar
                     sx={{
-                      width: 72,
-                      height: 72,
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                      color: theme.palette.primary.main,
-                      border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                      fontSize: '1.8rem',
+                      width: 80,
+                      height: 80,
+                      bgcolor: alpha('#FFFFFF', 0.2),
+                      border: `3px solid ${alpha('#FFFFFF', 0.4)}`,
+                      fontSize: '2rem',
                       fontWeight: 700,
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
                     }}
                   >
                     {(user?.name || user?.fullName || 'T')[0].toUpperCase()}
                   </Avatar>
                 </motion.div>
               )}
-              <Box sx={{ flex: 1 }}>
+              <Box>
                 <Typography
                   variant={collapsed ? 'h5' : 'h3'}
                   sx={{
                     fontWeight: 800,
-                    color: theme.palette.text.primary,
+                    textShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                    mb: collapsed ? 0 : 0.5,
+                    transition: 'all 0.3s ease',
                   }}
                 >
                   {collapsed 
                     ? 'Teacher Dashboard' 
-                    : `Welcome back, ${getDisplayName(user)}!`
+                    : `Welcome back, ${getDisplayName(user)}! 👋`
                   }
                 </Typography>
                 {!collapsed && (
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: theme.palette.text.secondary,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      mt: 0.5,
-                    }}
-                  >
-                    Ready to inspire and educate today
-                    <School sx={{ fontSize: 20, color: theme.palette.primary.main }} />
-                  </Typography>
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: alpha('#FFFFFF', 0.95),
+                        fontWeight: 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      Ready to inspire and educate today
+                      <School sx={{ fontSize: 20 }} />
+                    </Typography>
+                  </motion.div>
                 )}
               </Box>
-            </Stack>
-            <Stack direction="row" spacing={1}>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 1 }}>
               <IconButton
                 onClick={onRefresh}
                 disabled={refreshing}
                 sx={{
-                  color: theme.palette.primary.main,
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) },
-                  '&:disabled': { bgcolor: alpha(theme.palette.primary.main, 0.1), opacity: 0.5 },
+                  color: 'white',
+                  bgcolor: alpha('#FFFFFF', 0.15),
+                  '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
+                  '&:disabled': { bgcolor: alpha('#FFFFFF', 0.1) },
                 }}
               >
                 <Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
@@ -245,53 +261,56 @@ const TeacherDashboardBanner = ({
               <IconButton
                 onClick={() => setCollapsed(!collapsed)}
                 sx={{
-                  color: theme.palette.primary.main,
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) },
+                  color: 'white',
+                  bgcolor: alpha('#FFFFFF', 0.15),
+                  '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
                 }}
               >
                 {collapsed ? <ExpandMore /> : <ExpandLess />}
               </IconButton>
-            </Stack>
-          </Stack>
+            </Box>
+          </Box>
 
           {!collapsed && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} flexWrap="wrap">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap' }}>
                 <Chip
                   icon={<Article />}
                   label={`${stats?.lessonNotes || 0} Lesson Notes`}
                   sx={{
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    color: theme.palette.primary.main,
+                    bgcolor: alpha('#FFFFFF', 0.2),
+                    color: 'white',
                     fontWeight: 600,
-                    '& .MuiChip-icon': { color: theme.palette.primary.main },
+                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
+                    '& .MuiChip-icon': { color: 'white' },
                   }}
                 />
                 <Chip
                   icon={<Preview />}
                   label={`${stats?.draftNotes || 0} Draft Notes`}
                   sx={{
-                    bgcolor: alpha(theme.palette.info.main, 0.12),
-                    color: theme.palette.info.main,
+                    bgcolor: alpha('#FFFFFF', 0.2),
+                    color: 'white',
                     fontWeight: 600,
-                    '& .MuiChip-icon': { color: theme.palette.info.main },
+                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
+                    '& .MuiChip-icon': { color: 'white' },
                   }}
                 />
                 <Chip
                   icon={<Quiz />}
                   label={`${stats?.quizzes || 0} AI Quizzes`}
                   sx={{
-                    bgcolor: alpha(theme.palette.warning.main, 0.12),
-                    color: theme.palette.warning.main,
+                    bgcolor: alpha('#FFFFFF', 0.2),
+                    color: 'white',
                     fontWeight: 600,
-                    '& .MuiChip-icon': { color: theme.palette.warning.main },
+                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) },
+                    '& .MuiChip-icon': { color: 'white' },
                   }}
                 />
-              </Stack>
+              </Box>
             </motion.div>
           )}
-        </Stack>
+        </Box>
       </Paper>
 
       <style>
@@ -313,21 +332,30 @@ const QuickActionCard = ({ title, description, icon: Icon, color, onClick, badge
   return (
     <Card
       component={motion.div}
-      whileHover={{ y: -4 }}
+      whileHover={{ scale: 1.02, y: -4 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       sx={{
         cursor: 'pointer',
         borderRadius: 3,
-        backgroundColor: theme.palette.common.white,
-        border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+        background: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
+        border: `1px solid ${alpha(color, 0.15)}`,
         transition: 'all 0.3s ease',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
         '&:hover': {
-          boxShadow: `0 16px 35px ${alpha(color, 0.2)}`,
-          borderColor: alpha(color, 0.4),
+          boxShadow: `0 12px 32px ${alpha(color, 0.2)}`,
+          border: `1px solid ${alpha(color, 0.3)}`,
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '100px',
+          height: '100px',
+          background: `radial-gradient(circle at top right, ${alpha(color, 0.1)}, transparent)`,
+          pointerEvents: 'none',
         },
       }}
     >
@@ -337,9 +365,8 @@ const QuickActionCard = ({ title, description, icon: Icon, color, onClick, badge
             sx={{
               width: 48,
               height: 48,
-              bgcolor: alpha(color, 0.12),
+              bgcolor: alpha(color, 0.15),
               color: color,
-              border: `1px solid ${alpha(color, 0.3)}`,
             }}
           >
             {badge ? (
@@ -358,7 +385,7 @@ const QuickActionCard = ({ title, description, icon: Icon, color, onClick, badge
               {description}
             </Typography>
           </Box>
-          <PlayArrow sx={{ color: alpha(color, 0.4) }} />
+          <PlayArrow sx={{ color: alpha(color, 0.5) }} />
         </Box>
       </CardContent>
     </Card>
@@ -379,13 +406,11 @@ const SectionCard = ({ title, icon, children, color, action }) => {
       sx={{
         height: '100%',
         borderRadius: 3,
-        border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-        backgroundColor: theme.palette.common.white,
-        boxShadow: '0 12px 35px rgba(15, 23, 42, 0.06)',
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': {
           transform: 'translateY(-4px)',
-          boxShadow: `0 16px 40px ${alpha(theme.palette.primary.main, 0.18)}`,
+          boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
         },
       }}
     >
@@ -424,15 +449,23 @@ const StatCard = ({ icon: Icon, label, value, color, delay }) => {
             position: 'relative',
             overflow: 'hidden',
             borderRadius: 3,
-            backgroundColor: theme.palette.common.white,
-            backgroundImage: `linear-gradient(135deg, ${alpha(color, 0.05)} 0%, transparent 70%)`,
-            border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-            boxShadow: '0 12px 35px rgba(15, 23, 42, 0.06)',
+            background: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
+            border: `1px solid ${alpha(color, 0.15)}`,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
               transform: 'translateY(-8px)',
-              boxShadow: `0 16px 40px ${alpha(color, 0.2)}`,
-              borderColor: alpha(color, 0.4),
+              boxShadow: `0 12px 40px ${alpha(color, 0.25)}`,
+              border: `1px solid ${alpha(color, 0.3)}`,
+            },
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '120px',
+              height: '120px',
+              background: `radial-gradient(circle at top right, ${alpha(color, 0.15)}, transparent)`,
+              pointerEvents: 'none',
             },
           }}
         >
@@ -460,7 +493,10 @@ const StatCard = ({ icon: Icon, label, value, color, delay }) => {
                   variant="h3"
                   sx={{
                     fontWeight: 800,
-                    color: theme.palette.text.primary,
+                    background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.7)} 100%)`,
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                   }}
                 >
                   {value}
@@ -1201,8 +1237,8 @@ function TeacherDashboard() {
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#F5F7FB' }}>
-      <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+      <Container maxWidth="xl" sx={{ mt: 3, pb: 6 }}>
         
         {/* 🎨 NEW MODERN BANNER */}
         <TeacherDashboardBanner
@@ -1220,14 +1256,9 @@ function TeacherDashboard() {
 
         {/* 🚀 NEW QUICK ACTIONS SECTION */}
         <Box sx={{ mb: 4 }}>
-          <Stack spacing={1} sx={{ mb: 3 }}>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              Quick Actions
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Jump into your most common workflows with a single tap.
-            </Typography>
-          </Stack>
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
+            Quick Actions
+          </Typography>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6} md={3}>
               <QuickActionCard
@@ -1270,14 +1301,9 @@ function TeacherDashboard() {
         </Box>
 
         {/* 📊 ANALYTICS OVERVIEW */}
-        <Stack spacing={1} sx={{ mb: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Overview
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            High-level look at your content production and engagement.
-          </Typography>
-        </Stack>
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
+          Overview
+        </Typography>
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <StatCard
             icon={Article}
@@ -1307,10 +1333,8 @@ function TeacherDashboard() {
           elevation={0}
           sx={{
             borderRadius: 3,
-            border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-            backgroundColor: theme.palette.common.white,
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
             overflow: 'hidden',
-            boxShadow: '0 15px 40px rgba(15, 23, 42, 0.07)',
           }}
         >
           <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
@@ -1790,11 +1814,12 @@ function TeacherDashboard() {
               <Paper
                 elevation={0}
                 sx={{
-                  p: { xs: 3, md: 4 },
+                  p: 3,
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid',
+                  borderColor: 'divider',
                   borderRadius: 3,
-                  border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-                  backgroundColor: theme.palette.common.white,
-                  boxShadow: '0 15px 40px rgba(15, 23, 42, 0.07)',
                 }}
               >
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
