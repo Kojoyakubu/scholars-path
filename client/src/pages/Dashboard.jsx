@@ -114,7 +114,11 @@ const StudentDashboardBanner = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      sx={{ position: 'relative', overflow: 'hidden', mb: 4 }}
+      sx={{
+        position: 'relative',
+        overflow: 'hidden',
+        mb: { xs: 3, md: 4 },
+      }}
     >
       <Paper
         elevation={0}
@@ -122,14 +126,14 @@ const StudentDashboardBanner = ({
           background: `linear-gradient(135deg, 
             ${alpha(theme.palette.primary.main, 0.95)} 0%, 
             ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
-          backdropFilter: 'blur(20px)',
-          borderRadius: 4,
-          p: 4,
+          backdropFilter: 'blur(18px)',
+          borderRadius: { xs: '16px', md: '24px' },
+          p: { xs: 2.5, sm: 3, md: 4 },
           color: 'white',
           position: 'relative',
           overflow: 'hidden',
           border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
-          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)',
+          boxShadow: '0px 6px 24px rgba(31, 38, 135, 0.18)',
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -153,17 +157,32 @@ const StudentDashboardBanner = ({
         }}
       >
         <Box sx={{ position: 'relative', zIndex: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', md: 'center' },
+              flexWrap: 'wrap',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: { xs: 2, md: 2.5 },
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 2, md: 3 },
+              }}
+            >
               {!collapsed && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
                   <Avatar
                     sx={{
-                      width: 80,
-                      height: 80,
+                      width: { xs: 56, sm: 64, md: 80 },
+                      height: { xs: 56, sm: 64, md: 80 },
                       bgcolor: alpha('#FFFFFF', 0.2),
                       border: `3px solid ${alpha('#FFFFFF', 0.4)}`,
-                      fontSize: '2rem',
+                      fontSize: { xs: '1.5rem', md: '2rem' },
                       fontWeight: 700,
                       boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
                     }}
@@ -174,24 +193,26 @@ const StudentDashboardBanner = ({
               )}
               <Box>
                 <Typography
-                  variant={collapsed ? 'h5' : 'h3'}
                   sx={{
+                    typography: collapsed
+                      ? { xs: 'subtitle1', md: 'h5' }
+                      : { xs: 'h6', md: 'h3' },
                     fontWeight: 800,
                     textShadow: '0 2px 10px rgba(0,0,0,0.1)',
                     mb: collapsed ? 0 : 0.5,
                     transition: 'all 0.3s ease',
                   }}
                 >
-                  {collapsed 
-                    ? 'My Learning Dashboard' 
+                  {collapsed
+                    ? 'My Learning Dashboard'
                     : `Welcome back, ${getDisplayName(user)}! 👋`
                   }
                 </Typography>
                 {!collapsed && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                     <Typography
-                      variant="h6"
                       sx={{
+                        typography: { xs: 'body2', sm: 'body1' },
                         color: alpha('#FFFFFF', 0.95),
                         fontWeight: 400,
                         display: 'flex',
@@ -207,7 +228,14 @@ const StudentDashboardBanner = ({
               </Box>
             </Box>
 
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: 'center',
+                alignSelf: { xs: 'flex-start', md: 'flex-end' },
+              }}
+            >
               <Tooltip title={refreshing ? 'Refreshing...' : 'Refresh data'}>
                 <IconButton
                   onClick={onRefresh}
@@ -249,83 +277,127 @@ const StudentDashboardBanner = ({
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Grid container spacing={2} sx={{ mt: 3 }}>
-                <Grid item xs={6} sm={3}>
+              <Grid container spacing={1.5} sx={{ mt: { xs: 2, md: 3 } }}>
+                <Grid item xs={6} sm={4} md={3}>
                   <Box
                     sx={{
                       bgcolor: alpha('#FFFFFF', 0.15),
                       backdropFilter: 'blur(10px)',
-                      borderRadius: 2,
-                      p: 2,
+                      borderRadius: { xs: 2, md: 2.5 },
+                      p: { xs: 1.5, md: 2 },
                       border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
                       textAlign: 'center',
+                      height: 120,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      boxShadow: '0px 2px 6px rgba(0,0,0,0.05)',
                     }}
                   >
-                    <MenuBookIcon sx={{ fontSize: 32, mb: 1 }} />
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <MenuBookIcon sx={{ fontSize: 28, mb: 1 }} />
+                    <Typography
+                      sx={{
+                        typography: { xs: 'subtitle1', md: 'h5' },
+                        fontWeight: 700,
+                        mb: 0.25,
+                      }}
+                    >
                       {stats.notes}
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
                       Study Notes
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid item xs={6} sm={4} md={3}>
                   <Box
                     sx={{
                       bgcolor: alpha('#FFFFFF', 0.15),
                       backdropFilter: 'blur(10px)',
-                      borderRadius: 2,
-                      p: 2,
+                      borderRadius: { xs: 2, md: 2.5 },
+                      p: { xs: 1.5, md: 2 },
                       border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
                       textAlign: 'center',
+                      height: 120,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      boxShadow: '0px 2px 6px rgba(0,0,0,0.05)',
                     }}
                   >
-                    <QuizIcon sx={{ fontSize: 32, mb: 1 }} />
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <QuizIcon sx={{ fontSize: 28, mb: 1 }} />
+                    <Typography
+                      sx={{
+                        typography: { xs: 'subtitle1', md: 'h5' },
+                        fontWeight: 700,
+                        mb: 0.25,
+                      }}
+                    >
                       {stats.quizzes}
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
                       Quizzes
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid item xs={6} sm={4} md={3}>
                   <Box
                     sx={{
                       bgcolor: alpha('#FFFFFF', 0.15),
                       backdropFilter: 'blur(10px)',
-                      borderRadius: 2,
-                      p: 2,
+                      borderRadius: { xs: 2, md: 2.5 },
+                      p: { xs: 1.5, md: 2 },
                       border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
                       textAlign: 'center',
+                      height: 120,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      boxShadow: '0px 2px 6px rgba(0,0,0,0.05)',
                     }}
                   >
-                    <AttachFileIcon sx={{ fontSize: 32, mb: 1 }} />
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <AttachFileIcon sx={{ fontSize: 28, mb: 1 }} />
+                    <Typography
+                      sx={{
+                        typography: { xs: 'subtitle1', md: 'h5' },
+                        fontWeight: 700,
+                        mb: 0.25,
+                      }}
+                    >
                       {stats.resources}
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
                       Resources
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid item xs={6} sm={4} md={3}>
                   <Box
                     sx={{
                       bgcolor: alpha('#FFFFFF', 0.15),
                       backdropFilter: 'blur(10px)',
-                      borderRadius: 2,
-                      p: 2,
+                      borderRadius: { xs: 2, md: 2.5 },
+                      p: { xs: 1.5, md: 2 },
                       border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
                       textAlign: 'center',
+                      height: 120,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      boxShadow: '0px 2px 6px rgba(0,0,0,0.05)',
                     }}
                   >
-                    <TrendingUpIcon sx={{ fontSize: 32, mb: 1 }} />
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    <TrendingUpIcon sx={{ fontSize: 28, mb: 1 }} />
+                    <Typography
+                      sx={{
+                        typography: { xs: 'subtitle1', md: 'h5' },
+                        fontWeight: 700,
+                        mb: 0.25,
+                      }}
+                    >
                       {stats.progress}%
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
                       Progress
                     </Typography>
                   </Box>
@@ -364,15 +436,18 @@ const SectionCard = ({ children, gradient, ...props }) => {
         background: gradient || `linear-gradient(135deg, 
           ${alpha(theme.palette.background.paper, 0.8)} 0%, 
           ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
-        backdropFilter: 'blur(20px)',
-        borderRadius: 3,
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        boxShadow: `0 8px 32px 0 ${alpha(theme.palette.primary.main, 0.1)}`,
+        backdropFilter: 'blur(14px)',
+        borderRadius: { xs: 2, md: 3 },
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+        transition: 'all 0.25s ease',
+        boxShadow: {
+          xs: '0px 2px 6px rgba(0,0,0,0.05)',
+          md: `0 10px 28px ${alpha(theme.palette.primary.main, 0.12)}`,
+        },
         '&:hover': {
-          transform: 'translateY(-8px)',
-          boxShadow: `0 16px 48px ${alpha(theme.palette.primary.main, 0.2)}`,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+          transform: { xs: 'none', md: 'translateY(-4px)' },
+          boxShadow: `0 16px 36px ${alpha(theme.palette.primary.main, 0.18)}`,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
         },
         ...props.sx,
       }}
@@ -933,11 +1008,12 @@ function Dashboard() {
         background: `linear-gradient(135deg, 
           ${alpha(theme.palette.primary.main, 0.02)} 0%, 
           ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
-        pt: 4,
-        pb: 8,
       }}
     >
-      <Container maxWidth="xl">
+      <Container
+        maxWidth="xl"
+        sx={{ px: { xs: 1.5, md: 3 }, py: { xs: 2, md: 3 } }}
+      >
         {/* Modern Banner with Avatar */}
         <StudentDashboardBanner
           user={user}
@@ -954,19 +1030,38 @@ function Dashboard() {
             <Paper
               elevation={0}
               sx={{
-                p: 4,
-                borderRadius: 3,
-                background: alpha('#ffffff', 0.8),
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                mb: 4,
+                p: { xs: 2, md: 4 },
+                borderRadius: { xs: 2, md: 3 },
+                background: {
+                  xs: 'transparent',
+                  md: alpha('#ffffff', 0.9),
+                },
+                backdropFilter: { xs: 'none', md: 'blur(10px)' },
+                border: {
+                  xs: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+                  md: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                },
+                boxShadow: {
+                  xs: 'none',
+                  md: '0px 8px 24px rgba(15, 23, 42, 0.08)',
+                },
+                mb: { xs: 3, md: 4 },
               }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 1.5,
+                  mb: 2.5,
+                }}
+              >
                 <Typography
-                  variant="h5"
-                  fontWeight={700}
                   sx={{
+                    typography: { xs: 'h6', md: 'h5' },
+                    fontWeight: 700,
                     background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
@@ -1004,9 +1099,9 @@ function Dashboard() {
                   </Typography>
                 </Box>
               ) : (
-                <Grid container spacing={3}>
+                <Grid container spacing={{ xs: 2, md: 3 }}>
                   {safeSubjects.map((subject) => (
-                    <Grid item xs={12} sm={6} md={4} key={subject._id}>
+                    <Grid item xs={6} sm={4} md={3} key={subject._id}>
                       <motion.div
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.98 }}
@@ -1014,36 +1109,52 @@ function Dashboard() {
                         <Card
                           onClick={() => handleSubjectSelect(subject._id)}
                           sx={{
-                            height: '100%',
+                            height: 120,
                             cursor: 'pointer',
-                            borderRadius: 3,
-                            transition: 'all 0.3s ease',
-                            background: `linear-gradient(135deg, ${alpha(
-                              theme.palette.primary.main,
-                              0.05
-                            )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
-                            border: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                            borderRadius: { xs: 2, md: 3 },
+                            transition: 'all 0.25s ease',
+                            background: alpha(theme.palette.primary.main, 0.04),
+                            border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                            boxShadow: '0px 2px 6px rgba(0,0,0,0.05)',
                             '&:hover': {
-                              border: `2px solid ${theme.palette.primary.main}`,
-                              boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
+                              borderColor: theme.palette.primary.main,
+                              boxShadow: `0 12px 30px ${alpha(theme.palette.primary.main, 0.18)}`,
                             },
                           }}
                         >
-                          <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                          <CardContent
+                            sx={{
+                              height: '100%',
+                              p: 2,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              textAlign: 'center',
+                              gap: 1,
+                            }}
+                          >
                             <Box
                               sx={{
-                                display: 'inline-flex',
-                                p: 2,
+                                display: 'flex',
+                                width: 42,
+                                height: 42,
                                 borderRadius: '50%',
-                                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                mb: 2,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: alpha(theme.palette.primary.main, 0.12),
                               }}
                             >
                               <MenuBookIcon
-                                sx={{ fontSize: 40, color: 'primary.main' }}
+                                sx={{ fontSize: 24, color: 'primary.main' }}
                               />
                             </Box>
-                            <Typography variant="h6" fontWeight={600} gutterBottom>
+                            <Typography
+                              sx={{
+                                typography: { xs: 'body2', md: 'subtitle1' },
+                                fontWeight: 600,
+                              }}
+                            >
                               {subject.name}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
@@ -1062,7 +1173,7 @@ function Dashboard() {
 
         {/* Show "Back to Subjects" button when subject is selected */}
         {selections.subject && (
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: { xs: 2, md: 3 } }}>
             <Button
               variant="outlined"
               startIcon={<ArrowBackIcon />}
@@ -1084,18 +1195,28 @@ function Dashboard() {
             <Paper
               elevation={0}
               sx={{
-                p: 4,
-                borderRadius: 3,
-                background: alpha('#ffffff', 0.8),
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                mb: 4,
+                p: { xs: 2, md: 4 },
+                borderRadius: { xs: 2, md: 3 },
+                background: {
+                  xs: 'transparent',
+                  md: alpha('#ffffff', 0.9),
+                },
+                backdropFilter: { xs: 'none', md: 'blur(10px)' },
+                border: {
+                  xs: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+                  md: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                },
+                boxShadow: {
+                  xs: 'none',
+                  md: '0px 8px 24px rgba(15, 23, 42, 0.08)',
+                },
+                mb: { xs: 3, md: 4 },
               }}
             >
               <Typography
-                variant="h5"
-                fontWeight={700}
                 sx={{
+                  typography: { xs: 'h6', md: 'h5' },
+                  fontWeight: 700,
                   mb: 3,
                   background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                   backgroundClip: 'text',
@@ -1106,7 +1227,7 @@ function Dashboard() {
                 🎯 Select Topic
               </Typography>
 
-              <Grid container spacing={3}>
+              <Grid container spacing={{ xs: 2, md: 3 }}>
                 {/* Strand Dropdown */}
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
@@ -1173,14 +1294,18 @@ function Dashboard() {
         {selections.subStrand && contentLoaded ? (
           <AnimatePresence mode="wait">
             {/* Study Notes Section */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid
+              container
+              spacing={{ xs: 2, md: 3 }}
+              sx={{ mb: { xs: 3, md: 4 } }}
+            >
               <Grid item xs={12}>
                 <motion.div
                   variants={fadeInUp}
                   initial="hidden"
                   animate="visible"
                 >
-                  <SectionCard sx={{ p: 3 }}>
+                  <SectionCard sx={{ p: { xs: 2, md: 3 } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                       <Avatar
                         sx={{
@@ -1391,7 +1516,7 @@ function Dashboard() {
                   animate="visible"
                   transition={{ delay: 0.2 }}
                 >
-                  <SectionCard sx={{ p: 3, height: '100%' }}>
+                  <SectionCard sx={{ p: { xs: 2, md: 3 }, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                       <Avatar
                         sx={{
@@ -1618,8 +1743,8 @@ function Dashboard() {
               >
                 <SectionCard
                   sx={{
-                    p: 4,
-                    mt: 4,
+                    p: { xs: 2.5, md: 4 },
+                    mt: { xs: 3, md: 4 },
                     background: `linear-gradient(135deg, 
                       ${alpha(theme.palette.secondary.main, 0.12)} 0%, 
                       ${alpha(theme.palette.primary.main, 0.08)} 100%)`,
