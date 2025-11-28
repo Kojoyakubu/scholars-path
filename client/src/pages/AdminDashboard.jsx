@@ -75,7 +75,7 @@ const TabPanel = ({ index, value, children }) => {
     <AnimatePresence mode="wait">
       {visible && (
         <motion.div key={index} {...fadeInUp} style={{ width: '100%' }}>
-          <Box sx={{ mt: 4 }}>{children}</Box>
+          <Box sx={{ mt: 2 }}>{children}</Box>
         </motion.div>
       )}
     </AnimatePresence>
@@ -150,7 +150,7 @@ const StatCard = ({
             },
           }}
         >
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Box sx={{ flex: 1 }}>
                 <Typography
@@ -792,8 +792,8 @@ const AdminDashboard = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
-      {/* 📊 Main Content Area */}
-      <Container maxWidth="xl" sx={{ mt: 3, pb: 6 }}>
+      {/* 📊 Main Content Area - 98% Screen Usage, 1% margin each side */}
+      <Box sx={{ width: '98%', mx: '1%', mt: 1, pb: 2 }}>
         {/* Error Alert */}
         {isError && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
@@ -833,7 +833,7 @@ const AdminDashboard = () => {
           ) : (
             <motion.div variants={staggerContainer} initial="initial" animate="animate">
               {/* Time Range Selector */}
-              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                   Overview
                 </Typography>
@@ -866,7 +866,7 @@ const AdminDashboard = () => {
               </Box>
 
               {/* Stats Grid */}
-              <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid container spacing={2} sx={{ mb: 4 }}>
                 {statCards.map((card, i) => (
                   <StatCard key={i} {...card} delay={0.1 * i} />
                 ))}
@@ -884,7 +884,7 @@ const AdminDashboard = () => {
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   Quick Stats
                 </Typography>
-                <Grid container spacing={3}>
+                <Grid container spacing={2}>
                   <Grid item xs={12} sm={6} md={3}>
                     <Box>
                       <Typography variant="caption" color="text.secondary">
@@ -1098,7 +1098,7 @@ const AdminDashboard = () => {
         <TabPanel value={tab} index={4}>
           <AdminAnalytics />
         </TabPanel>
-      </Container>
+      </Box>
     </Box>
   );
 };

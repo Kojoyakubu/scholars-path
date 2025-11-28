@@ -162,7 +162,7 @@ const TeacherDashboardBanner = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      sx={{ position: 'relative', overflow: 'hidden', mb: 3 }}
+      sx={{ position: 'relative', overflow: 'hidden', mb: 2 }}
     >
       <Paper
         elevation={0}
@@ -172,7 +172,7 @@ const TeacherDashboardBanner = ({
             ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
           backdropFilter: 'blur(20px)',
           borderRadius: 4,
-          p: 4,
+          p: 2,
           color: 'white',
           position: 'relative',
           overflow: 'hidden',
@@ -192,7 +192,7 @@ const TeacherDashboardBanner = ({
       >
         <Box sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {!collapsed && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
                   <Avatar
@@ -273,7 +273,7 @@ const TeacherDashboardBanner = ({
 
           {!collapsed && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-              <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                 <Chip
                   icon={<Article />}
                   label={`${stats?.lessonNotes || 0} Lesson Notes`}
@@ -359,7 +359,7 @@ const QuickActionCard = ({ title, description, icon: Icon, color, onClick, badge
         },
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <Avatar
             sx={{
@@ -469,7 +469,7 @@ const StatCard = ({ icon: Icon, label, value, color, delay }) => {
             },
           }}
         >
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: 2 }}>
             <Box
               sx={{
                 display: 'flex',
@@ -1238,7 +1238,7 @@ function TeacherDashboard() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
-      <Container maxWidth="xl" sx={{ mt: 3, pb: 6 }}>
+      <Box sx={{ width: '98%', mx: '1%', mt: 1, pb: 2 }}>
         
         {/* 🎨 NEW MODERN BANNER */}
         <TeacherDashboardBanner
@@ -1256,10 +1256,10 @@ function TeacherDashboard() {
 
         {/* 🚀 NEW QUICK ACTIONS SECTION */}
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
             Quick Actions
           </Typography>
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={3}>
               <QuickActionCard
                 title="Create Lesson"
@@ -1301,10 +1301,10 @@ function TeacherDashboard() {
         </Box>
 
         {/* 📊 ANALYTICS OVERVIEW */}
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
           Overview
         </Typography>
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={2} sx={{ mb: 4 }}>
           <StatCard
             icon={Article}
             label="Lesson Notes"
@@ -1385,8 +1385,8 @@ function TeacherDashboard() {
 
           {/* Tab Panel 0: Create New */}
           <TabPanel value={activeTab} index={0}>
-            <Container maxWidth="md">
-              <Grid container spacing={3}>
+            <Box sx={{ width: '100%' }}>
+              <Grid container spacing={2}>
                 {/* Curriculum Selection */}
                 <Grid item xs={12}>
                   <SectionCard
@@ -1590,7 +1590,7 @@ function TeacherDashboard() {
                   </SectionCard>
                 </Grid>
               </Grid>
-            </Container>
+            </Box>
           </TabPanel>
 
           {/* Tab Panel 1: My Lesson Notes */}
@@ -1602,7 +1602,7 @@ function TeacherDashboard() {
                 spacing={2}
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{ mb: 3 }}
+                sx={{ mb: 2 }}
               >
                 <TextField
                   placeholder="Search lesson notes..."
@@ -1640,7 +1640,7 @@ function TeacherDashboard() {
               ) : filteredLessonNotes.length > 0 ? (
                 <AnimatePresence mode="popLayout">
                   {viewMode === 'grid' ? (
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                       {filteredLessonNotes.map((note) => (
                         <Grid item xs={12} sm={6} md={4} key={note._id}>
                           <LessonNoteCard
@@ -1689,7 +1689,7 @@ function TeacherDashboard() {
                   <Typography variant="h6" gutterBottom color="text.secondary" fontWeight={600}>
                     {searchQuery ? 'No notes found' : 'No lesson notes yet'}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {searchQuery 
                       ? 'Try adjusting your search terms'
                       : 'Start creating engaging lesson notes with AI'}
@@ -1718,7 +1718,7 @@ function TeacherDashboard() {
                 spacing={2}
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{ mb: 3 }}
+                sx={{ mb: 2 }}
               >
                 <TextField
                   placeholder="Search draft notes..."
@@ -1754,7 +1754,7 @@ function TeacherDashboard() {
               ) : filteredDraftNotes.length > 0 ? (
                 <AnimatePresence mode="popLayout">
                   {viewMode === 'grid' ? (
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                       {filteredDraftNotes.map((note) => (
                         <Grid item xs={12} sm={6} md={4} key={note._id}>
                           <DraftNoteCard
@@ -1814,7 +1814,7 @@ function TeacherDashboard() {
               <Paper
                 elevation={0}
                 sx={{
-                  p: 3,
+                  p: 2,
                   background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
                   backdropFilter: 'blur(10px)',
                   border: '1px solid',
@@ -1822,7 +1822,7 @@ function TeacherDashboard() {
                   borderRadius: 3,
                 }}
               >
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                   <Box>
                     <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
                       📦 My Lesson Bundles
@@ -1940,7 +1940,7 @@ function TeacherDashboard() {
             {snackbar.message}
           </Alert>
         </Snackbar>
-      </Container>
+      </Box>
     </Box>
   );
 }
