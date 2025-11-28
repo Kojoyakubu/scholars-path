@@ -1013,8 +1013,8 @@ function Dashboard() {
       }}
     >
       <Container
-        maxWidth="lg"
-        sx={{ px: { xs: 2, sm: 3, md: 4 }, py: { xs: 2, md: 3 } }}
+        maxWidth={false}
+        sx={{ maxWidth: "98%", mx: "auto", px: { xs: 1, sm: 1.5, md: 2 }, py: { xs: 2, md: 3 } }}
       >
         {/* Modern Banner with Avatar */}
         <StudentDashboardBanner
