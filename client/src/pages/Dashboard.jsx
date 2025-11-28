@@ -843,9 +843,9 @@ function Dashboard() {
           console.error('   - Message:', error?.message);
           console.error('   - Response:', error?.response);
           console.error('   - Status:', error?.response?.status);
-          setContentLoaded(true);
         });
       
+          setContentLoaded(true);
       // Fetch quizzes
       dispatch(getQuizzes(subStrandId))
         .unwrap()
