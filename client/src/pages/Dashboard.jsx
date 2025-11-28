@@ -835,12 +835,15 @@ function Dashboard() {
             console.log('      2. Teacher is from same school?');
             console.log('      3. Notes marked as "published" not "draft"?');
           }
+          setContentLoaded(true);
+          console.log('🎯 Content loaded set to TRUE after notes fetched');
         })
         .catch((error) => {
           console.error('❌ ERROR FETCHING NOTES:', error);
           console.error('   - Message:', error?.message);
           console.error('   - Response:', error?.response);
           console.error('   - Status:', error?.response?.status);
+          setContentLoaded(true);
         });
       
       // Fetch quizzes
@@ -869,7 +872,6 @@ function Dashboard() {
           console.error('❌ ERROR FETCHING RESOURCES:', error);
         });
       
-      setContentLoaded(true);
       console.log('════════════════════════════════════════════════════');
     } else {
       // Reset content loaded when subStrand is cleared
