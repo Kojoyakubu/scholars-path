@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Outlet, useLocation, Link as RouterLink } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
@@ -9,10 +9,9 @@ import {
   Box,
   Drawer,
   List,
-  ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
-  ListItemButton,
   CssBaseline,
   useTheme,
   Avatar,
@@ -42,22 +41,25 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 // ═══════════════════════════════════════════════════════════
-// 🎨 DESIGN SYSTEM CONSTANTS
+// 🎨 DESIGN CONSTANTS
 // ═══════════════════════════════════════════════════════════
 
-const DRAWER_WIDTH_EXPANDED = 240;  // Updated from 260
+const DRAWER_WIDTH_EXPANDED = 240;
 const DRAWER_WIDTH_COLLAPSED = 80;
 
+// Color scheme - Dark blue professional theme
+const TOPBAR_BG = '#1E293B';      // Slate 800
+const SIDEBAR_BG = '#0F172A';     // Slate 900
+const ACCENT_COLOR = '#3B82F6';   // Blue 500
+
 // ═══════════════════════════════════════════════════════════
-// 🎨 STYLED COMPONENTS - REFINED DESIGN
+// 🎨 STYLED COMPONENTS
 // ═══════════════════════════════════════════════════════════
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
-  background: 'rgba(255, 255, 255, 0.95)',
-  backdropFilter: 'blur(10px)',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-  borderBottom: '1px solid #E0E0E0',
-  color: theme.palette.text.primary,
+  background: TOPBAR_BG,
+  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
+  borderBottom: `1px solid ${alpha('#ffffff', 0.1)}`,
   zIndex: theme.zIndex.drawer + 1,
 }));
 
@@ -65,8 +67,7 @@ const StyledDrawerContent = styled(Box)(({ theme }) => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  background: '#FFFFFF',
-  borderRight: '1px solid #E0E0E0',
+  background: SIDEBAR_BG,
 }));
 
 const StyledNavItem = styled(ListItemButton)(({ theme, active }) => ({
@@ -76,13 +77,14 @@ const StyledNavItem = styled(ListItemButton)(({ theme, active }) => ({
   borderRadius: 8,
   minHeight: 44,
   transition: 'all 0.2s ease',
-  color: active ? theme.palette.primary.main : theme.palette.text.secondary,
-  background: active ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
-  borderLeft: active ? `3px solid ${theme.palette.primary.main}` : '3px solid transparent',
+  color: active ? '#FFFFFF' : alpha('#FFFFFF', 0.7),
+  background: active ? alpha(ACCENT_COLOR, 0.15) : 'transparent',
+  borderLeft: active ? `3px solid ${ACCENT_COLOR}` : '3px solid transparent',
   
   '&:hover': {
-    background: alpha(theme.palette.primary.main, 0.04),
+    background: active ? alpha(ACCENT_COLOR, 0.2) : alpha('#FFFFFF', 0.05),
     transform: 'translateX(2px)',
+    color: '#FFFFFF',
   },
   
   '& .MuiListItemIcon-root': {
@@ -102,6 +104,7 @@ const StyledNavItem = styled(ListItemButton)(({ theme, active }) => ({
 
 const Layout = ({ onLogout }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -115,7 +118,7 @@ const Layout = ({ onLogout }) => {
   const handleCollapse = () => setCollapsed(!collapsed);
 
   // ═══════════════════════════════════════════════════════════
-  // 🎯 ROLE-BASED NAVIGATION - PRESERVED LOGIC
+  // 🎯 ROLE-BASED NAVIGATION (FIXED ROUTING)
   // ═══════════════════════════════════════════════════════════
 
   const getMenuItems = () => {
@@ -124,29 +127,29 @@ const Layout = ({ onLogout }) => {
     switch (role) {
       case 'admin':
         return [
-          { text: 'Overview', icon: <DashboardIcon />, link: '/admin/dashboard' },
-          { text: 'Users', icon: <GroupIcon />, link: '/admin/users' },
-          { text: 'Schools', icon: <SchoolIcon />, link: '/admin/schools' },
-          { text: 'Curriculum', icon: <BookIcon />, link: '/admin/curriculum' },
-          { text: 'Analytics', icon: <AssessmentIcon />, link: '/admin/analytics' },
+          { text: 'Overview', icon: <DashboardIcon />, path: '/admin/dashboard' },
+          { text: 'Users', icon: <GroupIcon />, path: '/admin/users' },
+          { text: 'Schools', icon: <SchoolIcon />, path: '/admin/schools' },
+          { text: 'Curriculum', icon: <BookIcon />, path: '/admin/curriculum' },
+          { text: 'Analytics', icon: <AssessmentIcon />, path: '/admin/analytics' },
         ];
 
       case 'teacher':
         return [
-          { text: 'Home', icon: <DashboardIcon />, link: '/teacher/dashboard' },
-          { text: 'My Notes', icon: <ArticleIcon />, link: '/teacher/notes' },
-          { text: 'Drafts', icon: <BookIcon />, link: '/teacher/drafts' },
-          { text: 'Bundles', icon: <FolderIcon />, link: '/teacher/bundles' },
-          { text: 'Analytics', icon: <AssessmentIcon />, link: '/teacher/analytics' },
+          { text: 'Home', icon: <DashboardIcon />, path: '/teacher/dashboard' },
+          { text: 'My Notes', icon: <ArticleIcon />, path: '/teacher/notes' },
+          { text: 'Drafts', icon: <BookIcon />, path: '/teacher/drafts' },
+          { text: 'Bundles', icon: <FolderIcon />, path: '/teacher/bundles' },
+          { text: 'Analytics', icon: <AssessmentIcon />, path: '/teacher/analytics' },
         ];
 
       case 'student':
       default:
         return [
-          { text: 'Home', icon: <DashboardIcon />, link: '/dashboard' },
-          { text: 'My Subjects', icon: <BookIcon />, link: '/student/subjects' },
-          { text: 'Quizzes', icon: <QuizIcon />, link: '/student/quizzes' },
-          { text: 'Progress', icon: <AssessmentIcon />, link: '/student/progress' },
+          { text: 'Home', icon: <DashboardIcon />, path: '/dashboard' },
+          { text: 'My Subjects', icon: <BookIcon />, path: '/student/subjects' },
+          { text: 'Quizzes', icon: <QuizIcon />, path: '/student/quizzes' },
+          { text: 'Progress', icon: <AssessmentIcon />, path: '/student/progress' },
         ];
     }
   };
@@ -156,17 +159,22 @@ const Layout = ({ onLogout }) => {
   // Get page title
   const getPageTitle = () => {
     const role = user?.role?.toLowerCase();
-    const currentItem = menuItems.find(item => item.link === location.pathname);
+    const currentItem = menuItems.find(item => item.path === location.pathname);
     
     if (currentItem?.text) return currentItem.text;
     
-    // Fallback based on role
     switch (role) {
       case 'admin': return 'Admin Dashboard';
       case 'teacher': return 'Teacher Dashboard';
       case 'student': return 'Student Dashboard';
       default: return 'Dashboard';
     }
+  };
+
+  // Handle navigation click
+  const handleNavClick = (path) => {
+    navigate(path);
+    setMobileOpen(false);
   };
 
   // ═══════════════════════════════════════════════════════════
@@ -184,33 +192,34 @@ const Layout = ({ onLogout }) => {
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
           minHeight: 64,
-          borderBottom: '1px solid #E0E0E0',
+          borderBottom: `1px solid ${alpha('#ffffff', 0.1)}`,
         }}
       >
         {!collapsed ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {/* Simple Logo Icon */}
+            {/* Logo Icon */}
             <Box
               sx={{
                 width: 36,
                 height: 36,
                 borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, #2563EB 100%)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
                 fontWeight: 800,
                 fontSize: '1.25rem',
+                boxShadow: `0 4px 12px ${alpha(ACCENT_COLOR, 0.4)}`,
               }}
             >
               S
             </Box>
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1, fontSize: '1rem' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1, fontSize: '1rem', color: 'white' }}>
                 Scholar's Path
               </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+              <Typography variant="caption" sx={{ color: alpha('#ffffff', 0.6), fontSize: '0.7rem' }}>
                 Learning Platform
               </Typography>
             </Box>
@@ -221,13 +230,14 @@ const Layout = ({ onLogout }) => {
               width: 36,
               height: 36,
               borderRadius: 2,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+              background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, #2563EB 100%)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
               fontWeight: 800,
               fontSize: '1.25rem',
+              boxShadow: `0 4px 12px ${alpha(ACCENT_COLOR, 0.4)}`,
             }}
           >
             S
@@ -239,16 +249,14 @@ const Layout = ({ onLogout }) => {
       <Box sx={{ flex: 1, overflowY: 'auto', py: 2 }}>
         <List component="nav">
           {menuItems.map((item, index) => {
-            const isActive = location.pathname === item.link || 
-                           (item.link !== '/dashboard' && location.pathname.startsWith(item.link));
+            const isActive = location.pathname === item.path || 
+                           (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
             
             return (
               <StyledNavItem
                 key={index}
-                component={RouterLink}
-                to={item.link}
                 active={isActive ? 1 : 0}
-                onClick={() => setMobileOpen(false)}
+                onClick={() => handleNavClick(item.path)}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 {!collapsed && <ListItemText primary={item.text} />}
@@ -262,7 +270,7 @@ const Layout = ({ onLogout }) => {
       <Box
         sx={{
           display: { xs: 'none', sm: 'block' },
-          borderTop: '1px solid #E0E0E0',
+          borderTop: `1px solid ${alpha('#ffffff', 0.1)}`,
           p: 1,
         }}
       >
@@ -272,8 +280,10 @@ const Layout = ({ onLogout }) => {
             sx={{
               width: '100%',
               borderRadius: 2,
+              color: alpha('#ffffff', 0.7),
               '&:hover': {
-                background: alpha(theme.palette.primary.main, 0.04),
+                background: alpha('#ffffff', 0.05),
+                color: '#ffffff',
               },
             }}
           >
@@ -289,7 +299,7 @@ const Layout = ({ onLogout }) => {
       <CssBaseline />
 
       {/* ═══════════════════════════════════════════════════════════
-          🎨 TOP BAR (APP BAR)
+          🎨 TOP BAR (APP BAR) - DARK BLUE
           ═══════════════════════════════════════════════════════════*/}
       
       <StyledAppBar position="fixed">
@@ -314,6 +324,7 @@ const Layout = ({ onLogout }) => {
               flexGrow: 1,
               fontWeight: 700,
               fontSize: { xs: '1rem', sm: '1.25rem' },
+              color: 'white',
             }}
           >
             {getPageTitle()}
@@ -325,9 +336,9 @@ const Layout = ({ onLogout }) => {
             <Tooltip title="Notifications">
               <IconButton
                 sx={{
-                  color: 'text.secondary',
+                  color: alpha('#ffffff', 0.9),
                   '&:hover': {
-                    background: alpha(theme.palette.primary.main, 0.08),
+                    background: alpha('#ffffff', 0.1),
                   },
                 }}
               >
@@ -346,7 +357,8 @@ const Layout = ({ onLogout }) => {
                   sx={{
                     width: 36,
                     height: 36,
-                    border: `2px solid ${theme.palette.primary.main}`,
+                    border: `2px solid ${ACCENT_COLOR}`,
+                    boxShadow: `0 0 0 2px ${alpha(ACCENT_COLOR, 0.2)}`,
                   }}
                 >
                   {(user?.fullName || user?.name || 'U')[0].toUpperCase()}
@@ -388,7 +400,7 @@ const Layout = ({ onLogout }) => {
                   mx: 1,
                   my: 0.5,
                   '&:hover': {
-                    background: alpha(theme.palette.primary.main, 0.08),
+                    background: alpha(ACCENT_COLOR, 0.08),
                   },
                 }}
               >
@@ -402,7 +414,7 @@ const Layout = ({ onLogout }) => {
                   mx: 1,
                   my: 0.5,
                   '&:hover': {
-                    background: alpha(theme.palette.primary.main, 0.08),
+                    background: alpha(ACCENT_COLOR, 0.08),
                   },
                 }}
               >
@@ -434,7 +446,7 @@ const Layout = ({ onLogout }) => {
       </StyledAppBar>
 
       {/* ═══════════════════════════════════════════════════════════
-          🎨 SIDEBAR (DRAWER)
+          🎨 SIDEBAR (DRAWER) - DARKER BLUE
           ═══════════════════════════════════════════════════════════*/}
       
       <Box
@@ -451,7 +463,7 @@ const Layout = ({ onLogout }) => {
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better mobile performance
+            keepMounted: true,
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
