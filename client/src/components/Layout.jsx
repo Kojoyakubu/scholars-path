@@ -137,11 +137,11 @@ const Layout = ({ onLogout }) => {
     switch (role) {
       case 'admin':
         return [
-          { text: 'Overview', icon: <DashboardIcon />, path: '/admin' }, // ← FIXED: Changed from /admin/dashboard to /admin
-          { text: 'Users', icon: <GroupIcon />, path: '/admin#users' }, // ← Using hash until routes exist
-          { text: 'Schools', icon: <SchoolIcon />, path: '/admin#schools' },
-          { text: 'Curriculum', icon: <BookIcon />, path: '/admin#curriculum' },
-          { text: 'Analytics', icon: <AssessmentIcon />, path: '/admin#analytics' },
+          { text: 'Overview', icon: <DashboardIcon />, path: '/admin' },
+          { text: 'Users', icon: <GroupIcon />, path: '/admin/users' }, // ← Real route now!
+          { text: 'Schools', icon: <SchoolIcon />, path: '/admin/schools' }, // ← Real route now!
+          { text: 'Curriculum', icon: <BookIcon />, path: '/admin/curriculum' }, // ← Real route now!
+          { text: 'Analytics', icon: <AssessmentIcon />, path: '/admin/analytics' }, // ← Real route now!
         ];
 
       case 'teacher':
