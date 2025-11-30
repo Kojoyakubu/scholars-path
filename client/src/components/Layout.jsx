@@ -137,11 +137,11 @@ const Layout = ({ onLogout }) => {
     switch (role) {
       case 'admin':
         return [
-          { text: 'Overview', icon: <DashboardIcon />, path: '/admin/dashboard' },
-          { text: 'Users', icon: <GroupIcon />, path: '/admin/users' },
-          { text: 'Schools', icon: <SchoolIcon />, path: '/admin/schools' },
-          { text: 'Curriculum', icon: <BookIcon />, path: '/admin/curriculum' },
-          { text: 'Analytics', icon: <AssessmentIcon />, path: '/admin/analytics' },
+          { text: 'Overview', icon: <DashboardIcon />, path: '/admin' }, // ← FIXED: Changed from /admin/dashboard to /admin
+          { text: 'Users', icon: <GroupIcon />, path: '/admin#users' }, // ← Using hash until routes exist
+          { text: 'Schools', icon: <SchoolIcon />, path: '/admin#schools' },
+          { text: 'Curriculum', icon: <BookIcon />, path: '/admin#curriculum' },
+          { text: 'Analytics', icon: <AssessmentIcon />, path: '/admin#analytics' },
         ];
 
       case 'teacher':
@@ -181,8 +181,11 @@ const Layout = ({ onLogout }) => {
   };
 
   const handleNavClick = (path) => {
+    console.log('🚀 Navigation clicked:', path); // Debug log
+    console.log('📍 Current location:', location.pathname); // Debug log
     navigate(path);
     setMobileOpen(false);
+    console.log('✅ Navigation executed'); // Debug log
   };
 
   // ═══════════════════════════════════════════════════════════
@@ -275,8 +278,14 @@ const Layout = ({ onLogout }) => {
       <Box sx={{ flex: 1, overflowY: 'auto', py: 2.5 }}>
         <List component="nav">
           {menuItems.map((item, index) => {
+            // Handle both exact paths and hash-based paths
+            const itemPathBase = item.path.split('#')[0]; // Get path without hash
             const isActive = location.pathname === item.path || 
-                           (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+                           location.pathname === itemPathBase ||
+                           (item.path !== '/dashboard' && 
+                            item.path !== '/admin' && 
+                            !item.path.includes('#') && 
+                            location.pathname.startsWith(item.path));
             
             return (
               <StyledNavItem
