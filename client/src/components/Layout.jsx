@@ -47,21 +47,21 @@ import SettingsIcon from '@mui/icons-material/Settings';
 const DRAWER_WIDTH_EXPANDED = 240;
 const DRAWER_WIDTH_COLLAPSED = 72;
 
-// Professional Dark Theme - Blue/Slate
+// Professional Dark Theme
 const TOPBAR_BG = '#1E293B';      // Slate 800
 const SIDEBAR_BG = '#0F172A';     // Slate 900  
 const ACCENT_COLOR = '#3B82F6';   // Blue 500
 const CONTENT_BG = '#F1F5F9';     // Slate 100
 
 // ═══════════════════════════════════════════════════════════
-// 🎨 STYLED COMPONENTS
+// 🎨 STYLED COMPONENTS - NO ROUNDED CORNERS
 // ═══════════════════════════════════════════════════════════
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   background: TOPBAR_BG,
   boxShadow: 'none',
   borderBottom: `1px solid ${alpha('#ffffff', 0.08)}`,
-  zIndex: theme.zIndex.drawer + 1,
+  zIndex: theme.zIndex.drawer - 1, // ← FIXED: Below drawer, not above
 }));
 
 const StyledDrawerContent = styled(Box)(({ theme }) => ({
@@ -75,7 +75,7 @@ const StyledNavItem = styled(ListItemButton)(({ theme, active }) => ({
   marginBottom: 6,
   marginLeft: 10,
   marginRight: 10,
-  borderRadius: 10,
+  borderRadius: 0, // ← FIXED: No rounded corners
   minHeight: 48,
   paddingLeft: 12,
   paddingRight: 12,
@@ -97,7 +97,7 @@ const StyledNavItem = styled(ListItemButton)(({ theme, active }) => ({
   
   '& .MuiListItemIcon-root': {
     color: 'inherit',
-    minWidth: 42,
+    minWidth: 40,
   },
   
   '& .MuiListItemText-primary': {
@@ -209,7 +209,7 @@ const Layout = ({ onLogout }) => {
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 2.5,
+                borderRadius: 0, // ← FIXED: No rounded corners
                 background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, #2563EB 100%)`,
                 display: 'flex',
                 alignItems: 'center',
@@ -253,7 +253,7 @@ const Layout = ({ onLogout }) => {
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 2.5,
+                borderRadius: 0, // ← FIXED: No rounded corners
                 background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, #2563EB 100%)`,
                 display: 'flex',
                 alignItems: 'center',
@@ -278,20 +278,19 @@ const Layout = ({ onLogout }) => {
                            (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
             
             return (
-              <Tooltip 
-                key={index} 
-                title={collapsed ? item.text : ''} 
-                placement="right"
-                arrow
+              <StyledNavItem
+                key={index}
+                active={isActive ? 1 : 0}
+                onClick={() => handleNavClick(item.path)}
               >
-                <StyledNavItem
-                  active={isActive ? 1 : 0}
-                  onClick={() => handleNavClick(item.path)}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  {!collapsed && <ListItemText primary={item.text} />}
-                </StyledNavItem>
-              </Tooltip>
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText 
+                  primary={item.text}
+                  sx={{ 
+                    display: collapsed ? 'none' : 'block' // ← FIXED: Show/hide based on collapsed state
+                  }}
+                />
+              </StyledNavItem>
             );
           })}
         </List>
@@ -310,7 +309,7 @@ const Layout = ({ onLogout }) => {
             sx={{
               p: 1.5,
               mb: 1.5,
-              borderRadius: 2,
+              borderRadius: 0, // ← FIXED: No rounded corners
               background: alpha('#ffffff', 0.04),
               display: 'flex',
               alignItems: 'center',
@@ -362,7 +361,7 @@ const Layout = ({ onLogout }) => {
               onClick={handleCollapse}
               sx={{
                 width: '100%',
-                borderRadius: 2,
+                borderRadius: 0, // ← FIXED: No rounded corners
                 color: alpha('#ffffff', 0.7),
                 background: alpha('#ffffff', 0.04),
                 '&:hover': {
@@ -384,7 +383,57 @@ const Layout = ({ onLogout }) => {
       <CssBaseline />
 
       {/* ═══════════════════════════════════════════════════════════
-          🎨 TOP BAR
+          🎨 SIDEBAR - HIGHER Z-INDEX
+          ═══════════════════════════════════════════════════════════*/}
+      
+      <Box
+        component="nav"
+        sx={{
+          width: { sm: collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH_EXPANDED },
+          flexShrink: { sm: 0 },
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        {/* Mobile Drawer */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: 280,
+              border: 'none',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+
+        {/* Desktop Drawer - PERMANENT */}
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH_EXPANDED,
+              border: 'none',
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+
+      {/* ═══════════════════════════════════════════════════════════
+          🎨 TOP BAR - LOWER Z-INDEX (behind sidebar)
           ═══════════════════════════════════════════════════════════*/}
       
       <StyledAppBar position="fixed">
@@ -415,6 +464,8 @@ const Layout = ({ onLogout }) => {
               fontSize: { xs: '1.1rem', sm: '1.3rem' },
               color: 'white',
               letterSpacing: '-0.02em',
+              ml: { sm: `${collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH_EXPANDED}px` }, // ← FIXED: Push right to avoid sidebar
+              transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
             {getPageTitle()}
@@ -473,25 +524,10 @@ const Layout = ({ onLogout }) => {
                 elevation: 0,
                 sx: {
                   mt: 1.5,
-                  borderRadius: 2.5,
+                  borderRadius: 0, // ← FIXED: No rounded corners
                   minWidth: 220,
                   border: '1px solid #E5E7EB',
                   boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
-                  overflow: 'visible',
-                  '&:before': {
-                    content: '""',
-                    display: 'block',
-                    position: 'absolute',
-                    top: 0,
-                    right: 14,
-                    width: 10,
-                    height: 10,
-                    bgcolor: 'background.paper',
-                    transform: 'translateY(-50%) rotate(45deg)',
-                    zIndex: 0,
-                    borderTop: '1px solid #E5E7EB',
-                    borderLeft: '1px solid #E5E7EB',
-                  },
                 },
               }}
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
@@ -509,9 +545,9 @@ const Layout = ({ onLogout }) => {
               <MenuItem
                 onClick={handleMenuClose}
                 sx={{
-                  borderRadius: 1.5,
-                  mx: 1,
-                  my: 0.75,
+                  borderRadius: 0, // ← FIXED: No rounded corners
+                  mx: 0,
+                  my: 0,
                   py: 1.25,
                   '&:hover': {
                     background: alpha(ACCENT_COLOR, 0.08),
@@ -525,9 +561,9 @@ const Layout = ({ onLogout }) => {
               <MenuItem
                 onClick={handleMenuClose}
                 sx={{
-                  borderRadius: 1.5,
-                  mx: 1,
-                  my: 0.75,
+                  borderRadius: 0, // ← FIXED: No rounded corners
+                  mx: 0,
+                  my: 0,
                   py: 1.25,
                   '&:hover': {
                     background: alpha(ACCENT_COLOR, 0.08),
@@ -538,7 +574,7 @@ const Layout = ({ onLogout }) => {
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>Settings</Typography>
               </MenuItem>
               
-              <Divider sx={{ my: 1 }} />
+              <Divider sx={{ my: 0 }} />
               
               <MenuItem
                 onClick={() => {
@@ -546,9 +582,9 @@ const Layout = ({ onLogout }) => {
                   onLogout();
                 }}
                 sx={{
-                  borderRadius: 1.5,
-                  mx: 1,
-                  my: 0.75,
+                  borderRadius: 0, // ← FIXED: No rounded corners
+                  mx: 0,
+                  my: 0,
                   py: 1.25,
                   color: theme.palette.error.main,
                   '&:hover': {
@@ -565,56 +601,6 @@ const Layout = ({ onLogout }) => {
       </StyledAppBar>
 
       {/* ═══════════════════════════════════════════════════════════
-          🎨 SIDEBAR
-          ═══════════════════════════════════════════════════════════*/}
-      
-      <Box
-        component="nav"
-        sx={{
-          width: { sm: collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH_EXPANDED },
-          flexShrink: { sm: 0 },
-          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
-        {/* Mobile Drawer */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: 280,
-              border: 'none',
-            },
-          }}
-        >
-          {drawer}
-        </Drawer>
-
-        {/* Desktop Drawer */}
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH_EXPANDED,
-              border: 'none',
-              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-
-      {/* ═══════════════════════════════════════════════════════════
           🎨 MAIN CONTENT
           ═══════════════════════════════════════════════════════════*/}
       
@@ -629,6 +615,7 @@ const Layout = ({ onLogout }) => {
           minHeight: '100vh',
           background: CONTENT_BG,
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          ml: { sm: 0 }, // No extra margin needed
         }}
       >
         {/* Toolbar Spacer */}
