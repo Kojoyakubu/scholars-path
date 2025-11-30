@@ -75,24 +75,24 @@ const StyledNavItem = styled(ListItemButton)(({ theme, active }) => ({
   marginBottom: 6,
   marginLeft: 10,
   marginRight: 10,
-  borderRadius: 0, // ← FIXED: No rounded corners
+  borderRadius: 0,
   minHeight: 48,
   paddingLeft: 12,
   paddingRight: 12,
   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-  color: active ? '#FFFFFF' : alpha('#FFFFFF', 0.65),
+  color: active ? '#FFFFFF' : alpha('#FFFFFF', 0.85), // ← FIXED: Brighter (was 0.65)
   background: active 
-    ? `linear-gradient(90deg, ${alpha(ACCENT_COLOR, 0.18)} 0%, ${alpha(ACCENT_COLOR, 0.12)} 100%)`
+    ? `linear-gradient(90deg, ${alpha(ACCENT_COLOR, 0.25)} 0%, ${alpha(ACCENT_COLOR, 0.18)} 100%)` // ← FIXED: Stronger gradient
     : 'transparent',
   borderLeft: active ? `4px solid ${ACCENT_COLOR}` : '4px solid transparent',
   
   '&:hover': {
     background: active 
-      ? `linear-gradient(90deg, ${alpha(ACCENT_COLOR, 0.25)} 0%, ${alpha(ACCENT_COLOR, 0.18)} 100%)`
-      : alpha('#FFFFFF', 0.06),
+      ? `linear-gradient(90deg, ${alpha(ACCENT_COLOR, 0.35)} 0%, ${alpha(ACCENT_COLOR, 0.28)} 100%)` // ← FIXED: Stronger hover
+      : `linear-gradient(90deg, ${alpha(ACCENT_COLOR, 0.15)} 0%, ${alpha(ACCENT_COLOR, 0.08)} 100%)`, // ← FIXED: Visible hover gradient
     transform: 'translateX(3px)',
-    color: '#FFFFFF',
-    borderLeft: `4px solid ${alpha(ACCENT_COLOR, 0.5)}`,
+    color: '#FFFFFF', // ← Always white on hover
+    borderLeft: `4px solid ${alpha(ACCENT_COLOR, 0.7)}`, // ← FIXED: More visible (was 0.5)
   },
   
   '& .MuiListItemIcon-root': {
@@ -104,6 +104,7 @@ const StyledNavItem = styled(ListItemButton)(({ theme, active }) => ({
     fontWeight: active ? 700 : 500,
     fontSize: '0.9rem',
     letterSpacing: '0.01em',
+    color: 'inherit', // ← FIXED: Inherit brighter color
   },
 }));
 
