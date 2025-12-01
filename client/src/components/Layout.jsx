@@ -147,19 +147,19 @@ const Layout = ({ onLogout }) => {
       case 'teacher':
         return [
           { text: 'Home', icon: <DashboardIcon />, path: '/teacher/dashboard' },
-          { text: 'My Notes', icon: <ArticleIcon />, path: '/teacher/notes' },
-          { text: 'Drafts', icon: <BookIcon />, path: '/teacher/drafts' },
-          { text: 'Bundles', icon: <FolderIcon />, path: '/teacher/bundles' },
-          { text: 'Analytics', icon: <AssessmentIcon />, path: '/teacher/analytics' },
+          { text: 'Create New', icon: <ArticleIcon />, path: '/teacher/dashboard?tab=0' },
+          { text: 'My Notes', icon: <BookIcon />, path: '/teacher/dashboard?tab=1' },
+          { text: 'Drafts', icon: <FolderIcon />, path: '/teacher/dashboard?tab=2' },
+          { text: 'Bundles', icon: <AssessmentIcon />, path: '/teacher/dashboard?tab=3' },
         ];
 
       case 'student':
       default:
         return [
           { text: 'Home', icon: <DashboardIcon />, path: '/dashboard' },
-          { text: 'My Subjects', icon: <BookIcon />, path: '/student/subjects' },
-          { text: 'Quizzes', icon: <QuizIcon />, path: '/student/quizzes' },
-          { text: 'Progress', icon: <AssessmentIcon />, path: '/student/progress' },
+          { text: 'My Subjects', icon: <BookIcon />, path: '/dashboard' },
+          { text: 'Resources', icon: <QuizIcon />, path: '/dashboard' },
+          { text: 'Progress', icon: <AssessmentIcon />, path: '/dashboard' },
         ];
     }
   };
