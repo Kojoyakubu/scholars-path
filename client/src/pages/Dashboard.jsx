@@ -1,6 +1,6 @@
 // /client/src/pages/Dashboard.jsx
 // 🎨 Enhanced Student Dashboard - Modern Glassmorphism Design
-// Features: Modern banner with avatar, quick actions, progress tracking, enhanced stats
+// Features: Uniform Subject Cards, Polished Stat Cards, Modern banner
 // ALL REDUX LOGIC AND API CALLS PRESERVED
 
 import { useEffect, useState, useCallback } from 'react';
@@ -17,6 +17,8 @@ import {
   useTheme, alpha, Chip, Divider, LinearProgress, CardActions,
   Tooltip, IconButton, Badge
 } from '@mui/material';
+
+// Icons
 import QuizIcon from '@mui/icons-material/Quiz';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -84,14 +86,14 @@ const cardVariants = {
   }
 };
 
-// 🎨 Helper function for user display name (preserved)
+// 🎨 Helper function for user display name
 const getDisplayName = (user) => {
   if (!user) return 'Student';
   const name = user.name || user.fullName || 'Student';
   return name.split(' ')[0];
 };
 
-// 🎨 Helper to safely get array length (preserved)
+// 🎨 Helper to safely get array length
 const getArrayLength = (arr) => {
   if (!arr) return 0;
   if (Array.isArray(arr)) return arr.length;
@@ -323,7 +325,7 @@ const SectionCard = ({ children, gradient, ...props }) => {
   );
 };
 
-// 🎯 Quick Action Card Component - Enhanced Design
+// 🎯 Quick Action Card Component
 const QuickActionCard = ({ icon: Icon, title, description, color, onClick, to, badge }) => {
   const theme = useTheme();
   
@@ -781,7 +783,7 @@ function Dashboard() {
           refreshing={refreshing}
         />
 
-        {/* ✅ NEW: PROGRESS SECTION WITH POLISHED STAT CARDS */}
+        {/* ✅ YOUR PROGRESS - POLISHED STAT CARDS */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'text.primary' }}>
             📊 Your Progress
@@ -837,7 +839,7 @@ function Dashboard() {
           </Grid>
         </Box>
 
-        {/* Subjects Grid - Only show if no subject is selected */}
+        {/* ✅ SUBJECTS GRID - UNIFORM SIZE & ALIGNMENT FIX */}
         {!selections.subject && selections.class && (
           <motion.div variants={fadeInUp}>
             <Paper
@@ -915,11 +917,12 @@ function Dashboard() {
                 // ✅ UPDATED GRID LOGIC FOR EQUAL HEIGHT AND WIDTH CARDS
                 <Grid container spacing={{ xs: 2, md: 3 }}>
                   {safeSubjects.map((subject) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={subject._id}>
+                    // ✅ FIXED: Using lg={3} for 4 columns and display: flex to equal height
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={subject._id} sx={{ display: 'flex' }}>
                       <motion.div
                         whileHover={{ y: -5 }}
                         whileTap={{ scale: 0.98 }}
-                        style={{ height: '100%' }}
+                        style={{ height: '100%', width: '100%' }}
                       >
                         <Card
                           onClick={() => handleSubjectSelect(subject._id)}
@@ -928,7 +931,7 @@ function Dashboard() {
                             minHeight: 180, // Force a nice height
                             display: 'flex',
                             flexDirection: 'column',
-                            justifyContent: 'center',
+                            justifyContent: 'space-between',
                             alignItems: 'center',
                             textAlign: 'center',
                             p: 3,
@@ -947,31 +950,55 @@ function Dashboard() {
                         >
                             <Box
                               sx={{
-                                display: 'flex',
-                                width: 56,
-                                height: 56,
-                                borderRadius: '50%',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: alpha(theme.palette.primary.main, 0.12),
-                                mb: 2,
-                                color: theme.palette.primary.main,
-                              }}
-                            >
-                              <MenuBookIcon sx={{ fontSize: 32 }} />
-                            </Box>
-                            <Typography
-                              sx={{
-                                typography: 'subtitle1',
-                                fontWeight: 700,
-                                lineHeight: 1.3,
                                 width: '100%',
-                                // Remove nowrap to allow text wrapping for long names
-                                wordWrap: 'break-word', 
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                flexGrow: 1,
                               }}
                             >
-                              {subject.name}
-                            </Typography>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  width: 56,
+                                  height: 56,
+                                  borderRadius: '50%',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                  mb: 2,
+                                  color: theme.palette.primary.main,
+                                }}
+                              >
+                                <MenuBookIcon sx={{ fontSize: 32 }} />
+                              </Box>
+                              
+                              {/* ✅ FIXED: Min-height container for title alignment */}
+                              <Box 
+                                sx={{ 
+                                  minHeight: '3.6rem', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  width: '100%',
+                                  mb: 1
+                                }}
+                              >
+                                <Typography
+                                  sx={{
+                                    typography: 'subtitle1',
+                                    fontWeight: 700,
+                                    lineHeight: 1.3,
+                                    width: '100%',
+                                    // Ensure words wrap and don't overflow
+                                    wordWrap: 'break-word', 
+                                  }}
+                                >
+                                  {subject.name}
+                                </Typography>
+                              </Box>
+                            </Box>
+
                             <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
                               View Content
                             </Typography>
@@ -1247,8 +1274,81 @@ function Dashboard() {
                   </SectionCard>
                 </motion.div>
               </Grid>
+              
+              {/* ✅ ADDED QUIZZES AND RESOURCES SECTIONS BACK TO ENSURE COMPLETENESS */}
+              <Grid item xs={12} md={6}>
+                <motion.div variants={fadeInUp} initial="hidden" animate="visible">
+                  <SectionCard sx={{ p: { xs: 2, md: 3 }, height: '100%' }}>
+                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                       <Avatar sx={{ bgcolor: theme.palette.secondary.main, boxShadow: `0 4px 12px ${alpha(theme.palette.secondary.main, 0.3)}` }}>
+                         <QuizIcon />
+                       </Avatar>
+                       <Typography variant="h6" fontWeight={700}>Quizzes</Typography>
+                     </Box>
+                     <Divider sx={{ mb: 2 }} />
+                     {safeQuizzes.length > 0 ? (
+                       <Stack spacing={2}>
+                         {safeQuizzes.map(quiz => (
+                           <Card key={quiz._id} variant="outlined" sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', '&:hover': { borderColor: theme.palette.secondary.main } }}>
+                             <Box>
+                               <Typography variant="subtitle1" fontWeight={600}>{quiz.title || 'Untitled Quiz'}</Typography>
+                               <Typography variant="caption" color="text.secondary">{quiz.questions?.length || 0} questions</Typography>
+                             </Box>
+                             <Button size="small" variant="contained" color="secondary" onClick={() => navigate(`/student/quiz/${quiz._id}`)}>Start</Button>
+                           </Card>
+                         ))}
+                       </Stack>
+                     ) : (
+                       <Box textAlign="center" py={4}>
+                         <QuizIcon sx={{ fontSize: 48, color: 'text.disabled', opacity: 0.5, mb: 1 }} />
+                         <Typography variant="body2" color="text.secondary">No quizzes available yet.</Typography>
+                       </Box>
+                     )}
+                  </SectionCard>
+                </motion.div>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <motion.div variants={fadeInUp} initial="hidden" animate="visible">
+                  <SectionCard sx={{ p: { xs: 2, md: 3 }, height: '100%' }}>
+                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                       <Avatar sx={{ bgcolor: theme.palette.success.main, boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.3)}` }}>
+                         <AttachFileIcon />
+                       </Avatar>
+                       <Typography variant="h6" fontWeight={700}>Resources</Typography>
+                     </Box>
+                     <Divider sx={{ mb: 2 }} />
+                     {safeResources.length > 0 ? (
+                       <List>
+                         {safeResources.map(resource => (
+                           <ListItem key={resource._id} disablePadding sx={{ mb: 1 }}>
+                             <Paper elevation={0} variant="outlined" sx={{ width: '100%', p: 1.5, display: 'flex', alignItems: 'center', '&:hover': { borderColor: theme.palette.success.main } }}>
+                               <ListItemIcon sx={{ minWidth: 40 }}>
+                                 <DescriptionIcon color="success" />
+                               </ListItemIcon>
+                               <ListItemText 
+                                 primary={resource.title || resource.fileName} 
+                                 secondary={resource.fileType || 'File'}
+                                 primaryTypographyProps={{ fontWeight: 500 }}
+                               />
+                               <IconButton size="small" color="primary" href={resource.url} target="_blank">
+                                 <PlayArrowIcon />
+                               </IconButton>
+                             </Paper>
+                           </ListItem>
+                         ))}
+                       </List>
+                     ) : (
+                       <Box textAlign="center" py={4}>
+                         <AttachFileIcon sx={{ fontSize: 48, color: 'text.disabled', opacity: 0.5, mb: 1 }} />
+                         <Typography variant="body2" color="text.secondary">No resources available yet.</Typography>
+                       </Box>
+                     )}
+                  </SectionCard>
+                </motion.div>
+              </Grid>
+
             </Grid>
-            {/* Quizzes and Resources sections would go here - preserved but simplified for brevity in this response */}
           </AnimatePresence>
         ) : null}
 
@@ -1358,6 +1458,13 @@ function Dashboard() {
                         onClick={() => handleDownloadPdf(selectedNote)}
                       >
                         Download PDF
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<DescriptionIcon />}
+                        onClick={() => handleDownloadWord(selectedNote)}
+                      >
+                        Download Word
                       </Button>
                       <Button
                         variant="contained"
