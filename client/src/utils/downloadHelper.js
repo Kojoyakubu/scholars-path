@@ -4,11 +4,9 @@ import autoTable from 'jspdf-autotable';
 import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
- * ✅ SIMPLE PDF DOWNLOAD
- * Landscape layout, 11px text, left-aligned,
- * Learning Phases column widths fixed at 150 / 450 / 150 px.
- * Reduced page margins for better fit.
- * Phase 1–3 row is force-highlighted before export.
+ * ✅ UPDATED PDF DOWNLOAD
+ * Portrait layout, 12pt text (approx 16px), left-aligned.
+ * Standard A4 margins.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -23,81 +21,53 @@ export const downloadAsPdf = (elementId, topic) => {
 
   const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-  // ✅ Force highlight for first row in learning phases
-  const learningTable = element.querySelector('table.learning-phases');
-  if (learningTable) {
-    const firstRow = learningTable.querySelector('tr');
-    if (firstRow) {
-      firstRow.querySelectorAll('th, td').forEach((cell) => {
-        cell.style.backgroundColor = '#dbeafe';
-        cell.style.fontWeight = 'bold';
-      });
-    }
-  }
-
-  // Inject consistent styles
+  // Inject consistent styles for A4 Portrait 12pt
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
-      font-size: 11px !important;
-      line-height: 1.45 !important;
+      font-size: 12pt !important;
+      line-height: 1.6 !important;
       text-align: left !important;
-      margin: 0 !important;
-      padding: 0 !important;
+      background: white !important;
+      color: black !important;
     }
     #${elementId} * {
-      text-align: left !important;
-      font-size: 11px !important;
-      line-height: 1.45 !important;
+      font-size: 12pt !important;
     }
+    #${elementId} h1 { font-size: 24pt !important; margin-bottom: 12pt; }
+    #${elementId} h2 { font-size: 18pt !important; margin-bottom: 10pt; }
+    #${elementId} h3 { font-size: 14pt !important; margin-bottom: 8pt; }
+    
     #${elementId} table {
-      width: 100%;
+      width: 100% !important;
       border-collapse: collapse;
-      font-size: 11px !important;
+      margin-bottom: 1rem;
     }
     #${elementId} th, #${elementId} td {
       border: 1px solid #000;
-      padding: 3px;
-      text-align: left !important;
+      padding: 8px;
       vertical-align: top;
-      font-size: 11px !important;
     }
-    #${elementId} th {
-      background-color: #f2f2f2;
-      font-weight: bold;
-    }
-
-    #${elementId} p {
-      margin-bottom: 0.5em;
-    }
-
-    /* ✅ Learning Phases explicit pixel widths */
-    #${elementId} table.learning-phases {
-      width: 100% !important;
-      table-layout: fixed !important;
-    }
-    #${elementId} table.learning-phases th:nth-of-type(1),
-    #${elementId} table.learning-phases td:nth-of-type(1) {
-      width: 150px !important;
-    }
-    #${elementId} table.learning-phases th:nth-of-type(2),
-    #${elementId} table.learning-phases td:nth-of-type(2) {
-      width: 450px !important;
-    }
-    #${elementId} table.learning-phases th:nth-of-type(3),
-    #${elementId} table.learning-phases td:nth-of-type(3) {
-      width: 150px !important;
+    #${elementId} p, #${elementId} li {
+      margin-bottom: 0.8em;
     }
   `;
   document.head.appendChild(style);
 
-  // Reduced margins
   const options = {
-    margin: 5,
+    margin: [15, 15], // 15mm margins
     filename: safeFilename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true,
+      letterRendering: true 
+    },
+    jsPDF: { 
+      unit: 'mm', 
+      format: 'a4', 
+      orientation: 'portrait' // ✅ Changed to Portrait
+    },
   };
 
   window.html2pdf()
@@ -108,29 +78,11 @@ export const downloadAsPdf = (elementId, topic) => {
     .catch(() => document.head.removeChild(style));
 };
 
-/**
- * ✅ WORD DOWNLOAD
- * Matches PDF styling — 11px font, left-aligned,
- * Learning Phases column widths fixed at 150 / 450 / 150 px.
- * Phase 1–3 row highlighted (also forced inline).
- */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
     alert('An error occurred while generating the Word document.');
     return;
-  }
-
-  // ✅ Force highlight for first row in learning phases
-  const learningTable = element.querySelector('table.learning-phases');
-  if (learningTable) {
-    const firstRow = learningTable.querySelector('tr');
-    if (firstRow) {
-      firstRow.querySelectorAll('th, td').forEach((cell) => {
-        cell.style.backgroundColor = '#dbeafe';
-        cell.style.fontWeight = 'bold';
-      });
-    }
   }
 
   const html = `
@@ -139,41 +91,11 @@ export const downloadAsWord = async (elementId, topic) => {
     <head>
       <meta charset="UTF-8" />
       <style>
-        body { font-size: 11px; line-height: 1.45; text-align: left; margin: 0; padding: 0; }
-        * { text-align: left; font-size: 11px; line-height: 1.45; }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 8px 0;
-          font-size: 11px;
-        }
-        th, td {
-          border: 1px solid #000;
-          padding: 3px;
-          text-align: left;
-          vertical-align: top;
-          font-size: 11px;
-        }
-        th { background: #f0f0f0; font-weight: bold; }
-        p { margin-bottom: 0.5em; }
-
-        /* ✅ Learning Phases explicit pixel widths */
-        table.learning-phases {
-          width: 100%;
-          table-layout: fixed;
-        }
-        table.learning-phases th:nth-of-type(1),
-        table.learning-phases td:nth-of-type(1) {
-          width: 150px;
-        }
-        table.learning-phases th:nth-of-type(2),
-        table.learning-phases td:nth-of-type(2) {
-          width: 450px;
-        }
-        table.learning-phases th:nth-of-type(3),
-        table.learning-phases td:nth-of-type(3) {
-          width: 150px;
-        }
+        body { font-size: 12pt; line-height: 1.6; text-align: left; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #000; padding: 5pt; }
+        h1 { font-size: 20pt; }
+        h2 { font-size: 16pt; }
       </style>
     </head>
     <body>
@@ -186,16 +108,12 @@ export const downloadAsWord = async (elementId, topic) => {
     const blob = new Blob([fileBuffer], {
       type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     });
-
     const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = safeFilename;
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
   } catch (error) {
     console.error('Word generation failed:', error);
-    alert('An error occurred while generating the Word document.');
   }
 };
