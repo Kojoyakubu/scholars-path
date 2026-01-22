@@ -48,6 +48,19 @@ export const downloadAsPdf = (elementId, topic) => {
       margin-bottom: 8pt !important;
       table-layout: fixed; /* Prevents tables from pushing width */
     }
+
+    /* ✅ FIX: TEACHER INFORMATION TABLE COLUMN WIDTHS */
+    #${elementId} .teacher-info-table td:nth-child(1),
+    #${elementId} .teacher-info-table td:nth-child(3) {
+      width: 12% !important; 
+      font-weight: bold;
+      white-space: nowrap; 
+    }
+    #${elementId} .teacher-info-table td:nth-child(2),
+    #${elementId} .teacher-info-table td:nth-child(4) {
+      width: 38% !important; 
+    }
+
     #${elementId} th, #${elementId} td {
       border: 1px solid #000;
       padding: 4px !important; /* Compact cells */
@@ -74,7 +87,6 @@ export const downloadAsPdf = (elementId, topic) => {
       format: 'a4', 
       orientation: 'portrait' 
     },
-    // ✅ This logic helps keep the document to 2 pages by managing breaks
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
   };
 
@@ -85,7 +97,6 @@ export const downloadAsPdf = (elementId, topic) => {
     .get('pdf')
     .then((pdf) => {
       const totalPages = pdf.internal.getNumberOfPages();
-      // If content spills to 3 pages, we "squish" the last bit (optional logic)
       if (totalPages > 2) {
         console.warn("Content exceeded 2 pages. Consider reducing text.");
       }
