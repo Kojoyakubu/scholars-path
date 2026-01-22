@@ -40,19 +40,19 @@ export const downloadAsPdf = (elementId, topic) => {
     }
 
     /* ✅ TEACHER INFORMATION TABLE (4 Columns) */
-    /* Shrinks the "Labels" even further to 15% to remove excess space */
+    /* Target the specific columns to remove excess space from labels */
     #${elementId} .teacher-info-table td:nth-child(1),
     #${elementId} .teacher-info-table td:nth-child(3) {
-      width: 15% !important; 
+      width: 12% !important; /* Shrunk from 15% to further remove excess space */
       font-weight: bold;
       background-color: #f9fafb;
-      white-space: nowrap; /* Prevents labels from wrapping */
+      white-space: nowrap; 
     }
 
-    /* Expands the actual information/data columns */
+    /* Expands the actual information/data columns to fill the saved space */
     #${elementId} .teacher-info-table td:nth-child(2),
     #${elementId} .teacher-info-table td:nth-child(4) {
-      width: 35% !important; 
+      width: 38% !important; 
     }
 
     /* ✅ LEARNING PHASES TABLE (3 Columns) */
