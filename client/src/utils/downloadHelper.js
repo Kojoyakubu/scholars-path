@@ -43,7 +43,7 @@ export const downloadAsPdf = (elementId, topic) => {
     /* Target the specific columns to remove excess space from labels */
     #${elementId} .teacher-info-table td:nth-child(1),
     #${elementId} .teacher-info-table td:nth-child(3) {
-      width: 12% !important; /* Shrunk from 15% to further remove excess space */
+      width: 12% !important; 
       font-weight: bold;
       background-color: #f9fafb;
       white-space: nowrap; 
