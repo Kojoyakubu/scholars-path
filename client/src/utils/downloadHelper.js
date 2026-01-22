@@ -5,7 +5,7 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
  * ✅ OPTIMIZED PDF DOWNLOAD
- * Portrait A4, 11pt text.
+ * Portrait A4, 11pt text, forced 2-page fit.
  * Fixed column widths for Teacher Information Table and Learning Phases.
  */
 export const downloadAsPdf = (elementId, topic) => {
@@ -31,7 +31,7 @@ export const downloadAsPdf = (elementId, topic) => {
       color: black !important;
     }
 
-    /* Target ALL tables to be compact */
+    /* Target ALL tables to be compact and prevent horizontal stretching */
     #${elementId} table {
       width: 100% !important;
       border-collapse: collapse;
@@ -39,25 +39,26 @@ export const downloadAsPdf = (elementId, topic) => {
       margin-bottom: 8pt !important;
     }
 
-    /* ✅ FIX: TEACHER INFORMATION TABLE (4 Columns) */
-    /* Shrinks the "Labels" (Col 1 & 3) and expands "Data" (Col 2 & 4) */
-    #${elementId} .teacher-info-table th, 
+    /* ✅ TEACHER INFORMATION TABLE (4 Columns) */
+    /* Shrinks the "Labels" even further to 15% to remove excess space */
     #${elementId} .teacher-info-table td:nth-child(1),
     #${elementId} .teacher-info-table td:nth-child(3) {
-      width: 18% !important; /* Smaller label columns */
+      width: 15% !important; 
       font-weight: bold;
       background-color: #f9fafb;
+      white-space: nowrap; /* Prevents labels from wrapping */
     }
 
+    /* Expands the actual information/data columns */
     #${elementId} .teacher-info-table td:nth-child(2),
     #${elementId} .teacher-info-table td:nth-child(4) {
-      width: 32% !important; /* Larger data columns */
+      width: 35% !important; 
     }
 
     /* ✅ LEARNING PHASES TABLE (3 Columns) */
-    #${elementId} .learning-phases td:nth-child(1) { width: 12% !important; } /* Phase/Time */
-    #${elementId} .learning-phases td:nth-child(2) { width: 73% !important; } /* Main Activity */
-    #${elementId} .learning-phases td:nth-child(3) { width: 15% !important; } /* Assessment */
+    #${elementId} .learning-phases td:nth-child(1) { width: 12% !important; } 
+    #${elementId} .learning-phases td:nth-child(2) { width: 73% !important; } 
+    #${elementId} .learning-phases td:nth-child(3) { width: 15% !important; } 
 
     #${elementId} th, #${elementId} td {
       border: 1px solid #000;
@@ -76,7 +77,11 @@ export const downloadAsPdf = (elementId, topic) => {
     margin: [10, 10, 10, 10], 
     filename: safeFilename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true,
+      letterRendering: true
+    },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   };
