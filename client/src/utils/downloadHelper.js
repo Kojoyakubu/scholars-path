@@ -3,7 +3,7 @@ export const downloadAsPdf = (elementId, topic) => {
   if (!element || !window.html2pdf) return;
 
   window.html2pdf().set({
-    margin: [15, 15, 15, 15],
+    margin: [10, 10, 10, 10],
     filename: `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
