@@ -11,8 +11,8 @@ const LessonNotePdfView = ({ note, elementId }) => {
       id={elementId}
       style={{
         fontFamily: 'Arial, sans-serif',
-        fontSize: '10pt', // Reduced base font size
-        lineHeight: '1.3', // Tighter line height
+        fontSize: '11pt', // Set base font to 11
+        lineHeight: '1.3',
         color: '#000',
         background: '#fff',
         padding: '10mm',
@@ -20,10 +20,6 @@ const LessonNotePdfView = ({ note, elementId }) => {
         margin: '0 auto',
       }}
     >
-      {/* REMOVED: Title and Created Date headers 
-          The PDF will now start directly with the content.
-      */}
-
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
@@ -48,16 +44,34 @@ const LessonNotePdfView = ({ note, elementId }) => {
           ),
           table: ({ children }) => (
             <div style={{ overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', margin: '8pt 0', fontSize: '9pt' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', margin: '8pt 0', fontSize: '11pt' }}>
                 {children}
               </table>
             </div>
           ),
-          th: ({ children }) => (
-            <th style={{ border: '1px solid #000', padding: '4pt', background: '#f2f2f2', textAlign: 'left' }}>{children}</th>
+          tr: ({ children }) => {
+            // Check if this is the 3-column "Lesson Phases" table
+            const childrenArray = React.Children.toArray(children);
+            if (childrenArray.length === 3) {
+              return (
+                <tr>
+                  {childrenArray.map((child, index) => {
+                    // Give middle column 50% width, side columns 25% each
+                    const width = index === 1 ? '50%' : '25%';
+                    return React.cloneElement(child, {
+                      style: { ...child.props.style, width }
+                    });
+                  })}
+                </tr>
+              );
+            }
+            return <tr>{children}</tr>;
+          },
+          th: ({ children, style }) => (
+            <th style={{ ...style, border: '1px solid #000', padding: '4pt', background: '#f2f2f2', textAlign: 'left', fontWeight: 'bold' }}>{children}</th>
           ),
-          td: ({ children }) => (
-            <td style={{ border: '1px solid #000', padding: '4pt', verticalAlign: 'top' }}>{children}</td>
+          td: ({ children, style }) => (
+            <td style={{ ...style, border: '1px solid #000', padding: '4pt', verticalAlign: 'top' }}>{children}</td>
           ),
         }}
       >
