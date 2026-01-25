@@ -3,11 +3,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import HTMLtoDOCX from 'html-docx-js-typescript';
 
-/**
- * ✅ OPTIMIZED PDF DOWNLOAD
- * Portrait layout, 11pt text, forced to fit 2 pages.
- * Targets the Teacher Info table without needing a class name.
- */
+
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
@@ -21,72 +17,60 @@ export const downloadAsPdf = (elementId, topic) => {
 
   const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-  // Inject styles to optimize for a 2-page fit
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
-      font-size: 11pt !important;
-      line-height: 1.3 !important;
-      text-align: left !important;
+      line-height: 1.1 !important; /* Tightens space between lines */
       background: white !important;
       color: black !important;
-      padding: 0 !important;
-      width: 100% !important;
-    }
-    #${elementId} * {
-      font-size: 11pt !important;
     }
     
-    /* Target the very first table in the document (Teacher Info Table) */
-    #${elementId} table:first-of-type {
-      table-layout: fixed !important;
-      width: 100% !important;
+    /* Remove margins from all elements to save vertical space */
+    #${elementId} p, #${elementId} ul, #${elementId} ol, #${elementId} li {
+      margin-top: 1px !important;
+      margin-bottom: 1px !important;
     }
 
-    /* Shrink the labels (1st and 3rd columns) to be very tight */
-    #${elementId} table:first-of-type td:nth-child(1),
-    #${elementId} table:first-of-type td:nth-child(3) {
-      width: 18% !important; 
-      font-weight: bold !important;
-      white-space: nowrap !important;
-    }
-
-    /* Give the data (2nd and 4th columns) the remaining space */
-    #${elementId} table:first-of-type td:nth-child(2),
-    #${elementId} table:first-of-type td:nth-child(4) {
-      width: 32% !important;
+    #${elementId} h1, #${elementId} h2, #${elementId} h3 {
+      margin-top: 4px !important;
+      margin-bottom: 2px !important;
+      line-height: 1.0 !important;
     }
 
     #${elementId} table {
       width: 100% !important;
       border-collapse: collapse;
-      margin-bottom: 8pt !important;
+      table-layout: fixed !important;
+      margin-bottom: 4px !important;
     }
-    #${elementId} th, #${elementId} td {
-      border: 1px solid #000;
-      padding: 4px !important;
-      word-wrap: break-word;
+
+    /* Teacher Info Table Sizing */
+    #${elementId} table:first-of-type td:nth-child(1),
+    #${elementId} table:first-of-type td:nth-child(3) {
+      width: 15% !important;
+      font-weight: bold;
+    }
+
+    /* Learning Phases Table - Aggressive Spacing Reduction */
+    #${elementId} .learning-phases td {
+      padding: 1px 3px !important; /* Minimal padding */
+      line-height: 1.0 !important; /* Absolute tightest line height */
       vertical-align: top;
     }
-    #${elementId} h1 { font-size: 18pt !important; margin-bottom: 8pt !important; }
-    #${elementId} h2 { font-size: 14pt !important; margin-bottom: 6pt !important; }
+
+    #${elementId} th, #${elementId} td {
+      border: 1px solid #000;
+      word-wrap: break-word;
+    }
   `;
   document.head.appendChild(style);
 
   const options = {
-    margin: [10, 10, 10, 10], 
+    margin: [7, 10, 7, 10], // Reduced top/bottom margins to 7mm
     filename: safeFilename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { 
-      scale: 2, 
-      useCORS: true,
-      letterRendering: true 
-    },
-    jsPDF: { 
-      unit: 'mm', 
-      format: 'a4', 
-      orientation: 'portrait' 
-    },
+    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
   };
 
@@ -95,12 +79,6 @@ export const downloadAsPdf = (elementId, topic) => {
     .from(element)
     .toPdf()
     .get('pdf')
-    .then((pdf) => {
-      const totalPages = pdf.internal.getNumberOfPages();
-      if (totalPages > 2) {
-        console.warn("Content exceeded 2 pages.");
-      }
-    })
     .save()
     .then(() => document.head.removeChild(style))
     .catch(() => document.head.removeChild(style));
@@ -109,34 +87,13 @@ export const downloadAsPdf = (elementId, topic) => {
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) return;
-
-  const html = `
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <meta charset="UTF-8" />
-      <style>
-        body { font-size: 11pt; line-height: 1.4; text-align: left; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #000; padding: 4pt; }
-      </style>
-    </head>
-    <body>
-      ${element.innerHTML}
-    </body>
-  </html>`;
-
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8" /><style>body { font-size: 11pt; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #000; padding: 2pt; }</style></head><body>${element.innerHTML}</body></html>`;
   try {
     const fileBuffer = await HTMLtoDOCX(html);
-    const blob = new Blob([fileBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    });
-    const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+    const blob = new Blob([fileBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = safeFilename;
+    link.download = `${topic}.docx`;
     link.click();
-  } catch (error) {
-    console.error('Word generation failed:', error);
-  }
+  } catch (error) { console.error(error); }
 };
