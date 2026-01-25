@@ -50,15 +50,17 @@ export const downloadAsPdf = (elementId, topic) => {
     }
 
     /* ✅ FIX: TEACHER INFORMATION TABLE COLUMN WIDTHS */
+    /* Target the labels (1st and 3rd columns) to be very small */
     #${elementId} .teacher-info-table td:nth-child(1),
     #${elementId} .teacher-info-table td:nth-child(3) {
-      width: 12% !important; 
+      width: 15% !important; 
       font-weight: bold;
       white-space: nowrap; 
     }
+    /* Target the data (2nd and 4th columns) to be much larger */
     #${elementId} .teacher-info-table td:nth-child(2),
     #${elementId} .teacher-info-table td:nth-child(4) {
-      width: 38% !important; 
+      width: 35% !important; 
     }
 
     #${elementId} th, #${elementId} td {
