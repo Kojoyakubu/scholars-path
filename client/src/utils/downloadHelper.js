@@ -5,8 +5,8 @@ import HTMLtoDOCX from 'html-docx-js-typescript';
 
 /**
  * ✅ OPTIMIZED PDF DOWNLOAD
- * Portrait layout, 12pt text, forced to fit 2 pages.
- * Adjusts line-height and margins to ensure everything fits.
+ * Portrait layout, 11pt text, forced to fit 2 pages.
+ * Targets the Teacher Info table without needing a class name.
  */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
@@ -25,8 +25,8 @@ export const downloadAsPdf = (elementId, topic) => {
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
-      font-size: 11pt !important; /* Slightly smaller than 12pt to ensure fit */
-      line-height: 1.3 !important; /* Tighter line height to save space */
+      font-size: 11pt !important;
+      line-height: 1.3 !important;
       text-align: left !important;
       background: white !important;
       color: black !important;
@@ -35,48 +35,46 @@ export const downloadAsPdf = (elementId, topic) => {
     }
     #${elementId} * {
       font-size: 11pt !important;
-      margin-top: 2pt !important;
-      margin-bottom: 2pt !important;
     }
-    #${elementId} h1 { font-size: 18pt !important; margin-bottom: 8pt !important; }
-    #${elementId} h2 { font-size: 14pt !important; margin-bottom: 6pt !important; }
-    #${elementId} h3 { font-size: 12pt !important; margin-bottom: 4pt !important; }
     
+    /* Target the very first table in the document (Teacher Info Table) */
+    #${elementId} table:first-of-type {
+      table-layout: fixed !important;
+      width: 100% !important;
+    }
+
+    /* Shrink the labels (1st and 3rd columns) to be very tight */
+    #${elementId} table:first-of-type td:nth-child(1),
+    #${elementId} table:first-of-type td:nth-child(3) {
+      width: 18% !important; 
+      font-weight: bold !important;
+      white-space: nowrap !important;
+    }
+
+    /* Give the data (2nd and 4th columns) the remaining space */
+    #${elementId} table:first-of-type td:nth-child(2),
+    #${elementId} table:first-of-type td:nth-child(4) {
+      width: 32% !important;
+    }
+
     #${elementId} table {
       width: 100% !important;
       border-collapse: collapse;
       margin-bottom: 8pt !important;
-      table-layout: fixed; /* Prevents tables from pushing width */
     }
-
-    /* ✅ FIX: TEACHER INFORMATION TABLE COLUMN WIDTHS */
-    /* Target the labels (1st and 3rd columns) to be very small */
-    #${elementId} .teacher-info-table td:nth-child(1),
-    #${elementId} .teacher-info-table td:nth-child(3) {
-      width: 15% !important; 
-      font-weight: bold;
-      white-space: nowrap; 
-    }
-    /* Target the data (2nd and 4th columns) to be much larger */
-    #${elementId} .teacher-info-table td:nth-child(2),
-    #${elementId} .teacher-info-table td:nth-child(4) {
-      width: 35% !important; 
-    }
-
     #${elementId} th, #${elementId} td {
       border: 1px solid #000;
-      padding: 4px !important; /* Compact cells */
+      padding: 4px !important;
       word-wrap: break-word;
+      vertical-align: top;
     }
-    /* Forces page break only after major sections if needed */
-    .page-break {
-      page-break-before: always;
-    }
+    #${elementId} h1 { font-size: 18pt !important; margin-bottom: 8pt !important; }
+    #${elementId} h2 { font-size: 14pt !important; margin-bottom: 6pt !important; }
   `;
   document.head.appendChild(style);
 
   const options = {
-    margin: [10, 10, 10, 10], // Slimmer margins (10mm) to maximize space
+    margin: [10, 10, 10, 10], 
     filename: safeFilename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { 
@@ -100,7 +98,7 @@ export const downloadAsPdf = (elementId, topic) => {
     .then((pdf) => {
       const totalPages = pdf.internal.getNumberOfPages();
       if (totalPages > 2) {
-        console.warn("Content exceeded 2 pages. Consider reducing text.");
+        console.warn("Content exceeded 2 pages.");
       }
     })
     .save()
@@ -110,10 +108,7 @@ export const downloadAsPdf = (elementId, topic) => {
 
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
-  if (!element) {
-    alert('An error occurred while generating the Word document.');
-    return;
-  }
+  if (!element) return;
 
   const html = `
   <!DOCTYPE html>
@@ -124,8 +119,6 @@ export const downloadAsWord = async (elementId, topic) => {
         body { font-size: 11pt; line-height: 1.4; text-align: left; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #000; padding: 4pt; }
-        h1 { font-size: 18pt; }
-        h2 { font-size: 14pt; }
       </style>
     </head>
     <body>
