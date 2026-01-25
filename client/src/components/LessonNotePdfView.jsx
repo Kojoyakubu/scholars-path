@@ -15,7 +15,7 @@ const LessonNotePdfView = ({ note, elementId }) => {
         lineHeight: '1.3',
         color: '#000',
         background: '#fff',
-        padding: '5mm 5mm 5mm 5mm', 
+        padding: '5mm 10mm 10mm 10mm', 
         maxWidth: '210mm',
         margin: '0 auto',
       }}
@@ -25,7 +25,15 @@ const LessonNotePdfView = ({ note, elementId }) => {
         rehypePlugins={[rehypeRaw]}
         components={{
           h1: ({ children }) => (
-            <h1 style={{ fontSize: '16pt', textAlign: 'center', margin: '0 0 10pt 0', borderBottom: '1px solid #000' }}>{children}</h1>
+            <h1 style={{ 
+              fontSize: '16pt', 
+              textAlign: 'center', 
+              margin: '0 0 10pt 0', // Explicitly set top margin to 0
+              borderBottom: '1px solid #000',
+              paddingBottom: '2pt' 
+            }}>
+              {children}
+            </h1>
           ),
           h2: ({ children }) => (
             <h2 style={{ fontSize: '13pt', marginTop: '10pt', marginBottom: '4pt', color: '#333', borderLeft: '4px solid #ccc', paddingLeft: '5pt' }}>{children}</h2>
@@ -50,13 +58,11 @@ const LessonNotePdfView = ({ note, elementId }) => {
             </div>
           ),
           tr: ({ children }) => {
-            // Check if this is the 3-column "Lesson Phases" table
             const childrenArray = React.Children.toArray(children);
             if (childrenArray.length === 3) {
               return (
                 <tr>
                   {childrenArray.map((child, index) => {
-                    // Give middle column 50% width, side columns 25% each
                     const width = index === 1 ? '50%' : '25%';
                     return React.cloneElement(child, {
                       style: { ...child.props.style, width }
