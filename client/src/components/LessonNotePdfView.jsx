@@ -11,11 +11,11 @@ const LessonNotePdfView = ({ note, elementId }) => {
       id={elementId}
       style={{
         fontFamily: 'Arial, sans-serif',
-        fontSize: '11pt', // Set base font to 11
+        fontSize: '11pt',
         lineHeight: '1.3',
         color: '#000',
         background: '#fff',
-        padding: '10mm',
+        padding: '5mm 5mm 5mm 5mm', 
         maxWidth: '210mm',
         margin: '0 auto',
       }}
