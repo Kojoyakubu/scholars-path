@@ -33,36 +33,47 @@ import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
 // Optional: render generated diagram images
 import AiImage from '../components/AiImage';
 
+/* ✅ ADDED: PDF-only view */
+import LessonNotePdfView from '../components/LessonNotePdfView';
+
 const LessonNoteView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // ✅ FIX: Access currentNote instead of note
-  const { currentNote, isLoading, isError, message } = useSelector((s) => s.teacher);
+  const { currentNote, isLoading, isError, message } = useSelector(
+    (s) => s.teacher
+  );
 
   useEffect(() => {
-    console.log('📝 Loading lesson note with ID:', id);
-    if (id) {
-      dispatch(getLessonNoteById(id));
-    }
+    if (id) dispatch(getLessonNoteById(id));
   }, [dispatch, id]);
 
   const elementId = useMemo(() => `lesson-note-${id}`, [id]);
 
+  /* ✅ ADDED: PDF element ID */
+  const pdfElementId = useMemo(() => `pdf-lesson-note-${id}`, [id]);
+
   const handleDownload = useCallback(
     (type) => {
       if (!currentNote) return;
-      const topic = currentNote?.title || currentNote?.subStrand?.name || 'lesson_note';
-      if (type === 'pdf') downloadAsPdf(elementId, topic);
+      const topic =
+        currentNote?.title ||
+        currentNote?.subStrand?.name ||
+        'lesson_note';
+
+      /* ✅ MODIFIED: PDF now uses PDF-only view */
+      if (type === 'pdf') downloadAsPdf(pdfElementId, topic);
       if (type === 'word') downloadAsWord(elementId, topic);
     },
-    [currentNote, elementId]
+    [currentNote, elementId, pdfElementId]
   );
 
   const handleDelete = useCallback(async () => {
     if (!id) return;
-    const ok = window.confirm('Delete this lesson note? This action is irreversible.');
+    const ok = window.confirm(
+      'Delete this lesson note? This action is irreversible.'
+    );
     if (!ok) return;
     const res = await dispatch(deleteLessonNote(id));
     if (!res.error) navigate('/teacher/dashboard');
@@ -81,7 +92,9 @@ const LessonNoteView = () => {
       >
         <Box textAlign="center">
           <CircularProgress size={60} sx={{ color: 'white' }} />
-          <Typography mt={2} color="white">Loading lesson note…</Typography>
+          <Typography mt={2} color="white">
+            Loading lesson note…
+          </Typography>
         </Box>
       </Box>
     );
@@ -150,7 +163,12 @@ const LessonNoteView = () => {
       }}
     >
       <Container maxWidth="lg">
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+        >
           <Button
             variant="contained"
             startIcon={<ArrowBackIcon />}
@@ -158,52 +176,37 @@ const LessonNoteView = () => {
             sx={{
               background: 'rgba(255,255,255,0.2)',
               backdropFilter: 'blur(10px)',
-              '&:hover': {
-                background: 'rgba(255,255,255,0.3)',
-              },
             }}
           >
             Back to Dashboard
           </Button>
+
           <Stack direction="row" spacing={1}>
             <Button
               variant="outlined"
               startIcon={<PictureAsPdfIcon />}
               onClick={() => handleDownload('pdf')}
-              sx={{
-                background: 'rgba(255,255,255,0.9)',
-                '&:hover': {
-                  background: 'rgba(255,255,255,1)',
-                },
-              }}
+              sx={{ background: 'white' }}
             >
               Export PDF
             </Button>
+
             <Button
               variant="outlined"
               color="secondary"
               startIcon={<DescriptionIcon />}
               onClick={() => handleDownload('word')}
-              sx={{
-                background: 'rgba(255,255,255,0.9)',
-                '&:hover': {
-                  background: 'rgba(255,255,255,1)',
-                },
-              }}
+              sx={{ background: 'white' }}
             >
               Export Word
             </Button>
+
             <Button
               variant="outlined"
               color="error"
               startIcon={<DeleteOutlineIcon />}
               onClick={handleDelete}
-              sx={{
-                background: 'rgba(255,255,255,0.9)',
-                '&:hover': {
-                  background: 'rgba(255,255,255,1)',
-                },
-              }}
+              sx={{ background: 'white' }}
             >
               Delete
             </Button>
@@ -216,76 +219,37 @@ const LessonNoteView = () => {
             p: 4,
             borderRadius: 3,
             background: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
           }}
           component={motion.div}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
         >
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            {currentNote.title ||
+              `Lesson Note for ${currentNote.subStrand?.name || 'Topic'}`}
+          </Typography>
+
           <Typography
-            variant="h4"
-            fontWeight="bold"
-            gutterBottom
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            mb={3}
           >
-            {currentNote.title || `Lesson Note for ${currentNote.subStrand?.name || 'Topic'}`}
+            Created on{' '}
+            {new Date(currentNote.createdAt).toLocaleDateString()}
           </Typography>
 
-          <Typography variant="caption" color="text.secondary" display="block" mb={3}>
-            Created on {new Date(currentNote.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </Typography>
-
-          <Box
-            id={elementId}
-            sx={{
-              '& h1, & h2, & h3': { mt: 3, mb: 2, fontWeight: 700, color: '#333' },
-              '& h1': { fontSize: '2rem' },
-              '& h2': { fontSize: '1.5rem' },
-              '& h3': { fontSize: '1.25rem' },
-              '& p': { mb: 1.5, lineHeight: 1.8, color: '#555' },
-              '& a': { color: '#667eea' },
-              '& ul, & ol': { pl: 3, mb: 2 },
-              '& li': { mb: 1 },
-              '& table': { borderCollapse: 'collapse', width: '100%', mb: 2 },
-              '& th, & td': { border: '1px solid #e0e0e0', p: 1 },
-              '& blockquote': {
-                borderLeft: '4px solid #667eea',
-                pl: 2,
-                color: 'text.secondary',
-                fontStyle: 'italic',
-              },
-              '& code': {
-                background: '#f5f5f5',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '0.9em',
-              },
-              '& pre': {
-                background: '#f5f5f5',
-                p: 2,
-                borderRadius: 2,
-                overflow: 'auto',
-              },
-            }}
-          >
+          <Box id={elementId}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
               components={{
                 p: ({ node, ...props }) => {
                   const text = node?.children?.[0]?.value || '';
-                  if (typeof text === 'string' && text.startsWith('[DIAGRAM:')) {
+                  if (
+                    typeof text === 'string' &&
+                    text.startsWith('[DIAGRAM:')
+                  ) {
                     return <AiImage text={text} />;
                   }
                   return <p {...props} />;
@@ -296,6 +260,14 @@ const LessonNoteView = () => {
             </ReactMarkdown>
           </Box>
         </Paper>
+
+        {/* ✅ ADDED: Hidden PDF-only renderer */}
+        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+          <LessonNotePdfView
+            note={currentNote}
+            elementId={pdfElementId}
+          />
+        </div>
       </Container>
     </Box>
   );
