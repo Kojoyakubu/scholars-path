@@ -1,21 +1,16 @@
 // /client/src/utils/downloadHelper.js
+
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import HTMLtoDOCX from 'html-docx-js-typescript';
 
-/**
- * ✅ PROFESSIONAL PDF EXPORT
- * - Matches Browser 'LessonNoteView' organization.
- * - Fixes Teacher Info column alignment.
- * - Corrects Learning Phases column proportions (15% / 70% / 15%).
- * - Forces 2-page fit by removing vertical gaps.
- */
 export const downloadAsPdf = (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) {
     alert('PDF generation failed: content not found.');
     return;
   }
+
   if (!window.html2pdf) {
     alert('html2pdf.js is not loaded.');
     return;
@@ -23,84 +18,109 @@ export const downloadAsPdf = (elementId, topic) => {
 
   const safeFilename = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
+  /* ================= PDF STYLES ================= */
   const style = document.createElement('style');
   style.innerHTML = `
     #${elementId} {
-      line-height: 1.15 !important;
+      font-family: Arial, sans-serif !important;
+      font-size: 12pt !important;
+      line-height: 1.25 !important;
       background: white !important;
       color: black !important;
-      width: 100% !important;
-      font-family: Arial, sans-serif !important;
-    }
-    
-    /* Global Spacing Reduction */
-    #${elementId} p, #${elementId} li {
-      margin-top: 1px !important;
-      margin-bottom: 2px !important;
-    }
-    #${elementId} h1, #${elementId} h2, #${elementId} h3 {
-      margin-top: 4px !important;
-      margin-bottom: 2px !important;
+      max-width: 190mm !important;
+      margin: 0 auto !important;
     }
 
-    /* ALL TABLES: Force fixed layout so percentages are respected */
+    /* Paragraphs & Lists */
+    #${elementId} p {
+      margin: 4pt 0 !important;
+    }
+
+    #${elementId} li {
+      margin-bottom: 3pt !important;
+    }
+
+    /* Headings */
+    #${elementId} h1,
+    #${elementId} h2,
+    #${elementId} h3 {
+      margin-top: 6pt !important;
+      margin-bottom: 4pt !important;
+      font-weight: bold !important;
+      page-break-after: avoid !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* Tables */
     #${elementId} table {
       width: 100% !important;
-      border-collapse: collapse;
+      border-collapse: collapse !important;
       table-layout: fixed !important;
       margin-bottom: 6pt !important;
     }
 
-    /* 1. Teacher Information Table (4 columns) */
+    #${elementId} th,
+    #${elementId} td {
+      border: 1px solid #000 !important;
+      padding: 4pt !important;
+      vertical-align: top !important;
+      word-wrap: break-word !important;
+    }
+
+    #${elementId} th {
+      background: #f3f4f6 !important;
+      font-weight: bold !important;
+    }
+
+    /* Teacher Information Table (1st table) */
     #${elementId} table:first-of-type td:nth-child(1),
     #${elementId} table:first-of-type td:nth-child(3) {
-      width: 15% !important; 
+      width: 15% !important;
       font-weight: bold !important;
       white-space: nowrap !important;
     }
+
     #${elementId} table:first-of-type td:nth-child(2),
     #${elementId} table:first-of-type td:nth-child(4) {
       width: 35% !important;
     }
 
-    /* 2. Learning Phases Table (3 columns) - THE FIX */
-    /* We target the table that follows the 'Curriculum Standards' section */
+    /* Learning Phases Table (2nd table) */
     #${elementId} table:nth-of-type(2) th:nth-child(1),
-    #${elementId} table:nth-of-type(2) td:nth-child(1) { width: 15% !important; } /* Phase/Time */
-    
-    #${elementId} table:nth-of-type(2) th:nth-child(2),
-    #${elementId} table:nth-of-type(2) td:nth-child(2) { width: 70% !important; } /* Main Activity */
-    
-    #${elementId} table:nth-of-type(2) th:nth-child(3),
-    #${elementId} table:nth-of-type(2) td:nth-child(3) { width: 15% !important; } /* Assessment */
-
-    /* Cell Compression for 2-page fit */
-    #${elementId} th, #${elementId} td {
-      border: 1px solid #000;
-      padding: 3px 5px !important;
-      word-wrap: break-word;
-      vertical-align: top;
-      font-size: 11pt !important;
+    #${elementId} table:nth-of-type(2) td:nth-child(1) {
+      width: 15% !important;
     }
 
-    #${elementId} th {
-      background-color: #f3f4f6 !important;
-      font-weight: bold !important;
+    #${elementId} table:nth-of-type(2) th:nth-child(2),
+    #${elementId} table:nth-of-type(2) td:nth-child(2) {
+      width: 70% !important;
+    }
+
+    #${elementId} table:nth-of-type(2) th:nth-child(3),
+    #${elementId} table:nth-of-type(2) td:nth-child(3) {
+      width: 15% !important;
     }
   `;
   document.head.appendChild(style);
 
+  /* ================= PDF OPTIONS ================= */
   const options = {
-    margin: [10, 10, 10, 10], 
+    margin: [12, 10, 12, 10], // top, left, bottom, right (mm)
     filename: safeFilename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { 
-      scale: 2, 
+    html2canvas: {
+      scale: 2,
       useCORS: true,
-      letterRendering: true 
+      letterRendering: true,
     },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
+    jsPDF: {
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait',
+    },
+    pagebreak: {
+      mode: ['avoid-all', 'css'],
+    },
   };
 
   window.html2pdf()
@@ -113,16 +133,49 @@ export const downloadAsPdf = (elementId, topic) => {
     .catch(() => document.head.removeChild(style));
 };
 
+/* ================= WORD EXPORT ================= */
 export const downloadAsWord = async (elementId, topic) => {
   const element = document.getElementById(elementId);
   if (!element) return;
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8" /><style>body { font-family: Arial; font-size: 11pt; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #000; padding: 4pt; }</style></head><body>${element.innerHTML}</body></html>`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th, td {
+            border: 1px solid #000;
+            padding: 4pt;
+            vertical-align: top;
+          }
+        </style>
+      </head>
+      <body>
+        ${element.innerHTML}
+      </body>
+    </html>
+  `;
+
   try {
     const fileBuffer = await HTMLtoDOCX(html);
-    const blob = new Blob([fileBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const blob = new Blob([fileBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
     link.click();
-  } catch (error) { console.error(error); }
+  } catch (error) {
+    console.error(error);
+  }
 };
