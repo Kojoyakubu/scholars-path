@@ -11,53 +11,67 @@ const LessonNotePdfView = ({ note, elementId }) => {
       id={elementId}
       style={{
         fontFamily: 'Arial, sans-serif',
-        fontSize: '10pt', // Reduced base font size
-        lineHeight: '1.3', // Tighter line height
+        fontSize: '11pt', // Slightly larger for better readability
+        lineHeight: '1.4',
         color: '#000',
         background: '#fff',
-        padding: '10mm',
+        padding: '12mm',
         maxWidth: '210mm',
         margin: '0 auto',
       }}
     >
-      {/* REMOVED: Title and Created Date headers 
-          The PDF will now start directly with the content.
-      */}
-
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
+          // Main Title (e.g., "Socialisation")
           h1: ({ children }) => (
-            <h1 style={{ fontSize: '16pt', textAlign: 'center', margin: '0 0 10pt 0', borderBottom: '1px solid #000' }}>{children}</h1>
+            <h1 style={{ 
+              fontSize: '18pt', 
+              textAlign: 'center', 
+              margin: '0 0 12pt 0', 
+              textTransform: 'uppercase',
+              borderBottom: '2px solid #333',
+              paddingBottom: '4pt' 
+            }}>{children}</h1>
           ),
+          // Section Headers (e.g., "Curriculum Standards")
           h2: ({ children }) => (
-            <h2 style={{ fontSize: '13pt', marginTop: '10pt', marginBottom: '4pt', color: '#333', borderLeft: '4px solid #ccc', paddingLeft: '5pt' }}>{children}</h2>
+            <h2 style={{ 
+              fontSize: '14pt', 
+              marginTop: '12pt', 
+              marginBottom: '6pt', 
+              backgroundColor: '#f4f4f4',
+              padding: '2pt 6pt',
+              borderLeft: '5px solid #000'
+            }}>{children}</h2>
           ),
+          // Sub-headers (e.g., "Lesson Phases")
           h3: ({ children }) => (
-            <h3 style={{ fontSize: '11pt', marginTop: '8pt', marginBottom: '2pt' }}>{children}</h3>
+            <h3 style={{ fontSize: '12pt', marginTop: '10pt', marginBottom: '4pt', textDecoration: 'underline' }}>{children}</h3>
           ),
           p: ({ children }) => (
-            <p style={{ margin: '4pt 0' }}>{children}</p>
+            <p style={{ margin: '5pt 0' }}>{children}</p>
           ),
           ul: ({ children }) => (
-            <ul style={{ margin: '2pt 0', paddingLeft: '15pt' }}>{children}</ul>
-          ),
-          li: ({ children }) => (
-            <li style={{ marginBottom: '2pt' }}>{children}</li>
+            <ul style={{ margin: '3pt 0', paddingLeft: '18pt' }}>{children}</ul>
           ),
           table: ({ children }) => (
-            <div style={{ overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', margin: '8pt 0', fontSize: '9pt' }}>
+            <div style={{ width: '100%', margin: '10pt 0' }}>
+              <table style={{ 
+                width: '100%', 
+                borderCollapse: 'collapse', 
+                fontSize: '9.5pt' // Better balance for table data
+              }}>
                 {children}
               </table>
             </div>
           ),
           th: ({ children }) => (
-            <th style={{ border: '1px solid #000', padding: '4pt', background: '#f2f2f2', textAlign: 'left' }}>{children}</th>
+            <th style={{ border: '1px solid #000', padding: '5pt', background: '#e9e9e9', textAlign: 'left' }}>{children}</th>
           ),
           td: ({ children }) => (
-            <td style={{ border: '1px solid #000', padding: '4pt', verticalAlign: 'top' }}>{children}</td>
+            <td style={{ border: '1px solid #000', padding: '5pt', verticalAlign: 'top' }}>{children}</td>
           ),
         }}
       >
