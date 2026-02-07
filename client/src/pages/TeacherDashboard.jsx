@@ -33,8 +33,11 @@ import LessonBundleForm from '../components/LessonBundleForm';
 import BundleResultViewer from '../components/BundleResultViewer';
 import BundleManager from '../components/BundleManager';
 
-// ✅ IMPORT NEW STAT CARD
+// ✅ IMPORT NEW COMPONENTS
 import PolishedStatCard from '../components/Polishedstatcard';
+import DashboardBanner from '../components/DashboardBanner';
+import EmptyState from '../components/EmptyState';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 // MUI Imports
 import {
@@ -700,12 +703,14 @@ function TeacherDashboard() {
       <Box sx={{ width: '98%', mx: '1%', mt: 1, pb: 2 }}>
         
         {/* Banner */}
-        <TeacherDashboardBanner
+        <DashboardBanner
           user={user}
-          collapsed={bannerCollapsed}
-          setCollapsed={setBannerCollapsed}
+          role="teacher"
+          stats={[]} // Teacher stats go in cards below, not inline
           onRefresh={handleRefresh}
           refreshing={refreshing}
+          collapsed={bannerCollapsed}
+          onCollapse={setBannerCollapsed}
         />
 
         {/* 🚀 QUICK ACTIONS */}

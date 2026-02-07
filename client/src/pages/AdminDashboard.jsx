@@ -40,142 +40,9 @@ import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-// ═══════════════════════════════════════════════════════════
-// 🎨 ENHANCED STAT CARD - MORE VISUAL APPEAL
-// ═══════════════════════════════════════════════════════════
-
-const StatCard = ({ 
-  icon: Icon, 
-  label, 
-  value, 
-  color, 
-  trend, 
-  onClick,
-  subtitle,
-  delay = 0
-}) => {
-  const theme = useTheme();
-  
-  return (
-    <Grid item xs={12} sm={6} lg={3}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      >
-        <Card
-          onClick={onClick}
-          sx={{
-            height: 180,
-            position: 'relative',
-            cursor: onClick ? 'pointer' : 'default',
-            borderRadius: 3,
-            overflow: 'hidden',
-            background: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
-            border: `1px solid ${alpha(color, 0.15)}`,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': onClick ? {
-              transform: 'translateY(-8px)',
-              boxShadow: `0 12px 32px ${alpha(color, 0.25)}`,
-              border: `1px solid ${alpha(color, 0.3)}`,
-            } : {},
-            // Decorative corner element
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: 100,
-              height: 100,
-              background: `radial-gradient(circle at top right, ${alpha(color, 0.15)} 0%, transparent 70%)`,
-              pointerEvents: 'none',
-            }
-          }}
-        >
-          <CardContent sx={{ p: 2.5, position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Icon Row */}
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={2}>
-              <Box
-                sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 2.5,
-                  background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.8)} 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: `0 8px 24px ${alpha(color, 0.35)}`,
-                }}
-              >
-                <Icon sx={{ fontSize: 28, color: 'white' }} />
-              </Box>
-              {trend && (
-                <Chip
-                  size="small"
-                  label={trend}
-                  sx={{
-                    height: 24,
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    background: alpha(color, 0.12),
-                    color: color,
-                    border: `1px solid ${alpha(color, 0.2)}`,
-                  }}
-                />
-              )}
-            </Stack>
-
-            {/* Value & Label */}
-            <Box sx={{ flex: 1 }}>
-              <Typography 
-                variant="h3" 
-                sx={{ 
-                  fontWeight: 900,
-                  mb: 0.5,
-                  fontSize: '2.25rem',
-                  color: color,
-                  lineHeight: 1,
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                {value}
-              </Typography>
-              
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  color: 'text.secondary',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.8px',
-                  fontSize: '0.7rem',
-                  mb: 1,
-                }}
-              >
-                {label}
-              </Typography>
-
-              {subtitle && (
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: 'text.secondary',
-                    fontSize: '0.8rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                  }}
-                >
-                  {subtitle}
-                </Typography>
-              )}
-            </Box>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </Grid>
-  );
-};
+// ✅ IMPORT NEW COMPONENTS
+import DashboardBanner from '../components/DashboardBanner';
+import PolishedStatCard from '../components/Polishedstatcard';
 
 // ═══════════════════════════════════════════════════════════
 // 🎨 ENHANCED INSIGHT CARD
@@ -475,25 +342,28 @@ const AdminDashboard = () => {
         </Alert>
       )}
 
-      {/* Header */}
-      <Stack 
-        direction={{ xs: 'column', sm: 'row' }} 
-        justifyContent="space-between" 
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        spacing={2}
-        mb={3}
-      >
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5, fontSize: '1.75rem' }}>
-            Overview
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
-            Welcome back, <strong>{user?.name || 'Admin'}</strong> 👋
-          </Typography>
-        </Box>
-
-        <Stack direction="row" spacing={1.5}>
-          <ButtonGroup variant="outlined" size="small">
+      {/* Banner */}
+      <DashboardBanner
+        user={user}
+        role="admin"
+        stats={[]} // Admin uses stat cards
+        onRefresh={() => dispatch(getStats())}
+        refreshing={isLoading}
+        collapsed={false}
+        onCollapse={null} // No collapse for admin
+        actions={
+          // Time range selector
+          <ButtonGroup variant="outlined" size="small" sx={{ 
+            '& .MuiButton-outlined': { 
+              color: 'white', 
+              borderColor: alpha('#FFFFFF', 0.3),
+              '&:hover': { borderColor: 'white', bgcolor: alpha('#FFFFFF', 0.1) }
+            },
+            '& .MuiButton-contained': {
+              bgcolor: alpha('#FFFFFF', 0.2),
+              '&:hover': { bgcolor: alpha('#FFFFFF', 0.3) }
+            }
+          }}>
             {['Week', 'Month', 'Quarter', 'Year'].map((range) => (
               <Button
                 key={range}
@@ -509,32 +379,8 @@ const AdminDashboard = () => {
               </Button>
             ))}
           </ButtonGroup>
-
-          <Tooltip title="Refresh data">
-            <IconButton
-              onClick={handleRefresh}
-              disabled={refreshing}
-              sx={{
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                '&:hover': {
-                  bgcolor: alpha(theme.palette.primary.main, 0.2),
-                }
-              }}
-            >
-              <RefreshIcon 
-                sx={{ 
-                  animation: refreshing ? 'spin 1s linear infinite' : 'none',
-                  '@keyframes spin': {
-                    '0%': { transform: 'rotate(0deg)' },
-                    '100%': { transform: 'rotate(360deg)' }
-                  }
-                }} 
-              />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      </Stack>
+        }
+      />
 
       {/* Loading State */}
       {isLoading ? (
@@ -545,45 +391,53 @@ const AdminDashboard = () => {
         <>
           {/* Stats Grid */}
           <Grid container spacing={2.5} sx={{ mb: 3 }}>
-            <StatCard
-              icon={PeopleIcon}
-              label="Total Users"
-              value={stats?.totalUsers || 0}
-              color="#2196F3"
-              trend="↑ +12%"
-              onClick={() => handleCardClick('/admin/users')}
-              subtitle={`${stats?.totalTeachers || 0} teachers • ${stats?.totalStudents || 0} students`}
-              delay={0}
-            />
-            <StatCard
-              icon={SchoolIcon}
-              label="Schools"
-              value={stats?.totalSchools || 0}
-              color="#009688"
-              trend="↑ +5%"
-              onClick={() => handleCardClick('/admin/schools')}
-              subtitle="Active institutions"
-              delay={0.1}
-            />
-            <StatCard
-              icon={QuizIcon}
-              label="Quiz Attempts"
-              value={stats?.totalQuizAttempts || 0}
-              color="#FF9800"
-              trend="↑ +18%"
-              onClick={() => handleCardClick('/admin/analytics')}
-              subtitle={`${stats?.avgQuizPerformance?.toFixed(1) || 0}% average score`}
-              delay={0.2}
-            />
-            <StatCard
-              icon={PendingActionsIcon}
-              label="Pending Users"
-              value={stats?.pendingUsers || 0}
-              color="#F44336"
-              onClick={() => handleCardClick('/admin/users')}
-              subtitle="Awaiting approval"
-              delay={0.3}
-            />
+            <Grid item xs={12} sm={6} lg={3}>
+              <PolishedStatCard
+                icon={PeopleIcon}
+                label="Total Users"
+                value={stats?.totalUsers || 0}
+                color="#2196F3"
+                trend={{ value: "↑ +12%", color: "#4CAF50" }}
+                onClick={() => handleCardClick('/admin/users')}
+                subtitle={`${stats?.totalTeachers || 0} teachers • ${stats?.totalStudents || 0} students`}
+                delay={0}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} lg={3}>
+              <PolishedStatCard
+                icon={SchoolIcon}
+                label="Schools"
+                value={stats?.totalSchools || 0}
+                color="#009688"
+                trend={{ value: "↑ +5%", color: "#4CAF50" }}
+                onClick={() => handleCardClick('/admin/schools')}
+                subtitle="Active institutions"
+                delay={0.1}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} lg={3}>
+              <PolishedStatCard
+                icon={QuizIcon}
+                label="Quiz Attempts"
+                value={stats?.totalQuizAttempts || 0}
+                color="#FF9800"
+                trend={{ value: "↑ +18%", color: "#4CAF50" }}
+                onClick={() => handleCardClick('/admin/analytics')}
+                subtitle={`${stats?.avgQuizPerformance?.toFixed(1) || 0}% average score`}
+                delay={0.2}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} lg={3}>
+              <PolishedStatCard
+                icon={PendingActionsIcon}
+                label="Pending Users"
+                value={stats?.pendingUsers || 0}
+                color="#F44336"
+                onClick={() => handleCardClick('/admin/users')}
+                subtitle="Awaiting approval"
+                delay={0.3}
+              />
+            </Grid>
           </Grid>
 
           {/* Bottom Section */}

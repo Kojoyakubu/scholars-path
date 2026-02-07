@@ -55,8 +55,10 @@ import {
 } from '../features/student/studentSlice';
 import { downloadAsPdf, downloadAsWord } from '../utils/downloadHelper';
 import AiImage from '../components/AiImage';
-// ✅ IMPORT NEW COMPONENT
+// ✅ IMPORT NEW COMPONENTS
 import PolishedStatCard from '../components/Polishedstatcard';
+import DashboardBanner from '../components/DashboardBanner';
+import EmptyState from '../components/EmptyState';
 
 // 🎯 Animation Variants
 const fadeInUp = {
@@ -774,13 +776,18 @@ function Dashboard() {
         sx={{ maxWidth: "98%", mx: "auto", px: { xs: 1, sm: 1.5, md: 2 }, py: { xs: 2, md: 3 } }}
       >
         {/* Modern Banner */}
-        <StudentDashboardBanner
+        <DashboardBanner
           user={user}
-          collapsed={bannerCollapsed}
-          setCollapsed={setBannerCollapsed}
-          stats={stats}
+          role="student"
+          stats={[
+            { label: 'Notes', value: stats.notes, icon: MenuBookIcon },
+            { label: 'Quizzes', value: stats.quizzes, icon: QuizIcon },
+            { label: 'Resources', value: stats.resources, icon: AttachFileIcon },
+          ]}
           onRefresh={handleRefresh}
           refreshing={refreshing}
+          collapsed={bannerCollapsed}
+          onCollapse={setBannerCollapsed}
         />
 
         {/* ✅ YOUR PROGRESS - POLISHED STAT CARDS */}
@@ -1253,23 +1260,15 @@ function Dashboard() {
                         ))}
                       </Stack>
                     ) : (
-                      <Paper
-                        sx={{
-                          p: 6,
-                          textAlign: 'center',
-                          bgcolor: alpha(theme.palette.primary.main, 0.05),
-                          border: `2px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
-                          borderRadius: 3,
+                      <EmptyState
+                        icon={MenuBookIcon}
+                        title="No Study Notes Available"
+                        description="Notes will appear here once your teacher publishes them. Check back soon!"
+                        actionLabel="Choose Different Topic"
+                        onAction={() => {
+                          setSelections(prev => ({ ...prev, subStrand: '' }));
                         }}
-                      >
-                        <MenuBookIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 2, opacity: 0.5 }} />
-                        <Typography variant="h6" gutterBottom color="text.secondary" fontWeight={600}>
-                          No study notes available
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Notes will appear here once your teacher publishes them
-                        </Typography>
-                      </Paper>
+                      />
                     )}
                   </SectionCard>
                 </motion.div>
