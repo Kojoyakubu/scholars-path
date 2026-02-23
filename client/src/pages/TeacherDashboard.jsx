@@ -579,19 +579,211 @@ function TeacherDashboard() {
     bundleResult
   } = useSelector((state) => state.teacher);
 
-  // Local state
+
+  // Progressive workflow state
+  const [workflowStep, setWorkflowStep] = useState(1);
+  const [selectionProgress, setSelectionProgress] = useState({
+    level: null,
+    class: null,
+    subject: null,
+    strand: null,
+    subStrand: null,
+  });
+
+  // Snackbar for notifications
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
+  // Backward compatibility
   const [selections, setSelections] = useState({ level: '', class: '', subject: '', strand: '', subStrand: '' });
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isAiQuizModalOpen, setIsAiQuizModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
   const [generatingNoteId, setGeneratingNoteId] = useState(null);
-  
+
   // Bundle generation state
   const [isBundleModalOpen, setIsBundleModalOpen] = useState(false);
   const [viewBundleResult, setViewBundleResult] = useState(false);
-  
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
+  // Handle progressive selection with automatic step advancement
+  const handleProgressiveSelection = (field, value) => {
+    setSelectionProgress(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'level') {
+        updated.class = null;
+        updated.subject = null;
+        updated.strand = null;
+        updated.subStrand = null;
+        setWorkflowStep(2);
+      } else if (field === 'class') {
+        updated.subject = null;
+        updated.strand = null;
+        updated.subStrand = null;
+        setWorkflowStep(3);
+      } else if (field === 'subject') {
+        updated.strand = null;
+        updated.subStrand = null;
+        setWorkflowStep(4);
+      } else if (field === 'strand') {
+        updated.subStrand = null;
+        setWorkflowStep(5);
+      } else if (field === 'subStrand') {
+        setWorkflowStep(6); // Show action buttons
+      }
+      return updated;
+    });
+    setSelections(prev => ({ ...prev, [field]: value }));
+  };
+  // ==================== PROGRESSIVE STEP COMPONENT ====================
+  const ProgressiveStep = ({ 
+    stepNumber, 
+    title, 
+    description, 
+    isActive, 
+    isCompleted, 
+    children 
+  }) => {
+    const theme = useTheme();
+    return (
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+        sx={{
+          mb: 3,
+          opacity: isActive || isCompleted ? 1 : 0.4,
+          pointerEvents: isActive || isCompleted ? 'auto' : 'none',
+        }}
+      >
+        <Stack direction="row" spacing={2} alignItems="flex-start">
+          {/* Step Number Badge */}
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: isCompleted 
+                ? theme.palette.success.main 
+                : isActive 
+                  ? theme.palette.primary.main 
+                  : alpha(theme.palette.primary.main, 0.2),
+              color: isCompleted || isActive ? 'white' : theme.palette.text.secondary,
+              fontWeight: 'bold',
+              fontSize: '1.125rem',
+              flexShrink: 0,
+              transition: 'all 0.3s',
+            }}
+          >
+            {isCompleted ? '✓' : stepNumber}
+          </Box>
+          {/* Step Content */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography 
+              variant="h6" 
+              fontWeight="bold" 
+              gutterBottom
+              sx={{ 
+                color: isActive ? 'primary.main' : isCompleted ? 'success.main' : 'text.secondary' 
+              }}
+            >
+              {title}
+            </Typography>
+            {description && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {description}
+              </Typography>
+            )}
+            {(isActive || isCompleted) && (
+              <Box
+                component={motion.div}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {children}
+              </Box>
+            )}
+          </Box>
+        </Stack>
+      </Box>
+    );
+  };
+
+  // ==================== SELECTION CARD COMPONENT ====================
+  const SelectionCard = ({ 
+    item, 
+    isSelected, 
+    onClick, 
+    icon: Icon,
+    disabled = false 
+  }) => {
+    const theme = useTheme();
+    return (
+      <Card
+        component={motion.div}
+        whileHover={!disabled ? { scale: 1.02, y: -4 } : {}}
+        whileTap={!disabled ? { scale: 0.98 } : {}}
+        onClick={disabled ? undefined : onClick}
+        sx={{
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          border: `2px solid ${
+            isSelected 
+              ? theme.palette.primary.main 
+              : alpha(theme.palette.primary.main, 0.1)
+          }`,
+          background: isSelected 
+            ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`
+            : 'white',
+          transition: 'all 0.2s',
+          opacity: disabled ? 0.5 : 1,
+          '&:hover': !disabled ? {
+            boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
+          } : {},
+        }}
+      >
+        <CardContent sx={{ p: 2.5 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            {Icon && (
+              <Avatar
+                sx={{
+                  bgcolor: isSelected 
+                    ? theme.palette.primary.main 
+                    : alpha(theme.palette.primary.main, 0.1),
+                  color: isSelected ? 'white' : theme.palette.primary.main,
+                  width: 48,
+                  height: 48,
+                }}
+              >
+                <Icon />
+              </Avatar>
+            )}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography 
+                variant="subtitle1" 
+                fontWeight={isSelected ? 700 : 600}
+                noWrap
+              >
+                {item.name}
+              </Typography>
+              {item.description && (
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {item.description}
+                </Typography>
+              )}
+            </Box>
+            {isSelected && (
+              <CheckCircle color="primary" />
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  };
 
   // Tab and view state
   const tabFromUrl = parseInt(searchParams.get('tab')) || 0;
@@ -827,78 +1019,499 @@ function TeacherDashboard() {
             </Tabs>
           </Box>
 
-          {/* Tab Panel 0: Create New */}
-          <TabPanel value={activeTab} index={0}>
-            <Box sx={{ width: '100%' }}>
-              <Grid container spacing={2}>
-                {/* Curriculum Selection */}
-                <Grid item xs={12}>
-                  <SectionCard title="Select Curriculum" icon={<School />} color={theme.palette.info.main}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Level</InputLabel>
-                          <Select name="level" value={selections.level} label="Level" onChange={handleSelectionChange}>
-                            {(levels || []).map((item) => <MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small" disabled={!selections.level}>
-                          <InputLabel>Class</InputLabel>
-                          <Select name="class" value={selections.class} label="Class" onChange={handleSelectionChange}>
-                            {(classes || []).map((item) => <MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small" disabled={!selections.class}>
-                          <InputLabel>Subject</InputLabel>
-                          <Select name="subject" value={selections.subject} label="Subject" onChange={handleSelectionChange}>
-                            {(subjects || []).map((item) => <MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small" disabled={!selections.subject}>
-                          <InputLabel>Learning Area / Strand</InputLabel>
-                          <Select name="strand" value={selections.strand} label="Learning Area / Strand" onChange={handleSelectionChange}>
-                            {(strands || []).map((item) => <MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <FormControl fullWidth size="small" disabled={!selections.strand}>
-                          <InputLabel>Sub-Strand</InputLabel>
-                          <Select name="subStrand" value={selections.subStrand} label="Sub-Strand" onChange={handleSelectionChange}>
-                            {(subStrands || []).map((item) => <MenuItem key={item._id} value={item._id}>{item.name}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    </Grid>
-                  </SectionCard>
-                </Grid>
 
-                {/* Action Cards */}
-                <Grid item xs={12} md={6}>
-                  <SectionCard title="Generate Lesson Note" icon={<Article />} color={theme.palette.primary.main}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Create engaging lessons with AI on any topic of your choice.</Typography>
-                    <Button variant="contained" fullWidth startIcon={<AutoAwesome />} onClick={() => setIsNoteModalOpen(true)} disabled={!selections.subStrand || isLoading} sx={{ py: 1.5, fontWeight: 700, textTransform: 'none', borderRadius: 2 }}>Generate with AI</Button>
-                  </SectionCard>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <SectionCard title="Generate AI Quiz" icon={<Quiz />} color={theme.palette.warning.main}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Create interactive quizzes to your specifications.</Typography>
-                    <Button variant="contained" fullWidth startIcon={<AutoAwesome />} onClick={() => setIsAiQuizModalOpen(true)} disabled={isLoading} sx={{ py: 1.5, fontWeight: 700, textTransform: 'none', borderRadius: 2, bgcolor: theme.palette.warning.main, '&:hover': { bgcolor: theme.palette.warning.dark } }}>Generate Quiz</Button>
-                  </SectionCard>
-                </Grid>
-                <Grid item xs={12}>
-                  <SectionCard title="🚀 Generate Complete Lesson Bundle" icon={<AutoAwesome />} color={theme.palette.secondary.main}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Generate Teacher Note + Learner Note + Quiz in one click!</Typography>
-                    <Button variant="contained" fullWidth startIcon={<AutoAwesome />} onClick={() => setIsBundleModalOpen(true)} disabled={!selections.subStrand || isLoading} sx={{ py: 1.8, fontWeight: 700, textTransform: 'none', borderRadius: 2, background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)' }}>Generate Complete Bundle</Button>
-                  </SectionCard>
-                </Grid>
-              </Grid>
+          {/* Tab Panel 0: Create New (Progressive Workflow) */}
+          <TabPanel value={activeTab} index={0}>
+            <Box sx={{ p: 3, maxWidth: 1000, mx: 'auto' }}>
+              {/* Progress Indicator */}
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 2, 
+                  mb: 4, 
+                  bgcolor: alpha(theme.palette.primary.main, 0.05),
+                  borderRadius: 2,
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                  <Typography variant="body2" fontWeight="600">
+                    Progress:
+                  </Typography>
+                  <Chip 
+                    label="Level" 
+                    size="small" 
+                    color={workflowStep > 1 ? "success" : "default"}
+                    icon={workflowStep > 1 ? <CheckCircle /> : undefined}
+                  />
+                  <Chip 
+                    label="Class" 
+                    size="small" 
+                    color={workflowStep > 2 ? "success" : "default"}
+                    icon={workflowStep > 2 ? <CheckCircle /> : undefined}
+                  />
+                  <Chip 
+                    label="Subject" 
+                    size="small" 
+                    color={workflowStep > 3 ? "success" : "default"}
+                    icon={workflowStep > 3 ? <CheckCircle /> : undefined}
+                  />
+                  <Chip 
+                    label="Strand" 
+                    size="small" 
+                    color={workflowStep > 4 ? "success" : "default"}
+                    icon={workflowStep > 4 ? <CheckCircle /> : undefined}
+                  />
+                  <Chip 
+                    label="Substrand" 
+                    size="small" 
+                    color={workflowStep > 5 ? "success" : "default"}
+                    icon={workflowStep > 5 ? <CheckCircle /> : undefined}
+                  />
+                </Stack>
+              </Paper>
+
+              {/* Step 1: Select Level */}
+              <ProgressiveStep
+                stepNumber={1}
+                title="Select Level"
+                description="Choose the educational level (e.g., JHS 1, JHS 2, SHS 1)"
+                isActive={workflowStep === 1}
+                isCompleted={workflowStep > 1}
+              >
+                {levels && levels.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {levels.map((level) => (
+                      <Grid item xs={12} sm={6} md={4} key={level._id}>
+                        <SelectionCard
+                          item={level}
+                          isSelected={selectionProgress.level === level._id}
+                          onClick={() => {
+                            handleProgressiveSelection('level', level._id);
+                            dispatch(fetchChildren({ 
+                              entity: 'classes', 
+                              parentEntity: 'levels', 
+                              parentId: level._id 
+                            }));
+                          }}
+                          icon={School}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Alert severity="info">Loading levels...</Alert>
+                )}
+              </ProgressiveStep>
+
+              {/* Step 2: Select Class */}
+              <ProgressiveStep
+                stepNumber={2}
+                title="Select Class Block"
+                description="Choose the specific class (e.g., Class 1A, 1B, 2A)"
+                isActive={workflowStep === 2}
+                isCompleted={workflowStep > 2}
+              >
+                {classes && classes.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {classes.map((classItem) => (
+                      <Grid item xs={12} sm={6} md={4} key={classItem._id}>
+                        <SelectionCard
+                          item={classItem}
+                          isSelected={selectionProgress.class === classItem._id}
+                          onClick={() => {
+                            handleProgressiveSelection('class', classItem._id);
+                            dispatch(fetchChildren({ 
+                              entity: 'subjects', 
+                              parentEntity: 'classes', 
+                              parentId: classItem._id 
+                            }));
+                          }}
+                          icon={School}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">
+                      Loading classes...
+                    </Typography>
+                  </Box>
+                )}
+              </ProgressiveStep>
+
+              {/* Step 3: Select Subject */}
+              <ProgressiveStep
+                stepNumber={3}
+                title="Select Subject"
+                description="Choose the subject for your lesson content"
+                isActive={workflowStep === 3}
+                isCompleted={workflowStep > 3}
+              >
+                {subjects && subjects.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {subjects.map((subject) => (
+                      <Grid item xs={12} sm={6} md={4} key={subject._id}>
+                        <SelectionCard
+                          item={subject}
+                          isSelected={selectionProgress.subject === subject._id}
+                          onClick={() => {
+                            handleProgressiveSelection('subject', subject._id);
+                            dispatch(fetchChildren({ 
+                              entity: 'strands', 
+                              parentEntity: 'subjects', 
+                              parentId: subject._id 
+                            }));
+                          }}
+                          icon={Article}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">
+                      Loading subjects...
+                    </Typography>
+                  </Box>
+                )}
+              </ProgressiveStep>
+
+              {/* Step 4: Select Learning Area / Strand */}
+              <ProgressiveStep
+                stepNumber={4}
+                title="Select Learning Area / Strand"
+                description="Choose the broad topic area"
+                isActive={workflowStep === 4}
+                isCompleted={workflowStep > 4}
+              >
+                {strands && strands.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {strands.map((strand) => (
+                      <Grid item xs={12} sm={6} key={strand._id}>
+                        <SelectionCard
+                          item={strand}
+                          isSelected={selectionProgress.strand === strand._id}
+                          onClick={() => {
+                            handleProgressiveSelection('strand', strand._id);
+                            dispatch(fetchChildren({ 
+                              entity: 'subStrands', 
+                              parentEntity: 'strands', 
+                              parentId: strand._id 
+                            }));
+                          }}
+                          icon={Folder}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">
+                      Loading strands...
+                    </Typography>
+                  </Box>
+                )}
+              </ProgressiveStep>
+
+              {/* Step 5: Select Substrand */}
+              <ProgressiveStep
+                stepNumber={5}
+                title="Select Substrand"
+                description="Choose the specific topic for your lesson"
+                isActive={workflowStep === 5}
+                isCompleted={workflowStep > 5}
+              >
+                {subStrands && subStrands.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {subStrands.map((subStrand) => (
+                      <Grid item xs={12} sm={6} key={subStrand._id}>
+                        <SelectionCard
+                          item={subStrand}
+                          isSelected={selectionProgress.subStrand === subStrand._id}
+                          onClick={() => {
+                            handleProgressiveSelection('subStrand', subStrand._id);
+                          }}
+                          icon={Folder}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">
+                      Loading substrands...
+                    </Typography>
+                  </Box>
+                )}
+              </ProgressiveStep>
+
+              {/* Step 6: Action Buttons */}
+              {workflowStep === 6 && selectionProgress.subStrand && (
+                <Box
+                  component={motion.div}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <Paper
+                    elevation={3}
+                    sx={{
+                      p: 4,
+                      mt: 4,
+                      borderRadius: 3,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.08)} 0%, ${alpha(theme.palette.success.main, 0.02)} 100%)`,
+                      border: `2px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                    }}
+                  >
+                    <Stack spacing={3}>
+                      {/* Success Header */}
+                      <Box sx={{ textAlign: 'center', mb: 2 }}>
+                        <Avatar
+                          sx={{
+                            width: 64,
+                            height: 64,
+                            bgcolor: theme.palette.success.main,
+                            mx: 'auto',
+                            mb: 2,
+                          }}
+                        >
+                          <CheckCircle sx={{ fontSize: 40 }} />
+                        </Avatar>
+                        <Typography variant="h5" fontWeight="bold" gutterBottom>
+                          🎉 Ready to Generate Content!
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          All selections complete. Choose what you'd like to create:
+                        </Typography>
+                      </Box>
+
+                      <Divider />
+
+                      {/* Selection Summary */}
+                      <Paper 
+                        variant="outlined"
+                        sx={{ p: 2, bgcolor: 'background.default' }}
+                      >
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          📋 Selected Context:
+                        </Typography>
+                        <Stack spacing={0.5}>
+                          <Typography variant="body2">
+                            <strong>Level:</strong> {levels.find(l => l._id === selectionProgress.level)?.name}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Class:</strong> {classes.find(c => c._id === selectionProgress.class)?.name}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Subject:</strong> {subjects.find(s => s._id === selectionProgress.subject)?.name}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Strand:</strong> {strands.find(st => st._id === selectionProgress.strand)?.name}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Substrand:</strong> {subStrands.find(ss => ss._id === selectionProgress.subStrand)?.name}
+                          </Typography>
+                        </Stack>
+                      </Paper>
+
+                      <Divider />
+
+                      {/* Action Buttons */}
+                      <Typography variant="h6" fontWeight="bold">
+                        Choose What to Generate:
+                      </Typography>
+
+                      <Grid container spacing={3}>
+                        {/* Action 1: Generate Lesson Note */}
+                        <Grid item xs={12} md={4}>
+                          <Card
+                            sx={{
+                              height: '100%',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s',
+                              border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                              '&:hover': {
+                                transform: 'translateY(-8px)',
+                                boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                border: `2px solid ${theme.palette.primary.main}`,
+                              }
+                            }}
+                            onClick={() => setIsNoteModalOpen(true)}
+                          >
+                            <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                              <Avatar
+                                sx={{
+                                  width: 60,
+                                  height: 60,
+                                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                  color: theme.palette.primary.main,
+                                  mx: 'auto',
+                                  mb: 2,
+                                }}
+                              >
+                                <Article sx={{ fontSize: 32 }} />
+                              </Avatar>
+                              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                Lesson Note
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Detailed teacher's guide with objectives, activities, and teaching strategies
+                              </Typography>
+                              <Chip 
+                                label="For Teachers" 
+                                size="small" 
+                                color="primary"
+                                sx={{ fontWeight: 600 }}
+                              />
+                            </CardContent>
+                          </Card>
+                        </Grid>
+
+                        {/* Action 2: Generate Learner Note */}
+                        <Grid item xs={12} md={4}>
+                          <Card
+                            sx={{
+                              height: '100%',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s',
+                              border: `2px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                              '&:hover': {
+                                transform: 'translateY(-8px)',
+                                boxShadow: `0 12px 32px ${alpha(theme.palette.info.main, 0.3)}`,
+                                border: `2px solid ${theme.palette.info.main}`,
+                              }
+                            }}
+                            onClick={() => {
+                              // Generate directly from substrand
+                              const lessonNote = lessonNotes.find(note => 
+                                note.subStrand?._id === selectionProgress.subStrand
+                              );
+                              if (lessonNote) {
+                                dispatch(generateLearnerNote(lessonNote._id));
+                              } else {
+                                setSnackbar({
+                                  open: true,
+                                  message: 'Please generate a Lesson Note first',
+                                  severity: 'warning'
+                                });
+                              }
+                            }}
+                          >
+                            <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                              <Avatar
+                                sx={{
+                                  width: 60,
+                                  height: 60,
+                                  bgcolor: alpha(theme.palette.info.main, 0.1),
+                                  color: theme.palette.info.main,
+                                  mx: 'auto',
+                                  mb: 2,
+                                }}
+                              >
+                                <Preview sx={{ fontSize: 32 }} />
+                              </Avatar>
+                              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                Learner Note
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Student-friendly notes derived from lesson plan for distribution
+                              </Typography>
+                              <Chip 
+                                label="For Students" 
+                                size="small" 
+                                color="info"
+                                sx={{ fontWeight: 600 }}
+                              />
+                            </CardContent>
+                          </Card>
+                        </Grid>
+
+                        {/* Action 3: Generate AI Quiz */}
+                        <Grid item xs={12} md={4}>
+                          <Card
+                            sx={{
+                              height: '100%',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s',
+                              border: `2px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                              '&:hover': {
+                                transform: 'translateY(-8px)',
+                                boxShadow: `0 12px 32px ${alpha(theme.palette.warning.main, 0.3)}`,
+                                border: `2px solid ${theme.palette.warning.main}`,
+                              }
+                            }}
+                            onClick={() => setIsAiQuizModalOpen(true)}
+                          >
+                            <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                              <Avatar
+                                sx={{
+                                  width: 60,
+                                  height: 60,
+                                  bgcolor: alpha(theme.palette.warning.main, 0.1),
+                                  color: theme.palette.warning.main,
+                                  mx: 'auto',
+                                  mb: 2,
+                                }}
+                              >
+                                <Quiz sx={{ fontSize: 32 }} />
+                              </Avatar>
+                              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                AI Quiz
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Assessment with MCQ, True/False, Short Answer, and Essay questions
+                              </Typography>
+                              <Chip 
+                                label="Assessment" 
+                                size="small"
+                                sx={{ 
+                                  bgcolor: alpha(theme.palette.warning.main, 0.2),
+                                  color: theme.palette.warning.main,
+                                  fontWeight: 600
+                                }}
+                              />
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      </Grid>
+
+                      <Divider />
+
+                      {/* Start Over Button */}
+                      <Stack direction="row" spacing={2} justifyContent="center">
+                        <Button
+                          variant="outlined"
+                          startIcon={<Refresh />}
+                          onClick={() => {
+                            setWorkflowStep(1);
+                            setSelectionProgress({
+                              level: null,
+                              class: null,
+                              subject: null,
+                              strand: null,
+                              subStrand: null,
+                            });
+                            setSelections({
+                              level: '',
+                              class: '',
+                              subject: '',
+                              strand: '',
+                              subStrand: '',
+                            });
+                          }}
+                        >
+                          Start Over
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                </Box>
+              )}
             </Box>
           </TabPanel>
 
@@ -1005,8 +1618,20 @@ function TeacherDashboard() {
           <DialogActions><Button onClick={() => setViewingNote(null)}>Close</Button></DialogActions>
         </Dialog>
 
-        <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar(p => ({ ...p, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-          <Alert onClose={() => setSnackbar(p => ({ ...p, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
         </Snackbar>
       </Box>
     </Box>
