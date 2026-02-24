@@ -34,8 +34,8 @@ const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : 
 const claude = hasClaude ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
 
 // ---- Default Model Choices (override via env if you like) ----
-const GEMINI_MAIN = process.env.GEMINI_MODEL_MAIN || 'gemini-3-pro';
-const GEMINI_FAST = process.env.GEMINI_MODEL_FAST || 'gemini-3-flash';
+const GEMINI_MAIN = process.env.GEMINI_MODEL_MAIN || 'gemini-2.5-pro';
+const GEMINI_FAST = process.env.GEMINI_MODEL_FAST || 'gemini-2.5-flash';
 const OPENAI_MAIN = process.env.OPENAI_MODEL_MAIN || 'gpt-4o';
 const OPENAI_JSON = process.env.OPENAI_MODEL_JSON || 'gpt-4o-mini';
 const CLAUDE_MAIN = process.env.CLAUDE_MODEL_MAIN || 'claude-3-5-sonnet-20240620';
