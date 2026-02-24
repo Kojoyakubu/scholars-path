@@ -22,7 +22,8 @@ import {
   resetTeacherState,
   getMyBundles,
   getTeacherAnalytics,
-  generateLessonBundle, 
+  generateLessonBundle,
+  generateAiQuiz,
 } from '../features/teacher/teacherSlice';
 import LessonBundleForm from '../components/LessonBundleForm'; 
 import BundleResultViewer from '../components/BundleResultViewer';
@@ -582,6 +583,7 @@ function TeacherDashboard() {
   const [isBundleModalOpen, setIsBundleModalOpen] = useState(false);
   const [viewBundleResult, setViewBundleResult] = useState(false);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [isBundleSelectorOpen, setIsBundleSelectorOpen] = useState(false);
   
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
@@ -647,6 +649,7 @@ function TeacherDashboard() {
       setIsBundleModalOpen(false);
       setViewBundleResult(true);
       setSnackbar({ open: true, message: 'Lesson bundle generated! 🎉', severity: 'success' });
+      setShowCreateTools(false);
     }).catch((error) => setSnackbar({ open: true, message: error || 'Failed', severity: 'error' }));
   }, [dispatch]);
 
@@ -817,7 +820,10 @@ function TeacherDashboard() {
               <Grid item xs={6} sm={3}>
                 <Box
                   sx={{ textAlign: 'center', cursor: 'pointer' }}
-                  onClick={() => setIsBundleModalOpen(true)}
+                  onClick={() => {
+                    setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
+                    setIsBundleSelectorOpen(true);
+                  }}
                 >
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://img.freepik.com/premium-vector/color-school-tools-icon_24640-20330.jpg?w=2000')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Complete Lesson Bundle</Typography>
@@ -896,6 +902,36 @@ function TeacherDashboard() {
               startIcon={planLoading ? <CircularProgress size={20} /> : null}
             >
               {planLoading ? 'Generating...' : 'Generate Lesson Plan'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Bundle topic selector dialog */}
+        <Dialog open={isBundleSelectorOpen} onClose={() => setIsBundleSelectorOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Select Topic for Lesson Bundle</DialogTitle>
+          <DialogContent>
+            <CurriculumSelection
+              levels={levels}
+              classes={classes}
+              subjects={subjects}
+              strands={strands}
+              subStrands={subStrands}
+              selections={selections}
+              handleSelectionChange={handleSelectionChange}
+              isLoading={isLoading}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsBundleSelectorOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setIsBundleSelectorOpen(false);
+                setIsBundleModalOpen(true);
+              }}
+              disabled={!selections.subStrand}
+            >
+              Continue
             </Button>
           </DialogActions>
         </Dialog>
