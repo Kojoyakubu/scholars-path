@@ -28,6 +28,12 @@ const generateLearnerNote = async (lessonNoteId) => {
   return response.data;
 };
 
+// generate learner note based on a curriculum strand/sub-strand
+const generateLearnerNoteFromStrand = async (payload) => {
+  const response = await api.post('/api/teacher/ai/generate-learner-note-from-strand', payload);
+  return response.data;
+};
+
 const getTeacherAnalytics = async () => {
   const response = await api.get('/api/teacher/analytics');
   return response.data;
@@ -106,6 +112,7 @@ const teacherService = {
   getLessonNoteById,
   deleteLessonNote,
   generateLearnerNote,
+  generateLearnerNoteFromStrand,
   getTeacherAnalytics,
   getDraftLearnerNotes,
   publishLearnerNote,

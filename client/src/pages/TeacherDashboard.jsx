@@ -16,6 +16,7 @@ import {
   getMyLessonNotes,
   deleteLessonNote,
   generateLearnerNote,
+  generateLearnerNoteFromStrand,
   getDraftLearnerNotes,
   publishLearnerNote,
   deleteLearnerNote as deleteDraftLearnerNote,
@@ -588,7 +589,21 @@ function TeacherDashboard() {
   const [isLearnerFromLessonOpen, setIsLearnerFromLessonOpen] = useState(false);
   const [isLearnerFromStrandOpen, setIsLearnerFromStrandOpen] = useState(false);
   const [selectedLessonForLearner, setSelectedLessonForLearner] = useState('');
-  
+
+  // form state for gathering extra details when generating from strand
+  const [strandForm, setStrandForm] = useState({
+    term: '',
+    week: '',
+    dayDate: '',
+    duration: '',
+    classSize: '',
+    contentStandardCode: '',
+    indicatorCodes: '',
+    reference: '',
+    preferredProvider: '',
+    preferredModel: '',
+  });
+
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
 
@@ -656,6 +671,73 @@ function TeacherDashboard() {
       setShowCreateTools(false);
     }).catch((error) => setSnackbar({ open: true, message: error || 'Failed', severity: 'error' }));
   }, [dispatch]);
+
+  // form input change for strand dialog
+  const handleStrandFormChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setStrandForm((prev) => ({ ...prev, [name]: value }));
+  }, []);
+
+  const closeLearnerFromStrand = useCallback(() => {
+    setIsLearnerFromStrandOpen(false);
+    setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
+    setStrandForm({
+      term: '',
+      week: '',
+      dayDate: '',
+      duration: '',
+      classSize: '',
+      contentStandardCode: '',
+      indicatorCodes: '',
+      reference: '',
+      preferredProvider: '',
+      preferredModel: '',
+    });
+  }, []);
+
+  // dispatch generator for learner note from strand
+  const handleGenerateLearnerFromStrand = useCallback(() => {
+    if (!selections.subStrand) return;
+    const payload = {
+      subStrandId: selections.subStrand,
+      school: user?.school || '',
+      term: strandForm.term,
+      week: strandForm.week,
+      dayDate: strandForm.dayDate,
+      duration: strandForm.duration,
+      classSize: strandForm.classSize,
+      contentStandardCode: strandForm.contentStandardCode,
+      indicatorCodes: strandForm.indicatorCodes,
+      reference: strandForm.reference,
+      preferredProvider: strandForm.preferredProvider,
+      preferredModel: strandForm.preferredModel,
+    };
+    dispatch(generateLearnerNoteFromStrand(payload))
+      .unwrap()
+      .then((created) => {
+        setSnackbar({ open: true, message: 'Learner note generated (draft)!', severity: 'success' });
+        setViewingNote(created);
+        setIsLearnerFromStrandOpen(false);
+        // reset selections and form
+        setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
+        setStrandForm({
+          term: '',
+          week: '',
+          dayDate: '',
+          duration: '',
+          classSize: '',
+          contentStandardCode: '',
+          indicatorCodes: '',
+          reference: '',
+          preferredProvider: '',
+          preferredModel: '',
+        });
+        dispatch(getDraftLearnerNotes());
+      })
+      .catch((err) => {
+        setSnackbar({ open: true, message: err || 'Failed to generate learner note', severity: 'error' });
+      });
+  }, [dispatch, selections.subStrand, strandForm, user]);
 
   // Generate only lesson plan (first part of bundle)
   const handleGeneratePlan = useCallback(() => {
@@ -963,7 +1045,11 @@ function TeacherDashboard() {
               <Button variant="outlined" onClick={() => { setIsLearnerOptionsOpen(false); setIsLearnerFromLessonOpen(true); }}>
                 From Lesson Note
               </Button>
-              <Button variant="contained" onClick={() => { setIsLearnerOptionsOpen(false); setIsLearnerFromStrandOpen(true); }}>
+              <Button variant="contained" onClick={() => { setIsLearnerOptionsOpen(false); setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' }); setStrandForm({
+                    term: '', week: '', dayDate: '', duration: '', classSize: '',
+                    contentStandardCode: '', indicatorCodes: '', reference: '',
+                    preferredProvider: '', preferredModel: '',
+                  }); setIsLearnerFromStrandOpen(true); }}>
                 From Strands
               </Button>
             </Stack>
@@ -1051,14 +1137,137 @@ function TeacherDashboard() {
           </DialogActions>
         </Dialog>
 
-        {/* Placeholder: From Strands flow (will implement next) */}
-        <Dialog open={isLearnerFromStrandOpen} onClose={() => setIsLearnerFromStrandOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Generate Learner Notes from Strand</DialogTitle>
+        {/* From Strands flow */}
+        <Dialog open={isLearnerFromStrandOpen} onClose={closeLearnerFromStrand} fullWidth maxWidth="sm">
+          <DialogTitle>Generate Learner Note from Strand</DialogTitle>
           <DialogContent>
-            <Typography>This flow will let you pick strands/sub-strands and generate learner notes in batch. Implementation coming next.</Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Choose a strand/sub-strand and provide optional context details to guide the AI.
+            </Typography>
+            <CurriculumSelection
+              levels={levels}
+              classes={classes}
+              subjects={subjects}
+              strands={strands}
+              subStrands={subStrands}
+              selections={selections}
+              handleSelectionChange={handleSelectionChange}
+              isLoading={isLoading}
+            />
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Term"
+                  name="term"
+                  value={strandForm.term}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Week"
+                  name="week"
+                  value={strandForm.week}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Date"
+                  name="dayDate"
+                  type="date"
+                  value={strandForm.dayDate}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Duration"
+                  name="duration"
+                  value={strandForm.duration}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Class Size"
+                  name="classSize"
+                  value={strandForm.classSize}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Content Std. Code"
+                  name="contentStandardCode"
+                  value={strandForm.contentStandardCode}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Indicator Codes (comma separated)"
+                  name="indicatorCodes"
+                  value={strandForm.indicatorCodes}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Reference"
+                  name="reference"
+                  value={strandForm.reference}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Preferred AI Provider"
+                  name="preferredProvider"
+                  value={strandForm.preferredProvider}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Preferred AI Model"
+                  name="preferredModel"
+                  value={strandForm.preferredModel}
+                  onChange={handleStrandFormChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+            </Grid>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsLearnerFromStrandOpen(false)}>Close</Button>
+            <Button onClick={closeLearnerFromStrand} disabled={isLoading}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={!selections.subStrand || isLoading}
+              onClick={handleGenerateLearnerFromStrand}
+            >
+              {isLoading ? <CircularProgress size={18} /> : 'Generate Learner Note'}
+            </Button>
           </DialogActions>
         </Dialog>
         {/* Note creation form modal */}

@@ -8,6 +8,7 @@ const {
   getLessonNoteById,
   deleteLessonNote,
   generateLearnerNote,
+  generateLearnerNoteFromStrand,
   getDraftLearnerNotes,
   publishLearnerNote,
   deleteLearnerNote,
@@ -33,6 +34,7 @@ router.delete('/lesson-notes/:id', protect, authorize('teacher'), deleteLessonNo
 
 // --- Learner Notes ---
 router.post('/ai/generate-learner-note', protect, authorize('teacher'), generateLearnerNote);
+router.post('/ai/generate-learner-note-from-strand', protect, authorize('teacher'), generateLearnerNoteFromStrand);
 router.get('/learner-notes/drafts', protect, authorize('teacher'), getDraftLearnerNotes);
 router.put('/learner-notes/:id/publish', protect, authorize('teacher'), publishLearnerNote);
 router.delete('/learner-notes/:id', protect, authorize('teacher'), deleteLearnerNote);

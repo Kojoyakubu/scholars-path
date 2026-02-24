@@ -177,6 +177,88 @@ const generateLearnerNote = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Generate learner note from curriculum strand selection
+ * @route   POST /api/teacher/ai/generate-learner-note-from-strand
+ * @access  Private (Teacher)
+ */
+const generateLearnerNoteFromStrand = asyncHandler(async (req, res) => {
+  const {
+    subStrandId,
+    school,
+    term,
+    week,
+    dayDate,
+    duration,
+    classSize,
+    contentStandardCode,
+    indicatorCodes,
+    reference,
+    preferredProvider,
+    preferredModel,
+  } = req.body;
+
+  if (!subStrandId || !mongoose.Types.ObjectId.isValid(subStrandId)) {
+    res.status(400);
+    throw new Error('Valid subStrandId is required');
+  }
+
+  const subStrand = await SubStrand.findById(subStrandId).populate({
+    path: 'strand',
+    populate: {
+      path: 'subject',
+      populate: { path: 'class' },
+    },
+  });
+
+  if (!subStrand) {
+    res.status(404);
+    throw new Error('Sub-strand not found');
+  }
+
+  const curriculumDetails = {
+    school: school || req.user.school || '',
+    term: term || '',
+    week: week || '',
+    dayDate: dayDate || '',
+    duration: duration || '',
+    classSize: classSize || '',
+    contentStandardCode: contentStandardCode || '',
+    indicatorCodes: indicatorCodes || '',
+    reference: reference || '',
+    subStrandName: subStrand.name,
+    strandName: subStrand.strand?.name || 'N/A',
+    subjectName: subStrand.strand?.subject?.name || 'N/A',
+    className: subStrand.strand?.subject?.class?.name || 'N/A',
+  };
+
+  // first generate teacher note HTML so learner generator has structured input
+  const {
+    text: teacherNoteHTML,
+  } = await aiService.generateTeacherLessonNoteHTML(curriculumDetails);
+
+  const {
+    text: learnerNoteHTML,
+    provider,
+    model,
+    timestamp,
+  } = await aiService.generateLearnerNoteHTML(teacherNoteHTML, curriculumDetails);
+
+  const learnerNote = await LearnerNote.create({
+    author: req.user.id,
+    school: req.user.school,
+    subStrand: subStrandId,
+    content: learnerNoteHTML,
+    aiProvider: provider,
+    aiModel: model,
+    aiGeneratedAt: new Date(timestamp),
+    status: 'draft',
+  });
+  await learnerNote.populate({ path: 'subStrand', select: 'name' });
+
+  res.status(201).json(learnerNote);
+});
+
+/**
  * @desc    Create a new quiz (manual create)
  * @route   POST /api/teacher/create-quiz
  * @access  Private (Teacher)

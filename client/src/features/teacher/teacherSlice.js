@@ -35,6 +35,7 @@ export const generateLessonNote = createTeacherThunk('generateLessonNote', teach
 export const getLessonNoteById = createTeacherThunk('getLessonNoteById', teacherService.getLessonNoteById);
 export const deleteLessonNote = createTeacherThunk('deleteLessonNote', teacherService.deleteLessonNote);
 export const generateLearnerNote = createTeacherThunk('generateLearnerNote', teacherService.generateLearnerNote);
+export const generateLearnerNoteFromStrand = createTeacherThunk('generateLearnerNoteFromStrand', teacherService.generateLearnerNoteFromStrand);
 export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
 export const getDraftLearnerNotes = createTeacherThunk('getDraftLearnerNotes', teacherService.getDraftLearnerNotes);
 export const publishLearnerNote = createTeacherThunk('publishLearnerNote', teacherService.publishLearnerNote);
@@ -87,6 +88,11 @@ export const teacherSlice = createSlice({
         state.message = action.payload.message;
       })
       .addCase(generateLearnerNote.fulfilled, (state, action) => {
+        state.draftLearnerNotes.unshift(action.payload);
+        state.isSuccess = true;
+        state.message = 'Learner note generated successfully!';
+      })
+      .addCase(generateLearnerNoteFromStrand.fulfilled, (state, action) => {
         state.draftLearnerNotes.unshift(action.payload);
         state.isSuccess = true;
         state.message = 'Learner note generated successfully!';
