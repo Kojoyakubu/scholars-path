@@ -625,9 +625,12 @@ function TeacherDashboard() {
   }, [dispatch]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
-    dispatch(generateLessonNote(formData)).unwrap().then(() => {
+    dispatch(generateLessonNote(formData)).unwrap().then((createdNote) => {
       setSnackbar({ open: true, message: 'Lesson note generated!', severity: 'success' });
       setIsNoteModalOpen(false);
+      setViewingNote(createdNote);
+      // also close create tools if open
+      setShowCreateTools(false);
     }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
   }, [dispatch]);
 
@@ -649,20 +652,11 @@ function TeacherDashboard() {
   // Generate only lesson plan (first part of bundle)
   const handleGeneratePlan = useCallback(() => {
     if (!selections.subStrand) return;
-    setPlanLoading(true);
-    dispatch(generateLessonNote({ subStrandId: selections.subStrand }))
-      .unwrap()
-      .then(() => {
-        setSnackbar({ open: true, message: 'Lesson plan generated!', severity: 'success' });
-        setIsPlanModalOpen(false);
-        setShowCreateTools(false);
-        dispatch(getMyLessonNotes());
-      })
-      .catch((err) =>
-        setSnackbar({ open: true, message: err || 'Failed to generate', severity: 'error' })
-      )
-      .finally(() => setPlanLoading(false));
-  }, [dispatch, selections.subStrand]);
+    // close selection and open the lesson note form for user to fill details
+    setIsPlanModalOpen(false);
+    setIsNoteModalOpen(true);
+    // note modal will use existing selections to populate topic info
+  }, [selections.subStrand]);
 
   const handlePublishBundle = useCallback((bundle) => {
     if (bundle.learnerNote?.id) {
