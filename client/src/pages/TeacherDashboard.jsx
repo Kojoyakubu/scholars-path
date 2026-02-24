@@ -771,7 +771,7 @@ function TeacherDashboard() {
               {/** Generate Lesson Plan */}
               <Grid item xs={6} sm={3}>
                 <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('/images/generate-lesson-plan.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/027/685/568/original/teacher-lesson-icon-flat-vector.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Lesson Plan</Typography>
                 </Box>
               </Grid>
@@ -779,7 +779,7 @@ function TeacherDashboard() {
               {/** Generate Learner Notes */}
               <Grid item xs={6} sm={3}>
                 <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('/images/generate-learner-notes.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://cdn-icons-png.flaticon.com/512/8980/8980099.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Learner Notes</Typography>
                 </Box>
               </Grid>
@@ -787,7 +787,7 @@ function TeacherDashboard() {
               {/** Generate Quiz */}
               <Grid item xs={6} sm={3}>
                 <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('/images/generate-quiz.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/009/742/591/large_2x/quiz-game-icon-outline-illustration-vector.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Quiz</Typography>
                 </Box>
               </Grid>
@@ -795,7 +795,7 @@ function TeacherDashboard() {
               {/** Generate Complete Lesson Bundle */}
               <Grid item xs={6} sm={3}>
                 <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('/images/generate-bundle.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://img.freepik.com/premium-vector/color-school-tools-icon_24640-20330.jpg?w=2000')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Complete Lesson Bundle</Typography>
                 </Box>
               </Grid>
