@@ -135,25 +135,43 @@ const deleteLessonNote = asyncHandler(async (req, res) => {
  */
 const generateLearnerNote = asyncHandler(async (req, res) => {
   const { lessonNoteId, preferredProvider, preferredModel } = req.body;
-  const lessonNote = await LessonNote.findById(lessonNoteId);
+  const lessonNote = await LessonNote.findById(lessonNoteId).populate({
+    path: 'subStrand',
+    populate: {
+      path: 'strand',
+      populate: { path: 'subject', populate: { path: 'class' } },
+    },
+  });
 
   if (!lessonNote || lessonNote.teacher.toString() !== req.user.id.toString()) {
     res.status(404);
     throw new Error('Lesson note not found or you are not the author.');
   }
 
-  const { text: learnerText, provider, model, timestamp } =
-    await aiService.generateLearnerFriendlyNote(lessonNote.content, {
+  // Use HTML transformer so learner note is returned as HTML (matches bundle flow)
+  const { text: learnerNoteHTML, provider, model, timestamp } = await aiService.generateLearnerNoteHTML(
+    lessonNote.content,
+    {
+      subStrandName: lessonNote.subStrand?.name || 'Topic',
+      className: lessonNote.subStrand?.strand?.subject?.class?.name || 'Class',
       preferredProvider,
       preferredModel,
-    });
+    }
+  );
 
   const learnerNote = await LearnerNote.create({
     author: req.user.id,
     school: req.user.school,
-    subStrand: lessonNote.subStrand,
-    content: learnerText,
+    subStrand: lessonNote.subStrand?._id || lessonNote.subStrand,
+    content: learnerNoteHTML,
+    aiProvider: provider,
+    aiModel: model,
+    aiGeneratedAt: new Date(timestamp),
+    status: 'draft',
   });
+
+  // populate subStrand name for client convenience
+  await learnerNote.populate({ path: 'subStrand', select: 'name' });
 
   res.status(201).json(learnerNote);
 });
