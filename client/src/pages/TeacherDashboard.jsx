@@ -784,7 +784,7 @@ function TeacherDashboard() {
                     aspectRatio: '1/1',
                     borderRadius: '12px',
                     backgroundImage: `url('https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3')`,
-                    backgroundSize: 'contain',
+                    backgroundSize: 'cover',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     mb: 2,
@@ -816,6 +816,8 @@ function TeacherDashboard() {
                     aspectRatio: '1/1',
                     borderRadius: '12px',
                     backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     mb: 2,
                   }}
                 />
@@ -844,7 +846,9 @@ function TeacherDashboard() {
                     width: '100%',
                     aspectRatio: '1/1',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                    backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     mb: 2,
                   }}
                 />
@@ -873,7 +877,9 @@ function TeacherDashboard() {
                     width: '100%',
                     aspectRatio: '1/1',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     mb: 2,
                   }}
                 />
