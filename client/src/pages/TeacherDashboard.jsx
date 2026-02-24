@@ -967,9 +967,37 @@ function TeacherDashboard() {
 
         {/* Note Preview */}
         <Dialog open={!!viewingNote} onClose={() => setViewingNote(null)} fullWidth maxWidth="md">
-          <DialogTitle>Preview Learner Note</DialogTitle>
-          <DialogContent><Box><ReactMarkdown rehypePlugins={[rehypeRaw]}>{viewingNote?.content || ''}</ReactMarkdown></Box></DialogContent>
-          <DialogActions><Button onClick={() => setViewingNote(null)}>Close</Button></DialogActions>
+          <DialogTitle>Preview Lesson Note</DialogTitle>
+          <DialogContent sx={{ bgcolor: 'grey.50' }}>
+            <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
+              <Typography variant="caption" color="text.secondary" gutterBottom>
+                Topic: {viewingNote?.subStrand?.name || viewingNote?.subStrand || ''}
+              </Typography>
+              <Divider sx={{ my: 2 }} />
+              <Box
+                dangerouslySetInnerHTML={{ __html: viewingNote?.content || '' }}
+                sx={{
+                  '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
+                  '& h3': { fontSize: '1.25rem', fontWeight: 600, mt: 2, mb: 1 },
+                  '& table': {
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    my: 2,
+                    '& td, & th': {
+                      border: '1px solid #ddd',
+                      padding: '12px',
+                    },
+                    '& th': { backgroundColor: '#f5f5f5', fontWeight: 600 },
+                  },
+                  '& p': { lineHeight: 1.7, mb: 1 },
+                  '& ul, & ol': { pl: 3, mb: 2 },
+                }}
+              />
+            </Paper>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setViewingNote(null)}>Close</Button>
+          </DialogActions>
         </Dialog>
 
         <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar(p => ({ ...p, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>

@@ -51,14 +51,23 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     className: noteDetails.class || subStrand?.strand?.subject?.class?.name || 'N/A',
   };
 
-  const { text: aiText, provider, model, timestamp } =
-    await aiService.generateGhanaianLessonNote(aiDetails);
+  // Use the same HTML generator used by the bundle pipeline so single-note
+  // generation matches the richer layout/structure of bundle teacher notes.
+  const {
+    text: teacherNoteHTML,
+    provider: aiProvider,
+    model: aiModel,
+    timestamp,
+  } = await aiService.generateTeacherLessonNoteHTML(aiDetails);
 
   const lessonNote = await LessonNote.create({
     teacher: req.user.id,
     school: req.user.school,
     subStrand: subStrandId,
-    content: aiText,
+    content: teacherNoteHTML,
+    aiProvider,
+    aiModel,
+    aiGeneratedAt: new Date(timestamp),
   });
 
   res.status(201).json(lessonNote);
