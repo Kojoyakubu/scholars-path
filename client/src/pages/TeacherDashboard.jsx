@@ -555,7 +555,6 @@ function TabPanel({ children, value, index, ...other }) {
 function TeacherDashboard() {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   // Redux state
   const { user } = useSelector((state) => state.auth || {});
