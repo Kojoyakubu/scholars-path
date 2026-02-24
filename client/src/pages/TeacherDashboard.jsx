@@ -896,6 +896,15 @@ function TeacherDashboard() {
             </Button>
           </DialogActions>
         </Dialog>
+        {/* Note creation form modal */}
+        <LessonNoteForm
+          open={isNoteModalOpen}
+          onClose={() => setIsNoteModalOpen(false)}
+          onSubmit={handleGenerateNoteSubmit}
+          subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
+          subStrandId={selections.subStrand}
+          isLoading={isLoading || planLoading}
+        />
 
         <LessonBundleForm open={isBundleModalOpen} onClose={() => setIsBundleModalOpen(false)} onSubmit={handleGenerateBundleSubmit} subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''} subStrandId={selections.subStrand} isLoading={isLoading} />
         <BundleResultViewer open={viewBundleResult} onClose={() => setViewBundleResult(false)} bundleData={bundleResult} onPublish={handlePublishBundle} />
