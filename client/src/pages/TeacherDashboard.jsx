@@ -28,6 +28,7 @@ import LessonBundleForm from '../components/LessonBundleForm';
 import BundleResultViewer from '../components/BundleResultViewer';
 import DashboardBanner from '../components/DashboardBanner';
 import CurriculumSelection from '../components/CurriculumSelection';
+import LessonNoteForm from '../components/LessonNoteForm';
 
 // MUI Imports
 import {
