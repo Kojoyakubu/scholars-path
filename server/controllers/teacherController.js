@@ -974,6 +974,7 @@ module.exports = {
   getLessonNoteById,
   deleteLessonNote,
   generateLearnerNote,
+  generateLearnerNoteFromStrand,
   createQuiz,
   uploadResource,
   getTeacherAnalytics,
