@@ -27,6 +27,7 @@ import {
 import LessonBundleForm from '../components/LessonBundleForm'; 
 import BundleResultViewer from '../components/BundleResultViewer';
 import DashboardBanner from '../components/DashboardBanner';
+import CurriculumSelection from '../components/CurriculumSelection';
 
 // MUI Imports
 import {
@@ -579,6 +580,7 @@ function TeacherDashboard() {
   // Bundle generation state
   const [isBundleModalOpen, setIsBundleModalOpen] = useState(false);
   const [viewBundleResult, setViewBundleResult] = useState(false);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
@@ -589,6 +591,7 @@ function TeacherDashboard() {
   const [bannerCollapsed, setBannerCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateTools, setShowCreateTools] = useState(false);
+  const [planLoading, setPlanLoading] = useState(false);
 
   // Initialization & Handlers (Preserved from original)
 
@@ -642,6 +645,24 @@ function TeacherDashboard() {
       setSnackbar({ open: true, message: 'Lesson bundle generated! 🎉', severity: 'success' });
     }).catch((error) => setSnackbar({ open: true, message: error || 'Failed', severity: 'error' }));
   }, [dispatch]);
+
+  // Generate only lesson plan (first part of bundle)
+  const handleGeneratePlan = useCallback(() => {
+    if (!selections.subStrand) return;
+    setPlanLoading(true);
+    dispatch(generateLessonNote({ subStrandId: selections.subStrand }))
+      .unwrap()
+      .then(() => {
+        setSnackbar({ open: true, message: 'Lesson plan generated!', severity: 'success' });
+        setIsPlanModalOpen(false);
+        setShowCreateTools(false);
+        dispatch(getMyLessonNotes());
+      })
+      .catch((err) =>
+        setSnackbar({ open: true, message: err || 'Failed to generate', severity: 'error' })
+      )
+      .finally(() => setPlanLoading(false));
+  }, [dispatch, selections.subStrand]);
 
   const handlePublishBundle = useCallback((bundle) => {
     if (bundle.learnerNote?.id) {
@@ -770,7 +791,13 @@ function TeacherDashboard() {
             <Grid container spacing={3}>
               {/** Generate Lesson Plan */}
               <Grid item xs={6} sm={3}>
-                <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
+                <Box
+                  sx={{ textAlign: 'center', cursor: 'pointer' }}
+                  onClick={() => {
+                    setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
+                    setIsPlanModalOpen(true);
+                  }}
+                >
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/027/685/568/original/teacher-lesson-icon-flat-vector.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Lesson Plan</Typography>
                 </Box>
@@ -848,6 +875,34 @@ function TeacherDashboard() {
         )}
 
         {/* Modals & Dialogs */}
+        {/* Plan generation modal */}
+        <Dialog open={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Select Topic for Lesson Plan</DialogTitle>
+          <DialogContent>
+            <CurriculumSelection
+              levels={levels}
+              classes={classes}
+              subjects={subjects}
+              strands={strands}
+              subStrands={subStrands}
+              selections={selections}
+              handleSelectionChange={handleSelectionChange}
+              isLoading={isLoading || planLoading}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsPlanModalOpen(false)} disabled={planLoading}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleGeneratePlan}
+              disabled={!selections.subStrand || planLoading}
+              startIcon={planLoading ? <CircularProgress size={20} /> : null}
+            >
+              {planLoading ? 'Generating...' : 'Generate Lesson Plan'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <LessonBundleForm open={isBundleModalOpen} onClose={() => setIsBundleModalOpen(false)} onSubmit={handleGenerateBundleSubmit} subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''} subStrandId={selections.subStrand} isLoading={isLoading} />
         <BundleResultViewer open={viewBundleResult} onClose={() => setViewBundleResult(false)} bundleData={bundleResult} onPublish={handlePublishBundle} />
         
