@@ -39,6 +39,7 @@ import PolishedStatCard from '../components/Polishedstatcard';
 import DashboardBanner from '../components/DashboardBanner';
 import EmptyState from '../components/EmptyState';
 import ConfirmDialog from '../components/ConfirmDialog';
+import DashboardActionsAndStats from '../components/DashboardActionsAndStats';
 
 // MUI Imports
 import {
@@ -716,103 +717,16 @@ function TeacherDashboard() {
           onCollapse={setBannerCollapsed}
         />
 
-        {/* 🚀 QUICK ACTIONS */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              <QuickActionCard
-                title="Create Lesson"
-                description="Generate AI-powered lesson notes"
-                icon={AddCircle}
-                color={theme.palette.primary.main}
-                onClick={() => setActiveTab(0)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <QuickActionCard
-                title="Review Drafts"
-                description={`${draftLearnerNotes?.length || 0} notes pending`}
-                icon={Preview}
-                color={theme.palette.secondary.main}
-                onClick={() => setActiveTab(2)}
-                badge={draftLearnerNotes?.length > 0 ? draftLearnerNotes.length : null}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <QuickActionCard
-                title="Create Quiz"
-                description="AI-generated assessments"
-                icon={Quiz}
-                color={theme.palette.warning.main}
-                onClick={() => setIsAiQuizModalOpen(true)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <QuickActionCard
-                title="View Analytics"
-                description="Track your performance"
-                icon={Assessment}
-                color={theme.palette.success.main}
-                onClick={() => setActiveTab(3)} // Redirect to Analytics or Bundles
-              />
-            </Grid>
-          </Grid>
-        </Box>
-
-        {/* 📊 UPDATED ANALYTICS OVERVIEW USING POLISHED STAT CARDS */}
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>Overview</Typography>
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Lesson Notes */}
-          <Grid item xs={12} sm={6} md={3}>
-            <PolishedStatCard
-              icon={Article}
-              label="Lesson Notes"
-              value={lessonNotes?.length || 0}
-              color={theme.palette.primary.main}
-              subtitle="Published notes"
-              onClick={() => setActiveTab(1)}
-              delay={0}
-            />
-          </Grid>
-          
-          {/* Draft Notes */}
-          <Grid item xs={12} sm={6} md={3}>
-            <PolishedStatCard
-              icon={Preview}
-              label="Draft Notes"
-              value={draftLearnerNotes?.length || 0}
-              color={theme.palette.secondary.main}
-              subtitle="Pending review"
-              onClick={() => setActiveTab(2)}
-              delay={0.1}
-            />
-          </Grid>
-          
-          {/* AI Quizzes */}
-          <Grid item xs={12} sm={6} md={3}>
-            <PolishedStatCard
-              icon={Quiz}
-              label="AI Quizzes"
-              value={teacherAnalytics?.totalQuizzes || 0}
-              color={theme.palette.warning.main}
-              subtitle="Total generated"
-              delay={0.2}
-            />
-          </Grid>
-
-          {/* Students / Reach (Placeholder logic based on available stats) */}
-          <Grid item xs={12} sm={6} md={3}>
-            <PolishedStatCard
-              icon={School}
-              label="Students Reached"
-              value={teacherAnalytics?.totalStudents || 0}
-              color={theme.palette.success.main}
-              subtitle="Across all classes"
-              delay={0.3}
-            />
-          </Grid>
-        </Grid>
+        <DashboardActionsAndStats
+          draftLearnerNotes={draftLearnerNotes}
+          lessonNotes={lessonNotes}
+          teacherAnalytics={teacherAnalytics}
+          setActiveTab={setActiveTab}
+          setIsAiQuizModalOpen={setIsAiQuizModalOpen}
+          theme={theme}
+          refreshing={refreshing}
+          handleRefresh={handleRefresh}
+        />
 
         {/* Main Content Tabs */}
         <Paper elevation={0} sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, overflow: 'hidden' }}>
