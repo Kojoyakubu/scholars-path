@@ -13,6 +13,7 @@ import {
   Step,
   StepLabel,
 } from '@mui/material';
+import { Article } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
 
 // 💡 Fix 1: Add subStrandId to the props
