@@ -815,7 +815,10 @@ function TeacherDashboard() {
 
               {/** Generate Complete Lesson Bundle */}
               <Grid item xs={6} sm={3}>
-                <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
+                <Box
+                  sx={{ textAlign: 'center', cursor: 'pointer' }}
+                  onClick={() => setIsBundleModalOpen(true)}
+                >
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://img.freepik.com/premium-vector/color-school-tools-icon_24640-20330.jpg?w=2000')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Complete Lesson Bundle</Typography>
                 </Box>
