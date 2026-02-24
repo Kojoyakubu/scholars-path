@@ -653,10 +653,9 @@ function TeacherDashboard() {
   // Generate only lesson plan (first part of bundle)
   const handleGeneratePlan = useCallback(() => {
     if (!selections.subStrand) return;
-    // close selection and open the lesson note form for user to fill details
+    // close selection and open lesson note form for user completion
     setIsPlanModalOpen(false);
     setIsNoteModalOpen(true);
-    // note modal will use existing selections to populate topic info
   }, [selections.subStrand]);
 
   const handlePublishBundle = useCallback((bundle) => {
@@ -897,6 +896,15 @@ function TeacherDashboard() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <LessonBundleForm
+          open={isBundleModalOpen}
+          onClose={() => setIsBundleModalOpen(false)}
+          onSubmit={handleGenerateBundleSubmit}
+          subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
+          subStrandId={selections.subStrand}
+          isLoading={isLoading}
+        />
         {/* Note creation form modal */}
         <LessonNoteForm
           open={isNoteModalOpen}
@@ -906,8 +914,6 @@ function TeacherDashboard() {
           subStrandId={selections.subStrand}
           isLoading={isLoading || planLoading}
         />
-
-        <LessonBundleForm open={isBundleModalOpen} onClose={() => setIsBundleModalOpen(false)} onSubmit={handleGenerateBundleSubmit} subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''} subStrandId={selections.subStrand} isLoading={isLoading} />
         <BundleResultViewer open={viewBundleResult} onClose={() => setViewBundleResult(false)} bundleData={bundleResult} onPublish={handlePublishBundle} />
         
         {/* Delete Confirmation */}
