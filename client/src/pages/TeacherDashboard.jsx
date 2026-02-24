@@ -765,19 +765,7 @@ function TeacherDashboard() {
                   </SectionCard>
                 </Grid>
 
-                {/* Action Cards */}
-                <Grid item xs={12} md={6}>
-                  <SectionCard title="Generate Lesson Note" icon={<Article />} color={theme.palette.primary.main}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Create engaging lessons with AI on any topic of your choice.</Typography>
-                    <Button variant="contained" fullWidth startIcon={<AutoAwesome />} onClick={() => setIsNoteModalOpen(true)} disabled={!selections.subStrand || isLoading} sx={{ py: 1.5, fontWeight: 700, textTransform: 'none', borderRadius: 2 }}>Generate with AI</Button>
-                  </SectionCard>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <SectionCard title="Generate AI Quiz" icon={<Quiz />} color={theme.palette.warning.main}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Create interactive quizzes to your specifications.</Typography>
-                    <Button variant="contained" fullWidth startIcon={<AutoAwesome />} onClick={() => setIsAiQuizModalOpen(true)} disabled={isLoading} sx={{ py: 1.5, fontWeight: 700, textTransform: 'none', borderRadius: 2, bgcolor: theme.palette.warning.main, '&:hover': { bgcolor: theme.palette.warning.dark } }}>Generate Quiz</Button>
-                  </SectionCard>
-                </Grid>
+                {/* Action Card: Only Generate Complete Lesson Bundle */}
                 <Grid item xs={12}>
                   <SectionCard title="🚀 Generate Complete Lesson Bundle" icon={<AutoAwesome />} color={theme.palette.secondary.main}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Generate Teacher Note + Learner Note + Quiz in one click!</Typography>
