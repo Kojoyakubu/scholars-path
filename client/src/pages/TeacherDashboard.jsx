@@ -588,6 +588,7 @@ function TeacherDashboard() {
   const [viewMode, setViewMode] = useState('grid');
   const [bannerCollapsed, setBannerCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCreateTools, setShowCreateTools] = useState(false);
 
   // Initialization & Handlers (Preserved from original)
 
@@ -762,135 +763,89 @@ function TeacherDashboard() {
         <Divider sx={{ my: 4, borderColor: '#ddd' }} />
 
         {/* TEACHER TOOLS SECTION */}
-        <Box sx={{ mt: 4, mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>TEACHER TOOLS</Typography>
-          <Grid container spacing={3}>
-            {/* CREATE NEW */}
-            <Grid item xs={6} sm={3}>
-              <Box
-                onClick={() => setIsBundleModalOpen(true)}
-                sx={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                  },
-                }}
-              >
-                {/* Image Placeholder */}
-                <Box
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    margin: '0 auto 16px',
-                    borderRadius: '12px',
-                    backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/015/526/676/original/presentation-creative-icon-design-free-vector.jpg')`,
-                    backgroundSize: 'cover',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                  }}
-                />
-                {/* Label */}
-                <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>
-                  Create New
-                </Typography>
-              </Box>
-            </Grid>
+        {showCreateTools ? (
+          <Box sx={{ mt: 4, mb: 3 }}>
+            <Button onClick={() => setShowCreateTools(false)} variant="text" sx={{ mb: 2 }}>← Back</Button>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>Create New</Typography>
+            <Grid container spacing={3}>
+              {/** Generate Lesson Plan */}
+              <Grid item xs={6} sm={3}>
+                <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('/images/generate-lesson-plan.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Lesson Plan</Typography>
+                </Box>
+              </Grid>
 
-            {/* MY LESSON NOTES */}
-            <Grid item xs={6} sm={3}>
-              <Box
-                onClick={() => { /* TODO: Navigate to My Lesson Notes */ }}
-                sx={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                  },
-                }}
-              >
-                {/* Image Placeholder */}
-                <Box
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    margin: '0 auto 16px',
-                    borderRadius: '12px',
-                    backgroundImage: 'url(https://i.pinimg.com/736x/d1/f0/68/d1f068f076dd1d2090b35d602f62948f.jpg)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                />
-                {/* Label */}
-                <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>
-                  My Lesson Notes
-                </Typography>
-              </Box>
-            </Grid>
+              {/** Generate Learner Notes */}
+              <Grid item xs={6} sm={3}>
+                <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('/images/generate-learner-notes.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Learner Notes</Typography>
+                </Box>
+              </Grid>
 
-            {/* LEARNER NOTES */}
-            <Grid item xs={6} sm={3}>
-              <Box
-                onClick={() => { /* TODO: Navigate to Learner Notes */ }}
-                sx={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                  },
-                }}
-              >
-                {/* Image Placeholder */}
-                <Box
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    margin: '0 auto 16px',
-                    borderRadius: '12px',
-                    backgroundImage: 'url(https://media.istockphoto.com/id/1408391194/vector/reader-reciter.jpg?s=612x612&w=0&k=20&c=DpvhTP2hQqv_XrORtg56zz61WiFalK44CPO_Ka67ozg=)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                />
-                {/* Label */}
-                <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>
-                  Learner Notes
-                </Typography>
-              </Box>
-            </Grid>
+              {/** Generate Quiz */}
+              <Grid item xs={6} sm={3}>
+                <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('/images/generate-quiz.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Quiz</Typography>
+                </Box>
+              </Grid>
 
-            {/* ANALYSIS */}
-            <Grid item xs={6} sm={3}>
-              <Box
-                onClick={() => { /* TODO: Navigate to Analysis */ }}
-                sx={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                  },
-                }}
-              >
-                {/* Image Placeholder */}
-                <Box
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    margin: '0 auto 16px',
-                    borderRadius: '12px',
-                    backgroundImage: 'url(https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                />
-                {/* Label */}
-                <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>
-                  Analysis
-                </Typography>
-              </Box>
+              {/** Generate Complete Lesson Bundle */}
+              <Grid item xs={6} sm={3}>
+                <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('/images/generate-bundle.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Complete Lesson Bundle</Typography>
+                </Box>
+              </Grid>
             </Grid>
-          </Grid>
-        </Box>
+          </Box>
+        ) : (
+          <Box sx={{ mt: 4, mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>TEACHER TOOLS</Typography>
+            <Grid container spacing={3}>
+              {/* CREATE NEW */}
+              <Grid item xs={6} sm={3}>
+                <Box
+                  onClick={() => setShowCreateTools(true)}
+                  sx={{
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    '&:hover': { transform: 'scale(1.05)' },
+                  }}
+                >
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/015/526/676/original/presentation-creative-icon-design-free-vector.jpg')`, backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Create New</Typography>
+                </Box>
+              </Grid>
+
+              {/* MY LESSON NOTES */}
+              <Grid item xs={6} sm={3}>
+                <Box onClick={() => { /* TODO: Navigate to My Lesson Notes */ }} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://i.pinimg.com/736x/d1/f0/68/d1f068f076dd1d2090b35d602f62948f.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>My Lesson Notes</Typography>
+                </Box>
+              </Grid>
+
+              {/* LEARNER NOTES */}
+              <Grid item xs={6} sm={3}>
+                <Box onClick={() => { /* TODO: Navigate to Learner Notes */ }} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://media.istockphoto.com/id/1408391194/vector/reader-reciter.jpg?s=612x612&w=0&k=20&c=DpvhTP2hQqv_XrORtg56zz61WiFalK44CPO_Ka67ozg=)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Learner Notes</Typography>
+                </Box>
+              </Grid>
+
+              {/* ANALYSIS */}
+              <Grid item xs={6} sm={3}>
+                <Box onClick={() => { /* TODO: Navigate to Analysis */ }} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Analysis</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
 
         {/* Modals & Dialogs */}
         <LessonBundleForm open={isBundleModalOpen} onClose={() => setIsBundleModalOpen(false)} onSubmit={handleGenerateBundleSubmit} subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''} subStrandId={selections.subStrand} isLoading={isLoading} />
