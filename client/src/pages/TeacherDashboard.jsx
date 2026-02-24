@@ -587,6 +587,7 @@ function TeacherDashboard() {
   const [isLearnerOptionsOpen, setIsLearnerOptionsOpen] = useState(false);
   const [isLearnerFromLessonOpen, setIsLearnerFromLessonOpen] = useState(false);
   const [isLearnerFromStrandOpen, setIsLearnerFromStrandOpen] = useState(false);
+  const [selectedLessonForLearner, setSelectedLessonForLearner] = useState('');
   
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
@@ -972,14 +973,78 @@ function TeacherDashboard() {
           </DialogActions>
         </Dialog>
 
-        {/* Placeholder: From Lesson Note flow (will implement next) */}
-        <Dialog open={isLearnerFromLessonOpen} onClose={() => setIsLearnerFromLessonOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Generate Learner Note from Lesson Note</DialogTitle>
+        {/* From Lesson Note flow */}
+        <Dialog open={isLearnerFromLessonOpen} onClose={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} fullWidth maxWidth="md">
+          <DialogTitle>Generate Learner Note from an Existing Lesson Note</DialogTitle>
           <DialogContent>
-            <Typography>This flow will let you pick an existing lesson note and generate a learner-friendly version. Implementation coming next.</Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to convert into a learner-friendly note.</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={5}>
+                <Paper sx={{ maxHeight: 420, overflow: 'auto' }}>
+                  <List>
+                    {(lessonNotes || []).map((ln) => (
+                      <ListItemButton
+                        key={ln._id}
+                        selected={selectedLessonForLearner === ln._id}
+                        onClick={() => setSelectedLessonForLearner(ln._id)}
+                        sx={{ alignItems: 'flex-start' }}
+                      >
+                        <ListItemText
+                          primary={ln.subStrand?.name || ln.title || 'Lesson Note'}
+                          secondary={new Date(ln.createdAt).toLocaleString()}
+                        />
+                      </ListItemButton>
+                    ))}
+                    {(!lessonNotes || lessonNotes.length === 0) && (
+                      <ListItem><ListItemText primary="No lesson notes found" /></ListItem>
+                    )}
+                  </List>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={7}>
+                <Paper sx={{ p: 2, maxHeight: 520, overflow: 'auto' }}>
+                  {!selectedLessonForLearner ? (
+                    <Typography variant="body2" color="text.secondary">Select a lesson note to preview its content here.</Typography>
+                  ) : (
+                    (() => {
+                      const note = (lessonNotes || []).find(n => n._id === selectedLessonForLearner);
+                      return note ? (
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" gutterBottom>Topic: {note.subStrand?.name || note.subStrand}</Typography>
+                          <Divider sx={{ my: 1 }} />
+                          <Box dangerouslySetInnerHTML={{ __html: note.content || '' }} sx={{ '& p': { lineHeight: 1.7 } }} />
+                        </Box>
+                      ) : (
+                        <Typography>Selected note not available.</Typography>
+                      );
+                    })()
+                  )}
+                </Paper>
+              </Grid>
+            </Grid>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsLearnerFromLessonOpen(false)}>Close</Button>
+            <Button onClick={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} disabled={isLoading}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={!selectedLessonForLearner || isLoading}
+              onClick={() => {
+                if (!selectedLessonForLearner) return;
+                // Dispatch generation
+                dispatch(generateLearnerNote(selectedLessonForLearner)).unwrap().then((created) => {
+                  setSnackbar({ open: true, message: 'Learner note generated (draft)!', severity: 'success' });
+                  setIsLearnerFromLessonOpen(false);
+                  setSelectedLessonForLearner('');
+                  // refresh drafts
+                  dispatch(getDraftLearnerNotes());
+                }).catch((err) => {
+                  setSnackbar({ open: true, message: err || 'Failed to generate learner note', severity: 'error' });
+                });
+              }}
+            >
+              {isLoading ? <CircularProgress size={18} /> : 'Generate Learner Note'}
+            </Button>
           </DialogActions>
         </Dialog>
 
