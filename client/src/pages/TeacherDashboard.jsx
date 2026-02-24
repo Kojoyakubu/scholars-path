@@ -1,14 +1,11 @@
-// /client/src/pages/TeacherDashboard.jsx
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 
-// Redux & Components (all preserved)
+// Redux & Components
 import { syncUserFromStorage } from '../features/auth/authSlice';
-import CurriculumSelection from '../components/CurriculumSelection';
 import {
   fetchItems,
   fetchChildren,
@@ -24,22 +21,12 @@ import {
   deleteLearnerNote as deleteDraftLearnerNote,
   resetTeacherState,
   getMyBundles,
-  generateAiQuiz,
   getTeacherAnalytics,
   generateLessonBundle, 
 } from '../features/teacher/teacherSlice';
-import LessonNoteForm from '../components/LessonNoteForm';
-import AiQuizForm from '../components/AiQuizForm';
 import LessonBundleForm from '../components/LessonBundleForm'; 
 import BundleResultViewer from '../components/BundleResultViewer';
-import BundleManager from '../components/BundleManager';
-
-// ✅ IMPORT NEW COMPONENTS
-import PolishedStatCard from '../components/Polishedstatcard';
 import DashboardBanner from '../components/DashboardBanner';
-import EmptyState from '../components/EmptyState';
-import ConfirmDialog from '../components/ConfirmDialog';
-import DashboardActionsAndStats from '../components/DashboardActionsAndStats';
 
 // MUI Imports
 import {
@@ -597,21 +584,13 @@ function TeacherDashboard() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
 
-  // Tab and view state
-  const tabFromUrl = parseInt(searchParams.get('tab')) || 0;
-  const [activeTab, setActiveTab] = useState(tabFromUrl);
+  // View state
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [bannerCollapsed, setBannerCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // Initialization & Handlers (Preserved from original)
-  useEffect(() => {
-    const tabParam = parseInt(searchParams.get('tab'));
-    if (!isNaN(tabParam) && tabParam >= 0 && tabParam <= 3 && tabParam !== activeTab) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     dispatch(syncUserFromStorage());
@@ -685,10 +664,7 @@ function TeacherDashboard() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-    setSearchParams({ tab: newValue }, { replace: true });
-  };
+
 
   // Filter Logic
   const filteredLessonNotes = (lessonNotes || []).filter(note => {
@@ -703,162 +679,245 @@ function TeacherDashboard() {
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
-      <Box sx={{ width: '98%', mx: '1%', mt: 1, pb: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ maxWidth: '1200px', mx: 'auto', p: { xs: 2, md: 4 } }}>
         
-        {/* Banner */}
+        {/* Header Banner */}
         <DashboardBanner
           user={user}
           role="teacher"
-          stats={[]} // Teacher stats go in cards below, not inline
+          stats={[]}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           collapsed={bannerCollapsed}
           onCollapse={setBannerCollapsed}
         />
 
-        <DashboardActionsAndStats
-          draftLearnerNotes={draftLearnerNotes}
-          lessonNotes={lessonNotes}
-          teacherAnalytics={teacherAnalytics}
-          setActiveTab={setActiveTab}
-          setIsAiQuizModalOpen={setIsAiQuizModalOpen}
-          theme={theme}
-          refreshing={refreshing}
-          handleRefresh={handleRefresh}
-        />
-
-        {/* Main Content Tabs */}
-        <Paper elevation={0} sx={{ borderRadius: 3, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, overflow: 'hidden' }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              aria-label="dashboard tabs"
-              sx={{ px: 2, '& .MuiTab-root': { fontWeight: 600, fontSize: '1rem', textTransform: 'none', minHeight: 64 } }}
-            >
-              <Tab icon={<AddCircle sx={{ mr: 1 }} />} iconPosition="start" label="Create New" />
-              <Tab icon={<Badge badgeContent={filteredLessonNotes.length} color="primary" sx={{ mr: 1 }}><Article /></Badge>} iconPosition="start" label="My Lesson Notes" />
-              <Tab icon={<Badge badgeContent={filteredDraftNotes.length} color="secondary" sx={{ mr: 1 }}><Preview /></Badge>} iconPosition="start" label="Draft Learner Notes" />
-              <Tab icon={<Folder sx={{ mr: 1 }} />} iconPosition="start" label="My Bundles" />
-            </Tabs>
-          </Box>
-
-
-          {/* Tab Panel 0: Create New */}
-          <TabPanel value={activeTab} index={0}>
-            <Box sx={{ width: '100%' }}>
-              <Grid container spacing={2}>
-                {/* Curriculum Selection */}
-                <Grid item xs={12}>
-                  <SectionCard title="Select Curriculum" icon={<School />} color={theme.palette.info.main}>
-                    <CurriculumSelection
-                      levels={levels}
-                      classes={classes}
-                      subjects={subjects}
-                      strands={strands}
-                      subStrands={subStrands}
-                      selections={selections}
-                      handleSelectionChange={handleSelectionChange}
-                      isLoading={isLoading}
-                    />
-                  </SectionCard>
-                </Grid>
-
-                {/* Action Card: Only Generate Complete Lesson Bundle */}
-                <Grid item xs={12}>
-                  <SectionCard title="🚀 Generate Complete Lesson Bundle" icon={<AutoAwesome />} color={theme.palette.secondary.main}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Generate Teacher Note + Learner Note + Quiz in one click!</Typography>
-                    <Button variant="contained" fullWidth startIcon={<AutoAwesome />} onClick={() => setIsBundleModalOpen(true)} disabled={!selections.subStrand || isLoading} sx={{ py: 1.8, fontWeight: 700, textTransform: 'none', borderRadius: 2, background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)' }}>Generate Complete Bundle</Button>
-                  </SectionCard>
-                </Grid>
-              </Grid>
-            </Box>
-          </TabPanel>
-
-          {/* Tab Panel 1: My Lesson Notes */}
-          <TabPanel value={activeTab} index={1}>
-            <Box sx={{ px: 3 }}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                <TextField placeholder="Search lesson notes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} size="small" sx={{ flexGrow: 1, maxWidth: { sm: 400 } }} InputProps={{ startAdornment: <InputAdornment position="start"><Search /></InputAdornment> }} />
-                <Tooltip title={viewMode === 'grid' ? 'Switch to List' : 'Switch to Grid'}><IconButton onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}><ViewModule /></IconButton></Tooltip>
-              </Stack>
-              {isLoading && !lessonNotes.length ? <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box> : filteredLessonNotes.length > 0 ? (
-                <AnimatePresence mode="popLayout">
-                  {viewMode === 'grid' ? (
-                    <Grid container spacing={2}>
-                      {filteredLessonNotes.map((note) => (
-                        <Grid item xs={12} sm={6} md={4} key={note._id}>
-                          <LessonNoteCard
-                            note={note}
-                            onGenerateLearner={() => { setGeneratingNoteId(note._id); dispatch(generateLearnerNote(note._id)).finally(() => setGeneratingNoteId(null)); }}
-                            onDelete={() => setNoteToDelete(note)}
-                            isGenerating={generatingNoteId === note._id}
-                          />
-                        </Grid>
-                      ))}
-                    </Grid>
-                  ) : (
-                    <List disablePadding>
-                      {filteredLessonNotes.map((note) => (
-                        <LessonNoteListItem
-                          key={note._id}
-                          note={note}
-                          onGenerateLearner={() => { setGeneratingNoteId(note._id); dispatch(generateLearnerNote(note._id)).finally(() => setGeneratingNoteId(null)); }}
-                          onDelete={() => setNoteToDelete(note)}
-                          isGenerating={generatingNoteId === note._id}
-                        />
-                      ))}
-                    </List>
-                  )}
-                </AnimatePresence>
-              ) : (
-                <Paper sx={{ p: 6, textAlign: 'center', bgcolor: alpha(theme.palette.info.main, 0.05), border: `2px dashed ${alpha(theme.palette.info.main, 0.3)}`, borderRadius: 3 }}>
-                  <Article sx={{ fontSize: 64, color: theme.palette.info.main, mb: 2, opacity: 0.5 }} />
-                  <Typography variant="h6" color="text.secondary">No notes found</Typography>
-                </Paper>
-              )}
-            </Box>
-          </TabPanel>
-
-          {/* Tab Panel 2: Draft Learner Notes */}
-          <TabPanel value={activeTab} index={2}>
-            <Box sx={{ px: 3 }}>
-              {/* Draft List Content (Simplified for brevity, similar structure to Panel 1) */}
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                <TextField placeholder="Search drafts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} size="small" sx={{ flexGrow: 1, maxWidth: { sm: 400 } }} InputProps={{ startAdornment: <InputAdornment position="start"><Search /></InputAdornment> }} />
-                <Tooltip title="Switch View"><IconButton onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}><ViewModule /></IconButton></Tooltip>
-              </Stack>
-              {filteredDraftNotes.length > 0 ? (
-                 <Grid container spacing={2}>
-                   {filteredDraftNotes.map((note) => (
-                     <Grid item xs={12} sm={6} md={4} key={note._id}>
-                       <DraftNoteCard note={note} onPreview={() => setViewingNote(note)} onPublish={() => dispatch(publishLearnerNote(note._id))} onDelete={() => dispatch(deleteDraftLearnerNote(note._id))} />
-                     </Grid>
-                   ))}
-                 </Grid>
-              ) : (
-                <Paper sx={{ p: 6, textAlign: 'center', bgcolor: alpha(theme.palette.secondary.main, 0.05), border: `2px dashed ${alpha(theme.palette.secondary.main, 0.3)}` }}>
-                  <Preview sx={{ fontSize: 64, color: theme.palette.secondary.main, opacity: 0.5 }} />
-                  <Typography variant="h6" color="text.secondary">No drafts pending</Typography>
-                </Paper>
-              )}
-            </Box>
-          </TabPanel>
-
-          {/* Tab Panel 3: My Bundles */}
-          <TabPanel value={activeTab} index={3}>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-              <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                <BundleManager />
+        {/* OVERVIEW SECTION */}
+        <Box sx={{ mt: 4, mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>OVERVIEW</Typography>
+          <Grid container spacing={3}>
+            {/* Lesson Notes Card */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 2.5, textAlign: 'center', borderRadius: 1, bgcolor: '#e8e8e8', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#667eea', mb: 1 }}>
+                  {lessonNotes?.length || 0}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#555', fontWeight: 500 }}>
+                  Lesson Notes
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#999' }}>
+                  Published
+                </Typography>
               </Paper>
-            </motion.div>
-          </TabPanel>
-        </Paper>
+            </Grid>
 
-        {/* Modals */}
-        <LessonNoteForm open={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSubmit={(data) => handleGenerateNoteSubmit({ ...data, subStrandId: selections.subStrand })} subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''} isLoading={isLoading} />
-        <AiQuizForm open={isAiQuizModalOpen} onClose={() => setIsAiQuizModalOpen(false)} onSubmit={handleGenerateAiQuizSubmit} isLoading={isLoading} curriculum={{ levels, classes, subjects }} />
+            {/* Draft Notes Card */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 2.5, textAlign: 'center', borderRadius: 1, bgcolor: '#e8e8e8', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#7c3aed', mb: 1 }}>
+                  {draftLearnerNotes?.length || 0}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#555', fontWeight: 500 }}>
+                  Draft Notes
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#999' }}>
+                  Pending review
+                </Typography>
+              </Paper>
+            </Grid>
+
+            {/* AI Quizzes Card */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 2.5, textAlign: 'center', borderRadius: 1, bgcolor: '#e8e8e8', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#f59e0b', mb: 1 }}>
+                  {teacherAnalytics?.totalQuizzes || 0}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#555', fontWeight: 500 }}>
+                  AI Quizzes
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#999' }}>
+                  Generated
+                </Typography>
+              </Paper>
+            </Grid>
+
+            {/* Students Reached Card */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 2.5, textAlign: 'center', borderRadius: 1, bgcolor: '#e8e8e8', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#10b981', mb: 1 }}>
+                  {teacherAnalytics?.totalStudents || 0}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#555', fontWeight: 500 }}>
+                  Students Reached
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#999' }}>
+                  Across all classes
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Divider */}
+        <Divider sx={{ my: 4, borderColor: '#ddd' }} />
+
+        {/* TEACHER TOOLS SECTION */}
+        <Box sx={{ mt: 4, mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>TEACHER TOOLS</Typography>
+          <Grid container spacing={4}>
+            {/* CREATE NEW */}
+            <Grid item xs={12} sm={6}>
+              <Box
+                onClick={() => setIsBundleModalOpen(true)}
+                sx={{
+                  position: 'relative',
+                  height: 280,
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280"><rect fill="%23667eea" width="400" height="280"/><circle cx="70" cy="50" r="60" fill="%237c3aed" opacity="0.5"/><circle cx="350" cy="230" r="80" fill="%235a67d8" opacity="0.5"/></svg>')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                  },
+                }}
+              >
+                {/* Dark Overlay */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    bgcolor: 'rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                    CREATE NEW
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* MY LESSON NOTES */}
+            <Grid item xs={12} sm={6}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  height: 280,
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280"><rect fill="%238b5cf6" width="400" height="280"/><circle cx="100" cy="80" r="70" fill="%237c3aed" opacity="0.5"/><circle cx="320" cy="200" r="90" fill="%235b21b6" opacity="0.5"/></svg>')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                  },
+                }}
+              >
+                {/* Dark Overlay */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    bgcolor: 'rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                    MY LESSON NOTES
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* LEARNER NOTES */}
+            <Grid item xs={12} sm={6}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  height: 280,
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280"><rect fill="%2310b981" width="400" height="280"/><circle cx="80" cy="100" r="65" fill="%2359d5bf" opacity="0.5"/><circle cx="340" cy="180" r="75" fill="%23047857" opacity="0.5"/></svg>')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                  },
+                }}
+              >
+                {/* Dark Overlay */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    bgcolor: 'rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                    LEARNER NOTES
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* ANALYSIS */}
+            <Grid item xs={12} sm={6}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  height: 280,
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280"><rect fill="%23f59e0b" width="400" height="280"/><circle cx="90" cy="70" r="60" fill="%23d97706" opacity="0.5"/><circle cx="330" cy="210" r="85" fill="%238b5a00" opacity="0.5"/></svg>')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                  },
+                }}
+              >
+                {/* Dark Overlay */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    bgcolor: 'rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                    ANALYSIS
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Modals & Dialogs */}
         <LessonBundleForm open={isBundleModalOpen} onClose={() => setIsBundleModalOpen(false)} onSubmit={handleGenerateBundleSubmit} subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''} subStrandId={selections.subStrand} isLoading={isLoading} />
         <BundleResultViewer open={viewBundleResult} onClose={() => setViewBundleResult(false)} bundleData={bundleResult} onPublish={handlePublishBundle} />
         
