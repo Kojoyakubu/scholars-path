@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Typography, Grid, Stack, Badge } from '@mui/material';
-import QuickActionCard from './QuickActionCard';
 import PolishedStatCard from './Polishedstatcard';
 import { Article, Preview, Quiz, Assessment, AddCircle, School } from '@mui/icons-material';
 
@@ -15,49 +14,6 @@ const DashboardActionsAndStats = ({
   handleRefresh
 }) => (
   <>
-    {/* Quick Actions */}
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={3}>
-          <QuickActionCard
-            title="Create Lesson"
-            description="Generate AI-powered lesson notes"
-            icon={AddCircle}
-            color={theme.palette.primary.main}
-            onClick={() => setActiveTab(0)}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <QuickActionCard
-            title="Review Drafts"
-            description={`${draftLearnerNotes?.length || 0} notes pending`}
-            icon={Preview}
-            color={theme.palette.secondary.main}
-            onClick={() => setActiveTab(2)}
-            badge={draftLearnerNotes?.length > 0 ? draftLearnerNotes.length : null}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <QuickActionCard
-            title="Create Quiz"
-            description="AI-generated assessments"
-            icon={Quiz}
-            color={theme.palette.warning.main}
-            onClick={() => setIsAiQuizModalOpen(true)}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <QuickActionCard
-            title="View Analytics"
-            description="Track your performance"
-            icon={Assessment}
-            color={theme.palette.success.main}
-            onClick={() => setActiveTab(3)}
-          />
-        </Grid>
-      </Grid>
-    </Box>
 
     {/* Stats Overview */}
     <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>Overview</Typography>
