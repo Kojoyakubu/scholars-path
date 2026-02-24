@@ -780,14 +780,14 @@ function TeacherDashboard() {
                 {/* Image Placeholder */}
                 <Box
                   sx={{
-                    width: '100%',
-                    aspectRatio: '1/1',
+                    width: 120,
+                    height: 120,
+                    margin: '0 auto 16px',
                     borderRadius: '12px',
                     backgroundImage: `url('https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3')`,
                     backgroundSize: 'cover',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
-                    mb: 2,
                   }}
                 />
                 {/* Label */}
@@ -812,13 +812,13 @@ function TeacherDashboard() {
                 {/* Image Placeholder */}
                 <Box
                   sx={{
-                    width: '100%',
-                    aspectRatio: '1/1',
+                    width: 120,
+                    height: 120,
+                    margin: '0 auto 16px',
                     borderRadius: '12px',
                     backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    mb: 2,
                   }}
                 />
                 {/* Label */}
@@ -843,13 +843,13 @@ function TeacherDashboard() {
                 {/* Image Placeholder */}
                 <Box
                   sx={{
-                    width: '100%',
-                    aspectRatio: '1/1',
+                    width: 120,
+                    height: 120,
+                    margin: '0 auto 16px',
                     borderRadius: '12px',
                     backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    mb: 2,
                   }}
                 />
                 {/* Label */}
@@ -874,13 +874,13 @@ function TeacherDashboard() {
                 {/* Image Placeholder */}
                 <Box
                   sx={{
-                    width: '100%',
-                    aspectRatio: '1/1',
+                    width: 120,
+                    height: 120,
+                    margin: '0 auto 16px',
                     borderRadius: '12px',
                     backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    mb: 2,
                   }}
                 />
                 {/* Label */}
