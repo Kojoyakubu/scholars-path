@@ -87,6 +87,23 @@ function pickProvider({ task = 'generic', jsonNeeded = false, preferredProvider 
   throw new Error('No AI providers available.');
 }
 
+// When AI output includes placeholders like [image: query] or [Image suggestion: query],
+// convert them to a simple <img> tag using a placeholder service. This makes previews
+// automatically display an image instead of raw text.
+function replacePlaceholdersWithImages(html) {
+  if (!html || typeof html !== 'string') return html;
+  return html
+    .replace(/\[image:\s*([^\]]+)\]/gi, (_, desc) =>
+      `<img src="https://via.placeholder.com/800x400?text=${encodeURIComponent(desc.trim())}" alt="${desc.trim()}" style="max-width:100%;height:auto;"/>`
+    )
+    .replace(/\[Image suggestion:\s*([^\]]+)\]/gi, (_, desc) =>
+      `<img src="https://via.placeholder.com/800x400?text=${encodeURIComponent(desc.trim())}" alt="${desc.trim()}" style="max-width:100%;height:auto;"/>`
+    )
+    .replace(/\[DIAGRAM:\s*([^\]]+)\]/gi, (_, desc) =>
+      `<div style="border:1px solid #ccc;padding:8px;margin:8px 0;text-align:center;"><em>Diagram: ${desc.trim()}</em></div>`
+    );
+}
+
 async function generateTextCore({
   prompt,
   task = 'generic',
@@ -506,13 +523,16 @@ Generate HTML following this structure:
 REMEMBER: Return ONLY the HTML above, filled with appropriate content. No markdown, no code fences, no explanations.
 `;
 
-  const { text, provider, model, timestamp } = await generateTextCore({ 
+  let { text, provider, model, timestamp } = await generateTextCore({ 
     prompt, 
     task: 'teacherLessonNoteHTML', 
     temperature: 0.4, 
     preferredProvider, 
     providerModelOverride: preferredModel 
   });
+
+  // convert any placeholder tokens into real <img> tags
+  text = replacePlaceholdersWithImages(text);
 
   return { text, provider, model, task: 'teacherLessonNoteHTML', timestamp };
 }
@@ -601,13 +621,15 @@ ${teacherNoteHTML}
 REMEMBER: Return ONLY the HTML above, filled with student-friendly content. No markdown, no code fences, no explanations.
 `;
 
-  const { text, provider, model, timestamp } = await generateTextCore({ 
+  let { text, provider, model, timestamp } = await generateTextCore({ 
     prompt, 
     task: 'learnerNoteHTML', 
     temperature: 0.45, 
     preferredProvider: details.preferredProvider, 
     providerModelOverride: details.preferredModel 
   });
+
+  text = replacePlaceholdersWithImages(text);
 
   return { text, provider, model, task: 'learnerNoteHTML', timestamp };
 }
