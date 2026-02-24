@@ -764,111 +764,119 @@ function TeacherDashboard() {
         {/* TEACHER TOOLS SECTION */}
         <Box sx={{ mt: 4, mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>TEACHER TOOLS</Typography>
-          <Grid container spacing={4}>
+          <Grid container spacing={3}>
             {/* CREATE NEW */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6} sm={3}>
               <Box
                 onClick={() => setIsBundleModalOpen(true)}
                 sx={{
-                  position: 'relative',
-                  height: 280,
-                  borderRadius: '16px',
-                  overflow: 'hidden',
                   cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   '&:hover': {
-                    transform: 'scale(1.02)',
-                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                    transform: 'scale(1.05)',
                   },
                 }}
               >
-                <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
-                  CREATE NEW
+                {/* Image Placeholder */}
+                <Box
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '1/1',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    mb: 2,
+                  }}
+                />
+                {/* Label */}
+                <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>
+                  Create New
                 </Typography>
               </Box>
             </Grid>
 
             {/* MY LESSON NOTES */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6} sm={3}>
               <Box
                 onClick={() => { /* TODO: Navigate to My Lesson Notes */ }}
                 sx={{
-                  position: 'relative',
-                  height: 280,
-                  borderRadius: '16px',
-                  overflow: 'hidden',
                   cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)',
                   transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   '&:hover': {
-                    transform: 'scale(1.02)',
-                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                    transform: 'scale(1.05)',
                   },
                 }}
               >
-                <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
-                  MY LESSON NOTES
+                {/* Image Placeholder */}
+                <Box
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '1/1',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)',
+                    mb: 2,
+                  }}
+                />
+                {/* Label */}
+                <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>
+                  My Lesson Notes
                 </Typography>
               </Box>
             </Grid>
 
             {/* LEARNER NOTES */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6} sm={3}>
               <Box
                 onClick={() => { /* TODO: Navigate to Learner Notes */ }}
                 sx={{
-                  position: 'relative',
-                  height: 280,
-                  borderRadius: '16px',
-                  overflow: 'hidden',
                   cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
                   transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   '&:hover': {
-                    transform: 'scale(1.02)',
-                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                    transform: 'scale(1.05)',
                   },
                 }}
               >
-                <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
-                  LEARNER NOTES
+                {/* Image Placeholder */}
+                <Box
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '1/1',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                    mb: 2,
+                  }}
+                />
+                {/* Label */}
+                <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>
+                  Learner Notes
                 </Typography>
               </Box>
             </Grid>
 
             {/* ANALYSIS */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={6} sm={3}>
               <Box
                 onClick={() => { /* TODO: Navigate to Analysis */ }}
                 sx={{
-                  position: 'relative',
-                  height: 280,
-                  borderRadius: '16px',
-                  overflow: 'hidden',
                   cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                   transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   '&:hover': {
-                    transform: 'scale(1.02)',
-                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                    transform: 'scale(1.05)',
                   },
                 }}
               >
-                <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
-                  ANALYSIS
+                {/* Image Placeholder */}
+                <Box
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '1/1',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    mb: 2,
+                  }}
+                />
+                {/* Label */}
+                <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>
+                  Analysis
                 </Typography>
               </Box>
             </Grid>
