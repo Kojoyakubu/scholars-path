@@ -784,7 +784,7 @@ function TeacherDashboard() {
                     height: 120,
                     margin: '0 auto 16px',
                     borderRadius: '12px',
-                    backgroundImage: `url('https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3')`,
+                    backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/015/526/676/original/presentation-creative-icon-design-free-vector.jpg')`,
                     backgroundSize: 'cover',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
@@ -816,7 +816,7 @@ function TeacherDashboard() {
                     height: 120,
                     margin: '0 auto 16px',
                     borderRadius: '12px',
-                    backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
+                    backgroundImage: 'url(https://i.pinimg.com/736x/d1/f0/68/d1f068f076dd1d2090b35d602f62948f.jpg)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                   }}
@@ -847,7 +847,7 @@ function TeacherDashboard() {
                     height: 120,
                     margin: '0 auto 16px',
                     borderRadius: '12px',
-                    backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
+                    backgroundImage: 'url(https://media.istockphoto.com/id/1408391194/vector/reader-reciter.jpg?s=612x612&w=0&k=20&c=DpvhTP2hQqv_XrORtg56zz61WiFalK44CPO_Ka67ozg=)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                   }}
@@ -878,7 +878,7 @@ function TeacherDashboard() {
                     height: 120,
                     margin: '0 auto 16px',
                     borderRadius: '12px',
-                    backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
+                    backgroundImage: 'url(https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                   }}
