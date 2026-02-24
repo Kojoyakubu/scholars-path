@@ -584,6 +584,9 @@ function TeacherDashboard() {
   const [viewBundleResult, setViewBundleResult] = useState(false);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isBundleSelectorOpen, setIsBundleSelectorOpen] = useState(false);
+  const [isLearnerOptionsOpen, setIsLearnerOptionsOpen] = useState(false);
+  const [isLearnerFromLessonOpen, setIsLearnerFromLessonOpen] = useState(false);
+  const [isLearnerFromStrandOpen, setIsLearnerFromStrandOpen] = useState(false);
   
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
@@ -802,7 +805,13 @@ function TeacherDashboard() {
 
               {/** Generate Learner Notes */}
               <Grid item xs={6} sm={3}>
-                <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
+                <Box
+                  sx={{ textAlign: 'center', cursor: 'pointer' }}
+                  onClick={() => {
+                    setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
+                    setIsLearnerOptionsOpen(true);
+                  }}
+                >
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://cdn-icons-png.flaticon.com/512/8980/8980099.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Learner Notes</Typography>
                 </Box>
@@ -944,6 +953,46 @@ function TeacherDashboard() {
           subStrandId={selections.subStrand}
           isLoading={isLoading}
         />
+        {/* Learner Notes Options Dialog */}
+        <Dialog open={isLearnerOptionsOpen} onClose={() => setIsLearnerOptionsOpen(false)} fullWidth maxWidth="xs">
+          <DialogTitle>Generate Learner Notes</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" sx={{ mb: 2 }}>Choose how you want to generate learner notes:</Typography>
+            <Stack spacing={2}>
+              <Button variant="outlined" onClick={() => { setIsLearnerOptionsOpen(false); setIsLearnerFromLessonOpen(true); }}>
+                From Lesson Note
+              </Button>
+              <Button variant="contained" onClick={() => { setIsLearnerOptionsOpen(false); setIsLearnerFromStrandOpen(true); }}>
+                From Strands
+              </Button>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsLearnerOptionsOpen(false)}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Placeholder: From Lesson Note flow (will implement next) */}
+        <Dialog open={isLearnerFromLessonOpen} onClose={() => setIsLearnerFromLessonOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Generate Learner Note from Lesson Note</DialogTitle>
+          <DialogContent>
+            <Typography>This flow will let you pick an existing lesson note and generate a learner-friendly version. Implementation coming next.</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsLearnerFromLessonOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Placeholder: From Strands flow (will implement next) */}
+        <Dialog open={isLearnerFromStrandOpen} onClose={() => setIsLearnerFromStrandOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Generate Learner Notes from Strand</DialogTitle>
+          <DialogContent>
+            <Typography>This flow will let you pick strands/sub-strands and generate learner notes in batch. Implementation coming next.</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsLearnerFromStrandOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
         {/* Note creation form modal */}
         <LessonNoteForm
           open={isNoteModalOpen}
