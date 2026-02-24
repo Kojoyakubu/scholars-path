@@ -775,142 +775,101 @@ function TeacherDashboard() {
                   borderRadius: '16px',
                   overflow: 'hidden',
                   cursor: 'pointer',
-                  backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280"><rect fill="%23667eea" width="400" height="280"/><circle cx="70" cy="50" r="60" fill="%237c3aed" opacity="0.5"/><circle cx="350" cy="230" r="80" fill="%235a67d8" opacity="0.5"/></svg>')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   '&:hover': {
                     transform: 'scale(1.02)',
                     boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
                   },
                 }}
               >
-                {/* Dark Overlay */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    bgcolor: 'rgba(0,0,0,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
-                    CREATE NEW
-                  </Typography>
-                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                  CREATE NEW
+                </Typography>
               </Box>
             </Grid>
 
             {/* MY LESSON NOTES */}
             <Grid item xs={12} sm={6}>
               <Box
+                onClick={() => { /* TODO: Navigate to My Lesson Notes */ }}
                 sx={{
                   position: 'relative',
                   height: 280,
                   borderRadius: '16px',
                   overflow: 'hidden',
                   cursor: 'pointer',
-                  backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280"><rect fill="%238b5cf6" width="400" height="280"/><circle cx="100" cy="80" r="70" fill="%237c3aed" opacity="0.5"/><circle cx="320" cy="200" r="90" fill="%235b21b6" opacity="0.5"/></svg>')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)',
                   transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   '&:hover': {
                     transform: 'scale(1.02)',
                     boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
                   },
                 }}
               >
-                {/* Dark Overlay */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    bgcolor: 'rgba(0,0,0,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
-                    MY LESSON NOTES
-                  </Typography>
-                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                  MY LESSON NOTES
+                </Typography>
               </Box>
             </Grid>
 
             {/* LEARNER NOTES */}
             <Grid item xs={12} sm={6}>
               <Box
+                onClick={() => { /* TODO: Navigate to Learner Notes */ }}
                 sx={{
                   position: 'relative',
                   height: 280,
                   borderRadius: '16px',
                   overflow: 'hidden',
                   cursor: 'pointer',
-                  backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280"><rect fill="%2310b981" width="400" height="280"/><circle cx="80" cy="100" r="65" fill="%2359d5bf" opacity="0.5"/><circle cx="340" cy="180" r="75" fill="%23047857" opacity="0.5"/></svg>')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
                   transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   '&:hover': {
                     transform: 'scale(1.02)',
                     boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
                   },
                 }}
               >
-                {/* Dark Overlay */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    bgcolor: 'rgba(0,0,0,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
-                    LEARNER NOTES
-                  </Typography>
-                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                  LEARNER NOTES
+                </Typography>
               </Box>
             </Grid>
 
             {/* ANALYSIS */}
             <Grid item xs={12} sm={6}>
               <Box
+                onClick={() => { /* TODO: Navigate to Analysis */ }}
                 sx={{
                   position: 'relative',
                   height: 280,
                   borderRadius: '16px',
                   overflow: 'hidden',
                   cursor: 'pointer',
-                  backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280"><rect fill="%23f59e0b" width="400" height="280"/><circle cx="90" cy="70" r="60" fill="%23d97706" opacity="0.5"/><circle cx="330" cy="210" r="85" fill="%238b5a00" opacity="0.5"/></svg>')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                   transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   '&:hover': {
                     transform: 'scale(1.02)',
                     boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
                   },
                 }}
               >
-                {/* Dark Overlay */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    bgcolor: 'rgba(0,0,0,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
-                    ANALYSIS
-                  </Typography>
-                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                  ANALYSIS
+                </Typography>
               </Box>
             </Grid>
           </Grid>
