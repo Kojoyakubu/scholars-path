@@ -1034,6 +1034,9 @@ function TeacherDashboard() {
                 // Dispatch generation
                 dispatch(generateLearnerNote(selectedLessonForLearner)).unwrap().then((created) => {
                   setSnackbar({ open: true, message: 'Learner note generated (draft)!', severity: 'success' });
+                  // show preview immediately
+                  setViewingNote(created);
+                  // close the selection dialog and clear selection
                   setIsLearnerFromLessonOpen(false);
                   setSelectedLessonForLearner('');
                   // refresh drafts
