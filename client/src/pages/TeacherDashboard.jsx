@@ -783,7 +783,10 @@ function TeacherDashboard() {
                     width: '100%',
                     aspectRatio: '1/1',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    backgroundImage: `url('https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3')`,
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
                     mb: 2,
                   }}
                 />
@@ -812,7 +815,7 @@ function TeacherDashboard() {
                     width: '100%',
                     aspectRatio: '1/1',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)',
+                    backgroundImage: 'url(https://tse3.mm.bing.net/th/id/OIP.8_2WGB8VchOjIKO4c-WeKwAAAA?rs=1&pid=ImgDetMain&o=7&rm=3)',
                     mb: 2,
                   }}
                 />
