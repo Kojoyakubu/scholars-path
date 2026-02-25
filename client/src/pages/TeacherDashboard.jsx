@@ -740,11 +740,21 @@ function TeacherDashboard() {
       });
       return;
     }
+    const subjectId = note?.subStrand?.strand?.subject?._id || '';
+    if (!subjectId) {
+      setSnackbar({
+        open: true,
+        message: 'Unable to determine subject id for selected lesson note.',
+        severity: 'error',
+      });
+      return;
+    }
 
     dispatch(generateAiQuiz({
       topic,
       subjectName,
       className,
+      subjectId,
       subStrandId: note?.subStrand?._id || note?.subStrand,
       numQuestions: 10,
     }))
@@ -767,7 +777,8 @@ function TeacherDashboard() {
         const topic = sub?.name || 'Topic';
         const subjectName = sub?.strand?.subject?.name || '';
       const className = sub?.strand?.subject?.class?.name || '';
-      if (!subjectName || !className) {
+      const subjectId = sub?.strand?.subject?._id || '';
+      if (!subjectName || !className || !subjectId) {
         // should be rare because subStrands are fully populated, but guard anyway
         return Promise.reject('Curriculum data missing for selected strand');
       }
@@ -775,6 +786,7 @@ function TeacherDashboard() {
           topic,
           subjectName,
           className,
+          subjectId,
           subStrandId: id,
           numQuestions: 10,
         }));

@@ -13,22 +13,24 @@ const aiService = require('../services/aiService');
  * @access  Private (Teacher)
  */
 const generateAiQuiz = asyncHandler(async (req, res) => {
-  let { topic, subjectName, className, numQuestions = 5, subStrandId } = req.body;
+  let { topic, subjectName, className, numQuestions = 5, subStrandId, subjectId } = req.body;
 
-  // if the client didn't supply the subject or class name but did include a
-  // subStrandId, try to look up the curriculum hierarchy on the server so we
-  // can still satisfy the AI prompt. this prevents 400s when the front end only
-  // loads a slimmed-down lesson note object.
-  if ((!subjectName || !className || !topic) && subStrandId) {
+  // if the caller passed a subStrandId we can populate a bunch of useful data
+  // server-side. this allows the front end to remain lightweight (just send an
+  // id instead of duplicating strings) and prevents cast errors when storing
+  // the quiz document which requires the subject _id, not the name.
+  if (subStrandId) {
     const SubStrand = require('../models/subStrandModel');
     const sub = await SubStrand.findById(subStrandId).populate({
       path: 'strand',
       populate: { path: 'subject', populate: { path: 'class' } },
     });
     if (sub) {
+      // follow earlier logic for prompt defaults
       if (!topic) topic = sub.name || topic;
       if (!subjectName) subjectName = sub.strand?.subject?.name || subjectName;
       if (!className) className = sub.strand?.subject?.class?.name || className;
+      if (!subjectId) subjectId = sub.strand?.subject?._id || subjectId;
     }
   }
 
@@ -68,9 +70,17 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
     createdQuestions.push(savedQuestion._id);
   }
 
+  // Quiz model expects subject to be an ObjectId. if we still don't have
+  // a subjectId at this point then the request is malformed; such a situation
+  // should generally be caught earlier when deriving from subStrandId.
+  if (!subjectId) {
+    res.status(400);
+    throw new Error('Unable to determine subject for quiz. Please include a valid subStrandId or subjectId.');
+  }
+
   const quizDoc = await Quiz.create({
     title: `${topic} - ${className}`,
-    subject: subjectName,
+    subject: subjectId,
     teacher: req.user.id,
     school: req.user.school,
     questions: createdQuestions,

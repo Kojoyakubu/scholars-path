@@ -57,6 +57,10 @@ const deleteLearnerNote = async (noteId) => {
 // ✅ FIX: Updated quiz generation route (check your backend for correct path)
 const generateAiQuiz = async (quizData) => {
   // route defined in server/routes/quizRoutes.js as POST /api/quizzes/ai/generate
+  // quizData should contain topic, subjectName, className, numQuestions etc.
+  // optionally a subjectId can be supplied (preferred) and/or subStrandId
+  // to allow the server to look up and store the proper ObjectId instead of a
+  // plain string.
   const response = await api.post('/api/quizzes/ai/generate', quizData);
   return response.data;
 };
