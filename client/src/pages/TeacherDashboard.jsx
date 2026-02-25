@@ -75,6 +75,7 @@ import {
   TextField,
   InputAdornment,
   Badge,
+  Checkbox,
   CardActions,
 } from '@mui/material';
 
@@ -595,6 +596,13 @@ function TeacherDashboard() {
   const [isLearnerFromStrandOpen, setIsLearnerFromStrandOpen] = useState(false);
   const [selectedLessonForLearner, setSelectedLessonForLearner] = useState('');
 
+  // quiz generation dialogs
+  const [isQuizOptionsOpen, setIsQuizOptionsOpen] = useState(false);
+  const [isQuizFromLessonOpen, setIsQuizFromLessonOpen] = useState(false);
+  const [isQuizFromStrandOpen, setIsQuizFromStrandOpen] = useState(false);
+  const [selectedLessonForQuiz, setSelectedLessonForQuiz] = useState('');
+  const [quizSelectedSubStrands, setQuizSelectedSubStrands] = useState([]);
+
   // form state for gathering extra details when generating from strand
   const [strandForm, setStrandForm] = useState({
     term: '',
@@ -646,6 +654,8 @@ function TeacherDashboard() {
       if (resetMap[name]) {
         resetMap[name].forEach((k) => (next[k] = ''));
         dispatch(clearChildren({ entities: resetMap[name] }));
+        // if topic selections change, clear any previously queued strands for quizzes
+        setQuizSelectedSubStrands([]);
       }
       return next;
     });
@@ -653,18 +663,36 @@ function TeacherDashboard() {
 
   const preparePreviewSegments = useCallback((note) => {
     const segments = segmentHtmlWithImages(note?.content || '');
-    setPreviewSegments(segments);
+    // initialize segments with imgUrl field set to undefined for loading
+    const init = segments.map((s) => (s.type === 'image' ? { ...s, imgUrl: undefined } : s));
+    setPreviewSegments(init);
 
     // fetch images for any image segments asynchronously
-    segments.forEach((seg, idx) => {
-      if (seg.type === 'image' && seg.meta?.search_query) {
-        fetchImageForQuery(seg.meta.search_query).then((url) => {
+    init.forEach((seg, idx) => {
+      if (seg.type === 'image') {
+        const query = seg.meta?.search_query || seg.meta?.title || '';
+        if (query) {
+          fetchImageForQuery(query).then((url) => {
+            setPreviewSegments((prev) => {
+              const next = [...prev];
+              next[idx] = { ...next[idx], imgUrl: url || '' };
+              return next;
+            });
+          }).catch(() => {
+            setPreviewSegments((prev) => {
+              const next = [...prev];
+              next[idx] = { ...next[idx], imgUrl: '' };
+              return next;
+            });
+          });
+        } else {
+          // no search information, mark as no image
           setPreviewSegments((prev) => {
             const next = [...prev];
-            next[idx] = { ...next[idx], imgUrl: url };
+            next[idx] = { ...next[idx], imgUrl: '' };
             return next;
           });
-        });
+        }
       }
     });
   }, []);
@@ -695,6 +723,47 @@ function TeacherDashboard() {
       setIsAiQuizModalOpen(false);
     }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
   }, [dispatch]);
+
+  // quiz-from-lesson flow
+  const handleGenerateQuizFromLesson = useCallback(() => {
+    if (!selectedLessonForQuiz) return;
+    const note = (lessonNotes || []).find(n => n._id === selectedLessonForQuiz);
+    const topic = note?.subStrand?.name || note?.title || 'Topic';
+    dispatch(generateAiQuiz({
+      topic,
+      subjectName: note?.subject || '',
+      className: note?.class || '',
+      subStrandId: note?.subStrand?._id || note?.subStrand,
+      numQuestions: 10,
+    })).unwrap().then(() => {
+      setSnackbar({ open: true, message: 'Quiz generated from lesson note!', severity: 'success' });
+      setIsQuizFromLessonOpen(false);
+      setSelectedLessonForQuiz('');
+    }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
+  }, [dispatch, selectedLessonForQuiz, lessonNotes]);
+
+  // quiz-from-strands flow
+  const handleGenerateQuizFromStrands = useCallback(() => {
+    if (quizSelectedSubStrands.length === 0) return;
+    // generate one quiz per selected sub-strand
+    Promise.all(
+      quizSelectedSubStrands.map((id) => {
+        const sub = subStrands.find(s => s._id === id);
+        const topic = sub?.name || 'Topic';
+        return dispatch(generateAiQuiz({
+          topic,
+          subjectName: sub?.strand?.subject?.name || '',
+          className: sub?.strand?.subject?.class?.name || '',
+          subStrandId: id,
+          numQuestions: 10,
+        }));
+      })
+    ).then(() => {
+      setSnackbar({ open: true, message: 'Quizzes generated for selected strands!', severity: 'success' });
+      setIsQuizFromStrandOpen(false);
+      setQuizSelectedSubStrands([]);
+    }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
+  }, [dispatch, quizSelectedSubStrands, subStrands]);
 
   const handleGenerateBundleSubmit = useCallback((data) => {
     dispatch(generateLessonBundle(data)).unwrap().then(() => {
@@ -935,7 +1004,7 @@ function TeacherDashboard() {
 
               {/** Generate Quiz */}
               <Grid item xs={6} sm={3}>
-                <Box sx={{ textAlign: 'center', cursor: 'pointer' }}>
+                <Box sx={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => setIsQuizOptionsOpen(true)}>
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/009/742/591/large_2x/quiz-game-icon-outline-illustration-vector.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Quiz</Typography>
                 </Box>
@@ -1089,6 +1158,25 @@ function TeacherDashboard() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setIsLearnerOptionsOpen(false)}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Quiz Options Dialog */}
+        <Dialog open={isQuizOptionsOpen} onClose={() => setIsQuizOptionsOpen(false)} fullWidth maxWidth="xs">
+          <DialogTitle>Generate Quiz</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" sx={{ mb: 2 }}>Choose how you want to generate the quiz:</Typography>
+            <Stack spacing={2}>
+              <Button variant="outlined" onClick={() => { setIsQuizOptionsOpen(false); setIsQuizFromLessonOpen(true); }}>
+                From Lesson Note
+              </Button>
+              <Button variant="contained" onClick={() => { setIsQuizOptionsOpen(false); setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' }); setQuizSelectedSubStrands([]); setIsQuizFromStrandOpen(true); }}>
+                From Strands
+              </Button>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsQuizOptionsOpen(false)}>Cancel</Button>
           </DialogActions>
         </Dialog>
 
@@ -1303,6 +1391,118 @@ function TeacherDashboard() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Quiz From Lesson Note */}
+        <Dialog open={isQuizFromLessonOpen} onClose={() => setIsQuizFromLessonOpen(false)} fullWidth maxWidth="md">
+          <DialogTitle>Generate Quiz from a Lesson Note</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to use as the source for the quiz.</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={5}>
+                <Paper sx={{ maxHeight: 420, overflow: 'auto' }}>
+                  <List>
+                    {(lessonNotes || []).map((ln) => (
+                      <ListItemButton
+                        key={ln._id}
+                        selected={selectedLessonForQuiz === ln._id}
+                        onClick={() => setSelectedLessonForQuiz(ln._id)}
+                        sx={{ alignItems: 'flex-start' }}
+                      >
+                        <ListItemText
+                          primary={ln.subStrand?.name || ln.title || 'Lesson Note'}
+                          secondary={new Date(ln.createdAt).toLocaleString()}
+                        />
+                      </ListItemButton>
+                    ))}
+                    {(!lessonNotes || lessonNotes.length === 0) && (
+                      <ListItem><ListItemText primary="No lesson notes found" /></ListItem>
+                    )}
+                  </List>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} md={7}>
+                <Paper sx={{ p: 2, maxHeight: 520, overflow: 'auto' }}>
+                  {!selectedLessonForQuiz ? (
+                    <Typography variant="body2" color="text.secondary">Select a lesson note to preview its content here.</Typography>
+                  ) : (
+                    (() => {
+                      const note = (lessonNotes || []).find(n => n._id === selectedLessonForQuiz);
+                      return note ? (
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" gutterBottom>Topic: {note.subStrand?.name || note.subStrand}</Typography>
+                          <Divider sx={{ my: 1 }} />
+                          <Box dangerouslySetInnerHTML={{ __html: removeImageBlocks(note.content || '') }} sx={{ '& p': { lineHeight: 1.7 } }} />
+                        </Box>
+                      ) : (
+                        <Typography>Selected note not available.</Typography>
+                      );
+                    })()
+                  )}
+                </Paper>
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => { setIsQuizFromLessonOpen(false); setSelectedLessonForQuiz(''); }} disabled={isLoading}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={!selectedLessonForQuiz || isLoading}
+              onClick={handleGenerateQuizFromLesson}
+            >
+              {isLoading ? <CircularProgress size={18} /> : 'Generate Quiz'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Quiz From Strands */}
+        <Dialog open={isQuizFromStrandOpen} onClose={() => setIsQuizFromStrandOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Generate Quiz from Strands</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" sx={{ mb: 2 }}>Use the curriculum selector below, then tick one or more sub-strands.</Typography>
+            <CurriculumSelection
+              levels={levels}
+              classes={classes}
+              subjects={subjects}
+              strands={strands}
+              subStrands={subStrands}
+              selections={selections}
+              handleSelectionChange={handleSelectionChange}
+              isLoading={isLoading}
+            />
+            {subStrands.length > 0 && (
+              <Paper sx={{ mt: 2, maxHeight: 300, overflow: 'auto' }}>
+                <List>
+                  {subStrands.map(s => (
+                    <ListItem key={s._id} disablePadding>
+                      <ListItemButton
+                        role={undefined}
+                        onClick={() => {
+                          setQuizSelectedSubStrands(prev =>
+                            prev.includes(s._id) ? prev.filter(x => x !== s._id) : [...prev, s._id]
+                          );
+                        }}
+                      >
+                        <ListItemText primary={s.name} />
+                        <Checkbox edge="end" checked={quizSelectedSubStrands.includes(s._id)} />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                  {subStrands.length === 0 && <ListItem><ListItemText primary="No sub-strands available" /></ListItem>}
+                </List>
+              </Paper>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsQuizFromStrandOpen(false)} disabled={isLoading}>Cancel</Button>
+            <Button
+              variant="contained"
+              disabled={quizSelectedSubStrands.length === 0 || isLoading}
+              onClick={handleGenerateQuizFromStrands}
+            >
+              {isLoading ? <CircularProgress size={18} /> : 'Generate Quizzes'}
+            </Button>
+          </DialogActions>
+        </Dialog>
         {/* Note creation form modal */}
         <LessonNoteForm
           open={isNoteModalOpen}
@@ -1356,19 +1556,24 @@ function TeacherDashboard() {
                     );
                   }
                   if (seg.type === 'image') {
+                    // three states: undefined (loading), '' (no url/fail), string (url)
+                    if (seg.imgUrl === undefined) {
+                      return (
+                        <Typography key={idx} variant="caption" color="text.secondary">
+                          Loading image...
+                        </Typography>
+                      );
+                    }
+                    if (!seg.imgUrl) {
+                      return null; // nothing to show
+                    }
                     return (
                       <Box key={idx} sx={{ my: 2, textAlign: 'center' }}>
-                        {seg.imgUrl ? (
-                          <img
-                            src={seg.imgUrl}
-                            alt={seg.meta?.title || ''}
-                            style={{ maxWidth: '100%', height: 'auto' }}
-                          />
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">
-                            Loading image...
-                          </Typography>
-                        )}
+                        <img
+                          src={seg.imgUrl}
+                          alt={seg.meta?.title || ''}
+                          style={{ maxWidth: '100%', height: 'auto' }}
+                        />
                         {seg.meta?.title && (
                           <Typography variant="caption" display="block">{seg.meta.title}</Typography>
                         )}
