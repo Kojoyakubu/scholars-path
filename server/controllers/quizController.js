@@ -13,7 +13,24 @@ const aiService = require('../services/aiService');
  * @access  Private (Teacher)
  */
 const generateAiQuiz = asyncHandler(async (req, res) => {
-  const { topic, subjectName, className, numQuestions = 5, subStrandId } = req.body;
+  let { topic, subjectName, className, numQuestions = 5, subStrandId } = req.body;
+
+  // if the client didn't supply the subject or class name but did include a
+  // subStrandId, try to look up the curriculum hierarchy on the server so we
+  // can still satisfy the AI prompt. this prevents 400s when the front end only
+  // loads a slimmed-down lesson note object.
+  if ((!subjectName || !className || !topic) && subStrandId) {
+    const SubStrand = require('../models/subStrandModel');
+    const sub = await SubStrand.findById(subStrandId).populate({
+      path: 'strand',
+      populate: { path: 'subject', populate: { path: 'class' } },
+    });
+    if (sub) {
+      if (!topic) topic = sub.name || topic;
+      if (!subjectName) subjectName = sub.strand?.subject?.name || subjectName;
+      if (!className) className = sub.strand?.subject?.class?.name || className;
+    }
+  }
 
   if (!topic || !subjectName || !className) {
     res.status(400);

@@ -80,7 +80,19 @@ const generateLessonNote = asyncHandler(async (req, res) => {
  */
 const getMyLessonNotes = asyncHandler(async (req, res) => {
   const notes = await LessonNote.find({ teacher: req.user.id })
-    .populate('subStrand', 'name')
+    .populate({
+      path: 'subStrand',
+      select: 'name',
+      populate: {
+        path: 'strand',
+        select: 'name',
+        populate: {
+          path: 'subject',
+          select: 'name',
+          populate: { path: 'class', select: 'name' },
+        },
+      },
+    })
     .sort({ createdAt: -1 });
   res.json(notes);
 });

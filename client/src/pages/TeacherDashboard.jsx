@@ -729,17 +729,32 @@ function TeacherDashboard() {
     if (!selectedLessonForQuiz) return;
     const note = (lessonNotes || []).find(n => n._id === selectedLessonForQuiz);
     const topic = note?.subStrand?.name || note?.title || 'Topic';
+    const subjectName = note?.subStrand?.strand?.subject?.name || '';
+    const className = note?.subStrand?.strand?.subject?.class?.name || '';
+
+    if (!subjectName || !className) {
+      setSnackbar({
+        open: true,
+        message: 'Selected lesson note lacks curriculum metadata (subject/class). Open or regenerate the note and try again.',
+        severity: 'error',
+      });
+      return;
+    }
+
     dispatch(generateAiQuiz({
       topic,
-      subjectName: note?.subject || '',
-      className: note?.class || '',
+      subjectName,
+      className,
       subStrandId: note?.subStrand?._id || note?.subStrand,
       numQuestions: 10,
-    })).unwrap().then(() => {
-      setSnackbar({ open: true, message: 'Quiz generated from lesson note!', severity: 'success' });
-      setIsQuizFromLessonOpen(false);
-      setSelectedLessonForQuiz('');
-    }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
+    }))
+      .unwrap()
+      .then(() => {
+        setSnackbar({ open: true, message: 'Quiz generated from lesson note!', severity: 'success' });
+        setIsQuizFromLessonOpen(false);
+        setSelectedLessonForQuiz('');
+      })
+      .catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
   }, [dispatch, selectedLessonForQuiz, lessonNotes]);
 
   // quiz-from-strands flow
@@ -750,10 +765,16 @@ function TeacherDashboard() {
       quizSelectedSubStrands.map((id) => {
         const sub = subStrands.find(s => s._id === id);
         const topic = sub?.name || 'Topic';
-        return dispatch(generateAiQuiz({
+        const subjectName = sub?.strand?.subject?.name || '';
+      const className = sub?.strand?.subject?.class?.name || '';
+      if (!subjectName || !className) {
+        // should be rare because subStrands are fully populated, but guard anyway
+        return Promise.reject('Curriculum data missing for selected strand');
+      }
+      return dispatch(generateAiQuiz({
           topic,
-          subjectName: sub?.strand?.subject?.name || '',
-          className: sub?.strand?.subject?.class?.name || '',
+          subjectName,
+          className,
           subStrandId: id,
           numQuestions: 10,
         }));
