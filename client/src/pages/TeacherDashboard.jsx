@@ -26,6 +26,10 @@ import {
   generateLessonBundle,
   generateAiQuiz,
 } from '../features/teacher/teacherSlice';
+
+// utilities for image extraction & fetching
+import { segmentHtmlWithImages, removeImageBlocks } from '../utils/imageExtractor';
+import { fetchImageForQuery } from '../services/imageService';
 import LessonBundleForm from '../components/LessonBundleForm'; 
 import BundleResultViewer from '../components/BundleResultViewer';
 import DashboardBanner from '../components/DashboardBanner';
@@ -578,6 +582,7 @@ function TeacherDashboard() {
   const [isAiQuizModalOpen, setIsAiQuizModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
+  const [previewSegments, setPreviewSegments] = useState([]);
   const [generatingNoteId, setGeneratingNoteId] = useState(null);
   
   // Bundle generation state
@@ -646,15 +651,43 @@ function TeacherDashboard() {
     });
   }, [dispatch]);
 
+  const preparePreviewSegments = useCallback((note) => {
+    const segments = segmentHtmlWithImages(note?.content || '');
+    setPreviewSegments(segments);
+
+    // fetch images for any image segments asynchronously
+    segments.forEach((seg, idx) => {
+      if (seg.type === 'image' && seg.meta?.search_query) {
+        fetchImageForQuery(seg.meta.search_query).then((url) => {
+          setPreviewSegments((prev) => {
+            const next = [...prev];
+            next[idx] = { ...next[idx], imgUrl: url };
+            return next;
+          });
+        });
+      }
+    });
+  }, []);
+
+  const displayNote = useCallback((note) => {
+    if (!note) {
+      setViewingNote(null);
+      setPreviewSegments([]);
+      return;
+    }
+    setViewingNote(note);
+    preparePreviewSegments(note);
+  }, [preparePreviewSegments]);
+
   const handleGenerateNoteSubmit = useCallback((formData) => {
     dispatch(generateLessonNote(formData)).unwrap().then((createdNote) => {
       setSnackbar({ open: true, message: 'Lesson note generated!', severity: 'success' });
       setIsNoteModalOpen(false);
-      setViewingNote(createdNote);
+      displayNote(createdNote);
       // also close create tools if open
       setShowCreateTools(false);
     }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
-  }, [dispatch]);
+  }, [dispatch, displayNote]);
 
   const handleGenerateAiQuizSubmit = useCallback((formData) => {
     dispatch(generateAiQuiz(formData)).unwrap().then(() => {
@@ -716,7 +749,7 @@ function TeacherDashboard() {
       .unwrap()
       .then((created) => {
         setSnackbar({ open: true, message: 'Learner note generated (draft)!', severity: 'success' });
-        setViewingNote(created);
+        displayNote(created);
         setIsLearnerFromStrandOpen(false);
         // reset selections and form
         setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
@@ -1099,7 +1132,7 @@ function TeacherDashboard() {
                         <Box>
                           <Typography variant="caption" color="text.secondary" gutterBottom>Topic: {note.subStrand?.name || note.subStrand}</Typography>
                           <Divider sx={{ my: 1 }} />
-                          <Box dangerouslySetInnerHTML={{ __html: note.content || '' }} sx={{ '& p': { lineHeight: 1.7 } }} />
+                          <Box dangerouslySetInnerHTML={{ __html: removeImageBlocks(note.content || '') }} sx={{ '& p': { lineHeight: 1.7 } }} />
                         </Box>
                       ) : (
                         <Typography>Selected note not available.</Typography>
@@ -1121,7 +1154,7 @@ function TeacherDashboard() {
                 dispatch(generateLearnerNote(selectedLessonForLearner)).unwrap().then((created) => {
                   setSnackbar({ open: true, message: 'Learner note generated (draft)!', severity: 'success' });
                   // show preview immediately
-                  setViewingNote(created);
+                  displayNote(created);
                   // close the selection dialog and clear selection
                   setIsLearnerFromLessonOpen(false);
                   setSelectedLessonForLearner('');
@@ -1292,7 +1325,7 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Note Preview */}
-        <Dialog open={!!viewingNote} onClose={() => setViewingNote(null)} fullWidth maxWidth="md">
+        <Dialog open={!!viewingNote} onClose={() => displayNote(null)} fullWidth maxWidth="md">
           <DialogTitle>Preview Lesson Note</DialogTitle>
           <DialogContent sx={{ bgcolor: 'grey.50' }}>
             <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
@@ -1300,9 +1333,7 @@ function TeacherDashboard() {
                 Topic: {viewingNote?.subStrand?.name || viewingNote?.subStrand || ''}
               </Typography>
               <Divider sx={{ my: 2 }} />
-              <Box
-                dangerouslySetInnerHTML={{ __html: viewingNote?.content || '' }}
-                sx={{
+              <Box sx={{
                   '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
                   '& h3': { fontSize: '1.25rem', fontWeight: 600, mt: 2, mb: 1 },
                   '& table': {
@@ -1317,12 +1348,40 @@ function TeacherDashboard() {
                   },
                   '& p': { lineHeight: 1.7, mb: 1 },
                   '& ul, & ol': { pl: 3, mb: 2 },
-                }}
-              />
+                }}>
+                {previewSegments.map((seg, idx) => {
+                  if (seg.type === 'text') {
+                    return (
+                      <Box key={idx} dangerouslySetInnerHTML={{ __html: seg.html }} />
+                    );
+                  }
+                  if (seg.type === 'image') {
+                    return (
+                      <Box key={idx} sx={{ my: 2, textAlign: 'center' }}>
+                        {seg.imgUrl ? (
+                          <img
+                            src={seg.imgUrl}
+                            alt={seg.meta?.title || ''}
+                            style={{ maxWidth: '100%', height: 'auto' }}
+                          />
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            Loading image...
+                          </Typography>
+                        )}
+                        {seg.meta?.title && (
+                          <Typography variant="caption" display="block">{seg.meta.title}</Typography>
+                        )}
+                      </Box>
+                    );
+                  }
+                  return null;
+                })}
+              </Box>
             </Paper>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setViewingNote(null)}>Close</Button>
+            <Button onClick={() => displayNote(null)}>Close</Button>
           </DialogActions>
         </Dialog>
 

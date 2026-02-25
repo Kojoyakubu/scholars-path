@@ -43,6 +43,37 @@ const CLAUDE_MAIN = process.env.CLAUDE_MODEL_MAIN || 'claude-3-5-sonnet-20240620
 // ---- Utilities ----
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// -----------------------------------------------------------------------------
+// Master system prompt for subject-specific BECE 2024 output structure
+// -----------------------------------------------------------------------------
+const MASTER_SUBJECT_PROMPT = (subject = 'General') => `
+You are an expert Ghanaian basic school teacher specializing in ${subject}.
+Produce content strictly following BECE 2024 style guidelines. Your response MUST
+include the following top-level sections, in this exact order and spelled exactly
+as shown (no extra headings or explanatory text):
+
+LEARNER NOTES
+MULTIPLE CHOICE QUESTIONS
+APPLICATION QUESTIONS
+
+Whenever you need to suggest an image, embed a JSON block as shown below; do
+not output any other text inside it:
+
+[IMAGE]
+{
+  "title": "",
+  "search_query": "",
+  "purpose": ""
+}
+[/IMAGE]
+
+Rules:
+- Do NOT include any introduction, greetings, or framing sentences.
+- Do NOT add a marking scheme unless explicitly requested.
+- Only insert image blocks when they clearly enhance understanding.  
+- Follow Ghanaian examples and terminology where appropriate.
+`;
+
 function extractJson(text) {
   if (!text) return '';
   let cleaned = text.trim();
@@ -546,9 +577,10 @@ async function generateLearnerNoteHTML(teacherNoteHTML, details = {}) {
     throw new Error('Teacher note HTML must be provided as a non-empty string.');
   }
 
-  const { subStrandName = 'Topic', className = 'Class' } = details;
+  const { subStrandName = 'Topic', className = 'Class', subjectName = 'General' } = details;
+  const master = MASTER_SUBJECT_PROMPT(subjectName);
 
-  const prompt = `
+  const prompt = `${master}
 You are a friendly Ghanaian teacher creating an engaging study note for ${className} students.
 
 Transform the formal teacher's lesson note below into a rich, student-friendly HTML study guide.
@@ -567,8 +599,7 @@ GUIDELINES:
    - Local Ghanaian examples (use familiar contexts)
    - Step-by-step breakdowns where needed
 3. **Visuals:** 
-   - When an image would help, write: <p><em>[Image suggestion: Brief description of helpful image]</em></p>
-   - When a diagram would help, write: <p><em>[Diagram: Brief description]</em></p>
+   - When an image would help, insert the JSON block defined above.
 4. **Structure:** Use HTML headings (<h2>, <h3>), paragraphs (<p>), lists (<ul>, <li>), and bold/italic for emphasis
 5. **Engagement:** End with a "Check Your Understanding" section with 2-3 simple questions
 6. **Tone:** Friendly, encouraging, age-appropriate for ${className}
