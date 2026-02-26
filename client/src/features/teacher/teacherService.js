@@ -112,12 +112,12 @@ const duplicateBundle = async (bundleId) => {
 };
 
 const getMyQuizzes = async () => {
-  const response = await api.get('/api/teacher/quizzes');
+  const response = await api.get('/api/quizzes');
   return response.data;
 };
 
 const deleteQuiz = async (quizId) => {
-  const response = await api.delete(`/api/teacher/quizzes/${quizId}`);
+  const response = await api.delete(`/api/quizzes/${quizId}`);
   return response.data;
 };
 
@@ -145,7 +145,7 @@ const teacherService = {
 
   // retrieve single quiz with populated questions/options
   getQuizById: async (quizId) => {
-    const response = await api.get(`/api/teacher/quizzes/${quizId}`);
+    const response = await api.get(`/api/quizzes/${quizId}`);
     return response.data;
   },
 };
