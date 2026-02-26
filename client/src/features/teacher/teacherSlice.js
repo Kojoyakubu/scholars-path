@@ -8,6 +8,7 @@ const initialState = {
   bundles: [], // ✅ NEW: List of all lesson bundles
   currentNote: null,
   currentBundle: null, // ✅ NEW: Currently viewed bundle
+  currentQuiz: null, // ✅ NEW: quiz details when viewing
   analytics: {},
   aiInsights: null,
   bundleResult: null, // ✅ NEW: Store the complete lesson bundle
@@ -54,6 +55,7 @@ export const duplicateBundle = createTeacherThunk('duplicateBundle', teacherServ
 // ✅ NEW: Quiz operations
 export const getMyQuizzes = createTeacherThunk('getMyQuizzes', teacherService.getMyQuizzes);
 export const deleteQuiz = createTeacherThunk('deleteQuiz', teacherService.deleteQuiz);
+export const getQuizById = createTeacherThunk('getQuizById', teacherService.getQuizById);
 
 export const teacherSlice = createSlice({
   name: 'teacher',
@@ -67,6 +69,9 @@ export const teacherSlice = createSlice({
     },
     resetCurrentNote: (state) => {
       state.currentNote = null;
+    },
+    clearCurrentQuiz: (state) => {
+      state.currentQuiz = null;
     },
   },
   extraReducers: (builder) => {
@@ -190,6 +195,10 @@ export const teacherSlice = createSlice({
         state.quizzes = state.quizzes.filter(q => q._id !== action.payload.id);
         state.isSuccess = true;
         state.message = action.payload.message;
+      })
+      .addCase(getQuizById.fulfilled, (state, action) => {
+        state.currentQuiz = action.payload;
+        state.isSuccess = true;
       })
 
       // Generic loaders

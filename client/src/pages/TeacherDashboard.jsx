@@ -27,6 +27,7 @@ import {
   generateAiQuiz,
   getMyQuizzes,
   deleteQuiz,
+  getQuizById,
 } from '../features/teacher/teacherSlice';
 
 // utilities for image extraction & fetching
@@ -574,6 +575,7 @@ function TeacherDashboard() {
     lessonNotes,
     draftLearnerNotes,
     quizzes,
+    currentQuiz,
     isLoading,
     teacherAnalytics,
     bundleResult
@@ -606,6 +608,8 @@ function TeacherDashboard() {
   const [selectedLessonForQuiz, setSelectedLessonForQuiz] = useState('');
   const [quizSelectedSubStrands, setQuizSelectedSubStrands] = useState([]);
   const [isMyQuizzesOpen, setIsMyQuizzesOpen] = useState(false);
+  const [isQuizViewOpen, setIsQuizViewOpen] = useState(false);
+  const [quizToViewId, setQuizToViewId] = useState('');
 
   // form state for gathering extra details when generating from strand
   const [strandForm, setStrandForm] = useState({
@@ -644,6 +648,14 @@ function TeacherDashboard() {
     dispatch(getMyQuizzes());
     return () => { dispatch(resetTeacherState()); };
   }, [dispatch]);
+
+  // clear loaded quiz details when the detail dialog is closed
+  useEffect(() => {
+    if (!isQuizViewOpen) {
+      dispatch({ type: 'teacher/clearCurrentQuiz' });
+      setQuizToViewId('');
+    }
+  }, [isQuizViewOpen, dispatch]);
 
   // Dependent fetches
   useEffect(() => { if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); }, [selections.level, dispatch]);
@@ -1566,7 +1578,7 @@ function TeacherDashboard() {
                       <Box>
                         <Typography variant="h6">{quiz.title}</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Created: {new Date(quiz.createdAt).toLocaleString()}
+                          Created: {quiz.createdAt ? new Date(quiz.createdAt).toLocaleString() : 'Unknown'}
                         </Typography>
                         {quiz.aiProvider && (
                           <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
@@ -1574,20 +1586,36 @@ function TeacherDashboard() {
                           </Typography>
                         )}
                       </Box>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={() => {
-                          dispatch(deleteQuiz(quiz._id)).then(() => {
-                            setSnackbar({ open: true, message: 'Quiz deleted!', severity: 'success' });
-                          }).catch((err) => {
-                            setSnackbar({ open: true, message: err || 'Failed to delete quiz', severity: 'error' });
-                          });
-                        }}
-                      >
-                        Delete
-                      </Button>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            setQuizToViewId(quiz._id);
+                            dispatch(getQuizById(quiz._id)).unwrap().then(() => {
+                              setIsQuizViewOpen(true);
+                            }).catch((err) => {
+                              setSnackbar({ open: true, message: err || 'Failed to load quiz', severity: 'error' });
+                            });
+                          }}
+                        >
+                          View
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => {
+                            dispatch(deleteQuiz(quiz._id)).then(() => {
+                              setSnackbar({ open: true, message: 'Quiz deleted!', severity: 'success' });
+                            }).catch((err) => {
+                              setSnackbar({ open: true, message: err || 'Failed to delete quiz', severity: 'error' });
+                            });
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Box>
                     </Box>
                   </Paper>
                 ))}
@@ -1600,6 +1628,50 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Note creation form modal */}
+
+        {/* Quiz detail viewer */}
+        <Dialog open={isQuizViewOpen} onClose={() => { setIsQuizViewOpen(false); }} fullWidth maxWidth="md">
+          <DialogTitle>Quiz Details</DialogTitle>
+          <DialogContent>
+            {currentQuiz ? (
+              <Box>
+                <Typography variant="h6" gutterBottom>{currentQuiz.title}</Typography>
+                <Typography variant="caption" color="text.secondary" gutterBottom>
+                  Created: {currentQuiz.createdAt ? new Date(currentQuiz.createdAt).toLocaleString() : 'Unknown'}
+                </Typography>
+                {currentQuiz.questions && currentQuiz.questions.length > 0 ? (
+                  <List>
+                    {currentQuiz.questions.map((q, idx) => (
+                      <Paper key={q._id} sx={{ mb: 2, p: 2 }}>
+                        <Typography><strong>Q{idx + 1}.</strong> {q.text}</Typography>
+                        <List>
+                          {q.options.map((opt) => (
+                            <ListItem key={opt._id}>
+                              <ListItemText
+                                primary={opt.text}
+                                secondary={opt.isCorrect ? 'Correct' : ''}
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </Paper>
+                    ))}
+                  </List>
+                ) : (
+                  <Typography color="text.secondary">No questions available.</Typography>
+                )}
+              </Box>
+            ) : (
+              <Box sx={{ py: 4, textAlign: 'center' }}>
+                <CircularProgress />
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => { setIsQuizViewOpen(false); }} >Close</Button>
+          </DialogActions>
+        </Dialog>
+
         <LessonNoteForm
           open={isNoteModalOpen}
           onClose={() => setIsNoteModalOpen(false)}

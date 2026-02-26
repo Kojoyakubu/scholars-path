@@ -142,6 +142,12 @@ const teacherService = {
   duplicateBundle,
   getMyQuizzes,
   deleteQuiz,
+
+  // retrieve single quiz with populated questions/options
+  getQuizById: async (quizId) => {
+    const response = await api.get(`/api/teacher/quizzes/${quizId}`);
+    return response.data;
+  },
 };
 
 export default teacherService;
