@@ -111,6 +111,16 @@ const duplicateBundle = async (bundleId) => {
   return response.data;
 };
 
+const getMyQuizzes = async () => {
+  const response = await api.get('/api/teacher/quizzes');
+  return response.data;
+};
+
+const deleteQuiz = async (quizId) => {
+  const response = await api.delete(`/api/teacher/quizzes/${quizId}`);
+  return response.data;
+};
+
 const teacherService = {
   getMyLessonNotes,
   generateLessonNote,
@@ -130,6 +140,8 @@ const teacherService = {
   updateBundle,
   deleteBundle,
   duplicateBundle,
+  getMyQuizzes,
+  deleteQuiz,
 };
 
 export default teacherService;

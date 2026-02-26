@@ -51,6 +51,10 @@ export const updateBundle = createTeacherThunk('updateBundle', teacherService.up
 export const deleteBundle = createTeacherThunk('deleteBundle', teacherService.deleteBundle);
 export const duplicateBundle = createTeacherThunk('duplicateBundle', teacherService.duplicateBundle);
 
+// ✅ NEW: Quiz operations
+export const getMyQuizzes = createTeacherThunk('getMyQuizzes', teacherService.getMyQuizzes);
+export const deleteQuiz = createTeacherThunk('deleteQuiz', teacherService.deleteQuiz);
+
 export const teacherSlice = createSlice({
   name: 'teacher',
   initialState,
@@ -173,6 +177,17 @@ export const teacherSlice = createSlice({
       })
       .addCase(duplicateBundle.fulfilled, (state, action) => {
         state.bundles.unshift(action.payload.bundle);
+        state.isSuccess = true;
+        state.message = action.payload.message;
+      })
+
+      // ✅ NEW: Quiz cases
+      .addCase(getMyQuizzes.fulfilled, (state, action) => {
+        state.quizzes = action.payload;
+        state.isSuccess = true;
+      })
+      .addCase(deleteQuiz.fulfilled, (state, action) => {
+        state.quizzes = state.quizzes.filter(q => q._id !== action.payload.id);
         state.isSuccess = true;
         state.message = action.payload.message;
       })
