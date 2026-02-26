@@ -1098,19 +1098,19 @@ function TeacherDashboard() {
                 </Box>
               </Grid>
 
+              {/* MY QUIZZES */}
+              <Grid item xs={6} sm={3}>
+                <Box onClick={() => setIsMyQuizzesOpen(true)} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
+                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: `url('https://img.freepik.com/premium-vector/quiz-logo-poll-questionnaire-icon-symbol_101884-1076.jpg?w=2000')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Quizzes</Typography>
+                </Box>
+              </Grid>
+
               {/* ANALYSIS */}
               <Grid item xs={6} sm={3}>
                 <Box onClick={() => { /* TODO: Navigate to Analysis */ }} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Analysis</Typography>
-                </Box>
-              </Grid>
-
-              {/* MY QUIZZES */}
-              <Grid item xs={6} sm={3}>
-                <Box onClick={() => setIsMyQuizzesOpen(true)} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://static.flaticon.com/png/128/10473/10473296.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Quizzes</Typography>
                 </Box>
               </Grid>
             </Grid>
