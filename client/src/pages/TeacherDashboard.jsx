@@ -1639,6 +1639,14 @@ function TeacherDashboard() {
                         <Typography variant="caption" color="text.secondary">
                           Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'Unknown'}
                         </Typography>
+                        {note.status === 'published' && (
+                          <Chip
+                            label="Published"
+                            size="small"
+                            color="success"
+                            sx={{ ml: 1, height: 20 }}
+                          />
+                        )}
                       </Box>
                       <Stack direction="row" spacing={1}>
                         <Button
@@ -1654,6 +1662,7 @@ function TeacherDashboard() {
                         <Button
                           variant="contained"
                           size="small"
+                          disabled={note.status === 'published'}
                           onClick={() => {
                             dispatch(publishLearnerNote(note._id))
                               .unwrap()
@@ -1668,7 +1677,7 @@ function TeacherDashboard() {
                               });
                           }}
                         >
-                          Publish
+                          {note.status === 'published' ? 'Published' : 'Publish'}
                         </Button>
                         <Button
                           variant="outlined"

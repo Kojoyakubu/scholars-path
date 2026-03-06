@@ -111,9 +111,9 @@ export const teacherSlice = createSlice({
         state.isSuccess = true;
       })
       .addCase(publishLearnerNote.fulfilled, (state, action) => {
-        state.draftLearnerNotes = state.draftLearnerNotes.filter(
-          (note) => note._id !== action.payload.id
-        );
+        state.draftLearnerNotes = state.draftLearnerNotes.map((note) => (
+          note._id === action.payload.id ? { ...note, status: 'published' } : note
+        ));
         state.isSuccess = true;
         state.message = action.payload.message;
       })
