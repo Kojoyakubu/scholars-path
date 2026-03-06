@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -610,6 +610,9 @@ function TeacherDashboard() {
   const [isMyQuizzesOpen, setIsMyQuizzesOpen] = useState(false);
   const [isQuizViewOpen, setIsQuizViewOpen] = useState(false);
   const [quizToViewId, setQuizToViewId] = useState('');
+  const [isMyLessonNotesOpen, setIsMyLessonNotesOpen] = useState(false);
+  const [notesClassFilter, setNotesClassFilter] = useState('');
+  const [notesSubjectFilter, setNotesSubjectFilter] = useState('');
 
   // form state for gathering extra details when generating from strand
   const [strandForm, setStrandForm] = useState({
@@ -635,6 +638,49 @@ function TeacherDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateTools, setShowCreateTools] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
+
+  const lessonNoteClassOptions = useMemo(() => {
+    const classMap = new Map();
+    (lessonNotes || []).forEach((note) => {
+      const classObj = note?.subStrand?.strand?.subject?.class;
+      const classId = classObj?._id || classObj?.name;
+      const className = classObj?.name;
+      if (classId && className && !classMap.has(String(classId))) {
+        classMap.set(String(classId), { id: String(classId), name: className });
+      }
+    });
+    return Array.from(classMap.values()).sort((first, second) => first.name.localeCompare(second.name));
+  }, [lessonNotes]);
+
+  const lessonNoteSubjectOptions = useMemo(() => {
+    if (!notesClassFilter) return [];
+    const subjectMap = new Map();
+    (lessonNotes || []).forEach((note) => {
+      const classObj = note?.subStrand?.strand?.subject?.class;
+      const noteClassId = classObj?._id || classObj?.name;
+      if (String(noteClassId) !== String(notesClassFilter)) return;
+
+      const subjectObj = note?.subStrand?.strand?.subject;
+      const subjectId = subjectObj?._id || subjectObj?.name;
+      const subjectName = subjectObj?.name;
+      if (subjectId && subjectName && !subjectMap.has(String(subjectId))) {
+        subjectMap.set(String(subjectId), { id: String(subjectId), name: subjectName });
+      }
+    });
+    return Array.from(subjectMap.values()).sort((first, second) => first.name.localeCompare(second.name));
+  }, [lessonNotes, notesClassFilter]);
+
+  const lessonNotesBySelection = useMemo(() => {
+    if (!notesClassFilter || !notesSubjectFilter) return [];
+    return (lessonNotes || []).filter((note) => {
+      const classObj = note?.subStrand?.strand?.subject?.class;
+      const subjectObj = note?.subStrand?.strand?.subject;
+      const noteClassId = classObj?._id || classObj?.name;
+      const noteSubjectId = subjectObj?._id || subjectObj?.name;
+      return String(noteClassId) === String(notesClassFilter)
+        && String(noteSubjectId) === String(notesSubjectFilter);
+    });
+  }, [lessonNotes, notesClassFilter, notesSubjectFilter]);
 
   // Initialization & Handlers (Preserved from original)
 
@@ -1096,7 +1142,14 @@ function TeacherDashboard() {
 
               {/* MY LESSON NOTES */}
               <Grid item xs={6} sm={3}>
-                <Box onClick={() => { /* TODO: Navigate to My Lesson Notes */ }} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
+                <Box
+                  onClick={() => {
+                    setNotesClassFilter('');
+                    setNotesSubjectFilter('');
+                    setIsMyLessonNotesOpen(true);
+                  }}
+                  sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}
+                >
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://i.pinimg.com/736x/d1/f0/68/d1f068f076dd1d2090b35d602f62948f.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>My Lesson Notes</Typography>
                 </Box>
@@ -1235,6 +1288,104 @@ function TeacherDashboard() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setIsQuizOptionsOpen(false)}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* My Lesson Notes flow */}
+        <Dialog
+          open={isMyLessonNotesOpen}
+          onClose={() => {
+            setIsMyLessonNotesOpen(false);
+            setNotesClassFilter('');
+            setNotesSubjectFilter('');
+          }}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle>My Lesson Notes</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="notes-class-label">Class</InputLabel>
+                  <Select
+                    labelId="notes-class-label"
+                    label="Class"
+                    value={notesClassFilter}
+                    onChange={(event) => {
+                      setNotesClassFilter(event.target.value);
+                      setNotesSubjectFilter('');
+                    }}
+                  >
+                    {lessonNoteClassOptions.map((option) => (
+                      <MenuItem key={option.id} value={option.id}>{option.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size="small" disabled={!notesClassFilter}>
+                  <InputLabel id="notes-subject-label">Subject</InputLabel>
+                  <Select
+                    labelId="notes-subject-label"
+                    label="Subject"
+                    value={notesSubjectFilter}
+                    onChange={(event) => setNotesSubjectFilter(event.target.value)}
+                  >
+                    {lessonNoteSubjectOptions.map((option) => (
+                      <MenuItem key={option.id} value={option.id}>{option.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            {!notesClassFilter ? (
+              <Typography variant="body2" color="text.secondary">Select a class to continue.</Typography>
+            ) : !notesSubjectFilter ? (
+              <Typography variant="body2" color="text.secondary">Select a subject to view notes.</Typography>
+            ) : lessonNotesBySelection.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">No lesson notes found for this class and subject.</Typography>
+            ) : (
+              <List>
+                {lessonNotesBySelection.map((note) => (
+                  <Paper key={note._id} sx={{ mb: 1.5, p: 1.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                          {note.subStrand?.name || 'Lesson Note'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'Unknown'}
+                        </Typography>
+                      </Box>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          displayNote(note);
+                          setIsMyLessonNotesOpen(false);
+                        }}
+                      >
+                        Open
+                      </Button>
+                    </Box>
+                  </Paper>
+                ))}
+              </List>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setIsMyLessonNotesOpen(false);
+                setNotesClassFilter('');
+                setNotesSubjectFilter('');
+              }}
+            >
+              Close
+            </Button>
           </DialogActions>
         </Dialog>
 
