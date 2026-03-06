@@ -12,12 +12,23 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
-import { Article } from '@mui/icons-material';
+import { Article, OpenInFull, CloseFullscreen } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
 
 // 💡 Fix 1: Add subStrandId to the props
-function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading, subStrandId }) {
+function LessonNoteForm({
+  open,
+  onClose,
+  onSubmit,
+  subStrandName,
+  isLoading,
+  subStrandId,
+  fullScreen = false,
+  onToggleFullscreen,
+}) {
   const [formData, setFormData] = useState({
     school: '',
     term: 'One',
@@ -59,11 +70,27 @@ function LessonNoteForm({ open, onClose, onSubmit, subStrandName, isLoading, sub
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" disableEscapeKeyDown={isLoading}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen={fullScreen}
+      fullWidth
+      maxWidth={fullScreen ? false : 'md'}
+      disableEscapeKeyDown={isLoading}
+    >
       <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Article color="primary" />
-          <Typography variant="h6">Generate AI Lesson Note</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Article color="primary" />
+            <Typography variant="h6">Generate AI Lesson Note</Typography>
+          </Box>
+          {onToggleFullscreen && (
+            <Tooltip title={fullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+              <IconButton size="small" onClick={onToggleFullscreen}>
+                {fullScreen ? <CloseFullscreen fontSize="small" /> : <OpenInFull fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
           This will generate a teacher lesson note based on the selected topic.

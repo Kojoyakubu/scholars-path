@@ -17,6 +17,7 @@ import {
   Stack,
   Alert,
   IconButton,
+  Tooltip,
 } from '@mui/material';
 import { useState } from 'react';
 import {
@@ -27,6 +28,8 @@ import {
   CheckCircle,
   Publish,
   Download,
+  OpenInFull,
+  CloseFullscreen,
 } from '@mui/icons-material';
 
 /**
@@ -49,7 +52,14 @@ function TabPanel({ children, value, index, ...other }) {
 /**
  * BundleResultViewer - Displays generated Teacher Note, Learner Note, and Quiz
  */
-function BundleResultViewer({ open, onClose, bundleData, onPublish }) {
+function BundleResultViewer({
+  open,
+  onClose,
+  bundleData,
+  onPublish,
+  fullScreen = false,
+  onToggleFullscreen,
+}) {
   const [activeTab, setActiveTab] = useState(0);
 
   if (!bundleData) return null;
@@ -67,7 +77,7 @@ function BundleResultViewer({ open, onClose, bundleData, onPublish }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullScreen>
+    <Dialog open={open} onClose={onClose} fullScreen={fullScreen} fullWidth maxWidth={fullScreen ? false : 'lg'}>
       {/* Header */}
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -82,9 +92,18 @@ function BundleResultViewer({ open, onClose, bundleData, onPublish }) {
               </Typography>
             </Box>
           </Box>
-          <IconButton onClick={onClose}>
-            <Close />
-          </IconButton>
+          <Stack direction="row" spacing={1}>
+            {onToggleFullscreen && (
+              <Tooltip title={fullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+                <IconButton onClick={onToggleFullscreen}>
+                  {fullScreen ? <CloseFullscreen /> : <OpenInFull />}
+                </IconButton>
+              </Tooltip>
+            )}
+            <IconButton onClick={onClose}>
+              <Close />
+            </IconButton>
+          </Stack>
         </Box>
       </DialogTitle>
 

@@ -104,6 +104,8 @@ import {
   ExpandLess,
   Refresh,
   PlayArrow,
+  OpenInFull,
+  CloseFullscreen,
 } from '@mui/icons-material';
 
 // 🎯 Animation Variants
@@ -564,6 +566,23 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
+function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
+  return (
+    <DialogTitle sx={{ pb: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+        <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
+          {title}
+        </Typography>
+        <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+          <IconButton size="small" onClick={onToggle}>
+            {isFullscreen ? <CloseFullscreen fontSize="small" /> : <OpenInFull fontSize="small" />}
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </DialogTitle>
+  );
+}
+
 function TeacherDashboard() {
   const theme = useTheme();
   const dispatch = useDispatch();
@@ -638,6 +657,12 @@ function TeacherDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateTools, setShowCreateTools] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
+  const [dialogFullscreen, setDialogFullscreen] = useState({});
+
+  const isDialogFullscreen = useCallback((dialogKey) => !!dialogFullscreen[dialogKey], [dialogFullscreen]);
+  const toggleDialogFullscreen = useCallback((dialogKey) => {
+    setDialogFullscreen((prev) => ({ ...prev, [dialogKey]: !prev[dialogKey] }));
+  }, []);
 
   const lessonNoteClassOptions = useMemo(() => {
     const classMap = new Map();
@@ -1184,8 +1209,8 @@ function TeacherDashboard() {
 
         {/* Modals & Dialogs */}
         {/* Plan generation modal */}
-        <Dialog open={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Select Topic for Lesson Plan</DialogTitle>
+        <Dialog open={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} fullScreen={isDialogFullscreen('plan')} fullWidth maxWidth={isDialogFullscreen('plan') ? false : 'sm'}>
+          <DialogTitleWithFullscreen title="Select Topic for Lesson Plan" isFullscreen={isDialogFullscreen('plan')} onToggle={() => toggleDialogFullscreen('plan')} />
           <DialogContent>
             <CurriculumSelection
               levels={levels}
@@ -1212,8 +1237,8 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Bundle topic selector dialog */}
-        <Dialog open={isBundleSelectorOpen} onClose={() => setIsBundleSelectorOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Select Topic for Lesson Bundle</DialogTitle>
+        <Dialog open={isBundleSelectorOpen} onClose={() => setIsBundleSelectorOpen(false)} fullScreen={isDialogFullscreen('bundleSelector')} fullWidth maxWidth={isDialogFullscreen('bundleSelector') ? false : 'sm'}>
+          <DialogTitleWithFullscreen title="Select Topic for Lesson Bundle" isFullscreen={isDialogFullscreen('bundleSelector')} onToggle={() => toggleDialogFullscreen('bundleSelector')} />
           <DialogContent>
             <CurriculumSelection
               levels={levels}
@@ -1250,8 +1275,8 @@ function TeacherDashboard() {
           isLoading={isLoading}
         />
         {/* Learner Notes Options Dialog */}
-        <Dialog open={isLearnerOptionsOpen} onClose={() => setIsLearnerOptionsOpen(false)} fullWidth maxWidth="xs">
-          <DialogTitle>Generate Learner Notes</DialogTitle>
+        <Dialog open={isLearnerOptionsOpen} onClose={() => setIsLearnerOptionsOpen(false)} fullScreen={isDialogFullscreen('learnerOptions')} fullWidth maxWidth={isDialogFullscreen('learnerOptions') ? false : 'xs'}>
+          <DialogTitleWithFullscreen title="Generate Learner Notes" isFullscreen={isDialogFullscreen('learnerOptions')} onToggle={() => toggleDialogFullscreen('learnerOptions')} />
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>Choose how you want to generate learner notes:</Typography>
             <Stack spacing={2}>
@@ -1273,8 +1298,8 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Quiz Options Dialog */}
-        <Dialog open={isQuizOptionsOpen} onClose={() => setIsQuizOptionsOpen(false)} fullWidth maxWidth="xs">
-          <DialogTitle>Generate Quiz</DialogTitle>
+        <Dialog open={isQuizOptionsOpen} onClose={() => setIsQuizOptionsOpen(false)} fullScreen={isDialogFullscreen('quizOptions')} fullWidth maxWidth={isDialogFullscreen('quizOptions') ? false : 'xs'}>
+          <DialogTitleWithFullscreen title="Generate Quiz" isFullscreen={isDialogFullscreen('quizOptions')} onToggle={() => toggleDialogFullscreen('quizOptions')} />
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>Choose how you want to generate the quiz:</Typography>
             <Stack spacing={2}>
@@ -1299,10 +1324,11 @@ function TeacherDashboard() {
             setNotesClassFilter('');
             setNotesSubjectFilter('');
           }}
+          fullScreen={isDialogFullscreen('myLessonNotes')}
           fullWidth
-          maxWidth="md"
+          maxWidth={isDialogFullscreen('myLessonNotes') ? false : 'md'}
         >
-          <DialogTitle>My Lesson Notes</DialogTitle>
+          <DialogTitleWithFullscreen title="My Lesson Notes" isFullscreen={isDialogFullscreen('myLessonNotes')} onToggle={() => toggleDialogFullscreen('myLessonNotes')} />
           <DialogContent>
             <Grid container spacing={2} sx={{ mb: 2 }}>
               <Grid item xs={12} md={6}>
@@ -1390,8 +1416,8 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* From Lesson Note flow */}
-        <Dialog open={isLearnerFromLessonOpen} onClose={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} fullWidth maxWidth="md">
-          <DialogTitle>Generate Learner Note from an Existing Lesson Note</DialogTitle>
+        <Dialog open={isLearnerFromLessonOpen} onClose={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} fullScreen={isDialogFullscreen('learnerFromLesson')} fullWidth maxWidth={isDialogFullscreen('learnerFromLesson') ? false : 'md'}>
+          <DialogTitleWithFullscreen title="Generate Learner Note from an Existing Lesson Note" isFullscreen={isDialogFullscreen('learnerFromLesson')} onToggle={() => toggleDialogFullscreen('learnerFromLesson')} />
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to convert into a learner-friendly note.</Typography>
             <Grid container spacing={2}>
@@ -1468,8 +1494,8 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* From Strands flow */}
-        <Dialog open={isLearnerFromStrandOpen} onClose={closeLearnerFromStrand} fullWidth maxWidth="sm">
-          <DialogTitle>Generate Learner Note from Strand</DialogTitle>
+        <Dialog open={isLearnerFromStrandOpen} onClose={closeLearnerFromStrand} fullScreen={isDialogFullscreen('learnerFromStrand')} fullWidth maxWidth={isDialogFullscreen('learnerFromStrand') ? false : 'sm'}>
+          <DialogTitleWithFullscreen title="Generate Learner Note from Strand" isFullscreen={isDialogFullscreen('learnerFromStrand')} onToggle={() => toggleDialogFullscreen('learnerFromStrand')} />
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>
               Choose a strand/sub-strand and provide optional context details to guide the AI.
@@ -1602,8 +1628,8 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Quiz From Lesson Note */}
-        <Dialog open={isQuizFromLessonOpen} onClose={() => setIsQuizFromLessonOpen(false)} fullWidth maxWidth="md">
-          <DialogTitle>Generate Quiz from a Lesson Note</DialogTitle>
+        <Dialog open={isQuizFromLessonOpen} onClose={() => setIsQuizFromLessonOpen(false)} fullScreen={isDialogFullscreen('quizFromLesson')} fullWidth maxWidth={isDialogFullscreen('quizFromLesson') ? false : 'md'}>
+          <DialogTitleWithFullscreen title="Generate Quiz from a Lesson Note" isFullscreen={isDialogFullscreen('quizFromLesson')} onToggle={() => toggleDialogFullscreen('quizFromLesson')} />
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to use as the source for the quiz.</Typography>
             <Grid container spacing={2}>
@@ -1664,8 +1690,8 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Quiz From Strands */}
-        <Dialog open={isQuizFromStrandOpen} onClose={() => setIsQuizFromStrandOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Generate Quiz from Strands</DialogTitle>
+        <Dialog open={isQuizFromStrandOpen} onClose={() => setIsQuizFromStrandOpen(false)} fullScreen={isDialogFullscreen('quizFromStrand')} fullWidth maxWidth={isDialogFullscreen('quizFromStrand') ? false : 'sm'}>
+          <DialogTitleWithFullscreen title="Generate Quiz from Strands" isFullscreen={isDialogFullscreen('quizFromStrand')} onToggle={() => toggleDialogFullscreen('quizFromStrand')} />
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>Use the curriculum selector below, then tick one or more sub-strands.</Typography>
             <CurriculumSelection
@@ -1714,8 +1740,8 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* My Quizzes Dialog */}
-        <Dialog open={isMyQuizzesOpen} onClose={() => setIsMyQuizzesOpen(false)} fullWidth maxWidth="md">
-          <DialogTitle>My Quizzes</DialogTitle>
+        <Dialog open={isMyQuizzesOpen} onClose={() => setIsMyQuizzesOpen(false)} fullScreen={isDialogFullscreen('myQuizzes')} fullWidth maxWidth={isDialogFullscreen('myQuizzes') ? false : 'md'}>
+          <DialogTitleWithFullscreen title="My Quizzes" isFullscreen={isDialogFullscreen('myQuizzes')} onToggle={() => toggleDialogFullscreen('myQuizzes')} />
           <DialogContent>
             {(!quizzes || quizzes.length === 0) ? (
               <Box sx={{ py: 4, textAlign: 'center' }}>
@@ -1781,8 +1807,8 @@ function TeacherDashboard() {
         {/* Note creation form modal */}
 
         {/* Quiz detail viewer */}
-        <Dialog open={isQuizViewOpen} onClose={() => { setIsQuizViewOpen(false); }} fullWidth maxWidth="md">
-          <DialogTitle>Quiz Details</DialogTitle>
+        <Dialog open={isQuizViewOpen} onClose={() => { setIsQuizViewOpen(false); }} fullScreen={isDialogFullscreen('quizView')} fullWidth maxWidth={isDialogFullscreen('quizView') ? false : 'md'}>
+          <DialogTitleWithFullscreen title="Quiz Details" isFullscreen={isDialogFullscreen('quizView')} onToggle={() => toggleDialogFullscreen('quizView')} />
           <DialogContent>
             {currentQuiz ? (
               <Box>
@@ -1830,8 +1856,17 @@ function TeacherDashboard() {
           subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           subStrandId={selections.subStrand}
           isLoading={isLoading || planLoading}
+          fullScreen={isDialogFullscreen('lessonNoteForm')}
+          onToggleFullscreen={() => toggleDialogFullscreen('lessonNoteForm')}
         />
-        <BundleResultViewer open={viewBundleResult} onClose={() => setViewBundleResult(false)} bundleData={bundleResult} onPublish={handlePublishBundle} />
+        <BundleResultViewer
+          open={viewBundleResult}
+          onClose={() => setViewBundleResult(false)}
+          bundleData={bundleResult}
+          onPublish={handlePublishBundle}
+          fullScreen={isDialogFullscreen('bundleResultViewer')}
+          onToggleFullscreen={() => toggleDialogFullscreen('bundleResultViewer')}
+        />
         
         {/* Delete Confirmation */}
         <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
@@ -1844,8 +1879,8 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Note Preview */}
-        <Dialog open={!!viewingNote} onClose={() => displayNote(null)} fullWidth maxWidth="md">
-          <DialogTitle>Preview Lesson Note</DialogTitle>
+        <Dialog open={!!viewingNote} onClose={() => displayNote(null)} fullScreen={isDialogFullscreen('notePreview')} fullWidth maxWidth={isDialogFullscreen('notePreview') ? false : 'md'}>
+          <DialogTitleWithFullscreen title="Preview Lesson Note" isFullscreen={isDialogFullscreen('notePreview')} onToggle={() => toggleDialogFullscreen('notePreview')} />
           <DialogContent sx={{ bgcolor: 'grey.50' }}>
             <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
               <Typography variant="caption" color="text.secondary" gutterBottom>
