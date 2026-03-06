@@ -46,6 +46,7 @@ import {
   Button,
   Grid,
   Select,
+  Menu,
   MenuItem,
   FormControl,
   InputLabel,
@@ -106,7 +107,7 @@ import {
   PlayArrow,
   OpenInFull,
   CloseFullscreen,
-  Print,
+  Download,
 } from '@mui/icons-material';
 
 // 🎯 Animation Variants
@@ -633,6 +634,7 @@ function TeacherDashboard() {
   const [isMyLessonNotesOpen, setIsMyLessonNotesOpen] = useState(false);
   const [notesClassFilter, setNotesClassFilter] = useState('');
   const [notesSubjectFilter, setNotesSubjectFilter] = useState('');
+  const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
 
   // form state for gathering extra details when generating from strand
   const [strandForm, setStrandForm] = useState({
@@ -796,10 +798,20 @@ function TeacherDashboard() {
     preparePreviewSegments(note);
   }, [preparePreviewSegments]);
 
-  const handlePrintViewingNote = useCallback(() => {
+  const handleOpenDownloadMenu = useCallback((event) => {
+    setDownloadMenuAnchorEl(event.currentTarget);
+  }, []);
+
+  const handleCloseDownloadMenu = useCallback(() => {
+    setDownloadMenuAnchorEl(null);
+  }, []);
+
+  const handleDownloadViewingNote = useCallback((format) => {
     if (!viewingNote) return;
 
-    const topic = viewingNote?.subStrand?.name || viewingNote?.subStrand || 'Lesson Note';
+    const topic = viewingNote?.subStrand?.name || viewingNote?.subStrand || 'lesson-note';
+    const safeFileName = topic.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '');
+
     const printableBody = (previewSegments || []).map((segment) => {
       if (segment.type === 'text') return segment.html || '';
       if (segment.type === 'image' && segment.imgUrl) {
@@ -814,7 +826,7 @@ function TeacherDashboard() {
       return '';
     }).join('');
 
-    const printableHtml = `
+    const htmlDocument = `
       <!doctype html>
       <html>
         <head>
@@ -826,7 +838,6 @@ function TeacherDashboard() {
             table { width: 100%; border-collapse: collapse; margin: 12px 0; }
             td, th { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
             th { background: #f3f4f6; }
-            @media print { body { margin: 12mm; } }
           </style>
         </head>
         <body>
@@ -836,40 +847,35 @@ function TeacherDashboard() {
       </html>
     `;
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    iframe.setAttribute('aria-hidden', 'true');
+    let blob;
+    let extension;
 
-    document.body.appendChild(iframe);
-
-    const iframeDoc = iframe.contentWindow?.document;
-    if (!iframeDoc || !iframe.contentWindow) {
-      document.body.removeChild(iframe);
-      setSnackbar({ open: true, message: 'Unable to prepare print preview. Please try again.', severity: 'error' });
-      return;
+    if (format === 'html') {
+      blob = new Blob([htmlDocument], { type: 'text/html;charset=utf-8' });
+      extension = 'html';
+    } else if (format === 'doc') {
+      blob = new Blob([htmlDocument], { type: 'application/msword' });
+      extension = 'doc';
+    } else {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = printableBody;
+      const plainText = tmp.textContent || tmp.innerText || '';
+      blob = new Blob([`Topic: ${topic}\n\n${plainText}`], { type: 'text/plain;charset=utf-8' });
+      extension = 'txt';
     }
 
-    iframeDoc.open();
-    iframeDoc.write(printableHtml);
-    iframeDoc.close();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${safeFileName || 'lesson-note'}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
 
-    const cleanup = () => {
-      if (document.body.contains(iframe)) {
-        document.body.removeChild(iframe);
-      }
-    };
-
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      cleanup();
-    }, 250);
-  }, [previewSegments, setSnackbar, viewingNote]);
+    handleCloseDownloadMenu();
+    setSnackbar({ open: true, message: `Downloaded as .${extension}`, severity: 'success' });
+  }, [handleCloseDownloadMenu, previewSegments, setSnackbar, viewingNote]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
     dispatch(generateLessonNote(formData)).unwrap().then((createdNote) => {
@@ -2018,12 +2024,22 @@ function TeacherDashboard() {
           <DialogActions>
             <Button
               variant="outlined"
-              startIcon={<Print />}
-              onClick={handlePrintViewingNote}
+              startIcon={<Download />}
+              endIcon={<ExpandMore />}
+              onClick={handleOpenDownloadMenu}
               disabled={!viewingNote}
             >
-              Print
+              Download
             </Button>
+            <Menu
+              anchorEl={downloadMenuAnchorEl}
+              open={Boolean(downloadMenuAnchorEl)}
+              onClose={handleCloseDownloadMenu}
+            >
+              <MenuItem onClick={() => handleDownloadViewingNote('html')}>Download as HTML (.html)</MenuItem>
+              <MenuItem onClick={() => handleDownloadViewingNote('doc')}>Download as Word (.doc)</MenuItem>
+              <MenuItem onClick={() => handleDownloadViewingNote('txt')}>Download as Text (.txt)</MenuItem>
+            </Menu>
             <Button onClick={() => displayNote(null)}>Close</Button>
           </DialogActions>
         </Dialog>
