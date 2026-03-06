@@ -106,6 +106,7 @@ import {
   PlayArrow,
   OpenInFull,
   CloseFullscreen,
+  Print,
 } from '@mui/icons-material';
 
 // 🎯 Animation Variants
@@ -794,6 +795,58 @@ function TeacherDashboard() {
     setViewingNote(note);
     preparePreviewSegments(note);
   }, [preparePreviewSegments]);
+
+  const handlePrintViewingNote = useCallback(() => {
+    if (!viewingNote) return;
+
+    const topic = viewingNote?.subStrand?.name || viewingNote?.subStrand || 'Lesson Note';
+    const printableBody = (previewSegments || []).map((segment) => {
+      if (segment.type === 'text') return segment.html || '';
+      if (segment.type === 'image' && segment.imgUrl) {
+        const imageTitle = segment.meta?.title ? `<figcaption>${segment.meta.title}</figcaption>` : '';
+        return `
+          <figure style="margin: 16px 0; text-align: center;">
+            <img src="${segment.imgUrl}" alt="${segment.meta?.title || ''}" style="max-width: 100%; height: auto;" />
+            ${imageTitle}
+          </figure>
+        `;
+      }
+      return '';
+    }).join('');
+
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!printWindow) {
+      setSnackbar({ open: true, message: 'Please allow popups to print the lesson note.', severity: 'warning' });
+      return;
+    }
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${topic}</title>
+          <meta charset="utf-8" />
+          <style>
+            body { font-family: Arial, sans-serif; color: #111827; margin: 24px; line-height: 1.6; }
+            h2, h3 { margin-top: 20px; margin-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+            td, th { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+            th { background: #f3f4f6; }
+            @media print { body { margin: 12mm; } }
+          </style>
+        </head>
+        <body>
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">Topic: ${topic}</div>
+          ${printableBody}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  }, [previewSegments, setSnackbar, viewingNote]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
     dispatch(generateLessonNote(formData)).unwrap().then((createdNote) => {
@@ -1940,6 +1993,14 @@ function TeacherDashboard() {
             </Paper>
           </DialogContent>
           <DialogActions>
+            <Button
+              variant="outlined"
+              startIcon={<Print />}
+              onClick={handlePrintViewingNote}
+              disabled={!viewingNote}
+            >
+              Print
+            </Button>
             <Button onClick={() => displayNote(null)}>Close</Button>
           </DialogActions>
         </Dialog>
