@@ -1468,16 +1468,26 @@ function TeacherDashboard() {
                           Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'Unknown'}
                         </Typography>
                       </Box>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          displayNote(note);
-                          setIsMyLessonNotesOpen(false);
-                        }}
-                      >
-                        Open
-                      </Button>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            displayNote(note);
+                            setIsMyLessonNotesOpen(false);
+                          }}
+                        >
+                          Open
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => setNoteToDelete(note)}
+                        >
+                          Delete
+                        </Button>
+                      </Stack>
                     </Box>
                   </Paper>
                 ))}
@@ -1956,7 +1966,26 @@ function TeacherDashboard() {
           <DialogContent><DialogContentText>Are you sure you want to delete this note?</DialogContentText></DialogContent>
           <DialogActions>
             <Button onClick={() => setNoteToDelete(null)}>Cancel</Button>
-            <Button onClick={() => { dispatch(deleteLessonNote(noteToDelete._id)); setNoteToDelete(null); }} color="error">Delete</Button>
+            <Button
+              onClick={() => {
+                if (!noteToDelete?._id) return;
+                dispatch(deleteLessonNote(noteToDelete._id))
+                  .unwrap()
+                  .then(() => {
+                    if (viewingNote?._id === noteToDelete._id) {
+                      displayNote(null);
+                    }
+                    setSnackbar({ open: true, message: 'Lesson note deleted.', severity: 'success' });
+                  })
+                  .catch((err) => {
+                    setSnackbar({ open: true, message: err || 'Failed to delete lesson note.', severity: 'error' });
+                  })
+                  .finally(() => setNoteToDelete(null));
+              }}
+              color="error"
+            >
+              Delete
+            </Button>
           </DialogActions>
         </Dialog>
 
