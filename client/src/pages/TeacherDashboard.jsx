@@ -814,13 +814,7 @@ function TeacherDashboard() {
       return '';
     }).join('');
 
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
-    if (!printWindow) {
-      setSnackbar({ open: true, message: 'Please allow popups to print the lesson note.', severity: 'warning' });
-      return;
-    }
-
-    printWindow.document.write(`
+    const printableHtml = `
       <!doctype html>
       <html>
         <head>
@@ -840,11 +834,40 @@ function TeacherDashboard() {
           ${printableBody}
         </body>
       </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
+    `;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.setAttribute('aria-hidden', 'true');
+
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentWindow?.document;
+    if (!iframeDoc || !iframe.contentWindow) {
+      document.body.removeChild(iframe);
+      setSnackbar({ open: true, message: 'Unable to prepare print preview. Please try again.', severity: 'error' });
+      return;
+    }
+
+    iframeDoc.open();
+    iframeDoc.write(printableHtml);
+    iframeDoc.close();
+
+    const cleanup = () => {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    };
+
     setTimeout(() => {
-      printWindow.print();
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      cleanup();
     }, 250);
   }, [previewSegments, setSnackbar, viewingNote]);
 
