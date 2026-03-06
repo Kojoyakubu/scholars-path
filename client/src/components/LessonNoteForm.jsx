@@ -74,6 +74,7 @@ function LessonNoteForm({
       open={open}
       onClose={onClose}
       fullScreen={fullScreen}
+      scroll="paper"
       fullWidth
       maxWidth={fullScreen ? false : 'md'}
       disableEscapeKeyDown={isLoading}
@@ -98,7 +99,7 @@ function LessonNoteForm({
       </DialogTitle>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent>
+        <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
           {isLoading ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <CircularProgress size={60} sx={{ mb: 3 }} />

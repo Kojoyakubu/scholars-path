@@ -1416,9 +1416,9 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* From Lesson Note flow */}
-        <Dialog open={isLearnerFromLessonOpen} onClose={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} fullScreen={isDialogFullscreen('learnerFromLesson')} fullWidth maxWidth={isDialogFullscreen('learnerFromLesson') ? false : 'md'}>
+        <Dialog open={isLearnerFromLessonOpen} onClose={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} fullScreen={isDialogFullscreen('learnerFromLesson')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('learnerFromLesson') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Generate Learner Note from an Existing Lesson Note" isFullscreen={isDialogFullscreen('learnerFromLesson')} onToggle={() => toggleDialogFullscreen('learnerFromLesson')} />
-          <DialogContent>
+          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
             <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to convert into a learner-friendly note.</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} md={5}>
@@ -1494,9 +1494,9 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* From Strands flow */}
-        <Dialog open={isLearnerFromStrandOpen} onClose={closeLearnerFromStrand} fullScreen={isDialogFullscreen('learnerFromStrand')} fullWidth maxWidth={isDialogFullscreen('learnerFromStrand') ? false : 'sm'}>
+        <Dialog open={isLearnerFromStrandOpen} onClose={closeLearnerFromStrand} fullScreen={isDialogFullscreen('learnerFromStrand')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('learnerFromStrand') ? false : 'sm'}>
           <DialogTitleWithFullscreen title="Generate Learner Note from Strand" isFullscreen={isDialogFullscreen('learnerFromStrand')} onToggle={() => toggleDialogFullscreen('learnerFromStrand')} />
-          <DialogContent>
+          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
             <Typography variant="body2" sx={{ mb: 2 }}>
               Choose a strand/sub-strand and provide optional context details to guide the AI.
             </Typography>
@@ -1628,9 +1628,9 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Quiz From Lesson Note */}
-        <Dialog open={isQuizFromLessonOpen} onClose={() => setIsQuizFromLessonOpen(false)} fullScreen={isDialogFullscreen('quizFromLesson')} fullWidth maxWidth={isDialogFullscreen('quizFromLesson') ? false : 'md'}>
+        <Dialog open={isQuizFromLessonOpen} onClose={() => setIsQuizFromLessonOpen(false)} fullScreen={isDialogFullscreen('quizFromLesson')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizFromLesson') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Generate Quiz from a Lesson Note" isFullscreen={isDialogFullscreen('quizFromLesson')} onToggle={() => toggleDialogFullscreen('quizFromLesson')} />
-          <DialogContent>
+          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
             <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to use as the source for the quiz.</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} md={5}>
@@ -1690,9 +1690,9 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Quiz From Strands */}
-        <Dialog open={isQuizFromStrandOpen} onClose={() => setIsQuizFromStrandOpen(false)} fullScreen={isDialogFullscreen('quizFromStrand')} fullWidth maxWidth={isDialogFullscreen('quizFromStrand') ? false : 'sm'}>
+        <Dialog open={isQuizFromStrandOpen} onClose={() => setIsQuizFromStrandOpen(false)} fullScreen={isDialogFullscreen('quizFromStrand')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizFromStrand') ? false : 'sm'}>
           <DialogTitleWithFullscreen title="Generate Quiz from Strands" isFullscreen={isDialogFullscreen('quizFromStrand')} onToggle={() => toggleDialogFullscreen('quizFromStrand')} />
-          <DialogContent>
+          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
             <Typography variant="body2" sx={{ mb: 2 }}>Use the curriculum selector below, then tick one or more sub-strands.</Typography>
             <CurriculumSelection
               levels={levels}
@@ -1740,9 +1740,9 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* My Quizzes Dialog */}
-        <Dialog open={isMyQuizzesOpen} onClose={() => setIsMyQuizzesOpen(false)} fullScreen={isDialogFullscreen('myQuizzes')} fullWidth maxWidth={isDialogFullscreen('myQuizzes') ? false : 'md'}>
+        <Dialog open={isMyQuizzesOpen} onClose={() => setIsMyQuizzesOpen(false)} fullScreen={isDialogFullscreen('myQuizzes')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('myQuizzes') ? false : 'md'}>
           <DialogTitleWithFullscreen title="My Quizzes" isFullscreen={isDialogFullscreen('myQuizzes')} onToggle={() => toggleDialogFullscreen('myQuizzes')} />
-          <DialogContent>
+          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
             {(!quizzes || quizzes.length === 0) ? (
               <Box sx={{ py: 4, textAlign: 'center' }}>
                 <Typography color="text.secondary">No quizzes created yet. Start by generating a quiz from the "Create New" section.</Typography>
@@ -1807,9 +1807,9 @@ function TeacherDashboard() {
         {/* Note creation form modal */}
 
         {/* Quiz detail viewer */}
-        <Dialog open={isQuizViewOpen} onClose={() => { setIsQuizViewOpen(false); }} fullScreen={isDialogFullscreen('quizView')} fullWidth maxWidth={isDialogFullscreen('quizView') ? false : 'md'}>
+        <Dialog open={isQuizViewOpen} onClose={() => { setIsQuizViewOpen(false); }} fullScreen={isDialogFullscreen('quizView')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizView') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Quiz Details" isFullscreen={isDialogFullscreen('quizView')} onToggle={() => toggleDialogFullscreen('quizView')} />
-          <DialogContent>
+          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
             {currentQuiz ? (
               <Box>
                 <Typography variant="h6" gutterBottom>{currentQuiz.title}</Typography>
@@ -1879,9 +1879,9 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Note Preview */}
-        <Dialog open={!!viewingNote} onClose={() => displayNote(null)} fullScreen={isDialogFullscreen('notePreview')} fullWidth maxWidth={isDialogFullscreen('notePreview') ? false : 'md'}>
+        <Dialog open={!!viewingNote} onClose={() => displayNote(null)} fullScreen={isDialogFullscreen('notePreview')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('notePreview') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Preview Lesson Note" isFullscreen={isDialogFullscreen('notePreview')} onToggle={() => toggleDialogFullscreen('notePreview')} />
-          <DialogContent sx={{ bgcolor: 'grey.50' }}>
+          <DialogContent tabIndex={0} sx={{ bgcolor: 'grey.50', overflowY: 'auto' }}>
             <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
               <Typography variant="caption" color="text.secondary" gutterBottom>
                 Topic: {viewingNote?.subStrand?.name || viewingNote?.subStrand || ''}

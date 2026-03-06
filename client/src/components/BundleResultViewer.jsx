@@ -77,7 +77,7 @@ function BundleResultViewer({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullScreen={fullScreen} fullWidth maxWidth={fullScreen ? false : 'lg'}>
+    <Dialog open={open} onClose={onClose} fullScreen={fullScreen} scroll="paper" fullWidth maxWidth={fullScreen ? false : 'lg'}>
       {/* Header */}
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -132,7 +132,7 @@ function BundleResultViewer({
       </Box>
 
       {/* Content */}
-      <DialogContent sx={{ bgcolor: 'grey.50' }}>
+      <DialogContent tabIndex={0} sx={{ bgcolor: 'grey.50', overflowY: 'auto' }}>
         {/* Tab 1: Teacher Note */}
         <TabPanel value={activeTab} index={0}>
           <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
