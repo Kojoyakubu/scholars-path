@@ -634,6 +634,9 @@ function TeacherDashboard() {
   const [isMyLessonNotesOpen, setIsMyLessonNotesOpen] = useState(false);
   const [notesClassFilter, setNotesClassFilter] = useState('');
   const [notesSubjectFilter, setNotesSubjectFilter] = useState('');
+  const [isMyLearnerNotesOpen, setIsMyLearnerNotesOpen] = useState(false);
+  const [learnerNotesClassFilter, setLearnerNotesClassFilter] = useState('');
+  const [learnerNotesSubjectFilter, setLearnerNotesSubjectFilter] = useState('');
   const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
 
   // form state for gathering extra details when generating from strand
@@ -651,6 +654,7 @@ function TeacherDashboard() {
   });
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [learnerNoteToDelete, setLearnerNoteToDelete] = useState(null);
 
 
   // View state
@@ -709,6 +713,57 @@ function TeacherDashboard() {
         && String(noteSubjectId) === String(notesSubjectFilter);
     });
   }, [lessonNotes, notesClassFilter, notesSubjectFilter]);
+
+  const draftMetaBySubStrandId = useMemo(() => {
+    const metaMap = new Map();
+    (lessonNotes || []).forEach((note) => {
+      const subStrandId = note?.subStrand?._id || note?.subStrand;
+      const classObj = note?.subStrand?.strand?.subject?.class;
+      const subjectObj = note?.subStrand?.strand?.subject;
+      if (!subStrandId || !classObj?.name || !subjectObj?.name) return;
+      metaMap.set(String(subStrandId), {
+        classId: String(classObj?._id || classObj?.name),
+        className: classObj?.name,
+        subjectId: String(subjectObj?._id || subjectObj?.name),
+        subjectName: subjectObj?.name,
+      });
+    });
+    return metaMap;
+  }, [lessonNotes]);
+
+  const learnerNoteClassOptions = useMemo(() => {
+    const classMap = new Map();
+    (draftLearnerNotes || []).forEach((note) => {
+      const subStrandId = String(note?.subStrand?._id || note?.subStrand || '');
+      const meta = draftMetaBySubStrandId.get(subStrandId);
+      if (!meta?.classId || !meta?.className || classMap.has(meta.classId)) return;
+      classMap.set(meta.classId, { id: meta.classId, name: meta.className });
+    });
+    return Array.from(classMap.values()).sort((first, second) => first.name.localeCompare(second.name));
+  }, [draftLearnerNotes, draftMetaBySubStrandId]);
+
+  const learnerNoteSubjectOptions = useMemo(() => {
+    if (!learnerNotesClassFilter) return [];
+    const subjectMap = new Map();
+    (draftLearnerNotes || []).forEach((note) => {
+      const subStrandId = String(note?.subStrand?._id || note?.subStrand || '');
+      const meta = draftMetaBySubStrandId.get(subStrandId);
+      if (!meta || meta.classId !== String(learnerNotesClassFilter) || subjectMap.has(meta.subjectId)) return;
+      subjectMap.set(meta.subjectId, { id: meta.subjectId, name: meta.subjectName });
+    });
+    return Array.from(subjectMap.values()).sort((first, second) => first.name.localeCompare(second.name));
+  }, [draftLearnerNotes, draftMetaBySubStrandId, learnerNotesClassFilter]);
+
+  const learnerNotesBySelection = useMemo(() => {
+    if (!learnerNotesClassFilter || !learnerNotesSubjectFilter) return [];
+    return (draftLearnerNotes || []).filter((note) => {
+      const subStrandId = String(note?.subStrand?._id || note?.subStrand || '');
+      const meta = draftMetaBySubStrandId.get(subStrandId);
+      if (!meta) return false;
+      return meta.classId === String(learnerNotesClassFilter)
+        && meta.subjectId === String(learnerNotesSubjectFilter);
+    });
+  }, [draftLearnerNotes, draftMetaBySubStrandId, learnerNotesClassFilter, learnerNotesSubjectFilter]);
 
   // Initialization & Handlers (Preserved from original)
 
@@ -1264,7 +1319,14 @@ function TeacherDashboard() {
 
               {/* LEARNER NOTES */}
               <Grid item xs={6} sm={3}>
-                <Box onClick={() => { /* TODO: Navigate to Learner Notes */ }} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
+                <Box
+                  onClick={() => {
+                    setLearnerNotesClassFilter('');
+                    setLearnerNotesSubjectFilter('');
+                    setIsMyLearnerNotesOpen(true);
+                  }}
+                  sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}
+                >
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://media.istockphoto.com/id/1408391194/vector/reader-reciter.jpg?s=612x612&w=0&k=20&c=DpvhTP2hQqv_XrORtg56zz61WiFalK44CPO_Ka67ozg=)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Learner Notes</Typography>
                 </Box>
@@ -1500,6 +1562,116 @@ function TeacherDashboard() {
                 setIsMyLessonNotesOpen(false);
                 setNotesClassFilter('');
                 setNotesSubjectFilter('');
+              }}
+            >
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* My Learner Notes flow */}
+        <Dialog
+          open={isMyLearnerNotesOpen}
+          onClose={() => {
+            setIsMyLearnerNotesOpen(false);
+            setLearnerNotesClassFilter('');
+            setLearnerNotesSubjectFilter('');
+          }}
+          fullScreen={isDialogFullscreen('myLearnerNotes')}
+          scroll="paper"
+          fullWidth
+          maxWidth={isDialogFullscreen('myLearnerNotes') ? false : 'md'}
+        >
+          <DialogTitleWithFullscreen title="My Learner Notes" isFullscreen={isDialogFullscreen('myLearnerNotes')} onToggle={() => toggleDialogFullscreen('myLearnerNotes')} />
+          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="learner-notes-class-label">Class</InputLabel>
+                  <Select
+                    labelId="learner-notes-class-label"
+                    label="Class"
+                    value={learnerNotesClassFilter}
+                    onChange={(event) => {
+                      setLearnerNotesClassFilter(event.target.value);
+                      setLearnerNotesSubjectFilter('');
+                    }}
+                  >
+                    {learnerNoteClassOptions.map((option) => (
+                      <MenuItem key={option.id} value={option.id}>{option.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size="small" disabled={!learnerNotesClassFilter}>
+                  <InputLabel id="learner-notes-subject-label">Subject</InputLabel>
+                  <Select
+                    labelId="learner-notes-subject-label"
+                    label="Subject"
+                    value={learnerNotesSubjectFilter}
+                    onChange={(event) => setLearnerNotesSubjectFilter(event.target.value)}
+                  >
+                    {learnerNoteSubjectOptions.map((option) => (
+                      <MenuItem key={option.id} value={option.id}>{option.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            {!learnerNotesClassFilter ? (
+              <Typography variant="body2" color="text.secondary">Select a class to continue.</Typography>
+            ) : !learnerNotesSubjectFilter ? (
+              <Typography variant="body2" color="text.secondary">Select a subject to view learner notes.</Typography>
+            ) : learnerNotesBySelection.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">No learner notes found for this class and subject.</Typography>
+            ) : (
+              <List>
+                {learnerNotesBySelection.map((note) => (
+                  <Paper key={note._id} sx={{ mb: 1.5, p: 1.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                          {note.subStrand?.name || 'Learner Note'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'Unknown'}
+                        </Typography>
+                      </Box>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            displayNote(note);
+                            setIsMyLearnerNotesOpen(false);
+                          }}
+                        >
+                          Open
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => setLearnerNoteToDelete(note)}
+                        >
+                          Delete
+                        </Button>
+                      </Stack>
+                    </Box>
+                  </Paper>
+                ))}
+              </List>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setIsMyLearnerNotesOpen(false);
+                setLearnerNotesClassFilter('');
+                setLearnerNotesSubjectFilter('');
               }}
             >
               Close
@@ -1981,6 +2153,34 @@ function TeacherDashboard() {
                     setSnackbar({ open: true, message: err || 'Failed to delete lesson note.', severity: 'error' });
                   })
                   .finally(() => setNoteToDelete(null));
+              }}
+              color="error"
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={!!learnerNoteToDelete} onClose={() => setLearnerNoteToDelete(null)}>
+          <DialogTitle>Confirm Deletion</DialogTitle>
+          <DialogContent><DialogContentText>Are you sure you want to delete this learner note?</DialogContentText></DialogContent>
+          <DialogActions>
+            <Button onClick={() => setLearnerNoteToDelete(null)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (!learnerNoteToDelete?._id) return;
+                dispatch(deleteDraftLearnerNote(learnerNoteToDelete._id))
+                  .unwrap()
+                  .then(() => {
+                    if (viewingNote?._id === learnerNoteToDelete._id) {
+                      displayNote(null);
+                    }
+                    setSnackbar({ open: true, message: 'Learner note deleted.', severity: 'success' });
+                  })
+                  .catch((err) => {
+                    setSnackbar({ open: true, message: err || 'Failed to delete learner note.', severity: 'error' });
+                  })
+                  .finally(() => setLearnerNoteToDelete(null));
               }}
               color="error"
             >
