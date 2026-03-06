@@ -1652,6 +1652,25 @@ function TeacherDashboard() {
                           Open
                         </Button>
                         <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => {
+                            dispatch(publishLearnerNote(note._id))
+                              .unwrap()
+                              .then(() => {
+                                if (viewingNote?._id === note._id) {
+                                  displayNote(null);
+                                }
+                                setSnackbar({ open: true, message: 'Learner note published to students.', severity: 'success' });
+                              })
+                              .catch((err) => {
+                                setSnackbar({ open: true, message: err || 'Failed to publish learner note.', severity: 'error' });
+                              });
+                          }}
+                        >
+                          Publish
+                        </Button>
+                        <Button
                           variant="outlined"
                           color="error"
                           size="small"
