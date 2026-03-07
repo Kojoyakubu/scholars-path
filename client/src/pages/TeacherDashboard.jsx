@@ -106,6 +106,7 @@ import {
   CloseFullscreen,
   Download,
 } from '@mui/icons-material';
+import { alpha } from '@mui/material/styles';
 
 function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
   return (
@@ -202,22 +203,55 @@ function TeacherDashboard() {
   const [dialogFullscreen, setDialogFullscreen] = useState({});
 
   const overviewCardSx = {
-    p: 3,
-    minHeight: 148,
+    p: 2.25,
+    minHeight: 184,
     borderRadius: 3,
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
     border: '1px solid',
-    borderColor: 'divider',
-    bgcolor: 'background.paper',
-    boxShadow: 1,
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    transition: 'transform 0.22s ease, box-shadow 0.22s ease',
     '&:hover': {
-      transform: 'translateY(-3px)',
+      transform: 'translateY(-4px)',
       boxShadow: 4,
     },
   };
+
+  const overviewCards = [
+    {
+      key: 'lesson-notes',
+      value: lessonNotes?.length || 0,
+      label: 'LESSON NOTES',
+      subtitle: 'Published notes',
+      palette: 'primary',
+      Icon: Article,
+    },
+    {
+      key: 'draft-notes',
+      value: draftLearnerNotes?.length || 0,
+      label: 'DRAFT NOTES',
+      subtitle: 'Pending review',
+      palette: 'secondary',
+      Icon: FaceRetouchingNatural,
+    },
+    {
+      key: 'ai-quizzes',
+      value: teacherAnalytics?.totalQuizzes || 0,
+      label: 'AI QUIZZES',
+      subtitle: 'Total generated',
+      palette: 'warning',
+      Icon: Quiz,
+    },
+    {
+      key: 'students-reached',
+      value: teacherAnalytics?.totalStudents || 0,
+      label: 'STUDENTS REACHED',
+      subtitle: 'Across all classes',
+      palette: 'success',
+      Icon: School,
+    },
+  ];
 
   const toolTileSx = {
     height: '100%',
@@ -837,72 +871,48 @@ function TeacherDashboard() {
 
         {/* OVERVIEW SECTION */}
         <Box sx={{ mt: 4, mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5, color: 'text.primary', letterSpacing: 0.2 }}>
-            OVERVIEW
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-            A quick snapshot of your recent teaching activity
+          <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: 'text.primary', letterSpacing: 0.2 }}>
+            Overview
           </Typography>
           <Grid container spacing={3}>
-            {/* Lesson Notes Card */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={overviewCardSx}>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', mb: 1 }}>
-                  {lessonNotes?.length || 0}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
-                  Lesson Notes
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Published
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {/* Draft Notes Card */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={overviewCardSx}>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'secondary.main', mb: 1 }}>
-                  {draftLearnerNotes?.length || 0}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
-                  Draft Notes
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Pending review
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {/* AI Quizzes Card */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={overviewCardSx}>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'warning.main', mb: 1 }}>
-                  {teacherAnalytics?.totalQuizzes || 0}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
-                  AI Quizzes
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Generated
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {/* Students Reached Card */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={overviewCardSx}>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'success.main', mb: 1 }}>
-                  {teacherAnalytics?.totalStudents || 0}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
-                  Students Reached
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Across all classes
-                </Typography>
-              </Paper>
-            </Grid>
+            {overviewCards.map((card) => (
+              <Grid key={card.key} item xs={12} sm={6} md={3}>
+                <Paper
+                  sx={(theme) => ({
+                    ...overviewCardSx,
+                    borderColor: alpha(theme.palette[card.palette].main, 0.2),
+                    background: `linear-gradient(145deg, ${alpha(theme.palette[card.palette].main, 0.2)} 0%, ${alpha(theme.palette[card.palette].main, 0.06)} 100%)`,
+                    boxShadow: `0 10px 24px ${alpha(theme.palette[card.palette].main, 0.18)}`,
+                  })}
+                >
+                  <Box
+                    sx={(theme) => ({
+                      width: 38,
+                      height: 38,
+                      borderRadius: '50%',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: theme.palette[card.palette].main,
+                      color: theme.palette[card.palette].contrastText,
+                      boxShadow: `0 8px 16px ${alpha(theme.palette[card.palette].main, 0.35)}`,
+                      mb: 2,
+                    })}
+                  >
+                    <card.Icon sx={{ fontSize: 18 }} />
+                  </Box>
+                  <Typography variant="h3" sx={(theme) => ({ fontWeight: 800, lineHeight: 1, mb: 1.1, color: theme.palette[card.palette].main })}>
+                    {card.value}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: 0.6, color: 'text.primary', display: 'block' }}>
+                    {card.label}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25 }}>
+                    {card.subtitle}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
           </Grid>
         </Box>
 
