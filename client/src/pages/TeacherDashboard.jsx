@@ -109,7 +109,7 @@ import {
 
 function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
   return (
-    <DialogTitle sx={{ pb: 1 }}>
+    <DialogTitle sx={{ pb: 1.25, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
         <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
           {title}
@@ -246,6 +246,60 @@ function TeacherDashboard() {
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     boxShadow: 2,
+  };
+
+  const dialogBodySx = {
+    overflowY: 'auto',
+    bgcolor: 'background.default',
+    py: 2,
+  };
+
+  const dialogFilterPanelSx = {
+    mb: 2,
+    p: 2,
+    borderRadius: 2,
+    border: '1px solid',
+    borderColor: 'divider',
+    bgcolor: 'background.paper',
+  };
+
+  const dialogListCardSx = {
+    mb: 1.5,
+    p: 1.5,
+    borderRadius: 2,
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 0,
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    '&:hover': {
+      borderColor: 'primary.main',
+      boxShadow: 1,
+    },
+  };
+
+  const selectableListItemSx = {
+    alignItems: 'flex-start',
+    borderRadius: 1.5,
+    mx: 0.75,
+    my: 0.4,
+    '&.Mui-selected': {
+      bgcolor: 'primary.50',
+      border: '1px solid',
+      borderColor: 'primary.main',
+    },
+    '&.Mui-selected:hover': {
+      bgcolor: 'primary.100',
+    },
+  };
+
+  const analyticsKpiCardSx = {
+    p: 2,
+    height: '100%',
+    borderRadius: 2,
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 0,
+    bgcolor: 'background.paper',
   };
 
   const isDialogFullscreen = useCallback((dialogKey) => !!dialogFullscreen[dialogKey], [dialogFullscreen]);
@@ -1098,8 +1152,8 @@ function TeacherDashboard() {
           maxWidth={isDialogFullscreen('myLessonNotes') ? false : 'md'}
         >
           <DialogTitleWithFullscreen title="My Lesson Notes" isFullscreen={isDialogFullscreen('myLessonNotes')} onToggle={() => toggleDialogFullscreen('myLessonNotes')} />
-          <DialogContent>
-            <Grid container spacing={2} sx={{ mb: 2 }}>
+          <DialogContent sx={dialogBodySx}>
+            <Grid container spacing={2} sx={dialogFilterPanelSx}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth size="small">
                   <InputLabel id="notes-class-label">Class</InputLabel>
@@ -1145,7 +1199,7 @@ function TeacherDashboard() {
             ) : (
               <List>
                 {lessonNotesBySelection.map((note) => (
-                  <Paper key={note._id} sx={{ mb: 1.5, p: 1.5 }}>
+                  <Paper key={note._id} sx={dialogListCardSx}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
                       <Box>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
@@ -1208,8 +1262,8 @@ function TeacherDashboard() {
           maxWidth={isDialogFullscreen('myLearnerNotes') ? false : 'md'}
         >
           <DialogTitleWithFullscreen title="My Learner Notes" isFullscreen={isDialogFullscreen('myLearnerNotes')} onToggle={() => toggleDialogFullscreen('myLearnerNotes')} />
-          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
-            <Grid container spacing={2} sx={{ mb: 2 }}>
+          <DialogContent tabIndex={0} sx={dialogBodySx}>
+            <Grid container spacing={2} sx={dialogFilterPanelSx}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth size="small">
                   <InputLabel id="learner-notes-class-label">Class</InputLabel>
@@ -1255,7 +1309,7 @@ function TeacherDashboard() {
             ) : (
               <List>
                 {learnerNotesBySelection.map((note) => (
-                  <Paper key={note._id} sx={{ mb: 1.5, p: 1.5 }}>
+                  <Paper key={note._id} sx={dialogListCardSx}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
                       <Box>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
@@ -1269,7 +1323,7 @@ function TeacherDashboard() {
                             label="Published"
                             size="small"
                             color="success"
-                            sx={{ ml: 1, height: 20 }}
+                            sx={{ ml: 1, height: 20, fontWeight: 700 }}
                           />
                         )}
                       </Box>
@@ -1335,18 +1389,18 @@ function TeacherDashboard() {
         {/* From Lesson Note flow */}
         <Dialog open={isLearnerFromLessonOpen} onClose={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} fullScreen={isDialogFullscreen('learnerFromLesson')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('learnerFromLesson') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Generate Learner Note from an Existing Lesson Note" isFullscreen={isDialogFullscreen('learnerFromLesson')} onToggle={() => toggleDialogFullscreen('learnerFromLesson')} />
-          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+          <DialogContent tabIndex={0} sx={dialogBodySx}>
             <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to convert into a learner-friendly note.</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} md={5}>
-                <Paper sx={{ maxHeight: 420, overflow: 'auto' }}>
+                <Paper sx={{ maxHeight: 420, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                   <List>
                     {(lessonNotes || []).map((ln) => (
                       <ListItemButton
                         key={ln._id}
                         selected={selectedLessonForLearner === ln._id}
                         onClick={() => setSelectedLessonForLearner(ln._id)}
-                        sx={{ alignItems: 'flex-start' }}
+                        sx={selectableListItemSx}
                       >
                         <ListItemText
                           primary={ln.subStrand?.name || ln.title || 'Lesson Note'}
@@ -1362,7 +1416,7 @@ function TeacherDashboard() {
               </Grid>
 
               <Grid item xs={12} md={7}>
-                <Paper sx={{ p: 2, maxHeight: 520, overflow: 'auto' }}>
+                <Paper sx={{ p: 2, maxHeight: 520, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                   {!selectedLessonForLearner ? (
                     <Typography variant="body2" color="text.secondary">Select a lesson note to preview its content here.</Typography>
                   ) : (
@@ -1413,7 +1467,7 @@ function TeacherDashboard() {
         {/* From Strands flow */}
         <Dialog open={isLearnerFromStrandOpen} onClose={closeLearnerFromStrand} fullScreen={isDialogFullscreen('learnerFromStrand')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('learnerFromStrand') ? false : 'sm'}>
           <DialogTitleWithFullscreen title="Generate Learner Note from Strand" isFullscreen={isDialogFullscreen('learnerFromStrand')} onToggle={() => toggleDialogFullscreen('learnerFromStrand')} />
-          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+          <DialogContent tabIndex={0} sx={dialogBodySx}>
             <Typography variant="body2" sx={{ mb: 2 }}>
               Choose a strand/sub-strand and provide optional context details to guide the AI.
             </Typography>
@@ -1547,18 +1601,18 @@ function TeacherDashboard() {
         {/* Quiz From Lesson Note */}
         <Dialog open={isQuizFromLessonOpen} onClose={() => setIsQuizFromLessonOpen(false)} fullScreen={isDialogFullscreen('quizFromLesson')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizFromLesson') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Generate Quiz from a Lesson Note" isFullscreen={isDialogFullscreen('quizFromLesson')} onToggle={() => toggleDialogFullscreen('quizFromLesson')} />
-          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+          <DialogContent tabIndex={0} sx={dialogBodySx}>
             <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to use as the source for the quiz.</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} md={5}>
-                <Paper sx={{ maxHeight: 420, overflow: 'auto' }}>
+                <Paper sx={{ maxHeight: 420, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                   <List>
                     {(lessonNotes || []).map((ln) => (
                       <ListItemButton
                         key={ln._id}
                         selected={selectedLessonForQuiz === ln._id}
                         onClick={() => setSelectedLessonForQuiz(ln._id)}
-                        sx={{ alignItems: 'flex-start' }}
+                        sx={selectableListItemSx}
                       >
                         <ListItemText
                           primary={ln.subStrand?.name || ln.title || 'Lesson Note'}
@@ -1573,7 +1627,7 @@ function TeacherDashboard() {
                 </Paper>
               </Grid>
               <Grid item xs={12} md={7}>
-                <Paper sx={{ p: 2, maxHeight: 520, overflow: 'auto' }}>
+                <Paper sx={{ p: 2, maxHeight: 520, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                   {!selectedLessonForQuiz ? (
                     <Typography variant="body2" color="text.secondary">Select a lesson note to preview its content here.</Typography>
                   ) : (
@@ -1609,7 +1663,7 @@ function TeacherDashboard() {
         {/* Quiz From Strands */}
         <Dialog open={isQuizFromStrandOpen} onClose={() => setIsQuizFromStrandOpen(false)} fullScreen={isDialogFullscreen('quizFromStrand')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizFromStrand') ? false : 'sm'}>
           <DialogTitleWithFullscreen title="Generate Quiz from Strands" isFullscreen={isDialogFullscreen('quizFromStrand')} onToggle={() => toggleDialogFullscreen('quizFromStrand')} />
-          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+          <DialogContent tabIndex={0} sx={dialogBodySx}>
             <Typography variant="body2" sx={{ mb: 2 }}>Use the curriculum selector below, then tick one or more sub-strands.</Typography>
             <CurriculumSelection
               levels={levels}
@@ -1622,7 +1676,7 @@ function TeacherDashboard() {
               isLoading={isLoading}
             />
             {subStrands.length > 0 && (
-              <Paper sx={{ mt: 2, maxHeight: 300, overflow: 'auto' }}>
+              <Paper sx={{ mt: 2, maxHeight: 300, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                 <List>
                   {subStrands.map(s => (
                     <ListItem key={s._id} disablePadding>
@@ -1633,6 +1687,7 @@ function TeacherDashboard() {
                             prev.includes(s._id) ? prev.filter(x => x !== s._id) : [...prev, s._id]
                           );
                         }}
+                        sx={selectableListItemSx}
                       >
                         <ListItemText primary={s.name} />
                         <Checkbox edge="end" checked={quizSelectedSubStrands.includes(s._id)} />
@@ -1659,7 +1714,7 @@ function TeacherDashboard() {
         {/* My Quizzes Dialog */}
         <Dialog open={isMyQuizzesOpen} onClose={() => setIsMyQuizzesOpen(false)} fullScreen={isDialogFullscreen('myQuizzes')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('myQuizzes') ? false : 'md'}>
           <DialogTitleWithFullscreen title="My Quizzes" isFullscreen={isDialogFullscreen('myQuizzes')} onToggle={() => toggleDialogFullscreen('myQuizzes')} />
-          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+          <DialogContent tabIndex={0} sx={dialogBodySx}>
             {(!quizzes || quizzes.length === 0) ? (
               <Box sx={{ py: 4, textAlign: 'center' }}>
                 <Typography color="text.secondary">No quizzes created yet. Start by generating a quiz from the "Create New" section.</Typography>
@@ -1667,7 +1722,7 @@ function TeacherDashboard() {
             ) : (
               <List>
                 {quizzes.map((quiz) => (
-                  <Paper key={quiz._id} sx={{ mb: 2, p: 2 }}>
+                  <Paper key={quiz._id} sx={dialogListCardSx}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Box>
                         <Typography variant="h6">{quiz.title}</Typography>
@@ -1730,30 +1785,30 @@ function TeacherDashboard() {
           maxWidth={isDialogFullscreen('analytics') ? false : 'lg'}
         >
           <DialogTitleWithFullscreen title="Analytics" isFullscreen={isDialogFullscreen('analytics')} onToggle={() => toggleDialogFullscreen('analytics')} />
-          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+          <DialogContent tabIndex={0} sx={dialogBodySx}>
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={{ p: 2 }}>
+                <Paper sx={analyticsKpiCardSx}>
                   <Typography variant="caption" color="text.secondary">Lesson Notes</Typography>
                   <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalLessonNotes}</Typography>
                 </Paper>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={{ p: 2 }}>
+                <Paper sx={analyticsKpiCardSx}>
                   <Typography variant="caption" color="text.secondary">Learner Notes</Typography>
                   <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalLearnerNotes}</Typography>
                   <Typography variant="body2" color="text.secondary">{analyticsSummary.publishedLearnerNotes} published • {analyticsSummary.draftOnlyLearnerNotes} draft</Typography>
                 </Paper>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={{ p: 2 }}>
+                <Paper sx={analyticsKpiCardSx}>
                   <Typography variant="caption" color="text.secondary">Quizzes Generated</Typography>
                   <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalQuizzes}</Typography>
                   <Typography variant="body2" color="text.secondary">{analyticsSummary.totalQuizAttempts} attempts</Typography>
                 </Paper>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={{ p: 2 }}>
+                <Paper sx={analyticsKpiCardSx}>
                   <Typography variant="caption" color="text.secondary">Average Quiz Score</Typography>
                   <Typography variant="h4" sx={{ fontWeight: 700 }}>{Number(analyticsSummary.avgQuizScore).toFixed(1)}%</Typography>
                   <Typography variant="body2" color="text.secondary">{analyticsSummary.totalNoteViews} note views • {analyticsSummary.totalBundles} bundles</Typography>
@@ -1763,7 +1818,7 @@ function TeacherDashboard() {
 
             <Grid container spacing={2}>
               <Grid item xs={12} md={7}>
-                <Paper sx={{ p: 2.5, height: '100%' }}>
+                <Paper sx={{ p: 2.5, height: '100%', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                   <Typography variant="h6" sx={{ mb: 1 }}>Recent Activity</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {analyticsSummary.last30Count} actions in the last 30 days
@@ -1786,7 +1841,7 @@ function TeacherDashboard() {
               </Grid>
 
               <Grid item xs={12} md={5}>
-                <Paper sx={{ p: 2.5, height: '100%' }}>
+                <Paper sx={{ p: 2.5, height: '100%', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                   <Typography variant="h6" sx={{ mb: 2 }}>Top Topics</Typography>
                   {analyticsSummary.topTopics.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">No topic data available yet.</Typography>
@@ -1796,7 +1851,7 @@ function TeacherDashboard() {
                         <Box key={topic.name}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                             <Typography variant="body2" sx={{ fontWeight: 500 }}>{topic.name}</Typography>
-                            <Chip label={`${topic.count}`} size="small" />
+                            <Chip label={`${topic.count}`} size="small" color="primary" variant="outlined" />
                           </Box>
                           <Box sx={{ height: 8, borderRadius: 8, bgcolor: 'grey.200', overflow: 'hidden' }}>
                             <Box
@@ -1825,7 +1880,7 @@ function TeacherDashboard() {
         {/* Quiz detail viewer */}
         <Dialog open={isQuizViewOpen} onClose={() => { setIsQuizViewOpen(false); }} fullScreen={isDialogFullscreen('quizView')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizView') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Quiz Details" isFullscreen={isDialogFullscreen('quizView')} onToggle={() => toggleDialogFullscreen('quizView')} />
-          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+          <DialogContent tabIndex={0} sx={dialogBodySx}>
             {currentQuiz ? (
               <Box>
                 <Typography variant="h6" gutterBottom>{currentQuiz.title}</Typography>
@@ -1835,7 +1890,7 @@ function TeacherDashboard() {
                 {currentQuiz.questions && currentQuiz.questions.length > 0 ? (
                   <List>
                     {currentQuiz.questions.map((q, idx) => (
-                      <Paper key={q._id} sx={{ mb: 2, p: 2 }}>
+                      <Paper key={q._id} sx={dialogListCardSx}>
                         <Typography><strong>Q{idx + 1}.</strong> {q.text}</Typography>
                         <List>
                           {q.options.map((opt) => (
