@@ -596,6 +596,7 @@ function TeacherDashboard() {
     lessonNotes,
     draftLearnerNotes,
     quizzes,
+    bundles,
     currentQuiz,
     isLoading,
     teacherAnalytics,
@@ -637,6 +638,7 @@ function TeacherDashboard() {
   const [isMyLearnerNotesOpen, setIsMyLearnerNotesOpen] = useState(false);
   const [learnerNotesClassFilter, setLearnerNotesClassFilter] = useState('');
   const [learnerNotesSubjectFilter, setLearnerNotesSubjectFilter] = useState('');
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
 
   // form state for gathering extra details when generating from strand
@@ -764,6 +766,70 @@ function TeacherDashboard() {
         && meta.subjectId === String(learnerNotesSubjectFilter);
     });
   }, [draftLearnerNotes, draftMetaBySubStrandId, learnerNotesClassFilter, learnerNotesSubjectFilter]);
+
+  const analyticsSummary = useMemo(() => {
+    const publishedLearnerNotes = (draftLearnerNotes || []).filter((note) => note.status === 'published').length;
+    const draftOnlyLearnerNotes = (draftLearnerNotes || []).filter((note) => note.status !== 'published').length;
+
+    const now = new Date();
+    const last30Days = new Date(now);
+    last30Days.setDate(last30Days.getDate() - 30);
+
+    const activityEntries = [
+      ...(lessonNotes || []).map((note) => ({
+        type: 'Lesson note created',
+        title: note?.subStrand?.name || 'Lesson note',
+        date: note?.createdAt,
+      })),
+      ...(draftLearnerNotes || []).map((note) => ({
+        type: note?.status === 'published' ? 'Learner note published' : 'Learner note created',
+        title: note?.subStrand?.name || 'Learner note',
+        date: note?.createdAt,
+      })),
+      ...(quizzes || []).map((quiz) => ({
+        type: 'Quiz generated',
+        title: quiz?.title || 'Quiz',
+        date: quiz?.createdAt,
+      })),
+      ...(bundles || []).map((bundle) => ({
+        type: 'Bundle generated',
+        title: bundle?.title || bundle?.subStrandName || 'Lesson bundle',
+        date: bundle?.createdAt,
+      })),
+    ]
+      .filter((entry) => !!entry.date)
+      .sort((first, second) => new Date(second.date) - new Date(first.date));
+
+    const last30Count = activityEntries.filter((entry) => new Date(entry.date) >= last30Days).length;
+    const recentActivity = activityEntries.slice(0, 8);
+
+    const topicCounts = new Map();
+    [...(lessonNotes || []), ...(draftLearnerNotes || [])].forEach((note) => {
+      const topicName = note?.subStrand?.name;
+      if (!topicName) return;
+      topicCounts.set(topicName, (topicCounts.get(topicName) || 0) + 1);
+    });
+
+    const topTopics = Array.from(topicCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((first, second) => second.count - first.count)
+      .slice(0, 5);
+
+    return {
+      totalLessonNotes: lessonNotes?.length || 0,
+      totalLearnerNotes: draftLearnerNotes?.length || 0,
+      publishedLearnerNotes,
+      draftOnlyLearnerNotes,
+      totalBundles: bundles?.length || 0,
+      totalQuizzes: quizzes?.length || 0,
+      totalQuizAttempts: teacherAnalytics?.totalQuizAttempts || 0,
+      avgQuizScore: teacherAnalytics?.averageScore || 0,
+      totalNoteViews: teacherAnalytics?.totalNoteViews || 0,
+      last30Count,
+      recentActivity,
+      topTopics,
+    };
+  }, [lessonNotes, draftLearnerNotes, quizzes, bundles, teacherAnalytics]);
 
   // Initialization & Handlers (Preserved from original)
 
@@ -1342,7 +1408,7 @@ function TeacherDashboard() {
 
               {/* ANALYSIS */}
               <Grid item xs={6} sm={3}>
-                <Box onClick={() => { /* TODO: Navigate to Analysis */ }} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
+                <Box onClick={() => setIsAnalyticsOpen(true)} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
                   <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
                   <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Analysis</Typography>
                 </Box>
@@ -2093,6 +2159,106 @@ function TeacherDashboard() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setIsMyQuizzesOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Analytics Dialog */}
+        <Dialog
+          open={isAnalyticsOpen}
+          onClose={() => setIsAnalyticsOpen(false)}
+          fullScreen={isDialogFullscreen('analytics')}
+          scroll="paper"
+          fullWidth
+          maxWidth={isDialogFullscreen('analytics') ? false : 'lg'}
+        >
+          <DialogTitleWithFullscreen title="Analytics" isFullscreen={isDialogFullscreen('analytics')} onToggle={() => toggleDialogFullscreen('analytics')} />
+          <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Lesson Notes</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalLessonNotes}</Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Learner Notes</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalLearnerNotes}</Typography>
+                  <Typography variant="body2" color="text.secondary">{analyticsSummary.publishedLearnerNotes} published • {analyticsSummary.draftOnlyLearnerNotes} draft</Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Quizzes Generated</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalQuizzes}</Typography>
+                  <Typography variant="body2" color="text.secondary">{analyticsSummary.totalQuizAttempts} attempts</Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="caption" color="text.secondary">Average Quiz Score</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{Number(analyticsSummary.avgQuizScore).toFixed(1)}%</Typography>
+                  <Typography variant="body2" color="text.secondary">{analyticsSummary.totalNoteViews} note views • {analyticsSummary.totalBundles} bundles</Typography>
+                </Paper>
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={7}>
+                <Paper sx={{ p: 2.5, height: '100%' }}>
+                  <Typography variant="h6" sx={{ mb: 1 }}>Recent Activity</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {analyticsSummary.last30Count} actions in the last 30 days
+                  </Typography>
+                  {analyticsSummary.recentActivity.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">No recent activity yet.</Typography>
+                  ) : (
+                    <List sx={{ pt: 0 }}>
+                      {analyticsSummary.recentActivity.map((entry, index) => (
+                        <ListItem key={`${entry.type}-${entry.date}-${index}`} sx={{ px: 0, alignItems: 'flex-start' }}>
+                          <ListItemText
+                            primary={`${entry.type}: ${entry.title}`}
+                            secondary={new Date(entry.date).toLocaleString()}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  )}
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={5}>
+                <Paper sx={{ p: 2.5, height: '100%' }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>Top Topics</Typography>
+                  {analyticsSummary.topTopics.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">No topic data available yet.</Typography>
+                  ) : (
+                    <Stack spacing={1.5}>
+                      {analyticsSummary.topTopics.map((topic) => (
+                        <Box key={topic.name}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{topic.name}</Typography>
+                            <Chip label={`${topic.count}`} size="small" />
+                          </Box>
+                          <Box sx={{ height: 8, borderRadius: 8, bgcolor: 'grey.200', overflow: 'hidden' }}>
+                            <Box
+                              sx={{
+                                height: '100%',
+                                bgcolor: 'primary.main',
+                                width: `${Math.min(100, (topic.count / Math.max(...analyticsSummary.topTopics.map((item) => item.count))) * 100)}%`,
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+                </Paper>
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsAnalyticsOpen(false)}>Close</Button>
           </DialogActions>
         </Dialog>
 
