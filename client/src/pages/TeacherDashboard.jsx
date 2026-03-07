@@ -201,6 +201,53 @@ function TeacherDashboard() {
   const planLoading = false;
   const [dialogFullscreen, setDialogFullscreen] = useState({});
 
+  const overviewCardSx = {
+    p: 3,
+    minHeight: 148,
+    borderRadius: 3,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    border: '1px solid',
+    borderColor: 'divider',
+    bgcolor: 'background.paper',
+    boxShadow: 1,
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    '&:hover': {
+      transform: 'translateY(-3px)',
+      boxShadow: 4,
+    },
+  };
+
+  const toolTileSx = {
+    height: '100%',
+    p: 2,
+    borderRadius: 3,
+    textAlign: 'center',
+    cursor: 'pointer',
+    border: '1px solid',
+    borderColor: 'divider',
+    bgcolor: 'background.paper',
+    boxShadow: 1,
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+    '&:hover': {
+      transform: 'translateY(-4px)',
+      boxShadow: 4,
+      borderColor: 'primary.main',
+    },
+  };
+
+  const toolImageSx = {
+    width: 120,
+    height: 120,
+    margin: '0 auto 14px',
+    borderRadius: 2,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    boxShadow: 2,
+  };
+
   const isDialogFullscreen = useCallback((dialogKey) => !!dialogFullscreen[dialogKey], [dialogFullscreen]);
   const toggleDialogFullscreen = useCallback((dialogKey) => {
     setDialogFullscreen((prev) => ({ ...prev, [dialogKey]: !prev[dialogKey] }));
@@ -736,18 +783,23 @@ function TeacherDashboard() {
 
         {/* OVERVIEW SECTION */}
         <Box sx={{ mt: 4, mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>OVERVIEW</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5, color: 'text.primary', letterSpacing: 0.2 }}>
+            OVERVIEW
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+            A quick snapshot of your recent teaching activity
+          </Typography>
           <Grid container spacing={3}>
             {/* Lesson Notes Card */}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={{ p: 2.5, textAlign: 'center', borderRadius: 1, bgcolor: '#e8e8e8', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#667eea', mb: 1 }}>
+              <Paper sx={overviewCardSx}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', mb: 1 }}>
                   {lessonNotes?.length || 0}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#555', fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
                   Lesson Notes
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#999' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   Published
                 </Typography>
               </Paper>
@@ -755,14 +807,14 @@ function TeacherDashboard() {
 
             {/* Draft Notes Card */}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={{ p: 2.5, textAlign: 'center', borderRadius: 1, bgcolor: '#e8e8e8', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#7c3aed', mb: 1 }}>
+              <Paper sx={overviewCardSx}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'secondary.main', mb: 1 }}>
                   {draftLearnerNotes?.length || 0}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#555', fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
                   Draft Notes
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#999' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   Pending review
                 </Typography>
               </Paper>
@@ -770,14 +822,14 @@ function TeacherDashboard() {
 
             {/* AI Quizzes Card */}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={{ p: 2.5, textAlign: 'center', borderRadius: 1, bgcolor: '#e8e8e8', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#f59e0b', mb: 1 }}>
+              <Paper sx={overviewCardSx}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'warning.main', mb: 1 }}>
                   {teacherAnalytics?.totalQuizzes || 0}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#555', fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
                   AI Quizzes
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#999' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   Generated
                 </Typography>
               </Paper>
@@ -785,14 +837,14 @@ function TeacherDashboard() {
 
             {/* Students Reached Card */}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={{ p: 2.5, textAlign: 'center', borderRadius: 1, bgcolor: '#e8e8e8', minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#10b981', mb: 1 }}>
+              <Paper sx={overviewCardSx}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'success.main', mb: 1 }}>
                   {teacherAnalytics?.totalStudents || 0}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#555', fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
                   Students Reached
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#999' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   Across all classes
                 </Typography>
               </Paper>
@@ -801,128 +853,124 @@ function TeacherDashboard() {
         </Box>
 
         {/* Divider */}
-        <Divider sx={{ my: 4, borderColor: '#ddd' }} />
+        <Divider sx={{ my: 4, borderColor: 'divider' }} />
 
         {/* TEACHER TOOLS SECTION */}
         {showCreateTools ? (
           <Box sx={{ mt: 4, mb: 3 }}>
             <Button onClick={() => setShowCreateTools(false)} variant="text" sx={{ mb: 2 }}>← Back</Button>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>Create New</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary', letterSpacing: 0.2 }}>Create New</Typography>
             <Grid container spacing={3}>
               {/** Generate Lesson Plan */}
               <Grid item xs={6} sm={3}>
-                <Box
-                  sx={{ textAlign: 'center', cursor: 'pointer' }}
+                <Paper
+                  sx={toolTileSx}
                   onClick={() => {
                     setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
                     setIsPlanModalOpen(true);
                   }}
                 >
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/027/685/568/original/teacher-lesson-icon-flat-vector.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Lesson Plan</Typography>
-                </Box>
+                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/027/685/568/original/teacher-lesson-icon-flat-vector.jpg')` }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>Generate Lesson Plan</Typography>
+                </Paper>
               </Grid>
 
               {/** Generate Learner Notes */}
               <Grid item xs={6} sm={3}>
-                <Box
-                  sx={{ textAlign: 'center', cursor: 'pointer' }}
+                <Paper
+                  sx={toolTileSx}
                   onClick={() => {
                     setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
                     setIsLearnerOptionsOpen(true);
                   }}
                 >
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://cdn-icons-png.flaticon.com/512/8980/8980099.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Learner Notes</Typography>
-                </Box>
+                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://cdn-icons-png.flaticon.com/512/8980/8980099.png')` }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>Generate Learner Notes</Typography>
+                </Paper>
               </Grid>
 
               {/** Generate Quiz */}
               <Grid item xs={6} sm={3}>
-                <Box sx={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => setIsQuizOptionsOpen(true)}>
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/009/742/591/large_2x/quiz-game-icon-outline-illustration-vector.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Quiz</Typography>
-                </Box>
+                <Paper sx={toolTileSx} onClick={() => setIsQuizOptionsOpen(true)}>
+                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/009/742/591/large_2x/quiz-game-icon-outline-illustration-vector.jpg')` }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>Generate Quiz</Typography>
+                </Paper>
               </Grid>
 
               {/** Generate Complete Lesson Bundle */}
               <Grid item xs={6} sm={3}>
-                <Box
-                  sx={{ textAlign: 'center', cursor: 'pointer' }}
+                <Paper
+                  sx={toolTileSx}
                   onClick={() => {
                     setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
                     setIsBundleSelectorOpen(true);
                   }}
                 >
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 12px', borderRadius: 12, backgroundImage: `url('https://img.freepik.com/premium-vector/color-school-tools-icon_24640-20330.jpg?w=2000')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>Generate Complete Lesson Bundle</Typography>
-                </Box>
+                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://img.freepik.com/premium-vector/color-school-tools-icon_24640-20330.jpg?w=2000')` }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>Generate Complete Lesson Bundle</Typography>
+                </Paper>
               </Grid>
             </Grid>
           </Box>
         ) : (
           <Box sx={{ mt: 4, mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#333' }}>TEACHER TOOLS</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary', letterSpacing: 0.2 }}>TEACHER TOOLS</Typography>
             <Grid container spacing={3}>
               {/* CREATE NEW */}
               <Grid item xs={6} sm={3}>
-                <Box
+                <Paper
                   onClick={() => setShowCreateTools(true)}
-                  sx={{
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    '&:hover': { transform: 'scale(1.05)' },
-                  }}
+                  sx={toolTileSx}
                 >
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/015/526/676/original/presentation-creative-icon-design-free-vector.jpg')`, backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Create New</Typography>
-                </Box>
+                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/015/526/676/original/presentation-creative-icon-design-free-vector.jpg')` }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>Create New</Typography>
+                </Paper>
               </Grid>
 
               {/* MY LESSON NOTES */}
               <Grid item xs={6} sm={3}>
-                <Box
+                <Paper
                   onClick={() => {
                     setNotesClassFilter('');
                     setNotesSubjectFilter('');
                     setIsMyLessonNotesOpen(true);
                   }}
-                  sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}
+                  sx={toolTileSx}
                 >
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://i.pinimg.com/736x/d1/f0/68/d1f068f076dd1d2090b35d602f62948f.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>My Lesson Notes</Typography>
-                </Box>
+                  <Box sx={{ ...toolImageSx, backgroundImage: 'url(https://i.pinimg.com/736x/d1/f0/68/d1f068f076dd1d2090b35d602f62948f.jpg)' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>My Lesson Notes</Typography>
+                </Paper>
               </Grid>
 
               {/* LEARNER NOTES */}
               <Grid item xs={6} sm={3}>
-                <Box
+                <Paper
                   onClick={() => {
                     setLearnerNotesClassFilter('');
                     setLearnerNotesSubjectFilter('');
                     setIsMyLearnerNotesOpen(true);
                   }}
-                  sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}
+                  sx={toolTileSx}
                 >
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://media.istockphoto.com/id/1408391194/vector/reader-reciter.jpg?s=612x612&w=0&k=20&c=DpvhTP2hQqv_XrORtg56zz61WiFalK44CPO_Ka67ozg=)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Learner Notes</Typography>
-                </Box>
+                  <Box sx={{ ...toolImageSx, backgroundImage: 'url(https://media.istockphoto.com/id/1408391194/vector/reader-reciter.jpg?s=612x612&w=0&k=20&c=DpvhTP2hQqv_XrORtg56zz61WiFalK44CPO_Ka67ozg=)' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>Learner Notes</Typography>
+                </Paper>
               </Grid>
 
               {/* MY QUIZZES */}
               <Grid item xs={6} sm={3}>
-                <Box onClick={() => setIsMyQuizzesOpen(true)} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: `url('https://img.freepik.com/premium-vector/quiz-logo-poll-questionnaire-icon-symbol_101884-1076.jpg?w=2000')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Quizzes</Typography>
-                </Box>
+                <Paper onClick={() => setIsMyQuizzesOpen(true)} sx={toolTileSx}>
+                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://img.freepik.com/premium-vector/quiz-logo-poll-questionnaire-icon-symbol_101884-1076.jpg?w=2000')` }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>Quizzes</Typography>
+                </Paper>
               </Grid>
 
               {/* ANALYSIS */}
               <Grid item xs={6} sm={3}>
-                <Box onClick={() => setIsAnalyticsOpen(true)} sx={{ cursor: 'pointer', transition: 'all 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
-                  <Box sx={{ width: 120, height: 120, margin: '0 auto 16px', borderRadius: '12px', backgroundImage: 'url(https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center', color: '#333' }}>Analysis</Typography>
-                </Box>
+                <Paper onClick={() => setIsAnalyticsOpen(true)} sx={toolTileSx}>
+                  <Box sx={{ ...toolImageSx, backgroundImage: 'url(https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg)' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>Analysis</Typography>
+                </Paper>
               </Grid>
             </Grid>
           </Box>
