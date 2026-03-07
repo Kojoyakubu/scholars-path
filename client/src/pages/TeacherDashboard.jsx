@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
 
 // Redux & Components
 import { syncUserFromStorage } from '../features/auth/authSlice';
@@ -71,8 +70,6 @@ import {
   CardContent,
   Divider,
   Avatar,
-  useTheme,
-  alpha,
   Chip,
   Tabs,
   Tab,
@@ -110,464 +107,6 @@ import {
   Download,
 } from '@mui/icons-material';
 
-// 🎯 Animation Variants
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    scale: 1,
-    transition: { duration: 0.3 }
-  },
-  exit: { 
-    opacity: 0, 
-    scale: 0.95,
-    transition: { duration: 0.2 }
-  }
-};
-
-// 🎨 Helper function for user display name (preserved)
-const getDisplayName = (user) => {
-  if (!user) return 'Teacher';
-  const name = user.name || user.fullName || 'Teacher';
-  return name.split(' ')[0];
-};
-
-// 🎯 Modern Teacher Dashboard Banner
-const TeacherDashboardBanner = ({ 
-  user, 
-  collapsed, 
-  setCollapsed, 
-  onRefresh, 
-  refreshing,
-}) => {
-  const theme = useTheme();
-
-  return (
-    <Box
-      component={motion.div}
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      sx={{ position: 'relative', overflow: 'hidden', mb: 2 }}
-    >
-      <Paper
-        elevation={0}
-        sx={{
-          background: `linear-gradient(135deg, 
-            ${alpha(theme.palette.primary.main, 0.95)} 0%, 
-            ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
-          backdropFilter: 'blur(20px)',
-          borderRadius: 4,
-          p: 2,
-          color: 'white',
-          position: 'relative',
-          overflow: 'hidden',
-          border: `1px solid ${alpha('#FFFFFF', 0.2)}`,
-          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            width: '300px',
-            height: '300px',
-            borderRadius: '50%',
-            background: alpha('#FFFFFF', 0.05),
-            top: '-150px',
-            right: '-50px',
-          },
-        }}
-      >
-        <Box sx={{ position: 'relative', zIndex: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {!collapsed && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
-                  <Avatar
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      bgcolor: alpha('#FFFFFF', 0.2),
-                      border: `3px solid ${alpha('#FFFFFF', 0.4)}`,
-                      fontSize: '2rem',
-                      fontWeight: 700,
-                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                    }}
-                  >
-                    {(user?.name || user?.fullName || 'T')[0].toUpperCase()}
-                  </Avatar>
-                </motion.div>
-              )}
-              <Box>
-                <Typography
-                  variant={collapsed ? 'h5' : 'h3'}
-                  sx={{
-                    fontWeight: 800,
-                    textShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                    mb: collapsed ? 0 : 0.5,
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  {collapsed 
-                    ? 'Teacher Dashboard' 
-                    : `Welcome back, ${getDisplayName(user)}! 👋`
-                  }
-                </Typography>
-                {!collapsed && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: alpha('#FFFFFF', 0.95),
-                        fontWeight: 400,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      Ready to inspire and educate today
-                      <School sx={{ fontSize: 20 }} />
-                    </Typography>
-                  </motion.div>
-                )}
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton
-                onClick={onRefresh}
-                disabled={refreshing}
-                sx={{
-                  color: 'white',
-                  bgcolor: alpha('#FFFFFF', 0.15),
-                  '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
-                  '&:disabled': { bgcolor: alpha('#FFFFFF', 0.1) },
-                }}
-              >
-                <Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
-              </IconButton>
-              <IconButton
-                onClick={() => setCollapsed(!collapsed)}
-                sx={{
-                  color: 'white',
-                  bgcolor: alpha('#FFFFFF', 0.15),
-                  '&:hover': { bgcolor: alpha('#FFFFFF', 0.25) },
-                }}
-              >
-                {collapsed ? <ExpandMore /> : <ExpandLess />}
-              </IconButton>
-            </Box>
-          </Box>
-        </Box>
-      </Paper>
-      <style>
-        {`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}
-      </style>
-    </Box>
-  );
-};
-
-// 🚀 Quick Action Card Component
-const QuickActionCard = ({ title, description, icon: Icon, color, onClick, badge }) => {
-  const theme = useTheme();
-  
-  return (
-    <Card
-      component={motion.div}
-      whileHover={{ scale: 1.02, y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      sx={{
-        cursor: 'pointer',
-        borderRadius: 3,
-        background: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
-        border: `1px solid ${alpha(color, 0.15)}`,
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'hidden',
-        '&:hover': {
-          boxShadow: `0 12px 32px ${alpha(color, 0.2)}`,
-          border: `1px solid ${alpha(color, 0.3)}`,
-        },
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '100px',
-          height: '100px',
-          background: `radial-gradient(circle at top right, ${alpha(color, 0.1)}, transparent)`,
-          pointerEvents: 'none',
-        },
-      }}
-    >
-      <CardContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-          <Avatar
-            sx={{
-              width: 48,
-              height: 48,
-              bgcolor: alpha(color, 0.15),
-              color: color,
-            }}
-          >
-            {badge ? (
-              <Badge badgeContent={badge} color="error">
-                <Icon />
-              </Badge>
-            ) : (
-              <Icon />
-            )}
-          </Avatar>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, color: theme.palette.text.primary }}>
-              {title}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {description}
-            </Typography>
-          </Box>
-          <PlayArrow sx={{ color: alpha(color, 0.5) }} />
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
-
-// 🎴 Modern Section Card Component
-const SectionCard = ({ title, icon, children, color, action }) => {
-  const theme = useTheme();
-  
-  return (
-    <Card
-      component={motion.div}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-      sx={{
-        height: '100%',
-        borderRadius: 3,
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
-        },
-      }}
-    >
-      <CardHeader
-        avatar={
-          <Avatar sx={{ bgcolor: color || theme.palette.primary.main }}>
-            {icon}
-          </Avatar>
-        }
-        title={title}
-        action={action}
-        titleTypographyProps={{
-          variant: 'h6',
-          fontWeight: 700,
-        }}
-      />
-      <Divider />
-      <CardContent>{children}</CardContent>
-    </Card>
-  );
-};
-
-// 📝 Lesson Note Card & List Item Components (Preserved)
-const LessonNoteCard = ({ note, onGenerateLearner, onDelete, onView, isGenerating }) => {
-  const theme = useTheme();
-  
-  return (
-    <motion.div variants={cardVariants} initial="hidden" animate="visible" exit="exit" layout>
-      <Card
-        sx={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: 2,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.2)}`,
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-          },
-        }}
-      >
-        <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-          <Stack direction="row" spacing={1} alignItems="flex-start" mb={2}>
-            <Avatar
-              sx={{
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                color: theme.palette.primary.main,
-                width: 40,
-                height: 40,
-              }}
-            >
-              <Article />
-            </Avatar>
-            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem', mb: 0.5 }} noWrap>
-                {note.subStrand?.name || 'Untitled Note'}
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <CalendarToday sx={{ fontSize: 14, color: theme.palette.text.secondary }} />
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </Typography>
-              </Stack>
-            </Box>
-          </Stack>
-          {note.subStrand?.strand?.name && (
-            <Chip
-              label={note.subStrand.strand.name}
-              size="small"
-              sx={{ mb: 1, bgcolor: alpha(theme.palette.primary.main, 0.1), color: theme.palette.primary.main, fontWeight: 600 }}
-            />
-          )}
-        </CardContent>
-        <Divider />
-        <CardActions sx={{ justifyContent: 'space-between', px: 2, py: 1.5 }}>
-          <Button component={RouterLink} to={`/teacher/notes/${note._id}`} size="small" startIcon={<Visibility />} sx={{ fontWeight: 600 }}>
-            View
-          </Button>
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Generate Learner Note">
-              <span>
-                <IconButton onClick={onGenerateLearner} disabled={isGenerating} size="small">
-                  {isGenerating ? <CircularProgress size={20} /> : <FaceRetouchingNatural color="primary" />}
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="Delete Note">
-              <IconButton onClick={onDelete} size="small">
-                <Delete color="error" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        </CardActions>
-      </Card>
-    </motion.div>
-  );
-};
-
-const DraftNoteCard = ({ note, onPreview, onPublish, onDelete }) => {
-  const theme = useTheme();
-  return (
-    <motion.div variants={cardVariants} initial="hidden" animate="visible" exit="exit" layout>
-      <Card
-        sx={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: 2,
-          border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
-          bgcolor: alpha(theme.palette.secondary.main, 0.02),
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: `0 8px 24px ${alpha(theme.palette.secondary.main, 0.2)}`,
-            border: `1px solid ${alpha(theme.palette.secondary.main, 0.4)}`,
-          },
-        }}
-      >
-        <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-          <Stack direction="row" spacing={1} alignItems="flex-start" mb={2}>
-            <Avatar sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.1), color: theme.palette.secondary.main, width: 40, height: 40 }}>
-              <Preview />
-            </Avatar>
-            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem', mb: 0.5 }} noWrap>
-                {note.subStrand?.name || 'Draft Note'}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </Typography>
-            </Box>
-          </Stack>
-          <Chip label="Draft" size="small" color="secondary" sx={{ fontWeight: 600 }} />
-        </CardContent>
-        <Divider />
-        <CardActions sx={{ justifyContent: 'space-between', px: 2, py: 1.5 }}>
-          <Button onClick={onPreview} size="small" startIcon={<Visibility />} sx={{ fontWeight: 600 }}>Preview</Button>
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Publish to Students"><IconButton onClick={onPublish} size="small"><CheckCircle color="success" /></IconButton></Tooltip>
-            <Tooltip title="Delete Draft"><IconButton onClick={onDelete} size="small"><Delete color="error" /></IconButton></Tooltip>
-          </Stack>
-        </CardActions>
-      </Card>
-    </motion.div>
-  );
-};
-
-const LessonNoteListItem = ({ note, onGenerateLearner, onDelete, isGenerating }) => {
-  const theme = useTheme();
-  return (
-    <motion.div variants={cardVariants} initial="hidden" animate="visible" exit="exit" layout>
-      <ListItem
-        disablePadding
-        sx={{ mb: 1, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, borderRadius: 2, bgcolor: 'background.paper', transition: 'all 0.2s', '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.02) } }}
-        secondaryAction={
-          <Stack direction="row" spacing={0.5}>
-            <IconButton onClick={onGenerateLearner} disabled={isGenerating} size="small">
-              {isGenerating ? <CircularProgress size={20} /> : <FaceRetouchingNatural color="primary" />}
-            </IconButton>
-            <IconButton onClick={onDelete} size="small"><Delete color="error" /></IconButton>
-          </Stack>
-        }
-      >
-        <ListItemButton component={RouterLink} to={`/teacher/notes/${note._id}`} sx={{ py: 2 }}>
-          <ListItemText 
-            primary={note.subStrand?.name || 'Untitled Note'} 
-            secondary={new Date(note.createdAt).toLocaleDateString()} 
-            primaryTypographyProps={{ fontWeight: 600 }} 
-          />
-        </ListItemButton>
-      </ListItem>
-    </motion.div>
-  );
-};
-
-const DraftNoteListItem = ({ note, onPreview, onPublish, onDelete }) => {
-  const theme = useTheme();
-  return (
-    <motion.div variants={cardVariants} initial="hidden" animate="visible" exit="exit" layout>
-      <ListItem
-        disablePadding
-        sx={{ mb: 1, border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`, borderRadius: 2, bgcolor: alpha(theme.palette.secondary.main, 0.02), '&:hover': { bgcolor: alpha(theme.palette.secondary.main, 0.05) } }}
-        secondaryAction={
-          <Stack direction="row" spacing={0.5}>
-            <IconButton onClick={onPreview} size="small"><Visibility /></IconButton>
-            <IconButton onClick={onPublish} size="small"><CheckCircle color="success" /></IconButton>
-            <IconButton onClick={onDelete} size="small"><Delete color="error" /></IconButton>
-          </Stack>
-        }
-      >
-        <ListItemText 
-          sx={{ px: 2, py: 1 }}
-          primary={note.subStrand?.name || 'Draft Note'} 
-          secondary="Draft"
-          primaryTypographyProps={{ fontWeight: 600 }} 
-        />
-      </ListItem>
-    </motion.div>
-  );
-};
-
-// 📑 Tab Panel Component
-function TabPanel({ children, value, index, ...other }) {
-  return (
-    <div role="tabpanel" hidden={value !== index} id={`dashboard-tabpanel-${index}`} aria-labelledby={`dashboard-tab-${index}`} {...other}>
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
 function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
   return (
     <DialogTitle sx={{ pb: 1 }}>
@@ -586,7 +125,6 @@ function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
 }
 
 function TeacherDashboard() {
-  const theme = useTheme();
   const dispatch = useDispatch();
 
   // Redux state
@@ -607,11 +145,9 @@ function TeacherDashboard() {
   // Local state
   const [selections, setSelections] = useState({ level: '', class: '', subject: '', strand: '', subStrand: '' });
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
-  const [isAiQuizModalOpen, setIsAiQuizModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
   const [previewSegments, setPreviewSegments] = useState([]);
-  const [generatingNoteId, setGeneratingNoteId] = useState(null);
   
   // Bundle generation state
   const [isBundleModalOpen, setIsBundleModalOpen] = useState(false);
@@ -631,7 +167,6 @@ function TeacherDashboard() {
   const [quizSelectedSubStrands, setQuizSelectedSubStrands] = useState([]);
   const [isMyQuizzesOpen, setIsMyQuizzesOpen] = useState(false);
   const [isQuizViewOpen, setIsQuizViewOpen] = useState(false);
-  const [quizToViewId, setQuizToViewId] = useState('');
   const [isMyLessonNotesOpen, setIsMyLessonNotesOpen] = useState(false);
   const [notesClassFilter, setNotesClassFilter] = useState('');
   const [notesSubjectFilter, setNotesSubjectFilter] = useState('');
@@ -660,12 +195,10 @@ function TeacherDashboard() {
 
 
   // View state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('grid');
   const [bannerCollapsed, setBannerCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateTools, setShowCreateTools] = useState(false);
-  const [planLoading, setPlanLoading] = useState(false);
+  const planLoading = false;
   const [dialogFullscreen, setDialogFullscreen] = useState({});
 
   const isDialogFullscreen = useCallback((dialogKey) => !!dialogFullscreen[dialogKey], [dialogFullscreen]);
@@ -848,7 +381,6 @@ function TeacherDashboard() {
   useEffect(() => {
     if (!isQuizViewOpen) {
       dispatch({ type: 'teacher/clearCurrentQuiz' });
-      setQuizToViewId('');
     }
   }, [isQuizViewOpen, dispatch]);
 
@@ -1008,13 +540,6 @@ function TeacherDashboard() {
     }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
   }, [dispatch, displayNote]);
 
-  const handleGenerateAiQuizSubmit = useCallback((formData) => {
-    dispatch(generateAiQuiz(formData)).unwrap().then(() => {
-      setSnackbar({ open: true, message: 'AI Quiz generated!', severity: 'success' });
-      setIsAiQuizModalOpen(false);
-    }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
-  }, [dispatch]);
-
   // quiz-from-lesson flow
   const handleGenerateQuizFromLesson = useCallback(() => {
     if (!selectedLessonForQuiz) return;
@@ -1163,7 +688,7 @@ function TeacherDashboard() {
       .catch((err) => {
         setSnackbar({ open: true, message: err || 'Failed to generate learner note', severity: 'error' });
       });
-  }, [dispatch, selections.subStrand, strandForm, user]);
+  }, [dispatch, selections.subStrand, strandForm, user, displayNote]);
 
   // Generate only lesson plan (first part of bundle)
   const handleGeneratePlan = useCallback(() => {
@@ -1193,20 +718,6 @@ function TeacherDashboard() {
     ]);
     setTimeout(() => setRefreshing(false), 1000);
   };
-
-
-
-  // Filter Logic
-  const filteredLessonNotes = (lessonNotes || []).filter(note => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return note.subStrand?.name?.toLowerCase().includes(query) || note.subStrand?.strand?.name?.toLowerCase().includes(query);
-  });
-
-  const filteredDraftNotes = (draftLearnerNotes || []).filter(note => {
-    if (!searchQuery) return true;
-    return note.subStrand?.name?.toLowerCase().includes(searchQuery.toLowerCase());
-  });
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
@@ -2126,7 +1637,6 @@ function TeacherDashboard() {
                           variant="outlined"
                           size="small"
                           onClick={() => {
-                            setQuizToViewId(quiz._id);
                             dispatch(getQuizById(quiz._id)).unwrap().then(() => {
                               setIsQuizViewOpen(true);
                             }).catch((err) => {
