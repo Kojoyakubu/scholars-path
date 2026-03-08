@@ -108,6 +108,20 @@ import {
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 
+const INITIAL_SELECTIONS = { level: '', class: '', subject: '', strand: '', subStrand: '' };
+const INITIAL_STRAND_FORM = {
+  term: '',
+  week: '',
+  dayDate: '',
+  duration: '',
+  classSize: '',
+  contentStandardCode: '',
+  indicatorCodes: '',
+  reference: '',
+  preferredProvider: '',
+  preferredModel: '',
+};
+
 function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
   return (
     <DialogTitle sx={{ pb: 1.25, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
@@ -122,6 +136,19 @@ function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
         </Tooltip>
       </Box>
     </DialogTitle>
+  );
+}
+
+function ToolTile({ label, imageUrl, onClick, toolTileSx, toolImageSx }) {
+  return (
+    <Grid item xs={6} sm={3}>
+      <Paper onClick={onClick} sx={toolTileSx}>
+        <Box sx={{ ...toolImageSx, backgroundImage: `url('${imageUrl}')` }} />
+        <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>
+          {label}
+        </Typography>
+      </Paper>
+    </Grid>
   );
 }
 
@@ -144,7 +171,7 @@ function TeacherDashboard() {
 
 
   // Local state
-  const [selections, setSelections] = useState({ level: '', class: '', subject: '', strand: '', subStrand: '' });
+  const [selections, setSelections] = useState(INITIAL_SELECTIONS);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
@@ -178,18 +205,7 @@ function TeacherDashboard() {
   const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
 
   // form state for gathering extra details when generating from strand
-  const [strandForm, setStrandForm] = useState({
-    term: '',
-    week: '',
-    dayDate: '',
-    duration: '',
-    classSize: '',
-    contentStandardCode: '',
-    indicatorCodes: '',
-    reference: '',
-    preferredProvider: '',
-    preferredModel: '',
-  });
+  const [strandForm, setStrandForm] = useState(INITIAL_STRAND_FORM);
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [learnerNoteToDelete, setLearnerNoteToDelete] = useState(null);
@@ -339,6 +355,14 @@ function TeacherDashboard() {
   const isDialogFullscreen = useCallback((dialogKey) => !!dialogFullscreen[dialogKey], [dialogFullscreen]);
   const toggleDialogFullscreen = useCallback((dialogKey) => {
     setDialogFullscreen((prev) => ({ ...prev, [dialogKey]: !prev[dialogKey] }));
+  }, []);
+
+  const resetSelections = useCallback(() => {
+    setSelections(INITIAL_SELECTIONS);
+  }, []);
+
+  const resetStrandForm = useCallback(() => {
+    setStrandForm(INITIAL_STRAND_FORM);
   }, []);
 
   const lessonNoteClassOptions = useMemo(() => {
@@ -766,20 +790,9 @@ function TeacherDashboard() {
 
   const closeLearnerFromStrand = useCallback(() => {
     setIsLearnerFromStrandOpen(false);
-    setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
-    setStrandForm({
-      term: '',
-      week: '',
-      dayDate: '',
-      duration: '',
-      classSize: '',
-      contentStandardCode: '',
-      indicatorCodes: '',
-      reference: '',
-      preferredProvider: '',
-      preferredModel: '',
-    });
-  }, []);
+    resetSelections();
+    resetStrandForm();
+  }, [resetSelections, resetStrandForm]);
 
   // dispatch generator for learner note from strand
   const handleGenerateLearnerFromStrand = useCallback(() => {
@@ -805,25 +818,14 @@ function TeacherDashboard() {
         displayNote(created);
         setIsLearnerFromStrandOpen(false);
         // reset selections and form
-        setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
-        setStrandForm({
-          term: '',
-          week: '',
-          dayDate: '',
-          duration: '',
-          classSize: '',
-          contentStandardCode: '',
-          indicatorCodes: '',
-          reference: '',
-          preferredProvider: '',
-          preferredModel: '',
-        });
+        resetSelections();
+        resetStrandForm();
         dispatch(getDraftLearnerNotes());
       })
       .catch((err) => {
         setSnackbar({ open: true, message: err || 'Failed to generate learner note', severity: 'error' });
       });
-  }, [dispatch, selections.subStrand, strandForm, user, displayNote]);
+  }, [dispatch, selections.subStrand, strandForm, user, displayNote, resetSelections, resetStrandForm]);
 
   // Generate only lesson plan (first part of bundle)
   const handleGeneratePlan = useCallback(() => {
@@ -853,6 +855,83 @@ function TeacherDashboard() {
     ]);
     setTimeout(() => setRefreshing(false), 1000);
   };
+
+  const createNewToolItems = [
+    {
+      key: 'lesson-plan',
+      label: 'Generate Lesson Plan',
+      imageUrl: 'https://static.vecteezy.com/system/resources/previews/027/685/568/original/teacher-lesson-icon-flat-vector.jpg',
+      onClick: () => {
+        resetSelections();
+        setIsPlanModalOpen(true);
+      },
+    },
+    {
+      key: 'learner-notes',
+      label: 'Generate Learner Notes',
+      imageUrl: 'https://cdn-icons-png.flaticon.com/512/8980/8980099.png',
+      onClick: () => {
+        resetSelections();
+        setIsLearnerOptionsOpen(true);
+      },
+    },
+    {
+      key: 'quiz',
+      label: 'Generate Quiz',
+      imageUrl: 'https://static.vecteezy.com/system/resources/previews/009/742/591/large_2x/quiz-game-icon-outline-illustration-vector.jpg',
+      onClick: () => setIsQuizOptionsOpen(true),
+    },
+    {
+      key: 'bundle',
+      label: 'Generate Complete Lesson Bundle',
+      imageUrl: 'https://img.freepik.com/premium-vector/color-school-tools-icon_24640-20330.jpg?w=2000',
+      onClick: () => {
+        resetSelections();
+        setIsBundleSelectorOpen(true);
+      },
+    },
+  ];
+
+  const managementToolItems = [
+    {
+      key: 'create-new',
+      label: 'Create New',
+      imageUrl: 'https://static.vecteezy.com/system/resources/previews/015/526/676/original/presentation-creative-icon-design-free-vector.jpg',
+      onClick: () => setShowCreateTools(true),
+    },
+    {
+      key: 'my-lesson-notes',
+      label: 'My Lesson Notes',
+      imageUrl: 'https://i.pinimg.com/736x/d1/f0/68/d1f068f076dd1d2090b35d602f62948f.jpg',
+      onClick: () => {
+        setNotesClassFilter('');
+        setNotesSubjectFilter('');
+        setIsMyLessonNotesOpen(true);
+      },
+    },
+    {
+      key: 'my-learner-notes',
+      label: 'Learner Notes',
+      imageUrl: 'https://media.istockphoto.com/id/1408391194/vector/reader-reciter.jpg?s=612x612&w=0&k=20&c=DpvhTP2hQqv_XrORtg56zz61WiFalK44CPO_Ka67ozg=',
+      onClick: () => {
+        setLearnerNotesClassFilter('');
+        setLearnerNotesSubjectFilter('');
+        setIsMyLearnerNotesOpen(true);
+      },
+    },
+    {
+      key: 'my-quizzes',
+      label: 'Quizzes',
+      imageUrl: 'https://img.freepik.com/premium-vector/quiz-logo-poll-questionnaire-icon-symbol_101884-1076.jpg?w=2000',
+      onClick: () => setIsMyQuizzesOpen(true),
+    },
+    {
+      key: 'analysis',
+      label: 'Analysis',
+      imageUrl: 'https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg',
+      onClick: () => setIsAnalyticsOpen(true),
+    },
+  ];
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
@@ -925,117 +1004,32 @@ function TeacherDashboard() {
             <Button onClick={() => setShowCreateTools(false)} variant="text" sx={{ mb: 2 }}>← Back</Button>
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary', letterSpacing: 0.2 }}>Create New</Typography>
             <Grid container spacing={3}>
-              {/** Generate Lesson Plan */}
-              <Grid item xs={6} sm={3}>
-                <Paper
-                  sx={toolTileSx}
-                  onClick={() => {
-                    setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
-                    setIsPlanModalOpen(true);
-                  }}
-                >
-                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/027/685/568/original/teacher-lesson-icon-flat-vector.jpg')` }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>Generate Lesson Plan</Typography>
-                </Paper>
-              </Grid>
-
-              {/** Generate Learner Notes */}
-              <Grid item xs={6} sm={3}>
-                <Paper
-                  sx={toolTileSx}
-                  onClick={() => {
-                    setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
-                    setIsLearnerOptionsOpen(true);
-                  }}
-                >
-                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://cdn-icons-png.flaticon.com/512/8980/8980099.png')` }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>Generate Learner Notes</Typography>
-                </Paper>
-              </Grid>
-
-              {/** Generate Quiz */}
-              <Grid item xs={6} sm={3}>
-                <Paper sx={toolTileSx} onClick={() => setIsQuizOptionsOpen(true)}>
-                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/009/742/591/large_2x/quiz-game-icon-outline-illustration-vector.jpg')` }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>Generate Quiz</Typography>
-                </Paper>
-              </Grid>
-
-              {/** Generate Complete Lesson Bundle */}
-              <Grid item xs={6} sm={3}>
-                <Paper
-                  sx={toolTileSx}
-                  onClick={() => {
-                    setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' });
-                    setIsBundleSelectorOpen(true);
-                  }}
-                >
-                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://img.freepik.com/premium-vector/color-school-tools-icon_24640-20330.jpg?w=2000')` }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>Generate Complete Lesson Bundle</Typography>
-                </Paper>
-              </Grid>
+              {createNewToolItems.map((tool) => (
+                <ToolTile
+                  key={tool.key}
+                  label={tool.label}
+                  imageUrl={tool.imageUrl}
+                  onClick={tool.onClick}
+                  toolTileSx={toolTileSx}
+                  toolImageSx={toolImageSx}
+                />
+              ))}
             </Grid>
           </Box>
         ) : (
           <Box sx={{ mt: 4, mb: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary', letterSpacing: 0.2 }}>TEACHER TOOLS</Typography>
             <Grid container spacing={3}>
-              {/* CREATE NEW */}
-              <Grid item xs={6} sm={3}>
-                <Paper
-                  onClick={() => setShowCreateTools(true)}
-                  sx={toolTileSx}
-                >
-                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://static.vecteezy.com/system/resources/previews/015/526/676/original/presentation-creative-icon-design-free-vector.jpg')` }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>Create New</Typography>
-                </Paper>
-              </Grid>
-
-              {/* MY LESSON NOTES */}
-              <Grid item xs={6} sm={3}>
-                <Paper
-                  onClick={() => {
-                    setNotesClassFilter('');
-                    setNotesSubjectFilter('');
-                    setIsMyLessonNotesOpen(true);
-                  }}
-                  sx={toolTileSx}
-                >
-                  <Box sx={{ ...toolImageSx, backgroundImage: 'url(https://i.pinimg.com/736x/d1/f0/68/d1f068f076dd1d2090b35d602f62948f.jpg)' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>My Lesson Notes</Typography>
-                </Paper>
-              </Grid>
-
-              {/* LEARNER NOTES */}
-              <Grid item xs={6} sm={3}>
-                <Paper
-                  onClick={() => {
-                    setLearnerNotesClassFilter('');
-                    setLearnerNotesSubjectFilter('');
-                    setIsMyLearnerNotesOpen(true);
-                  }}
-                  sx={toolTileSx}
-                >
-                  <Box sx={{ ...toolImageSx, backgroundImage: 'url(https://media.istockphoto.com/id/1408391194/vector/reader-reciter.jpg?s=612x612&w=0&k=20&c=DpvhTP2hQqv_XrORtg56zz61WiFalK44CPO_Ka67ozg=)' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>Learner Notes</Typography>
-                </Paper>
-              </Grid>
-
-              {/* MY QUIZZES */}
-              <Grid item xs={6} sm={3}>
-                <Paper onClick={() => setIsMyQuizzesOpen(true)} sx={toolTileSx}>
-                  <Box sx={{ ...toolImageSx, backgroundImage: `url('https://img.freepik.com/premium-vector/quiz-logo-poll-questionnaire-icon-symbol_101884-1076.jpg?w=2000')` }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>Quizzes</Typography>
-                </Paper>
-              </Grid>
-
-              {/* ANALYSIS */}
-              <Grid item xs={6} sm={3}>
-                <Paper onClick={() => setIsAnalyticsOpen(true)} sx={toolTileSx}>
-                  <Box sx={{ ...toolImageSx, backgroundImage: 'url(https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg)' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>Analysis</Typography>
-                </Paper>
-              </Grid>
+              {managementToolItems.map((tool) => (
+                <ToolTile
+                  key={tool.key}
+                  label={tool.label}
+                  imageUrl={tool.imageUrl}
+                  onClick={tool.onClick}
+                  toolTileSx={toolTileSx}
+                  toolImageSx={toolImageSx}
+                />
+              ))}
             </Grid>
           </Box>
         )}
@@ -1116,11 +1110,7 @@ function TeacherDashboard() {
               <Button variant="outlined" onClick={() => { setIsLearnerOptionsOpen(false); setIsLearnerFromLessonOpen(true); }}>
                 From Lesson Note
               </Button>
-              <Button variant="contained" onClick={() => { setIsLearnerOptionsOpen(false); setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' }); setStrandForm({
-                    term: '', week: '', dayDate: '', duration: '', classSize: '',
-                    contentStandardCode: '', indicatorCodes: '', reference: '',
-                    preferredProvider: '', preferredModel: '',
-                  }); setIsLearnerFromStrandOpen(true); }}>
+              <Button variant="contained" onClick={() => { setIsLearnerOptionsOpen(false); resetSelections(); resetStrandForm(); setIsLearnerFromStrandOpen(true); }}>
                 From Strands
               </Button>
             </Stack>
@@ -1139,7 +1129,7 @@ function TeacherDashboard() {
               <Button variant="outlined" onClick={() => { setIsQuizOptionsOpen(false); setIsQuizFromLessonOpen(true); }}>
                 From Lesson Note
               </Button>
-              <Button variant="contained" onClick={() => { setIsQuizOptionsOpen(false); setSelections({ level: '', class: '', subject: '', strand: '', subStrand: '' }); setQuizSelectedSubStrands([]); setIsQuizFromStrandOpen(true); }}>
+              <Button variant="contained" onClick={() => { setIsQuizOptionsOpen(false); resetSelections(); setQuizSelectedSubStrands([]); setIsQuizFromStrandOpen(true); }}>
                 From Strands
               </Button>
             </Stack>
