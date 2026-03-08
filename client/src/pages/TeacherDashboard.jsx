@@ -1,7 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
 
 // Redux & Components
 import { syncUserFromStorage } from '../features/auth/authSlice';
@@ -37,6 +35,10 @@ import BundleResultViewer from '../components/BundleResultViewer';
 import DashboardBanner from '../components/DashboardBanner';
 import CurriculumSelection from '../components/CurriculumSelection';
 import LessonNoteForm from '../components/LessonNoteForm';
+import LessonNotePickerDialog from '../components/LessonNotePickerDialog';
+import ConfirmDialog from '../components/ConfirmDialog';
+import AnalyticsDialog from '../components/AnalyticsDialog';
+import NotePreviewDialog from '../components/NotePreviewDialog';
 
 // MUI Imports
 import {
@@ -45,7 +47,6 @@ import {
   Button,
   Grid,
   Select,
-  Menu,
   MenuItem,
   FormControl,
   InputLabel,
@@ -53,58 +54,31 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemText, // Added missing import
+  ListItemText,
   CircularProgress,
   Stack,
   IconButton,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   Snackbar,
   Alert,
   Tooltip,
-  Card,
-  CardHeader,
-  CardContent,
   Divider,
-  Avatar,
   Chip,
-  Tabs,
-  Tab,
   TextField,
-  InputAdornment,
-  Badge,
   Checkbox,
-  CardActions,
 } from '@mui/material';
 
 // Icon Imports
 import {
   Article,
-  Delete,
   FaceRetouchingNatural,
-  CheckCircle,
-  Visibility,
-  AddCircle,
   Quiz,
-  Preview,
-  Assessment,
-  AutoAwesome,
   School,
-  Search,
-  ViewModule,
-  ViewList,
-  CalendarToday,
-  Folder,
-  ExpandMore,
-  ExpandLess,
-  Refresh,
-  PlayArrow,
   OpenInFull,
   CloseFullscreen,
-  Download,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 
@@ -121,6 +95,83 @@ const INITIAL_STRAND_FORM = {
   preferredProvider: '',
   preferredModel: '',
 };
+
+/* ── shared style tokens (module-scope, stable references) ─────────────── */
+
+const overviewCardSx = {
+  p: 2.25,
+  minHeight: 184,
+  borderRadius: 3,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  justifyContent: 'flex-start',
+  border: '1px solid',
+  transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+  '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 },
+};
+
+const toolTileSx = {
+  height: '100%',
+  p: 2,
+  borderRadius: 3,
+  textAlign: 'center',
+  cursor: 'pointer',
+  border: '1px solid',
+  borderColor: 'divider',
+  bgcolor: 'background.paper',
+  boxShadow: 1,
+  transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+  '&:hover': { transform: 'translateY(-4px)', boxShadow: 4, borderColor: 'primary.main' },
+};
+
+const toolImageSx = {
+  width: 120,
+  height: 120,
+  margin: '0 auto 14px',
+  borderRadius: 2,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  boxShadow: 2,
+};
+
+const dialogBodySx = {
+  overflowY: 'auto',
+  bgcolor: 'background.default',
+  py: 2,
+};
+
+const dialogFilterPanelSx = {
+  mb: 2,
+  p: 2,
+  borderRadius: 2,
+  border: '1px solid',
+  borderColor: 'divider',
+  bgcolor: 'background.paper',
+};
+
+const dialogListCardSx = {
+  mb: 1.5,
+  p: 1.5,
+  borderRadius: 2,
+  border: '1px solid',
+  borderColor: 'divider',
+  boxShadow: 0,
+  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+  '&:hover': { borderColor: 'primary.main', boxShadow: 1 },
+};
+
+const selectableListItemSx = {
+  alignItems: 'flex-start',
+  borderRadius: 1.5,
+  mx: 0.75,
+  my: 0.4,
+  '&.Mui-selected': { bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.main' },
+  '&.Mui-selected:hover': { bgcolor: 'primary.100' },
+};
+
+/* ── small shared sub-components ────────────────────────────────────────── */
 
 function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
   return (
@@ -172,44 +223,20 @@ function TeacherDashboard() {
 
   // Local state
   const [selections, setSelections] = useState(INITIAL_SELECTIONS);
-  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
   const [previewSegments, setPreviewSegments] = useState([]);
-  
-  // Bundle generation state
-  const [isBundleModalOpen, setIsBundleModalOpen] = useState(false);
-  const [viewBundleResult, setViewBundleResult] = useState(false);
-  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
-  const [isBundleSelectorOpen, setIsBundleSelectorOpen] = useState(false);
-  const [isLearnerOptionsOpen, setIsLearnerOptionsOpen] = useState(false);
-  const [isLearnerFromLessonOpen, setIsLearnerFromLessonOpen] = useState(false);
-  const [isLearnerFromStrandOpen, setIsLearnerFromStrandOpen] = useState(false);
   const [selectedLessonForLearner, setSelectedLessonForLearner] = useState('');
-
-  // quiz generation dialogs
-  const [isQuizOptionsOpen, setIsQuizOptionsOpen] = useState(false);
-  const [isQuizFromLessonOpen, setIsQuizFromLessonOpen] = useState(false);
-  const [isQuizFromStrandOpen, setIsQuizFromStrandOpen] = useState(false);
   const [selectedLessonForQuiz, setSelectedLessonForQuiz] = useState('');
   const [quizSelectedSubStrands, setQuizSelectedSubStrands] = useState([]);
-  const [isMyQuizzesOpen, setIsMyQuizzesOpen] = useState(false);
-  const [isQuizViewOpen, setIsQuizViewOpen] = useState(false);
-  const [isMyLessonNotesOpen, setIsMyLessonNotesOpen] = useState(false);
   const [notesClassFilter, setNotesClassFilter] = useState('');
   const [notesSubjectFilter, setNotesSubjectFilter] = useState('');
-  const [isMyLearnerNotesOpen, setIsMyLearnerNotesOpen] = useState(false);
   const [learnerNotesClassFilter, setLearnerNotesClassFilter] = useState('');
   const [learnerNotesSubjectFilter, setLearnerNotesSubjectFilter] = useState('');
-  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
-
-  // form state for gathering extra details when generating from strand
   const [strandForm, setStrandForm] = useState(INITIAL_STRAND_FORM);
-
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [learnerNoteToDelete, setLearnerNoteToDelete] = useState(null);
-
 
   // View state
   const [bannerCollapsed, setBannerCollapsed] = useState(false);
@@ -218,21 +245,13 @@ function TeacherDashboard() {
   const planLoading = false;
   const [dialogFullscreen, setDialogFullscreen] = useState({});
 
-  const overviewCardSx = {
-    p: 2.25,
-    minHeight: 184,
-    borderRadius: 3,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-    border: '1px solid',
-    transition: 'transform 0.22s ease, box-shadow 0.22s ease',
-    '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: 4,
-    },
-  };
+  // Single dialog state — replaces 16 boolean flags
+  // Keys: 'plan' | 'bundleSelector' | 'bundleModal' | 'bundleResult' | 'noteForm'
+  //       | 'learnerOptions' | 'learnerFromLesson' | 'learnerFromStrand'
+  //       | 'quizOptions' | 'quizFromLesson' | 'quizFromStrand'
+  //       | 'myLessonNotes' | 'myLearnerNotes' | 'myQuizzes' | 'quizView' | 'analytics'
+  const [activeDialog, setActiveDialog] = useState(null);
+  const closeDialog = useCallback(() => setActiveDialog(null), []);
 
   const overviewCards = [
     {
@@ -268,89 +287,6 @@ function TeacherDashboard() {
       Icon: School,
     },
   ];
-
-  const toolTileSx = {
-    height: '100%',
-    p: 2,
-    borderRadius: 3,
-    textAlign: 'center',
-    cursor: 'pointer',
-    border: '1px solid',
-    borderColor: 'divider',
-    bgcolor: 'background.paper',
-    boxShadow: 1,
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
-    '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: 4,
-      borderColor: 'primary.main',
-    },
-  };
-
-  const toolImageSx = {
-    width: 120,
-    height: 120,
-    margin: '0 auto 14px',
-    borderRadius: 2,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    boxShadow: 2,
-  };
-
-  const dialogBodySx = {
-    overflowY: 'auto',
-    bgcolor: 'background.default',
-    py: 2,
-  };
-
-  const dialogFilterPanelSx = {
-    mb: 2,
-    p: 2,
-    borderRadius: 2,
-    border: '1px solid',
-    borderColor: 'divider',
-    bgcolor: 'background.paper',
-  };
-
-  const dialogListCardSx = {
-    mb: 1.5,
-    p: 1.5,
-    borderRadius: 2,
-    border: '1px solid',
-    borderColor: 'divider',
-    boxShadow: 0,
-    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-    '&:hover': {
-      borderColor: 'primary.main',
-      boxShadow: 1,
-    },
-  };
-
-  const selectableListItemSx = {
-    alignItems: 'flex-start',
-    borderRadius: 1.5,
-    mx: 0.75,
-    my: 0.4,
-    '&.Mui-selected': {
-      bgcolor: 'primary.50',
-      border: '1px solid',
-      borderColor: 'primary.main',
-    },
-    '&.Mui-selected:hover': {
-      bgcolor: 'primary.100',
-    },
-  };
-
-  const analyticsKpiCardSx = {
-    p: 2,
-    height: '100%',
-    borderRadius: 2,
-    border: '1px solid',
-    borderColor: 'divider',
-    boxShadow: 0,
-    bgcolor: 'background.paper',
-  };
 
   const isDialogFullscreen = useCallback((dialogKey) => !!dialogFullscreen[dialogKey], [dialogFullscreen]);
   const toggleDialogFullscreen = useCallback((dialogKey) => {
@@ -538,10 +474,10 @@ function TeacherDashboard() {
 
   // clear loaded quiz details when the detail dialog is closed
   useEffect(() => {
-    if (!isQuizViewOpen) {
+    if (activeDialog !== 'quizView') {
       dispatch({ type: 'teacher/clearCurrentQuiz' });
     }
-  }, [isQuizViewOpen, dispatch]);
+  }, [activeDialog, dispatch]);
 
   // Dependent fetches
   useEffect(() => { if (selections.level) dispatch(fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: selections.level })); }, [selections.level, dispatch]);
@@ -566,37 +502,30 @@ function TeacherDashboard() {
 
   const preparePreviewSegments = useCallback((note) => {
     const segments = segmentHtmlWithImages(note?.content || '');
-    // initialize segments with imgUrl field set to undefined for loading
     const init = segments.map((s) => (s.type === 'image' ? { ...s, imgUrl: undefined } : s));
     setPreviewSegments(init);
 
-    // fetch images for any image segments asynchronously
-    init.forEach((seg, idx) => {
-      if (seg.type === 'image') {
+    // Collect image fetch promises and update state once when all settle
+    const imageJobs = init
+      .map((seg, idx) => ({ seg, idx }))
+      .filter(({ seg }) => seg.type === 'image');
+
+    if (imageJobs.length === 0) return;
+
+    Promise.allSettled(
+      imageJobs.map(({ seg }) => {
         const query = seg.meta?.search_query || seg.meta?.title || '';
-        if (query) {
-          fetchImageForQuery(query).then((url) => {
-            setPreviewSegments((prev) => {
-              const next = [...prev];
-              next[idx] = { ...next[idx], imgUrl: url || '' };
-              return next;
-            });
-          }).catch(() => {
-            setPreviewSegments((prev) => {
-              const next = [...prev];
-              next[idx] = { ...next[idx], imgUrl: '' };
-              return next;
-            });
-          });
-        } else {
-          // no search information, mark as no image
-          setPreviewSegments((prev) => {
-            const next = [...prev];
-            next[idx] = { ...next[idx], imgUrl: '' };
-            return next;
-          });
-        }
-      }
+        return query ? fetchImageForQuery(query) : Promise.resolve('');
+      })
+    ).then((results) => {
+      setPreviewSegments((prev) => {
+        const next = [...prev];
+        imageJobs.forEach(({ idx }, i) => {
+          const url = results[i].status === 'fulfilled' ? results[i].value || '' : '';
+          next[idx] = { ...next[idx], imgUrl: url };
+        });
+        return next;
+      });
     });
   }, []);
 
@@ -692,7 +621,7 @@ function TeacherDashboard() {
   const handleGenerateNoteSubmit = useCallback((formData) => {
     dispatch(generateLessonNote(formData)).unwrap().then((createdNote) => {
       setSnackbar({ open: true, message: 'Lesson note generated!', severity: 'success' });
-      setIsNoteModalOpen(false);
+      closeDialog();
       displayNote(createdNote);
       // also close create tools if open
       setShowCreateTools(false);
@@ -736,7 +665,7 @@ function TeacherDashboard() {
       .unwrap()
       .then(() => {
         setSnackbar({ open: true, message: 'Quiz generated from lesson note!', severity: 'success' });
-        setIsQuizFromLessonOpen(false);
+        closeDialog();
         setSelectedLessonForQuiz('');
       })
       .catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
@@ -768,15 +697,15 @@ function TeacherDashboard() {
       })
     ).then(() => {
       setSnackbar({ open: true, message: 'Quizzes generated for selected strands!', severity: 'success' });
-      setIsQuizFromStrandOpen(false);
+      closeDialog();
       setQuizSelectedSubStrands([]);
     }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
   }, [dispatch, quizSelectedSubStrands, subStrands]);
 
   const handleGenerateBundleSubmit = useCallback((data) => {
     dispatch(generateLessonBundle(data)).unwrap().then(() => {
-      setIsBundleModalOpen(false);
-      setViewBundleResult(true);
+      closeDialog();
+      setActiveDialog('bundleResult');
       setSnackbar({ open: true, message: 'Lesson bundle generated! 🎉', severity: 'success' });
       setShowCreateTools(false);
     }).catch((error) => setSnackbar({ open: true, message: error || 'Failed', severity: 'error' }));
@@ -789,7 +718,7 @@ function TeacherDashboard() {
   }, []);
 
   const closeLearnerFromStrand = useCallback(() => {
-    setIsLearnerFromStrandOpen(false);
+    closeDialog();
     resetSelections();
     resetStrandForm();
   }, [resetSelections, resetStrandForm]);
@@ -816,7 +745,7 @@ function TeacherDashboard() {
       .then((created) => {
         setSnackbar({ open: true, message: 'Learner note generated (draft)!', severity: 'success' });
         displayNote(created);
-        setIsLearnerFromStrandOpen(false);
+        closeDialog();
         // reset selections and form
         resetSelections();
         resetStrandForm();
@@ -831,21 +760,86 @@ function TeacherDashboard() {
   const handleGeneratePlan = useCallback(() => {
     if (!selections.subStrand) return;
     // close selection and open lesson note form for user completion
-    setIsPlanModalOpen(false);
-    setIsNoteModalOpen(true);
+    closeDialog();
+    setActiveDialog('noteForm');
   }, [selections.subStrand]);
 
   const handlePublishBundle = useCallback((bundle) => {
     if (bundle.learnerNote?.id) {
       dispatch(publishLearnerNote(bundle.learnerNote.id));
     }
-    setViewBundleResult(false);
+    closeDialog();
     setSnackbar({ open: true, message: 'Bundle published! ✨', severity: 'success' });
     dispatch(getMyLessonNotes());
     dispatch(getDraftLearnerNotes());
+  }, [dispatch, closeDialog]);
+
+  const handlePublishLearnerNote = useCallback((noteId) => {
+    dispatch(publishLearnerNote(noteId))
+      .unwrap()
+      .then(() => {
+        if (viewingNote?._id === noteId) displayNote(null);
+        setSnackbar({ open: true, message: 'Learner note published to students.', severity: 'success' });
+      })
+      .catch((err) => {
+        setSnackbar({ open: true, message: err || 'Failed to publish learner note.', severity: 'error' });
+      });
+  }, [dispatch, viewingNote, displayNote]);
+
+  const handleGenerateLearnerFromLesson = useCallback(() => {
+    if (!selectedLessonForLearner) return;
+    dispatch(generateLearnerNote(selectedLessonForLearner))
+      .unwrap()
+      .then((created) => {
+        setSnackbar({ open: true, message: 'Learner note generated (draft)!', severity: 'success' });
+        displayNote(created);
+        closeDialog();
+        setSelectedLessonForLearner('');
+        dispatch(getDraftLearnerNotes());
+      })
+      .catch((err) => {
+        setSnackbar({ open: true, message: err || 'Failed to generate learner note', severity: 'error' });
+      });
+  }, [dispatch, selectedLessonForLearner, displayNote, closeDialog]);
+
+  const handleViewQuiz = useCallback((quizId) => {
+    dispatch(getQuizById(quizId))
+      .unwrap()
+      .then(() => setActiveDialog('quizView'))
+      .catch((err) => setSnackbar({ open: true, message: err || 'Failed to load quiz', severity: 'error' }));
   }, [dispatch]);
 
-  const handleRefresh = async () => {
+  const handleDeleteQuiz = useCallback((quizId) => {
+    dispatch(deleteQuiz(quizId))
+      .then(() => setSnackbar({ open: true, message: 'Quiz deleted!', severity: 'success' }))
+      .catch((err) => setSnackbar({ open: true, message: err || 'Failed to delete quiz', severity: 'error' }));
+  }, [dispatch]);
+
+  const handleDeleteLessonNote = useCallback(() => {
+    if (!noteToDelete?._id) return;
+    dispatch(deleteLessonNote(noteToDelete._id))
+      .unwrap()
+      .then(() => {
+        if (viewingNote?._id === noteToDelete._id) displayNote(null);
+        setSnackbar({ open: true, message: 'Lesson note deleted.', severity: 'success' });
+      })
+      .catch((err) => setSnackbar({ open: true, message: err || 'Failed to delete lesson note.', severity: 'error' }))
+      .finally(() => setNoteToDelete(null));
+  }, [dispatch, noteToDelete, viewingNote, displayNote]);
+
+  const handleDeleteLearnerNote = useCallback(() => {
+    if (!learnerNoteToDelete?._id) return;
+    dispatch(deleteDraftLearnerNote(learnerNoteToDelete._id))
+      .unwrap()
+      .then(() => {
+        if (viewingNote?._id === learnerNoteToDelete._id) displayNote(null);
+        setSnackbar({ open: true, message: 'Learner note deleted.', severity: 'success' });
+      })
+      .catch((err) => setSnackbar({ open: true, message: err || 'Failed to delete learner note.', severity: 'error' }))
+      .finally(() => setLearnerNoteToDelete(null));
+  }, [dispatch, learnerNoteToDelete, viewingNote, displayNote]);
+
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
       dispatch(getMyLessonNotes()),
@@ -854,7 +848,7 @@ function TeacherDashboard() {
       dispatch(getMyBundles())
     ]);
     setTimeout(() => setRefreshing(false), 1000);
-  };
+  }, [dispatch]);
 
   const createNewToolItems = [
     {
@@ -863,7 +857,7 @@ function TeacherDashboard() {
       imageUrl: 'https://static.vecteezy.com/system/resources/previews/027/685/568/original/teacher-lesson-icon-flat-vector.jpg',
       onClick: () => {
         resetSelections();
-        setIsPlanModalOpen(true);
+        setActiveDialog('plan');
       },
     },
     {
@@ -872,14 +866,14 @@ function TeacherDashboard() {
       imageUrl: 'https://cdn-icons-png.flaticon.com/512/8980/8980099.png',
       onClick: () => {
         resetSelections();
-        setIsLearnerOptionsOpen(true);
+        setActiveDialog('learnerOptions');
       },
     },
     {
       key: 'quiz',
       label: 'Generate Quiz',
       imageUrl: 'https://static.vecteezy.com/system/resources/previews/009/742/591/large_2x/quiz-game-icon-outline-illustration-vector.jpg',
-      onClick: () => setIsQuizOptionsOpen(true),
+      onClick: () => setActiveDialog('quizOptions'),
     },
     {
       key: 'bundle',
@@ -887,7 +881,7 @@ function TeacherDashboard() {
       imageUrl: 'https://img.freepik.com/premium-vector/color-school-tools-icon_24640-20330.jpg?w=2000',
       onClick: () => {
         resetSelections();
-        setIsBundleSelectorOpen(true);
+        setActiveDialog('bundleSelector');
       },
     },
   ];
@@ -906,7 +900,7 @@ function TeacherDashboard() {
       onClick: () => {
         setNotesClassFilter('');
         setNotesSubjectFilter('');
-        setIsMyLessonNotesOpen(true);
+        setActiveDialog('myLessonNotes');
       },
     },
     {
@@ -916,20 +910,20 @@ function TeacherDashboard() {
       onClick: () => {
         setLearnerNotesClassFilter('');
         setLearnerNotesSubjectFilter('');
-        setIsMyLearnerNotesOpen(true);
+        setActiveDialog('myLearnerNotes');
       },
     },
     {
       key: 'my-quizzes',
       label: 'Quizzes',
       imageUrl: 'https://img.freepik.com/premium-vector/quiz-logo-poll-questionnaire-icon-symbol_101884-1076.jpg?w=2000',
-      onClick: () => setIsMyQuizzesOpen(true),
+      onClick: () => setActiveDialog('myQuizzes'),
     },
     {
       key: 'analysis',
       label: 'Analysis',
       imageUrl: 'https://png.pngtree.com/png-vector/20191009/ourlarge/pngtree-analysis-icon-png-image_1798051.jpg',
-      onClick: () => setIsAnalyticsOpen(true),
+      onClick: () => setActiveDialog('analytics'),
     },
   ];
 
@@ -1036,7 +1030,7 @@ function TeacherDashboard() {
 
         {/* Modals & Dialogs */}
         {/* Plan generation modal */}
-        <Dialog open={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} fullScreen={isDialogFullscreen('plan')} fullWidth maxWidth={isDialogFullscreen('plan') ? false : 'sm'}>
+        <Dialog open={activeDialog === 'plan'} onClose={() => closeDialog()} fullScreen={isDialogFullscreen('plan')} fullWidth maxWidth={isDialogFullscreen('plan') ? false : 'sm'}>
           <DialogTitleWithFullscreen title="Select Topic for Lesson Plan" isFullscreen={isDialogFullscreen('plan')} onToggle={() => toggleDialogFullscreen('plan')} />
           <DialogContent>
             <CurriculumSelection
@@ -1051,7 +1045,7 @@ function TeacherDashboard() {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsPlanModalOpen(false)} disabled={planLoading}>Cancel</Button>
+            <Button onClick={() => closeDialog()} disabled={planLoading}>Cancel</Button>
             <Button
               variant="contained"
               onClick={handleGeneratePlan}
@@ -1064,7 +1058,7 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Bundle topic selector dialog */}
-        <Dialog open={isBundleSelectorOpen} onClose={() => setIsBundleSelectorOpen(false)} fullScreen={isDialogFullscreen('bundleSelector')} fullWidth maxWidth={isDialogFullscreen('bundleSelector') ? false : 'sm'}>
+        <Dialog open={activeDialog === 'bundleSelector'} onClose={() => closeDialog()} fullScreen={isDialogFullscreen('bundleSelector')} fullWidth maxWidth={isDialogFullscreen('bundleSelector') ? false : 'sm'}>
           <DialogTitleWithFullscreen title="Select Topic for Lesson Bundle" isFullscreen={isDialogFullscreen('bundleSelector')} onToggle={() => toggleDialogFullscreen('bundleSelector')} />
           <DialogContent>
             <CurriculumSelection
@@ -1079,12 +1073,12 @@ function TeacherDashboard() {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsBundleSelectorOpen(false)}>Cancel</Button>
+            <Button onClick={() => closeDialog()}>Cancel</Button>
             <Button
               variant="contained"
               onClick={() => {
-                setIsBundleSelectorOpen(false);
-                setIsBundleModalOpen(true);
+                closeDialog();
+                setActiveDialog('bundleModal');
               }}
               disabled={!selections.subStrand}
             >
@@ -1094,56 +1088,56 @@ function TeacherDashboard() {
         </Dialog>
 
         <LessonBundleForm
-          open={isBundleModalOpen}
-          onClose={() => setIsBundleModalOpen(false)}
+          open={activeDialog === 'bundleModal'}
+          onClose={() => closeDialog()}
           onSubmit={handleGenerateBundleSubmit}
           subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           subStrandId={selections.subStrand}
           isLoading={isLoading}
         />
         {/* Learner Notes Options Dialog */}
-        <Dialog open={isLearnerOptionsOpen} onClose={() => setIsLearnerOptionsOpen(false)} fullScreen={isDialogFullscreen('learnerOptions')} fullWidth maxWidth={isDialogFullscreen('learnerOptions') ? false : 'xs'}>
+        <Dialog open={activeDialog === 'learnerOptions'} onClose={() => closeDialog()} fullScreen={isDialogFullscreen('learnerOptions')} fullWidth maxWidth={isDialogFullscreen('learnerOptions') ? false : 'xs'}>
           <DialogTitleWithFullscreen title="Generate Learner Notes" isFullscreen={isDialogFullscreen('learnerOptions')} onToggle={() => toggleDialogFullscreen('learnerOptions')} />
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>Choose how you want to generate learner notes:</Typography>
             <Stack spacing={2}>
-              <Button variant="outlined" onClick={() => { setIsLearnerOptionsOpen(false); setIsLearnerFromLessonOpen(true); }}>
+              <Button variant="outlined" onClick={() => { setActiveDialog('learnerFromLesson'); }}>
                 From Lesson Note
               </Button>
-              <Button variant="contained" onClick={() => { setIsLearnerOptionsOpen(false); resetSelections(); resetStrandForm(); setIsLearnerFromStrandOpen(true); }}>
+              <Button variant="contained" onClick={() => { closeDialog(); resetSelections(); resetStrandForm(); setActiveDialog('learnerFromStrand'); }}>
                 From Strands
               </Button>
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsLearnerOptionsOpen(false)}>Cancel</Button>
+            <Button onClick={() => closeDialog()}>Cancel</Button>
           </DialogActions>
         </Dialog>
 
         {/* Quiz Options Dialog */}
-        <Dialog open={isQuizOptionsOpen} onClose={() => setIsQuizOptionsOpen(false)} fullScreen={isDialogFullscreen('quizOptions')} fullWidth maxWidth={isDialogFullscreen('quizOptions') ? false : 'xs'}>
+        <Dialog open={activeDialog === 'quizOptions'} onClose={() => closeDialog()} fullScreen={isDialogFullscreen('quizOptions')} fullWidth maxWidth={isDialogFullscreen('quizOptions') ? false : 'xs'}>
           <DialogTitleWithFullscreen title="Generate Quiz" isFullscreen={isDialogFullscreen('quizOptions')} onToggle={() => toggleDialogFullscreen('quizOptions')} />
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>Choose how you want to generate the quiz:</Typography>
             <Stack spacing={2}>
-              <Button variant="outlined" onClick={() => { setIsQuizOptionsOpen(false); setIsQuizFromLessonOpen(true); }}>
+              <Button variant="outlined" onClick={() => { setActiveDialog('quizFromLesson'); }}>
                 From Lesson Note
               </Button>
-              <Button variant="contained" onClick={() => { setIsQuizOptionsOpen(false); resetSelections(); setQuizSelectedSubStrands([]); setIsQuizFromStrandOpen(true); }}>
+              <Button variant="contained" onClick={() => { closeDialog(); resetSelections(); setQuizSelectedSubStrands([]); setActiveDialog('quizFromStrand'); }}>
                 From Strands
               </Button>
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsQuizOptionsOpen(false)}>Cancel</Button>
+            <Button onClick={() => closeDialog()}>Cancel</Button>
           </DialogActions>
         </Dialog>
 
         {/* My Lesson Notes flow */}
         <Dialog
-          open={isMyLessonNotesOpen}
+          open={activeDialog === 'myLessonNotes'}
           onClose={() => {
-            setIsMyLessonNotesOpen(false);
+            closeDialog();
             setNotesClassFilter('');
             setNotesSubjectFilter('');
           }}
@@ -1215,7 +1209,7 @@ function TeacherDashboard() {
                           size="small"
                           onClick={() => {
                             displayNote(note);
-                            setIsMyLessonNotesOpen(false);
+                            closeDialog();
                           }}
                         >
                           Open
@@ -1238,7 +1232,7 @@ function TeacherDashboard() {
           <DialogActions>
             <Button
               onClick={() => {
-                setIsMyLessonNotesOpen(false);
+                closeDialog();
                 setNotesClassFilter('');
                 setNotesSubjectFilter('');
               }}
@@ -1250,9 +1244,9 @@ function TeacherDashboard() {
 
         {/* My Learner Notes flow */}
         <Dialog
-          open={isMyLearnerNotesOpen}
+          open={activeDialog === 'myLearnerNotes'}
           onClose={() => {
-            setIsMyLearnerNotesOpen(false);
+            closeDialog();
             setLearnerNotesClassFilter('');
             setLearnerNotesSubjectFilter('');
           }}
@@ -1333,7 +1327,7 @@ function TeacherDashboard() {
                           size="small"
                           onClick={() => {
                             displayNote(note);
-                            setIsMyLearnerNotesOpen(false);
+                            closeDialog();
                           }}
                         >
                           Open
@@ -1342,19 +1336,7 @@ function TeacherDashboard() {
                           variant="contained"
                           size="small"
                           disabled={note.status === 'published'}
-                          onClick={() => {
-                            dispatch(publishLearnerNote(note._id))
-                              .unwrap()
-                              .then(() => {
-                                if (viewingNote?._id === note._id) {
-                                  displayNote(null);
-                                }
-                                setSnackbar({ open: true, message: 'Learner note published to students.', severity: 'success' });
-                              })
-                              .catch((err) => {
-                                setSnackbar({ open: true, message: err || 'Failed to publish learner note.', severity: 'error' });
-                              });
-                          }}
+                          onClick={() => handlePublishLearnerNote(note._id)}
                         >
                           {note.status === 'published' ? 'Published' : 'Publish'}
                         </Button>
@@ -1376,7 +1358,7 @@ function TeacherDashboard() {
           <DialogActions>
             <Button
               onClick={() => {
-                setIsMyLearnerNotesOpen(false);
+                closeDialog();
                 setLearnerNotesClassFilter('');
                 setLearnerNotesSubjectFilter('');
               }}
@@ -1387,85 +1369,23 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* From Lesson Note flow */}
-        <Dialog open={isLearnerFromLessonOpen} onClose={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} fullScreen={isDialogFullscreen('learnerFromLesson')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('learnerFromLesson') ? false : 'md'}>
-          <DialogTitleWithFullscreen title="Generate Learner Note from an Existing Lesson Note" isFullscreen={isDialogFullscreen('learnerFromLesson')} onToggle={() => toggleDialogFullscreen('learnerFromLesson')} />
-          <DialogContent tabIndex={0} sx={dialogBodySx}>
-            <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to convert into a learner-friendly note.</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={5}>
-                <Paper sx={{ maxHeight: 420, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                  <List>
-                    {(lessonNotes || []).map((ln) => (
-                      <ListItemButton
-                        key={ln._id}
-                        selected={selectedLessonForLearner === ln._id}
-                        onClick={() => setSelectedLessonForLearner(ln._id)}
-                        sx={selectableListItemSx}
-                      >
-                        <ListItemText
-                          primary={ln.subStrand?.name || ln.title || 'Lesson Note'}
-                          secondary={new Date(ln.createdAt).toLocaleString()}
-                        />
-                      </ListItemButton>
-                    ))}
-                    {(!lessonNotes || lessonNotes.length === 0) && (
-                      <ListItem><ListItemText primary="No lesson notes found" /></ListItem>
-                    )}
-                  </List>
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} md={7}>
-                <Paper sx={{ p: 2, maxHeight: 520, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                  {!selectedLessonForLearner ? (
-                    <Typography variant="body2" color="text.secondary">Select a lesson note to preview its content here.</Typography>
-                  ) : (
-                    (() => {
-                      const note = (lessonNotes || []).find(n => n._id === selectedLessonForLearner);
-                      return note ? (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" gutterBottom>Topic: {note.subStrand?.name || note.subStrand}</Typography>
-                          <Divider sx={{ my: 1 }} />
-                          <Box dangerouslySetInnerHTML={{ __html: removeImageBlocks(note.content || '') }} sx={{ '& p': { lineHeight: 1.7 } }} />
-                        </Box>
-                      ) : (
-                        <Typography>Selected note not available.</Typography>
-                      );
-                    })()
-                  )}
-                </Paper>
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => { setIsLearnerFromLessonOpen(false); setSelectedLessonForLearner(''); }} disabled={isLoading}>Cancel</Button>
-            <Button
-              variant="contained"
-              disabled={!selectedLessonForLearner || isLoading}
-              onClick={() => {
-                if (!selectedLessonForLearner) return;
-                // Dispatch generation
-                dispatch(generateLearnerNote(selectedLessonForLearner)).unwrap().then((created) => {
-                  setSnackbar({ open: true, message: 'Learner note generated (draft)!', severity: 'success' });
-                  // show preview immediately
-                  displayNote(created);
-                  // close the selection dialog and clear selection
-                  setIsLearnerFromLessonOpen(false);
-                  setSelectedLessonForLearner('');
-                  // refresh drafts
-                  dispatch(getDraftLearnerNotes());
-                }).catch((err) => {
-                  setSnackbar({ open: true, message: err || 'Failed to generate learner note', severity: 'error' });
-                });
-              }}
-            >
-              {isLoading ? <CircularProgress size={18} /> : 'Generate Learner Note'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <LessonNotePickerDialog
+          open={activeDialog === 'learnerFromLesson'}
+          onClose={() => { closeDialog(); setSelectedLessonForLearner(''); }}
+          title="Generate Learner Note from an Existing Lesson Note"
+          description="Select a lesson note to convert into a learner-friendly note."
+          lessonNotes={lessonNotes}
+          selectedId={selectedLessonForLearner}
+          onSelect={setSelectedLessonForLearner}
+          onConfirm={handleGenerateLearnerFromLesson}
+          confirmLabel="Generate Learner Note"
+          isLoading={isLoading}
+          fullScreen={isDialogFullscreen('learnerFromLesson')}
+          onToggleFullscreen={() => toggleDialogFullscreen('learnerFromLesson')}
+        />
 
         {/* From Strands flow */}
-        <Dialog open={isLearnerFromStrandOpen} onClose={closeLearnerFromStrand} fullScreen={isDialogFullscreen('learnerFromStrand')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('learnerFromStrand') ? false : 'sm'}>
+        <Dialog open={activeDialog === 'learnerFromStrand'} onClose={closeLearnerFromStrand} fullScreen={isDialogFullscreen('learnerFromStrand')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('learnerFromStrand') ? false : 'sm'}>
           <DialogTitleWithFullscreen title="Generate Learner Note from Strand" isFullscreen={isDialogFullscreen('learnerFromStrand')} onToggle={() => toggleDialogFullscreen('learnerFromStrand')} />
           <DialogContent tabIndex={0} sx={dialogBodySx}>
             <Typography variant="body2" sx={{ mb: 2 }}>
@@ -1599,69 +1519,23 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* Quiz From Lesson Note */}
-        <Dialog open={isQuizFromLessonOpen} onClose={() => setIsQuizFromLessonOpen(false)} fullScreen={isDialogFullscreen('quizFromLesson')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizFromLesson') ? false : 'md'}>
-          <DialogTitleWithFullscreen title="Generate Quiz from a Lesson Note" isFullscreen={isDialogFullscreen('quizFromLesson')} onToggle={() => toggleDialogFullscreen('quizFromLesson')} />
-          <DialogContent tabIndex={0} sx={dialogBodySx}>
-            <Typography variant="body2" sx={{ mb: 2 }}>Select a lesson note to use as the source for the quiz.</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={5}>
-                <Paper sx={{ maxHeight: 420, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                  <List>
-                    {(lessonNotes || []).map((ln) => (
-                      <ListItemButton
-                        key={ln._id}
-                        selected={selectedLessonForQuiz === ln._id}
-                        onClick={() => setSelectedLessonForQuiz(ln._id)}
-                        sx={selectableListItemSx}
-                      >
-                        <ListItemText
-                          primary={ln.subStrand?.name || ln.title || 'Lesson Note'}
-                          secondary={new Date(ln.createdAt).toLocaleString()}
-                        />
-                      </ListItemButton>
-                    ))}
-                    {(!lessonNotes || lessonNotes.length === 0) && (
-                      <ListItem><ListItemText primary="No lesson notes found" /></ListItem>
-                    )}
-                  </List>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={7}>
-                <Paper sx={{ p: 2, maxHeight: 520, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                  {!selectedLessonForQuiz ? (
-                    <Typography variant="body2" color="text.secondary">Select a lesson note to preview its content here.</Typography>
-                  ) : (
-                    (() => {
-                      const note = (lessonNotes || []).find(n => n._id === selectedLessonForQuiz);
-                      return note ? (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" gutterBottom>Topic: {note.subStrand?.name || note.subStrand}</Typography>
-                          <Divider sx={{ my: 1 }} />
-                          <Box dangerouslySetInnerHTML={{ __html: removeImageBlocks(note.content || '') }} sx={{ '& p': { lineHeight: 1.7 } }} />
-                        </Box>
-                      ) : (
-                        <Typography>Selected note not available.</Typography>
-                      );
-                    })()
-                  )}
-                </Paper>
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => { setIsQuizFromLessonOpen(false); setSelectedLessonForQuiz(''); }} disabled={isLoading}>Cancel</Button>
-            <Button
-              variant="contained"
-              disabled={!selectedLessonForQuiz || isLoading}
-              onClick={handleGenerateQuizFromLesson}
-            >
-              {isLoading ? <CircularProgress size={18} /> : 'Generate Quiz'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <LessonNotePickerDialog
+          open={activeDialog === 'quizFromLesson'}
+          onClose={() => { closeDialog(); setSelectedLessonForQuiz(''); }}
+          title="Generate Quiz from a Lesson Note"
+          description="Select a lesson note to use as the source for the quiz."
+          lessonNotes={lessonNotes}
+          selectedId={selectedLessonForQuiz}
+          onSelect={setSelectedLessonForQuiz}
+          onConfirm={handleGenerateQuizFromLesson}
+          confirmLabel="Generate Quiz"
+          isLoading={isLoading}
+          fullScreen={isDialogFullscreen('quizFromLesson')}
+          onToggleFullscreen={() => toggleDialogFullscreen('quizFromLesson')}
+        />
 
         {/* Quiz From Strands */}
-        <Dialog open={isQuizFromStrandOpen} onClose={() => setIsQuizFromStrandOpen(false)} fullScreen={isDialogFullscreen('quizFromStrand')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizFromStrand') ? false : 'sm'}>
+        <Dialog open={activeDialog === 'quizFromStrand'} onClose={() => closeDialog()} fullScreen={isDialogFullscreen('quizFromStrand')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizFromStrand') ? false : 'sm'}>
           <DialogTitleWithFullscreen title="Generate Quiz from Strands" isFullscreen={isDialogFullscreen('quizFromStrand')} onToggle={() => toggleDialogFullscreen('quizFromStrand')} />
           <DialogContent tabIndex={0} sx={dialogBodySx}>
             <Typography variant="body2" sx={{ mb: 2 }}>Use the curriculum selector below, then tick one or more sub-strands.</Typography>
@@ -1700,7 +1574,7 @@ function TeacherDashboard() {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsQuizFromStrandOpen(false)} disabled={isLoading}>Cancel</Button>
+            <Button onClick={() => closeDialog()} disabled={isLoading}>Cancel</Button>
             <Button
               variant="contained"
               disabled={quizSelectedSubStrands.length === 0 || isLoading}
@@ -1712,7 +1586,7 @@ function TeacherDashboard() {
         </Dialog>
 
         {/* My Quizzes Dialog */}
-        <Dialog open={isMyQuizzesOpen} onClose={() => setIsMyQuizzesOpen(false)} fullScreen={isDialogFullscreen('myQuizzes')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('myQuizzes') ? false : 'md'}>
+        <Dialog open={activeDialog === 'myQuizzes'} onClose={() => closeDialog()} fullScreen={isDialogFullscreen('myQuizzes')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('myQuizzes') ? false : 'md'}>
           <DialogTitleWithFullscreen title="My Quizzes" isFullscreen={isDialogFullscreen('myQuizzes')} onToggle={() => toggleDialogFullscreen('myQuizzes')} />
           <DialogContent tabIndex={0} sx={dialogBodySx}>
             {(!quizzes || quizzes.length === 0) ? (
@@ -1739,13 +1613,7 @@ function TeacherDashboard() {
                         <Button
                           variant="outlined"
                           size="small"
-                          onClick={() => {
-                            dispatch(getQuizById(quiz._id)).unwrap().then(() => {
-                              setIsQuizViewOpen(true);
-                            }).catch((err) => {
-                              setSnackbar({ open: true, message: err || 'Failed to load quiz', severity: 'error' });
-                            });
-                          }}
+                          onClick={() => handleViewQuiz(quiz._id)}
                         >
                           View
                         </Button>
@@ -1753,13 +1621,7 @@ function TeacherDashboard() {
                           variant="outlined"
                           color="error"
                           size="small"
-                          onClick={() => {
-                            dispatch(deleteQuiz(quiz._id)).then(() => {
-                              setSnackbar({ open: true, message: 'Quiz deleted!', severity: 'success' });
-                            }).catch((err) => {
-                              setSnackbar({ open: true, message: err || 'Failed to delete quiz', severity: 'error' });
-                            });
-                          }}
+                          onClick={() => handleDeleteQuiz(quiz._id)}
                         >
                           Delete
                         </Button>
@@ -1771,114 +1633,23 @@ function TeacherDashboard() {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsMyQuizzesOpen(false)}>Close</Button>
+            <Button onClick={() => closeDialog()}>Close</Button>
           </DialogActions>
         </Dialog>
 
         {/* Analytics Dialog */}
-        <Dialog
-          open={isAnalyticsOpen}
-          onClose={() => setIsAnalyticsOpen(false)}
+        <AnalyticsDialog
+          open={activeDialog === 'analytics'}
+          onClose={closeDialog}
+          analyticsSummary={analyticsSummary}
           fullScreen={isDialogFullscreen('analytics')}
-          scroll="paper"
-          fullWidth
-          maxWidth={isDialogFullscreen('analytics') ? false : 'lg'}
-        >
-          <DialogTitleWithFullscreen title="Analytics" isFullscreen={isDialogFullscreen('analytics')} onToggle={() => toggleDialogFullscreen('analytics')} />
-          <DialogContent tabIndex={0} sx={dialogBodySx}>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={analyticsKpiCardSx}>
-                  <Typography variant="caption" color="text.secondary">Lesson Notes</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalLessonNotes}</Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={analyticsKpiCardSx}>
-                  <Typography variant="caption" color="text.secondary">Learner Notes</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalLearnerNotes}</Typography>
-                  <Typography variant="body2" color="text.secondary">{analyticsSummary.publishedLearnerNotes} published • {analyticsSummary.draftOnlyLearnerNotes} draft</Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={analyticsKpiCardSx}>
-                  <Typography variant="caption" color="text.secondary">Quizzes Generated</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{analyticsSummary.totalQuizzes}</Typography>
-                  <Typography variant="body2" color="text.secondary">{analyticsSummary.totalQuizAttempts} attempts</Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Paper sx={analyticsKpiCardSx}>
-                  <Typography variant="caption" color="text.secondary">Average Quiz Score</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{Number(analyticsSummary.avgQuizScore).toFixed(1)}%</Typography>
-                  <Typography variant="body2" color="text.secondary">{analyticsSummary.totalNoteViews} note views • {analyticsSummary.totalBundles} bundles</Typography>
-                </Paper>
-              </Grid>
-            </Grid>
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={7}>
-                <Paper sx={{ p: 2.5, height: '100%', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                  <Typography variant="h6" sx={{ mb: 1 }}>Recent Activity</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {analyticsSummary.last30Count} actions in the last 30 days
-                  </Typography>
-                  {analyticsSummary.recentActivity.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">No recent activity yet.</Typography>
-                  ) : (
-                    <List sx={{ pt: 0 }}>
-                      {analyticsSummary.recentActivity.map((entry, index) => (
-                        <ListItem key={`${entry.type}-${entry.date}-${index}`} sx={{ px: 0, alignItems: 'flex-start' }}>
-                          <ListItemText
-                            primary={`${entry.type}: ${entry.title}`}
-                            secondary={new Date(entry.date).toLocaleString()}
-                          />
-                        </ListItem>
-                      ))}
-                    </List>
-                  )}
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} md={5}>
-                <Paper sx={{ p: 2.5, height: '100%', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>Top Topics</Typography>
-                  {analyticsSummary.topTopics.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">No topic data available yet.</Typography>
-                  ) : (
-                    <Stack spacing={1.5}>
-                      {analyticsSummary.topTopics.map((topic) => (
-                        <Box key={topic.name}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{topic.name}</Typography>
-                            <Chip label={`${topic.count}`} size="small" color="primary" variant="outlined" />
-                          </Box>
-                          <Box sx={{ height: 8, borderRadius: 8, bgcolor: 'grey.200', overflow: 'hidden' }}>
-                            <Box
-                              sx={{
-                                height: '100%',
-                                bgcolor: 'primary.main',
-                                width: `${Math.min(100, (topic.count / Math.max(...analyticsSummary.topTopics.map((item) => item.count))) * 100)}%`,
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                      ))}
-                    </Stack>
-                  )}
-                </Paper>
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setIsAnalyticsOpen(false)}>Close</Button>
-          </DialogActions>
-        </Dialog>
+          onToggleFullscreen={() => toggleDialogFullscreen('analytics')}
+        />
 
         {/* Note creation form modal */}
 
         {/* Quiz detail viewer */}
-        <Dialog open={isQuizViewOpen} onClose={() => { setIsQuizViewOpen(false); }} fullScreen={isDialogFullscreen('quizView')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizView') ? false : 'md'}>
+        <Dialog open={activeDialog === 'quizView'} onClose={() => { closeDialog(); }} fullScreen={isDialogFullscreen('quizView')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizView') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Quiz Details" isFullscreen={isDialogFullscreen('quizView')} onToggle={() => toggleDialogFullscreen('quizView')} />
           <DialogContent tabIndex={0} sx={dialogBodySx}>
             {currentQuiz ? (
@@ -1916,13 +1687,13 @@ function TeacherDashboard() {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => { setIsQuizViewOpen(false); }} >Close</Button>
+            <Button onClick={() => { closeDialog(); }} >Close</Button>
           </DialogActions>
         </Dialog>
 
         <LessonNoteForm
-          open={isNoteModalOpen}
-          onClose={() => setIsNoteModalOpen(false)}
+          open={activeDialog === 'noteForm'}
+          onClose={() => closeDialog()}
           onSubmit={handleGenerateNoteSubmit}
           subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           subStrandId={selections.subStrand}
@@ -1931,154 +1702,48 @@ function TeacherDashboard() {
           onToggleFullscreen={() => toggleDialogFullscreen('lessonNoteForm')}
         />
         <BundleResultViewer
-          open={viewBundleResult}
-          onClose={() => setViewBundleResult(false)}
+          open={activeDialog === 'bundleResult'}
+          onClose={() => closeDialog()}
           bundleData={bundleResult}
           onPublish={handlePublishBundle}
           fullScreen={isDialogFullscreen('bundleResultViewer')}
           onToggleFullscreen={() => toggleDialogFullscreen('bundleResultViewer')}
         />
         
-        {/* Delete Confirmation */}
-        <Dialog open={!!noteToDelete} onClose={() => setNoteToDelete(null)}>
-          <DialogTitle>Confirm Deletion</DialogTitle>
-          <DialogContent><DialogContentText>Are you sure you want to delete this note?</DialogContentText></DialogContent>
-          <DialogActions>
-            <Button onClick={() => setNoteToDelete(null)}>Cancel</Button>
-            <Button
-              onClick={() => {
-                if (!noteToDelete?._id) return;
-                dispatch(deleteLessonNote(noteToDelete._id))
-                  .unwrap()
-                  .then(() => {
-                    if (viewingNote?._id === noteToDelete._id) {
-                      displayNote(null);
-                    }
-                    setSnackbar({ open: true, message: 'Lesson note deleted.', severity: 'success' });
-                  })
-                  .catch((err) => {
-                    setSnackbar({ open: true, message: err || 'Failed to delete lesson note.', severity: 'error' });
-                  })
-                  .finally(() => setNoteToDelete(null));
-              }}
-              color="error"
-            >
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
+        {/* Delete Confirmations */}
+        <ConfirmDialog
+          open={!!noteToDelete}
+          title="Delete Lesson Note"
+          message="Are you sure you want to delete this lesson note? This action cannot be undone."
+          severity="error"
+          confirmLabel="Delete"
+          onConfirm={handleDeleteLessonNote}
+          onCancel={() => setNoteToDelete(null)}
+        />
 
-        <Dialog open={!!learnerNoteToDelete} onClose={() => setLearnerNoteToDelete(null)}>
-          <DialogTitle>Confirm Deletion</DialogTitle>
-          <DialogContent><DialogContentText>Are you sure you want to delete this learner note?</DialogContentText></DialogContent>
-          <DialogActions>
-            <Button onClick={() => setLearnerNoteToDelete(null)}>Cancel</Button>
-            <Button
-              onClick={() => {
-                if (!learnerNoteToDelete?._id) return;
-                dispatch(deleteDraftLearnerNote(learnerNoteToDelete._id))
-                  .unwrap()
-                  .then(() => {
-                    if (viewingNote?._id === learnerNoteToDelete._id) {
-                      displayNote(null);
-                    }
-                    setSnackbar({ open: true, message: 'Learner note deleted.', severity: 'success' });
-                  })
-                  .catch((err) => {
-                    setSnackbar({ open: true, message: err || 'Failed to delete learner note.', severity: 'error' });
-                  })
-                  .finally(() => setLearnerNoteToDelete(null));
-              }}
-              color="error"
-            >
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <ConfirmDialog
+          open={!!learnerNoteToDelete}
+          title="Delete Learner Note"
+          message="Are you sure you want to delete this learner note? This action cannot be undone."
+          severity="error"
+          confirmLabel="Delete"
+          onConfirm={handleDeleteLearnerNote}
+          onCancel={() => setLearnerNoteToDelete(null)}
+        />
 
         {/* Note Preview */}
-        <Dialog open={!!viewingNote} onClose={() => displayNote(null)} fullScreen={isDialogFullscreen('notePreview')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('notePreview') ? false : 'md'}>
-          <DialogTitleWithFullscreen title="Preview Lesson Note" isFullscreen={isDialogFullscreen('notePreview')} onToggle={() => toggleDialogFullscreen('notePreview')} />
-          <DialogContent tabIndex={0} sx={{ bgcolor: 'grey.50', overflowY: 'auto' }}>
-            <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
-              <Typography variant="caption" color="text.secondary" gutterBottom>
-                Topic: {viewingNote?.subStrand?.name || viewingNote?.subStrand || ''}
-              </Typography>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{
-                  '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
-                  '& h3': { fontSize: '1.25rem', fontWeight: 600, mt: 2, mb: 1 },
-                  '& table': {
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    my: 2,
-                    '& td, & th': {
-                      border: '1px solid #ddd',
-                      padding: '12px',
-                    },
-                    '& th': { backgroundColor: '#f5f5f5', fontWeight: 600 },
-                  },
-                  '& p': { lineHeight: 1.7, mb: 1 },
-                  '& ul, & ol': { pl: 3, mb: 2 },
-                }}>
-                {previewSegments.map((seg, idx) => {
-                  if (seg.type === 'text') {
-                    return (
-                      <Box key={idx} dangerouslySetInnerHTML={{ __html: seg.html }} />
-                    );
-                  }
-                  if (seg.type === 'image') {
-                    // three states: undefined (loading), '' (no url/fail), string (url)
-                    if (seg.imgUrl === undefined) {
-                      return (
-                        <Typography key={idx} variant="caption" color="text.secondary">
-                          Loading image...
-                        </Typography>
-                      );
-                    }
-                    if (!seg.imgUrl) {
-                      return null; // nothing to show
-                    }
-                    return (
-                      <Box key={idx} sx={{ my: 2, textAlign: 'center' }}>
-                        <img
-                          src={seg.imgUrl}
-                          alt={seg.meta?.title || ''}
-                          style={{ maxWidth: '100%', height: 'auto' }}
-                        />
-                        {seg.meta?.title && (
-                          <Typography variant="caption" display="block">{seg.meta.title}</Typography>
-                        )}
-                      </Box>
-                    );
-                  }
-                  return null;
-                })}
-              </Box>
-            </Paper>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              variant="outlined"
-              startIcon={<Download />}
-              endIcon={<ExpandMore />}
-              onClick={handleOpenDownloadMenu}
-              disabled={!viewingNote}
-            >
-              Download
-            </Button>
-            <Menu
-              anchorEl={downloadMenuAnchorEl}
-              open={Boolean(downloadMenuAnchorEl)}
-              onClose={handleCloseDownloadMenu}
-            >
-              <MenuItem onClick={() => handleDownloadViewingNote('html')}>Download as HTML (.html)</MenuItem>
-              <MenuItem onClick={() => handleDownloadViewingNote('doc')}>Download as Word (.doc)</MenuItem>
-              <MenuItem onClick={() => handleDownloadViewingNote('txt')}>Download as Text (.txt)</MenuItem>
-            </Menu>
-            <Button onClick={() => displayNote(null)}>Close</Button>
-          </DialogActions>
-        </Dialog>
+        <NotePreviewDialog
+          open={!!viewingNote}
+          onClose={() => displayNote(null)}
+          note={viewingNote}
+          segments={previewSegments}
+          downloadMenuAnchorEl={downloadMenuAnchorEl}
+          onOpenDownloadMenu={handleOpenDownloadMenu}
+          onCloseDownloadMenu={handleCloseDownloadMenu}
+          onDownload={handleDownloadViewingNote}
+          fullScreen={isDialogFullscreen('notePreview')}
+          onToggleFullscreen={() => toggleDialogFullscreen('notePreview')}
+        />
 
         <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar(p => ({ ...p, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
           <Alert onClose={() => setSnackbar(p => ({ ...p, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
