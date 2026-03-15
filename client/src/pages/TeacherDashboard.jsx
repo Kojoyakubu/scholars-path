@@ -591,7 +591,8 @@ function TeacherDashboard() {
     `;
 
     if (format === 'pdf') {
-      if (!window.html2pdf) {
+      const previewElement = document.getElementById('teacher-note-preview-content');
+      if (!window.html2pdf || !previewElement) {
         handleCloseDownloadMenu();
         setSnackbar({ open: true, message: 'PDF export is not available right now.', severity: 'error' });
         return;
@@ -600,59 +601,39 @@ function TeacherDashboard() {
       setIsPdfExporting(true);
       handleCloseDownloadMenu();
 
-      const exportRootId = `teacher-note-pdf-${Date.now()}`;
-      const exportHost = document.createElement('div');
-      exportHost.innerHTML = `
-        <div
-          id="${exportRootId}"
-          style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 794px;
-            background: #ffffff;
-            color: #111827;
-            pointer-events: none;
-            z-index: -1;
-            box-sizing: border-box;
-            padding: 12px;
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.35;
-          "
-        >
-          <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px;">Topic: ${topic}</div>
-          ${printableBody}
-        </div>
-      `;
-      document.body.appendChild(exportHost);
+      // Ensure the screenshot starts from top of the preview content.
+      const scrollHost = previewElement.closest('.MuiDialogContent-root');
+      if (scrollHost) scrollHost.scrollTop = 0;
 
       requestAnimationFrame(() => {
-        const pdfTask = downloadAsPdf(exportRootId, safeFileName || 'lesson-note', {
-          margin: [5, 5, 5, 5],
-          html2canvas: {
-            scale: 1.2,
-            useCORS: true,
-            scrollX: 0,
-            scrollY: 0,
-          },
-          pagebreak: {
-            mode: ['css', 'legacy'],
-            avoid: ['img', 'figure'],
-          },
-        });
-
-        Promise.resolve(pdfTask)
-          .then(() => {
-            setSnackbar({ open: true, message: 'Downloaded as .pdf', severity: 'success' });
-          })
-          .catch(() => {
-            setSnackbar({ open: true, message: 'Failed to generate PDF.', severity: 'error' });
-          })
-          .finally(() => {
-            exportHost.remove();
-            setIsPdfExporting(false);
+        requestAnimationFrame(() => {
+          const pdfTask = downloadAsPdf('teacher-note-preview-content', safeFileName || 'lesson-note', {
+            margin: [5, 5, 5, 5],
+            html2canvas: {
+              scale: 1.2,
+              useCORS: true,
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: previewElement.scrollWidth,
+              windowHeight: previewElement.scrollHeight,
+            },
+            pagebreak: {
+              mode: ['css', 'legacy'],
+              avoid: ['img', 'figure'],
+            },
           });
+
+          Promise.resolve(pdfTask)
+            .then(() => {
+              setSnackbar({ open: true, message: 'Downloaded as .pdf', severity: 'success' });
+            })
+            .catch(() => {
+              setSnackbar({ open: true, message: 'Failed to generate PDF.', severity: 'error' });
+            })
+            .finally(() => {
+              setIsPdfExporting(false);
+            });
+        });
       });
 
       return;
