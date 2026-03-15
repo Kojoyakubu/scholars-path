@@ -1142,6 +1142,7 @@ function TeacherDashboard() {
           onSubmit={handleGenerateBundleSubmit}
           subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           subStrandId={selections.subStrand}
+          defaultFacilitatorName={user?.name || ''}
           isLoading={isLoading}
         />
         {/* Learner Notes Options Dialog */}

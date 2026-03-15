@@ -20,9 +20,18 @@ import { AutoAwesome } from '@mui/icons-material';
  * LessonBundleForm - Collects all curriculum inputs for AI bundle generation
  * Generates: Teacher Note + Learner Note + Quiz (all at once)
  */
-function LessonBundleForm({ open, onClose, onSubmit, subStrandName, isLoading, subStrandId }) {
+function LessonBundleForm({
+  open,
+  onClose,
+  onSubmit,
+  subStrandName,
+  isLoading,
+  subStrandId,
+  defaultFacilitatorName = '',
+}) {
   const [formData, setFormData] = useState({
     school: '',
+    facilitatorName: '',
     term: 'One',
     duration: '1hr 10 mins / 2 Periods',
     dayDate: '',
@@ -39,6 +48,7 @@ function LessonBundleForm({ open, onClose, onSubmit, subStrandName, isLoading, s
       // Reset form when dialog opens
       setFormData({
         school: '',
+        facilitatorName: defaultFacilitatorName || '',
         term: 'One',
         duration: '1hr 10 mins / 2 Periods',
         dayDate: '',
@@ -50,7 +60,7 @@ function LessonBundleForm({ open, onClose, onSubmit, subStrandName, isLoading, s
         numQuestions: 20,
       });
     }
-  }, [open]);
+  }, [open, defaultFacilitatorName]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -119,6 +129,16 @@ function LessonBundleForm({ open, onClose, onSubmit, subStrandName, isLoading, s
                 required
                 fullWidth
                 placeholder="e.g., Ghana International School"
+              />
+
+              <TextField
+                name="facilitatorName"
+                label="Facilitator Name *"
+                value={formData.facilitatorName}
+                onChange={handleChange}
+                required
+                fullWidth
+                placeholder="e.g., Mr. John Mensah"
               />
 
               {/* Term, Week, Date */}

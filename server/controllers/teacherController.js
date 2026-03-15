@@ -197,6 +197,7 @@ const generateLearnerNoteFromStrand = asyncHandler(async (req, res) => {
   const {
     subStrandId,
     school,
+    facilitatorName,
     term,
     week,
     dayDate,
@@ -440,7 +441,7 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   }
 
   // Validate required fields
-  if (!school || !term || !week || !dayDate || !duration || !classSize || !contentStandardCode || !indicatorCodes || !reference) {
+  if (!school || !facilitatorName || !term || !week || !dayDate || !duration || !classSize || !contentStandardCode || !indicatorCodes || !reference) {
     res.status(400);
     throw new Error('All curriculum fields are required');
   }
@@ -462,6 +463,7 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   // Build curriculum details object
   const curriculumDetails = {
     school,
+    facilitatorName,
     term,
     week,
     dayDate,
