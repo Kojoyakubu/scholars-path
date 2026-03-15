@@ -56,17 +56,27 @@ const contentSx = {
 };
 
 const compactContentSx = {
+  '& *': { boxSizing: 'border-box' },
   '& h2': { fontSize: '1.3rem', fontWeight: 600, mt: 1.5, mb: 1 },
   '& h3': { fontSize: '1.1rem', fontWeight: 600, mt: 1.25, mb: 0.75 },
   '& table': {
     width: '100%',
+    tableLayout: 'fixed',
     borderCollapse: 'collapse',
     my: 1,
     fontSize: '0.9rem',
-    '& td, & th': { border: '1px solid #ddd', padding: '6px 7px', verticalAlign: 'top' },
+    '& td, & th': {
+      border: '1px solid #ddd',
+      padding: '6px 7px',
+      verticalAlign: 'top',
+      whiteSpace: 'normal',
+      wordBreak: 'break-word',
+      overflowWrap: 'anywhere',
+    },
     '& th': { backgroundColor: '#f5f5f5', fontWeight: 600 },
   },
-  '& p': { lineHeight: 1.5, mb: 0.6, fontSize: '0.95rem' },
+  '& p': { lineHeight: 1.5, mb: 0.6, fontSize: '0.95rem', wordBreak: 'break-word', overflowWrap: 'anywhere' },
+  '& li': { wordBreak: 'break-word', overflowWrap: 'anywhere' },
   '& ul, & ol': { pl: 2.5, mb: 1 },
   '& figure': { pageBreakInside: 'avoid', breakInside: 'avoid', my: 1 },
   '& > :first-child': { marginTop: '0 !important', paddingTop: 0 },
@@ -106,8 +116,8 @@ export default function NotePreviewDialog({
           elevation={0}
           sx={{
             p: isPdfExporting ? 1.5 : 4,
-            width: isPdfExporting ? '794px' : 'auto',
-            maxWidth: isPdfExporting ? '794px' : 1000,
+            width: isPdfExporting ? '760px' : 'auto',
+            maxWidth: isPdfExporting ? '760px' : 1000,
             mx: 'auto',
           }}
         >

@@ -608,7 +608,7 @@ function TeacherDashboard() {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           const pdfTask = downloadAsPdf('teacher-note-preview-content', safeFileName || 'lesson-note', {
-            margin: [5, 5, 5, 5],
+            margin: [6, 7, 6, 7],
             html2canvas: {
               scale: 1.4,
               useCORS: true,
