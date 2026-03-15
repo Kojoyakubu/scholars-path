@@ -551,7 +551,6 @@ Generate HTML in this exact "Modern Academic" style (use semantic sections and c
 
   <header class="note-header">
     <h2>Teacher Lesson Note</h2>
-    <div class="meta-strip">NaCCA-Aligned | Ghana Basic School Curriculum</div>
     <div class="chip-row">
       <span class="chip">${subjectName}</span>
       <span class="chip">${className}</span>
@@ -561,7 +560,6 @@ Generate HTML in this exact "Modern Academic" style (use semantic sections and c
   </header>
 
   <section class="card teacher-info">
-    <h3>Teacher Information</h3>
     <table class="teacher-table">
       <tr>
         <td class="label-cell">School</td><td>${school}</td>
