@@ -114,9 +114,9 @@ export default function NotePreviewDialog({
           id={contentId}
           elevation={0}
           sx={{
-            p: isPdfExporting ? 1.5 : 4,
-            width: isPdfExporting ? '760px' : 'auto',
-            maxWidth: isPdfExporting ? '760px' : 1000,
+            p: isPdfExporting ? 1 : 4,
+            width: isPdfExporting ? '790px' : 'auto',
+            maxWidth: isPdfExporting ? '790px' : 1000,
             mx: 'auto',
           }}
         >
