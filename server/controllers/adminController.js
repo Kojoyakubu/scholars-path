@@ -51,6 +51,48 @@ const approveUser = asyncHandler(async (req, res) => {
   res.json({ message: `User ${user.fullName} has been approved.`, user });
 });
 
+// PUT /api/admin/users/:id/suspend
+const suspendUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (user.role === 'admin') {
+    res.status(400);
+    throw new Error('Cannot suspend an admin user.');
+  }
+
+  user.status = 'suspended';
+  await user.save();
+
+  const safeUser = await User.findById(user._id).select('-password');
+  res.json({ message: `User ${user.fullName} has been suspended.`, user: safeUser });
+});
+
+// PUT /api/admin/users/:id/unsuspend
+const unsuspendUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (user.role === 'admin') {
+    res.status(400);
+    throw new Error('Admin users cannot be suspended or unsuspended.');
+  }
+
+  user.status = 'approved';
+  await user.save();
+
+  const safeUser = await User.findById(user._id).select('-password');
+  res.json({ message: `User ${user.fullName} has been reactivated.`, user: safeUser });
+});
+
 // DELETE /api/admin/users/:id
 const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
@@ -450,6 +492,8 @@ Include engagement comparison, AI usage, student performance, and one actionable
 module.exports = {
   getUsers,
   approveUser,
+  suspendUser,
+  unsuspendUser,
   deleteUser,
   assignUserToSchool,
   getAllTeachers,

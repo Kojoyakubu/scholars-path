@@ -5,6 +5,8 @@ const {
   // Users & role-based management
   getUsers,
   approveUser,
+  suspendUser,
+  unsuspendUser,
   deleteUser,
   assignUserToSchool,
 
@@ -36,6 +38,8 @@ const { protect, authorize } = require('../middleware/authMiddleware');
  */
 router.get('/users', protect, authorize('admin'), getUsers);
 router.put('/users/:id/approve', protect, authorize('admin'), approveUser);
+router.put('/users/:id/suspend', protect, authorize('admin'), suspendUser);
+router.put('/users/:id/unsuspend', protect, authorize('admin'), unsuspendUser);
 router.delete('/users/:id', protect, authorize('admin'), deleteUser);
 router.put('/users/:id/assign-school', protect, authorize('admin'), assignUserToSchool);
 

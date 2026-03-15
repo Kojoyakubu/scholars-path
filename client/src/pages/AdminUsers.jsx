@@ -23,6 +23,8 @@ import {
 import CheckIcon from '@mui/icons-material/Check';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SchoolIcon from '@mui/icons-material/School';
+import BlockIcon from '@mui/icons-material/Block';
+import ReplayIcon from '@mui/icons-material/Replay';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { motion } from 'framer-motion';
 import adminService from '../features/admin/adminService';
@@ -75,6 +77,26 @@ const AdminUsers = () => {
       fetchUsers();
     } catch (err) {
       console.error('Error approving user:', err);
+    }
+  };
+
+  // ⛔ Suspend user
+  const suspendUser = async (id) => {
+    try {
+      await adminService.suspendUser(id);
+      fetchUsers();
+    } catch (err) {
+      console.error('Error suspending user:', err);
+    }
+  };
+
+  // 🔄 Unsuspend user
+  const unsuspendUser = async (id) => {
+    try {
+      await adminService.unsuspendUser(id);
+      fetchUsers();
+    } catch (err) {
+      console.error('Error unsuspending user:', err);
     }
   };
 
@@ -180,6 +202,16 @@ const AdminUsers = () => {
                   {u.status === 'pending' && (
                     <IconButton onClick={() => approveUser(u._id)} title="Approve">
                       <CheckIcon color="success" />
+                    </IconButton>
+                  )}
+                  {u.role !== 'admin' && u.status !== 'suspended' && (
+                    <IconButton onClick={() => suspendUser(u._id)} title="Suspend User">
+                      <BlockIcon color="warning" />
+                    </IconButton>
+                  )}
+                  {u.role !== 'admin' && u.status === 'suspended' && (
+                    <IconButton onClick={() => unsuspendUser(u._id)} title="Reactivate User">
+                      <ReplayIcon color="primary" />
                     </IconButton>
                   )}
                   <IconButton onClick={() => openAssign(u)} title="Assign to School">

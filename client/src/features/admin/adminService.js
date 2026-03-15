@@ -12,6 +12,16 @@ const approveUser = async (userId) => {
   return response.data;
 };
 
+const suspendUser = async (userId) => {
+  const response = await api.put(`/api/admin/users/${userId}/suspend`);
+  return response.data;
+};
+
+const unsuspendUser = async (userId) => {
+  const response = await api.put(`/api/admin/users/${userId}/unsuspend`);
+  return response.data;
+};
+
 const deleteUser = async (userId) => {
   const response = await api.delete(`/api/admin/users/${userId}`);
   return response.data;
@@ -73,6 +83,8 @@ const getCurriculumLevels = async () => {
 const adminService = {
   getUsers,
   approveUser,
+  suspendUser,
+  unsuspendUser,
   deleteUser,
   getStats,
   getSchools,
