@@ -459,51 +459,137 @@ TRANSFORMATION LOGIC EXAMPLE:
 - THEN Another: "The learner can explain the advantages of fourth-generation computers."
 ---
 
-Generate HTML following this structure:
+Generate HTML in this exact "Modern Academic" style (use semantic sections and clean CSS classes):
 
-<div class="lesson-note">
-  <h2>Teacher Lesson Note</h2>
-  
-  <div class="teacher-info">
+<div class="lesson-note modern-academic">
+  <style>
+    .lesson-note.modern-academic {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      color: #1f2937;
+      background: #f8fafc;
+      border: 1px solid #dbe4ee;
+      border-radius: 12px;
+      padding: 18px;
+      line-height: 1.5;
+    }
+    .note-header {
+      background: linear-gradient(135deg, #0f2a43 0%, #1f4d7a 100%);
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .note-header h2 { margin: 0 0 6px 0; font-size: 1.4rem; }
+    .meta-strip { font-size: 0.85rem; opacity: 0.95; }
+    .chip-row { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #dbe4ee;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 0 rgba(15, 42, 67, 0.03);
+    }
+    .card h3 {
+      margin: 0 0 8px 0;
+      color: #0f2a43;
+      font-size: 1.05rem;
+      border-left: 4px solid #2f6ea4;
+      padding-left: 8px;
+    }
+    .teacher-table, .phase-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.92rem;
+    }
+    .teacher-table td, .teacher-table th, .phase-table td, .phase-table th {
+      border: 1px solid #cfd8e3;
+      padding: 8px;
+      vertical-align: top;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .teacher-table tr:nth-child(odd) td { background: #f8fbff; }
+    .label-cell {
+      background: #eef4fb;
+      font-weight: 700;
+      color: #1f3e5a;
+      width: 18%;
+    }
+    .phase-table thead th {
+      color: #0f2a43;
+      font-weight: 700;
+    }
+    .phase-h1 { background: #edf7ff; width: 25%; }
+    .phase-h2 { background: #e8f6f1; width: 50%; }
+    .phase-h3 { background: #fff6e9; width: 25%; }
+    .signoff .sign-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px;
+      align-items: center;
+      margin: 8px 0;
+    }
+    .signoff .sign-label { font-weight: 700; color: #0f2a43; }
+    .signoff .sign-line {
+      border-bottom: 1.8px solid #9fb2c7;
+      min-height: 20px;
+      padding-bottom: 2px;
+      font-weight: 600;
+      color: #111827;
+    }
+  </style>
+
+  <header class="note-header">
+    <h2>Teacher Lesson Note</h2>
+    <div class="meta-strip">NaCCA-Aligned | Ghana Basic School Curriculum</div>
+    <div class="chip-row">
+      <span class="chip">${subjectName}</span>
+      <span class="chip">${className}</span>
+      <span class="chip">Term ${term}</span>
+      <span class="chip">Week ${week}</span>
+    </div>
+  </header>
+
+  <section class="card teacher-info">
     <h3>Teacher Information</h3>
-    <table border="1" cellpadding="8" style="width: 100%; border-collapse: collapse;">
+    <table class="teacher-table">
       <tr>
-        <td><strong>School:</strong></td>
-        <td>${school}</td>
-        <td><strong>Term:</strong></td>
-        <td>${term}</td>
+        <td class="label-cell">School</td><td>${school}</td>
+        <td class="label-cell">Term</td><td>${term}</td>
       </tr>
       <tr>
-        <td><strong>Week:</strong></td>
-        <td>${week}</td>
-        <td><strong>Week Ending:</strong></td>
-        <td>[AI: Compute Friday from ${dayDate}]</td>
+        <td class="label-cell">Week</td><td>${week}</td>
+        <td class="label-cell">Week Ending</td><td>[AI: Compute Friday from ${dayDate}]</td>
       </tr>
       <tr>
-        <td><strong>Class:</strong></td>
-        <td>${className}</td>
-        <td><strong>Class Size:</strong></td>
-        <td>${classSize}</td>
+        <td class="label-cell">Class</td><td>${className}</td>
+        <td class="label-cell">Class Size</td><td>${classSize}</td>
       </tr>
       <tr>
-        <td><strong>Subject:</strong></td>
-        <td>${subjectName}</td>
-        <td><strong>Day/Date:</strong></td>
-        <td>${dayDate}</td>
+        <td class="label-cell">Subject</td><td>${subjectName}</td>
+        <td class="label-cell">Day/Date</td><td>${dayDate}</td>
       </tr>
       <tr>
-        <td><strong>Strand:</strong></td>
-        <td>${strandName}</td>
-        <td><strong>Duration:</strong></td>
-        <td>${duration}</td>
+        <td class="label-cell">Strand</td><td>${strandName}</td>
+        <td class="label-cell">Duration</td><td>${duration}</td>
       </tr>
       <tr>
-        <td colspan="4"><strong>Sub-Strand:</strong> ${subStrandName}</td>
+        <td class="label-cell">Sub-Strand</td><td colspan="3">${subStrandName}</td>
       </tr>
     </table>
-  </div>
+  </section>
 
-  <div class="curriculum-standards">
+  <section class="card curriculum-standards">
     <h3>Curriculum Standards</h3>
     <p><strong>Content Standard Code:</strong> ${contentStandardCode}</p>
     <p><strong>Official Indicator(s):</strong><br>${officialIndicatorText}</p>
@@ -511,20 +597,20 @@ Generate HTML following this structure:
     <p><strong>Core Competencies:</strong><br>[AI: List 3-4 relevant NaCCA core competencies]</p>
     <p><strong>Teaching & Learning Materials:</strong><br>[AI: Suggest realistic materials for this topic]</p>
     <p><strong>Reference:</strong> ${reference}</p>
-  </div>
+  </section>
 
-  <div class="lesson-phases">
+  <section class="card lesson-phases">
     <h3>Lesson Phases</h3>
-    <table border="1" cellpadding="10" style="width: 100%; border-collapse: collapse;">
+    <table class="phase-table">
       <thead>
-        <tr style="background-color: #f0f0f0;">
-          <th style="width: 25%;">Phase 1: Starter<br>(Preparing the Brain)</th>
-          <th style="width: 50%;">Phase 2: Main<br>(New Learning & Assessment)</th>
-          <th style="width: 25%;">Phase 3: Plenary<br>(Reflection)</th>
+        <tr>
+          <th class="phase-h1">Phase 1: Starter<br>(Preparing the Brain)</th>
+          <th class="phase-h2">Phase 2: Main<br>(New Learning & Assessment)</th>
+          <th class="phase-h3">Phase 3: Plenary<br>(Reflection)</th>
         </tr>
       </thead>
       <tbody>
-        <tr style="vertical-align: top;">
+        <tr>
           <td>
             <p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>
             <p><strong>Engaging Activity:</strong><br>[AI: Short task to capture interest]</p>
@@ -544,17 +630,18 @@ Generate HTML following this structure:
         </tr>
       </tbody>
     </table>
-  </div>
+  </section>
 
-  <div class="signatures">
-    <p><strong>Facilitator:</strong> ${facilitatorDisplayName}</p>
-    <p><strong>Vetted By:</strong> ..................................................</p>
-    <p><strong>Signature:</strong> ..................................................</p>
-    <p><strong>Date:</strong> ..................................................</p>
-  </div>
+  <section class="card signoff">
+    <h3>Approvals & Sign-off</h3>
+    <div class="sign-row"><span class="sign-label">Facilitator:</span><span class="sign-line">${facilitatorDisplayName}</span></div>
+    <div class="sign-row"><span class="sign-label">Vetted By:</span><span class="sign-line"></span></div>
+    <div class="sign-row"><span class="sign-label">Signature:</span><span class="sign-line"></span></div>
+    <div class="sign-row"><span class="sign-label">Date:</span><span class="sign-line"></span></div>
+  </section>
 </div>
 
-REMEMBER: Return ONLY the HTML above, filled with appropriate content. No markdown, no code fences, no explanations.
+REMEMBER: Return ONLY the HTML above, filled with appropriate content. Keep the same class names/style block and structure. No markdown, no code fences, no explanations.
 `;
 
   let { text, provider, model, timestamp } = await generateTextCore({ 
