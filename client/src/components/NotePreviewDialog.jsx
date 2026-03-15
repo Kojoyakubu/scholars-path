@@ -60,6 +60,7 @@ export default function NotePreviewDialog({
   onClose,
   note,
   segments = [],
+  contentId,
   downloadMenuAnchorEl,
   onOpenDownloadMenu,
   onCloseDownloadMenu,
@@ -82,7 +83,7 @@ export default function NotePreviewDialog({
         onToggle={onToggleFullscreen}
       />
       <DialogContent tabIndex={0} sx={{ bgcolor: 'grey.50', overflowY: 'auto' }}>
-        <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
+        <Paper id={contentId} elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
           <Typography variant="caption" color="text.secondary" gutterBottom>
             Topic: {note?.subStrand?.name || note?.subStrand || ''}
           </Typography>

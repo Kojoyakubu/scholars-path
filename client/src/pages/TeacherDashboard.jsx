@@ -30,6 +30,7 @@ import {
 // utilities for image extraction & fetching
 import { segmentHtmlWithImages, removeImageBlocks } from '../utils/imageExtractor';
 import { fetchImageForQuery } from '../services/imageService';
+import { downloadAsPdf } from '../utils/downloadHelper';
 import LessonBundleForm from '../components/LessonBundleForm'; 
 import BundleResultViewer from '../components/BundleResultViewer';
 import DashboardBanner from '../components/DashboardBanner';
@@ -589,42 +590,13 @@ function TeacherDashboard() {
     `;
 
     if (format === 'pdf') {
-      if (!window.html2pdf) {
+      if (!window.html2pdf || !document.getElementById('teacher-note-preview-content')) {
         handleCloseDownloadMenu();
         setSnackbar({ open: true, message: 'PDF export is not available right now.', severity: 'error' });
         return;
       }
 
-      const pdfContainer = document.createElement('div');
-      pdfContainer.style.position = 'fixed';
-      pdfContainer.style.left = '-99999px';
-      pdfContainer.style.top = '0';
-      pdfContainer.style.width = '800px';
-      pdfContainer.innerHTML = `
-        <div style="font-family: Arial, sans-serif; color: #111827; margin: 24px; line-height: 1.6;">
-          <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">Topic: ${topic}</div>
-          ${printableBody}
-        </div>
-      `;
-      document.body.appendChild(pdfContainer);
-
-      window.html2pdf()
-        .set({
-          margin: [10, 10, 10, 10],
-          filename: `${safeFileName || 'lesson-note'}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        })
-        .from(pdfContainer)
-        .save()
-        .then(() => {
-          pdfContainer.remove();
-        })
-        .catch(() => {
-          pdfContainer.remove();
-          setSnackbar({ open: true, message: 'Failed to generate PDF.', severity: 'error' });
-        });
+      downloadAsPdf('teacher-note-preview-content', safeFileName || 'lesson-note');
 
       handleCloseDownloadMenu();
       setSnackbar({ open: true, message: 'Downloading as .pdf', severity: 'success' });
@@ -1780,6 +1752,7 @@ function TeacherDashboard() {
           onClose={() => displayNote(null)}
           note={viewingNote}
           segments={previewSegments}
+          contentId="teacher-note-preview-content"
           downloadMenuAnchorEl={downloadMenuAnchorEl}
           onOpenDownloadMenu={handleOpenDownloadMenu}
           onCloseDownloadMenu={handleCloseDownloadMenu}
