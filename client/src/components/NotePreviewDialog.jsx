@@ -15,6 +15,8 @@ import {
   Paper,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Download,
@@ -95,29 +97,42 @@ export default function NotePreviewDialog({
   fullScreen = false,
   onToggleFullscreen,
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const effectiveFullScreen = fullScreen || isMobile;
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      fullScreen={fullScreen}
+      fullScreen={effectiveFullScreen}
       scroll="paper"
       fullWidth
-      maxWidth={fullScreen ? false : 'md'}
+      maxWidth={effectiveFullScreen ? false : 'md'}
     >
       <FullscreenTitle
         title="Preview Lesson Note"
         isFullscreen={fullScreen}
         onToggle={onToggleFullscreen}
       />
-      <DialogContent tabIndex={0} sx={{ bgcolor: 'grey.50', overflowY: 'auto' }}>
+      <DialogContent
+        tabIndex={0}
+        sx={{
+          bgcolor: 'grey.50',
+          overflowY: 'auto',
+          px: { xs: 1, sm: 2.5 },
+          py: { xs: 1, sm: 2 },
+        }}
+      >
         <Paper
           id={contentId}
           elevation={0}
           sx={{
-            p: isPdfExporting ? 1 : 4,
-            width: isPdfExporting ? '790px' : 'auto',
+            p: isPdfExporting ? 1 : { xs: 1.25, sm: 4 },
+            width: isPdfExporting ? '790px' : '100%',
             maxWidth: isPdfExporting ? '790px' : 1000,
             mx: 'auto',
+            overflowX: { xs: 'auto', sm: 'visible' },
           }}
         >
           <Box sx={isPdfExporting ? compactContentSx : contentSx}>

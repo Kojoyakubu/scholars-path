@@ -547,6 +547,51 @@ Generate HTML in this exact "Modern Academic" style (use semantic sections and c
       font-weight: 600;
       color: #111827;
     }
+    @media (max-width: 640px) {
+      .lesson-note.modern-academic {
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .note-header {
+        padding: 12px;
+      }
+      .note-header h2 {
+        font-size: 1.1rem;
+      }
+      .chip-row {
+        gap: 6px;
+      }
+      .chip {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+      }
+      .card {
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      .teacher-table,
+      .phase-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: normal;
+      }
+      .teacher-table td,
+      .teacher-table th,
+      .phase-table td,
+      .phase-table th {
+        min-width: 140px;
+        font-size: 0.86rem;
+        padding: 6px;
+      }
+      .label-cell {
+        width: auto;
+      }
+      .signoff .sign-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+    }
   </style>
 
   <header class="note-header">
