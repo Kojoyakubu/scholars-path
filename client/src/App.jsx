@@ -27,6 +27,8 @@ import AdminCurriculum from './pages/AdminCurriculum'; // ✅ NEW: Curriculum ma
 import AdminAnalytics from './pages/AdminAnalytics'; // ✅ NEW: Analytics
 import LessonNoteView from './pages/LessonNoteView';
 import SelectClass from './pages/SelectClass';      // Class selection page
+import AccountProfile from './pages/AccountProfile';
+import AccountSettings from './pages/AccountSettings';
 
 // ✅ UPDATED: Import QuizSeparated instead of TakeQuiz
 import QuizSeparated from './components/QuizSeparated';
@@ -67,6 +69,8 @@ const App = () => {
         ========================================== */}
         <Route element={<Layout onLogout={handleLogout} />}>
           <Route element={<PrivateRoute />}>
+            <Route path="/account/profile" element={<AccountProfile />} />
+            <Route path="/account/settings" element={<AccountSettings />} />
             
             {/* Teacher & School Admin Routes */}
             <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin']} />}>

@@ -82,6 +82,28 @@ const getProfile = async () => {
 };
 
 // -----------------------------------------------------------------------------
+// ✏️ UPDATE USER PROFILE
+// -----------------------------------------------------------------------------
+const updateProfile = async (profileData) => {
+  const storedUser = JSON.parse(localStorage.getItem('user'));
+  if (!storedUser?.token) {
+    throw new Error('No token found. Please log in again.');
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedUser.token}`,
+    },
+  };
+
+  const response = await api.put('/api/users/profile', profileData, config);
+  const updatedUser = response.data?.user ? { ...storedUser, ...response.data.user } : storedUser;
+  localStorage.setItem('user', JSON.stringify(updatedUser));
+
+  return updatedUser;
+};
+
+// -----------------------------------------------------------------------------
 // 🚪 LOGOUT USER
 // -----------------------------------------------------------------------------
 const logout = () => {
@@ -95,6 +117,7 @@ const authService = {
   register,
   login,
   getProfile,
+  updateProfile,
   logout,
 };
 

@@ -169,6 +169,9 @@ const Layout = ({ onLogout }) => {
   const getPageTitle = () => {
     const role = user?.role?.toLowerCase();
     const currentItem = menuItems.find(item => item.path === location.pathname);
+
+    if (location.pathname === '/account/profile') return 'Profile';
+    if (location.pathname === '/account/settings') return 'Settings';
     
     if (currentItem?.text) return currentItem.text;
     
@@ -553,7 +556,10 @@ const Layout = ({ onLogout }) => {
               </Box>
               
               <MenuItem
-                onClick={handleMenuClose}
+                onClick={() => {
+                  handleMenuClose();
+                  navigate('/account/profile');
+                }}
                 sx={{
                   borderRadius: 0, // ← FIXED: No rounded corners
                   mx: 0,
@@ -569,7 +575,10 @@ const Layout = ({ onLogout }) => {
               </MenuItem>
               
               <MenuItem
-                onClick={handleMenuClose}
+                onClick={() => {
+                  handleMenuClose();
+                  navigate('/account/settings');
+                }}
                 sx={{
                   borderRadius: 0, // ← FIXED: No rounded corners
                   mx: 0,
