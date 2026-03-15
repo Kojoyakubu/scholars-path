@@ -69,6 +69,7 @@ const compactContentSx = {
   '& p': { lineHeight: 1.45, mb: 0.55, fontSize: '0.9rem' },
   '& ul, & ol': { pl: 2.5, mb: 1 },
   '& figure': { pageBreakInside: 'avoid', breakInside: 'avoid', my: 1 },
+  '& > :first-child': { marginTop: '0 !important', paddingTop: 0 },
 };
 
 export default function NotePreviewDialog({

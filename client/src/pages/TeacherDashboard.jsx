@@ -591,7 +591,8 @@ function TeacherDashboard() {
     `;
 
     if (format === 'pdf') {
-      if (!window.html2pdf || !document.getElementById('teacher-note-preview-content')) {
+      const previewElement = document.getElementById('teacher-note-preview-content');
+      if (!window.html2pdf || !previewElement) {
         handleCloseDownloadMenu();
         setSnackbar({ open: true, message: 'PDF export is not available right now.', severity: 'error' });
         return;
@@ -600,18 +601,28 @@ function TeacherDashboard() {
       setIsPdfExporting(true);
       handleCloseDownloadMenu();
 
+      // Ensure capture starts from the top of the rendered preview, not current scroll position.
+      const scrollHost = previewElement.closest('.MuiDialogContent-root');
+      if (scrollHost) {
+        scrollHost.scrollTop = 0;
+      }
+
       // Wait for the compact export styles to apply before html2canvas takes the snapshot.
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           const pdfTask = downloadAsPdf('teacher-note-preview-content', safeFileName || 'lesson-note', {
-            margin: [5, 5, 5, 5],
+            margin: [4, 4, 4, 4],
             html2canvas: {
-              scale: 1.4,
+              scale: 1.35,
               useCORS: true,
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: previewElement.scrollWidth,
+              windowHeight: previewElement.scrollHeight,
             },
             pagebreak: {
               mode: ['css', 'legacy'],
-              avoid: ['table', 'tr', 'td', 'th', 'img', 'figure'],
+              avoid: ['img', 'figure'],
             },
           });
 
