@@ -26,11 +26,13 @@ function LessonNoteForm({
   subStrandName,
   isLoading,
   subStrandId,
+  defaultFacilitatorName = '',
   fullScreen = false,
   onToggleFullscreen,
 }) {
   const [formData, setFormData] = useState({
     school: '',
+    facilitatorName: '',
     term: 'One',
     duration: '1hr 10 mins / 2 Periods',
     dayDate: '',
@@ -46,6 +48,7 @@ function LessonNoteForm({
     if (open) {
       setFormData({
         school: '',
+        facilitatorName: defaultFacilitatorName || '',
         term: 'One',
         duration: '1hr 10 mins / 2 Periods',
         dayDate: '',
@@ -57,7 +60,7 @@ function LessonNoteForm({
         reference: '',
       });
     }
-  }, [open]);
+  }, [open, defaultFacilitatorName]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -140,6 +143,16 @@ function LessonNoteForm({
                 required
                 fullWidth
                 placeholder="e.g., Ghana International School"
+              />
+
+              <TextField
+                name="facilitatorName"
+                label="Facilitator Name *"
+                value={formData.facilitatorName}
+                onChange={handleChange}
+                required
+                fullWidth
+                placeholder="e.g., Mr. John Mensah"
               />
 
               {/* Term, Week, Date */}

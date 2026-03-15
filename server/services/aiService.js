@@ -281,8 +281,9 @@ async function getLandingInsights(details = {}) {
  * Generate a Ghanaian teacher lesson note (Markdown).
  */
 async function generateGhanaianLessonNote(details = {}) {
-  const { school, className, subjectName, strandName, subStrandName, week, term, duration, classSize, reference, contentStandardCode, indicatorCodes, dayDate, preferredModel, preferredProvider } = details;
+  const { school, className, subjectName, strandName, subStrandName, week, term, duration, classSize, reference, contentStandardCode, indicatorCodes, dayDate, facilitatorName, preferredModel, preferredProvider } = details;
   const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
+  const facilitatorDisplayName = String(facilitatorName || '').trim() || '..................................................';
   const prompt = `
 You are a Ghanaian master teacher and curriculum expert. Generate a professionally formatted Markdown lesson note.
 Follow these rules STRICTLY:
@@ -319,7 +320,7 @@ Follow these rules STRICTLY:
 |:---|:---:|---:|
 | **Recap:** Review prior knowledge.<br><br>**Engaging Activity:** A short task to capture interest.<br><br>**Introduction:** State the lesson's objective. | **Activity 1:** Introduce the main topic.<br><br>**Activity 2:** Design a practical task (individual, pair, or group work).<br><br>**Evaluation:** Ask 2-3 short questions.<br><br>**Assignment:** Give a short take-home task. | **Recap:** Summarize key ideas.<br><br>**Learner Reflection:** Ask questions to help learners reflect.<br><br>**Real-Life Application:** Link the lesson to everyday life. |
 ---
-**Facilitator:** ..................................................
+**Facilitator:** ${facilitatorDisplayName}
 <br><br>
 **Vetted By:** ....................................................
 <br><br>
@@ -432,11 +433,13 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     contentStandardCode, 
     indicatorCodes, 
     dayDate, 
+    facilitatorName,
     preferredModel, 
     preferredProvider 
   } = details;
 
   const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
+  const facilitatorDisplayName = String(facilitatorName || '').trim() || '..................................................';
   
   const prompt = `
 You are a Ghanaian master teacher and curriculum expert. Generate a professionally formatted HTML lesson note following Ghana's NaCCA (National Council for Curriculum and Assessment) structure.
@@ -544,7 +547,7 @@ Generate HTML following this structure:
   </div>
 
   <div class="signatures">
-    <p><strong>Facilitator:</strong> ..................................................</p>
+    <p><strong>Facilitator:</strong> ${facilitatorDisplayName}</p>
     <p><strong>Vetted By:</strong> ..................................................</p>
     <p><strong>Signature:</strong> ..................................................</p>
     <p><strong>Date:</strong> ..................................................</p>
