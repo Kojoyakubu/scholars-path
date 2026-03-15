@@ -55,6 +55,22 @@ const contentSx = {
   '& ul, & ol': { pl: 3, mb: 2 },
 };
 
+const compactContentSx = {
+  '& h2': { fontSize: '1.2rem', fontWeight: 600, mt: 1.5, mb: 1 },
+  '& h3': { fontSize: '1.05rem', fontWeight: 600, mt: 1.25, mb: 0.75 },
+  '& table': {
+    width: '100%',
+    borderCollapse: 'collapse',
+    my: 1,
+    fontSize: '0.82rem',
+    '& td, & th': { border: '1px solid #ddd', padding: '6px 7px', verticalAlign: 'top' },
+    '& th': { backgroundColor: '#f5f5f5', fontWeight: 600 },
+  },
+  '& p': { lineHeight: 1.45, mb: 0.55, fontSize: '0.9rem' },
+  '& ul, & ol': { pl: 2.5, mb: 1 },
+  '& figure': { pageBreakInside: 'avoid', breakInside: 'avoid', my: 1 },
+};
+
 export default function NotePreviewDialog({
   open,
   onClose,
@@ -65,6 +81,7 @@ export default function NotePreviewDialog({
   onOpenDownloadMenu,
   onCloseDownloadMenu,
   onDownload,
+  isPdfExporting = false,
   fullScreen = false,
   onToggleFullscreen,
 }) {
@@ -83,12 +100,20 @@ export default function NotePreviewDialog({
         onToggle={onToggleFullscreen}
       />
       <DialogContent tabIndex={0} sx={{ bgcolor: 'grey.50', overflowY: 'auto' }}>
-        <Paper id={contentId} elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
+        <Paper
+          id={contentId}
+          elevation={0}
+          sx={{
+            p: isPdfExporting ? 2 : 4,
+            maxWidth: isPdfExporting ? '100%' : 1000,
+            mx: 'auto',
+          }}
+        >
           <Typography variant="caption" color="text.secondary" gutterBottom>
             Topic: {note?.subStrand?.name || note?.subStrand || ''}
           </Typography>
           <Divider sx={{ my: 2 }} />
-          <Box sx={contentSx}>
+          <Box sx={isPdfExporting ? compactContentSx : contentSx}>
             {segments.map((seg, idx) => {
               if (seg.type === 'text') {
                 return <Box key={idx} dangerouslySetInnerHTML={{ __html: seg.html }} />;

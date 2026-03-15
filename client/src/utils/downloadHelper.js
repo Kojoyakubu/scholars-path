@@ -1,14 +1,29 @@
-export const downloadAsPdf = (elementId, topic) => {
+export const downloadAsPdf = (elementId, topic, options = {}) => {
   const element = document.getElementById(elementId);
-  if (!element || !window.html2pdf) return;
+  if (!element || !window.html2pdf) return null;
 
-  window.html2pdf().set({
+  const defaultOptions = {
     margin: [10, 10, 10, 10],
     filename: `${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-  }).from(element).save();
+  };
+
+  const mergedOptions = {
+    ...defaultOptions,
+    ...options,
+    html2canvas: {
+      ...defaultOptions.html2canvas,
+      ...(options.html2canvas || {}),
+    },
+    jsPDF: {
+      ...defaultOptions.jsPDF,
+      ...(options.jsPDF || {}),
+    },
+  };
+
+  return window.html2pdf().set(mergedOptions).from(element).save();
 };
 
 // ================= WORD EXPORT =================

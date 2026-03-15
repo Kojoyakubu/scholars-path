@@ -235,6 +235,7 @@ function TeacherDashboard() {
   const [learnerNotesClassFilter, setLearnerNotesClassFilter] = useState('');
   const [learnerNotesSubjectFilter, setLearnerNotesSubjectFilter] = useState('');
   const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
+  const [isPdfExporting, setIsPdfExporting] = useState(false);
   const [strandForm, setStrandForm] = useState(INITIAL_STRAND_FORM);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [learnerNoteToDelete, setLearnerNoteToDelete] = useState(null);
@@ -596,10 +597,37 @@ function TeacherDashboard() {
         return;
       }
 
-      downloadAsPdf('teacher-note-preview-content', safeFileName || 'lesson-note');
-
+      setIsPdfExporting(true);
       handleCloseDownloadMenu();
-      setSnackbar({ open: true, message: 'Downloading as .pdf', severity: 'success' });
+
+      // Wait for the compact export styles to apply before html2canvas takes the snapshot.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const pdfTask = downloadAsPdf('teacher-note-preview-content', safeFileName || 'lesson-note', {
+            margin: [5, 5, 5, 5],
+            html2canvas: {
+              scale: 1.4,
+              useCORS: true,
+            },
+            pagebreak: {
+              mode: ['css', 'legacy'],
+              avoid: ['table', 'tr', 'td', 'th', 'img', 'figure'],
+            },
+          });
+
+          Promise.resolve(pdfTask)
+            .then(() => {
+              setSnackbar({ open: true, message: 'Downloaded as .pdf', severity: 'success' });
+            })
+            .catch(() => {
+              setSnackbar({ open: true, message: 'Failed to generate PDF.', severity: 'error' });
+            })
+            .finally(() => {
+              setIsPdfExporting(false);
+            });
+        });
+      });
+
       return;
     }
 
@@ -1757,6 +1785,7 @@ function TeacherDashboard() {
           onOpenDownloadMenu={handleOpenDownloadMenu}
           onCloseDownloadMenu={handleCloseDownloadMenu}
           onDownload={handleDownloadViewingNote}
+          isPdfExporting={isPdfExporting}
           fullScreen={isDialogFullscreen('notePreview')}
           onToggleFullscreen={() => toggleDialogFullscreen('notePreview')}
         />
