@@ -163,17 +163,17 @@ const getCurriculum = asyncHandler(async (req, res) => {
     throw new Error('Invalid type. Use levels, classes, subjects, strands, or sub-strands.');
   }
 
-  let data = await model.find().sort({ createdAt: -1 }).lean();
+  let data = await model.find().sort({ createdAt: 1 }).lean();
   
   // Populate parent references
   if (type === 'classes') {
-    data = await Class.find().populate('level', 'name').sort({ createdAt: -1 }).lean();
+    data = await Class.find().populate('level', 'name').sort({ createdAt: 1 }).lean();
   } else if (type === 'subjects') {
-    data = await Subject.find().populate('class', 'name').sort({ createdAt: -1 }).lean();
+    data = await Subject.find().populate('class', 'name').sort({ createdAt: 1 }).lean();
   } else if (type === 'strands') {
-    data = await Strand.find().populate('subject', 'name').sort({ createdAt: -1 }).lean();
+    data = await Strand.find().populate('subject', 'name').sort({ createdAt: 1 }).lean();
   } else if (type === 'sub-strands' || type === 'subStrands') {
-    data = await SubStrand.find().populate('strand', 'name').sort({ createdAt: -1 }).lean();
+    data = await SubStrand.find().populate('strand', 'name').sort({ createdAt: 1 }).lean();
   }
 
   res.json(data);
@@ -207,7 +207,7 @@ const getChildren = asyncHandler(async (req, res) => {
   const data = await config.model
     .find(config.filter)
     .populate(config.populate, 'name')
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: 1 })
     .lean();
 
   res.json(data);
