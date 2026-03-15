@@ -610,12 +610,10 @@ function TeacherDashboard() {
           const pdfTask = downloadAsPdf('teacher-note-preview-content', safeFileName || 'lesson-note', {
             margin: [5, 5, 5, 5],
             html2canvas: {
-              scale: 1.2,
+              scale: 1.4,
               useCORS: true,
               scrollX: 0,
               scrollY: 0,
-              windowWidth: previewElement.scrollWidth,
-              windowHeight: previewElement.scrollHeight,
             },
             pagebreak: {
               mode: ['css', 'legacy'],
