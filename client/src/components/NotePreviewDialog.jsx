@@ -136,6 +136,7 @@ export default function NotePreviewDialog({
           open={Boolean(downloadMenuAnchorEl)}
           onClose={onCloseDownloadMenu}
         >
+          <MenuItem onClick={() => onDownload('pdf')}>Download as PDF (.pdf)</MenuItem>
           <MenuItem onClick={() => onDownload('html')}>Download as HTML (.html)</MenuItem>
           <MenuItem onClick={() => onDownload('doc')}>Download as Word (.doc)</MenuItem>
           <MenuItem onClick={() => onDownload('txt')}>Download as Text (.txt)</MenuItem>

@@ -588,6 +588,49 @@ function TeacherDashboard() {
       </html>
     `;
 
+    if (format === 'pdf') {
+      if (!window.html2pdf) {
+        handleCloseDownloadMenu();
+        setSnackbar({ open: true, message: 'PDF export is not available right now.', severity: 'error' });
+        return;
+      }
+
+      const pdfContainer = document.createElement('div');
+      pdfContainer.style.position = 'fixed';
+      pdfContainer.style.left = '-99999px';
+      pdfContainer.style.top = '0';
+      pdfContainer.style.width = '800px';
+      pdfContainer.innerHTML = `
+        <div style="font-family: Arial, sans-serif; color: #111827; margin: 24px; line-height: 1.6;">
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">Topic: ${topic}</div>
+          ${printableBody}
+        </div>
+      `;
+      document.body.appendChild(pdfContainer);
+
+      window.html2pdf()
+        .set({
+          margin: [10, 10, 10, 10],
+          filename: `${safeFileName || 'lesson-note'}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        })
+        .from(pdfContainer)
+        .save()
+        .then(() => {
+          pdfContainer.remove();
+        })
+        .catch(() => {
+          pdfContainer.remove();
+          setSnackbar({ open: true, message: 'Failed to generate PDF.', severity: 'error' });
+        });
+
+      handleCloseDownloadMenu();
+      setSnackbar({ open: true, message: 'Downloading as .pdf', severity: 'success' });
+      return;
+    }
+
     let blob;
     let extension;
 
