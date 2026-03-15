@@ -21,6 +21,9 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from 'framer-motion';
@@ -42,6 +45,9 @@ const AdminCurriculum = () => {
   const [dialogType, setDialogType] = useState('');
   const [parentId, setParentId] = useState('');
   const [newName, setNewName] = useState('');
+
+  const [editingItem, setEditingItem] = useState(null); // { type, id }
+  const [editName, setEditName] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -211,6 +217,48 @@ const AdminCurriculum = () => {
     }
   };
 
+  // Edit item
+  const startEditing = (type, id, currentName) => {
+    setEditingItem({ type, id });
+    setEditName(currentName);
+  };
+
+  const cancelEditing = () => {
+    setEditingItem(null);
+    setEditName('');
+  };
+
+  const handleEdit = async () => {
+    if (!editingItem || !editName.trim()) return;
+    const { type, id } = editingItem;
+
+    try {
+      setLoading(true);
+      setError('');
+      await api.put(`/api/curriculum/${type}/${id}`, { name: editName.trim() });
+
+      // Refresh the appropriate list
+      if (type === 'levels') {
+        fetchLevels();
+      } else if (type === 'classes' && selectedLevel) {
+        fetchClassesForLevel(selectedLevel);
+      } else if (type === 'subjects' && selectedClass) {
+        fetchSubjectsForClass(selectedClass);
+      } else if (type === 'strands' && selectedSubject) {
+        fetchStrandsForSubject(selectedSubject);
+      } else if (type === 'sub-strands' && selectedStrand) {
+        fetchSubStrandsForStrand(selectedStrand);
+      }
+
+      cancelEditing();
+    } catch (error) {
+      console.error(`Error updating ${type}:`, error);
+      setError(`Failed to update ${type}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openDialog = (type, parent = '') => {
     setDialogType(type);
     setParentId(parent);
@@ -281,20 +329,53 @@ const AdminCurriculum = () => {
                     >
                       <ExpandMoreIcon />
                     </IconButton>
-                    {level.name}
+                    {editingItem?.type === 'levels' && editingItem?.id === level._id ? (
+                      <TextField
+                        size="small"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(); if (e.key === 'Escape') cancelEditing(); }}
+                        autoFocus
+                        sx={{ minWidth: 150 }}
+                      />
+                    ) : (
+                      level.name
+                    )}
                   </Box>
                 </TableCell>
                 <TableCell align="right">
-                  <Tooltip title="Add Class">
-                    <IconButton onClick={() => openDialog('classes', level._id)} size="small">
-                      <AddIcon color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete Level">
-                    <IconButton onClick={() => handleDelete('levels', level._id)} size="small">
-                      <DeleteIcon color="error" />
-                    </IconButton>
-                  </Tooltip>
+                  {editingItem?.type === 'levels' && editingItem?.id === level._id ? (
+                    <>
+                      <Tooltip title="Save">
+                        <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                          <CheckIcon color="success" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Cancel">
+                        <IconButton onClick={cancelEditing} size="small">
+                          <CloseIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <>
+                      <Tooltip title="Edit Level">
+                        <IconButton onClick={() => startEditing('levels', level._id, level.name)} size="small">
+                          <EditIcon color="info" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Add Class">
+                        <IconButton onClick={() => openDialog('classes', level._id)} size="small">
+                          <AddIcon color="primary" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete Level">
+                        <IconButton onClick={() => handleDelete('levels', level._id)} size="small">
+                          <DeleteIcon color="error" />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -333,21 +414,54 @@ const AdminCurriculum = () => {
                         >
                           <ExpandMoreIcon />
                         </IconButton>
-                        {c.name}
+                        {editingItem?.type === 'classes' && editingItem?.id === c._id ? (
+                          <TextField
+                            size="small"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(); if (e.key === 'Escape') cancelEditing(); }}
+                            autoFocus
+                            sx={{ minWidth: 150 }}
+                          />
+                        ) : (
+                          c.name
+                        )}
                       </Box>
                     </TableCell>
                     <TableCell>{c.level?.name || '—'}</TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Add Subject">
-                        <IconButton onClick={() => openDialog('subjects', c._id)} size="small">
-                          <AddIcon color="primary" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Class">
-                        <IconButton onClick={() => handleDelete('classes', c._id)} size="small">
-                          <DeleteIcon color="error" />
-                        </IconButton>
-                      </Tooltip>
+                      {editingItem?.type === 'classes' && editingItem?.id === c._id ? (
+                        <>
+                          <Tooltip title="Save">
+                            <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                              <CheckIcon color="success" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Cancel">
+                            <IconButton onClick={cancelEditing} size="small">
+                              <CloseIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <>
+                          <Tooltip title="Edit Class">
+                            <IconButton onClick={() => startEditing('classes', c._id, c.name)} size="small">
+                              <EditIcon color="info" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Add Subject">
+                            <IconButton onClick={() => openDialog('subjects', c._id)} size="small">
+                              <AddIcon color="primary" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Class">
+                            <IconButton onClick={() => handleDelete('classes', c._id)} size="small">
+                              <DeleteIcon color="error" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -388,21 +502,54 @@ const AdminCurriculum = () => {
                         >
                           <ExpandMoreIcon />
                         </IconButton>
-                        {s.name}
+                        {editingItem?.type === 'subjects' && editingItem?.id === s._id ? (
+                          <TextField
+                            size="small"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(); if (e.key === 'Escape') cancelEditing(); }}
+                            autoFocus
+                            sx={{ minWidth: 150 }}
+                          />
+                        ) : (
+                          s.name
+                        )}
                       </Box>
                     </TableCell>
                     <TableCell>{s.class?.name || '—'}</TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Add Strand">
-                        <IconButton onClick={() => openDialog('strands', s._id)} size="small">
-                          <AddIcon color="primary" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Subject">
-                        <IconButton onClick={() => handleDelete('subjects', s._id)} size="small">
-                          <DeleteIcon color="error" />
-                        </IconButton>
-                      </Tooltip>
+                      {editingItem?.type === 'subjects' && editingItem?.id === s._id ? (
+                        <>
+                          <Tooltip title="Save">
+                            <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                              <CheckIcon color="success" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Cancel">
+                            <IconButton onClick={cancelEditing} size="small">
+                              <CloseIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <>
+                          <Tooltip title="Edit Subject">
+                            <IconButton onClick={() => startEditing('subjects', s._id, s.name)} size="small">
+                              <EditIcon color="info" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Add Strand">
+                            <IconButton onClick={() => openDialog('strands', s._id)} size="small">
+                              <AddIcon color="primary" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Subject">
+                            <IconButton onClick={() => handleDelete('subjects', s._id)} size="small">
+                              <DeleteIcon color="error" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -443,21 +590,54 @@ const AdminCurriculum = () => {
                         >
                           <ExpandMoreIcon />
                         </IconButton>
-                        {st.name}
+                        {editingItem?.type === 'strands' && editingItem?.id === st._id ? (
+                          <TextField
+                            size="small"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(); if (e.key === 'Escape') cancelEditing(); }}
+                            autoFocus
+                            sx={{ minWidth: 150 }}
+                          />
+                        ) : (
+                          st.name
+                        )}
                       </Box>
                     </TableCell>
                     <TableCell>{st.subject?.name || '—'}</TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Add Sub-Strand">
-                        <IconButton onClick={() => openDialog('sub-strands', st._id)} size="small">
-                          <AddIcon color="primary" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Strand">
-                        <IconButton onClick={() => handleDelete('strands', st._id)} size="small">
-                          <DeleteIcon color="error" />
-                        </IconButton>
-                      </Tooltip>
+                      {editingItem?.type === 'strands' && editingItem?.id === st._id ? (
+                        <>
+                          <Tooltip title="Save">
+                            <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                              <CheckIcon color="success" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Cancel">
+                            <IconButton onClick={cancelEditing} size="small">
+                              <CloseIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <>
+                          <Tooltip title="Edit Strand">
+                            <IconButton onClick={() => startEditing('strands', st._id, st.name)} size="small">
+                              <EditIcon color="info" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Add Sub-Strand">
+                            <IconButton onClick={() => openDialog('sub-strands', st._id)} size="small">
+                              <AddIcon color="primary" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Strand">
+                            <IconButton onClick={() => handleDelete('strands', st._id)} size="small">
+                              <DeleteIcon color="error" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -483,14 +663,49 @@ const AdminCurriculum = () => {
               <TableBody>
                 {subStrands.map((ss) => (
                   <TableRow key={ss._id}>
-                    <TableCell>{ss.name}</TableCell>
+                    <TableCell>
+                      {editingItem?.type === 'sub-strands' && editingItem?.id === ss._id ? (
+                        <TextField
+                          size="small"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(); if (e.key === 'Escape') cancelEditing(); }}
+                          autoFocus
+                          sx={{ minWidth: 150 }}
+                        />
+                      ) : (
+                        ss.name
+                      )}
+                    </TableCell>
                     <TableCell>{ss.strand?.name || '—'}</TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Delete Sub-Strand">
-                        <IconButton onClick={() => handleDelete('sub-strands', ss._id)} size="small">
-                          <DeleteIcon color="error" />
-                        </IconButton>
-                      </Tooltip>
+                      {editingItem?.type === 'sub-strands' && editingItem?.id === ss._id ? (
+                        <>
+                          <Tooltip title="Save">
+                            <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                              <CheckIcon color="success" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Cancel">
+                            <IconButton onClick={cancelEditing} size="small">
+                              <CloseIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <>
+                          <Tooltip title="Edit Sub-Strand">
+                            <IconButton onClick={() => startEditing('sub-strands', ss._id, ss.name)} size="small">
+                              <EditIcon color="info" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Sub-Strand">
+                            <IconButton onClick={() => handleDelete('sub-strands', ss._id)} size="small">
+                              <DeleteIcon color="error" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
