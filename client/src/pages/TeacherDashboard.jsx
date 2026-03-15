@@ -584,7 +584,6 @@ function TeacherDashboard() {
           </style>
         </head>
         <body>
-          <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">Topic: ${topic}</div>
           ${printableBody}
         </body>
       </html>
@@ -650,7 +649,7 @@ function TeacherDashboard() {
       const tmp = document.createElement('div');
       tmp.innerHTML = printableBody;
       const plainText = tmp.textContent || tmp.innerText || '';
-      blob = new Blob([`Topic: ${topic}\n\n${plainText}`], { type: 'text/plain;charset=utf-8' });
+      blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
       extension = 'txt';
     }
 

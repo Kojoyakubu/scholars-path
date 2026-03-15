@@ -9,7 +9,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   IconButton,
   Menu,
   MenuItem,
@@ -121,10 +120,6 @@ export default function NotePreviewDialog({
             mx: 'auto',
           }}
         >
-          <Typography variant="caption" color="text.secondary" gutterBottom>
-            Topic: {note?.subStrand?.name || note?.subStrand || ''}
-          </Typography>
-          <Divider sx={{ my: 2 }} />
           <Box sx={isPdfExporting ? compactContentSx : contentSx}>
             {segments.map((seg, idx) => {
               if (seg.type === 'text') {
