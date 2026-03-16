@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
+const Subscription = require('../models/subscriptionModel');
 
 // Utility: Generate JWT token
 const generateToken = (user) => {
@@ -122,6 +123,8 @@ const loginUser = asyncHandler(async (req, res) => {
     // Only 'approved' users can login
     const token = generateToken(user);
 
+    const subscription = await Subscription.findOne({ user: user._id, status: 'active' });
+
     res.json({
       message: 'Login successful',
       user: {
@@ -132,6 +135,7 @@ const loginUser = asyncHandler(async (req, res) => {
         role: user.role,
         school: user.school,
         status: user.status,
+        isSubscribed: !!subscription,
         token,
       },
     });
@@ -278,6 +282,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id).select('-password');
   
   if (user) {
+    const subscription = await Subscription.findOne({ user: user._id, status: 'active' });
     res.json({
       id: user._id,
       name: user.fullName,
@@ -287,6 +292,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
       school: user.school,
       status: user.status,
       aiOnboarded: user.aiOnboarded,
+      isSubscribed: !!subscription,
     });
   } else {
     res.status(404).json({ message: 'User not found' });
