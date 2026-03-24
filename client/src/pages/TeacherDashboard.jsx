@@ -984,6 +984,10 @@ function TeacherDashboard() {
           user={user}
           role="teacher"
           stats={[]}
+          primaryAction={{
+            label: 'Create New',
+            onClick: () => setShowCreateTools(true),
+          }}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           collapsed={bannerCollapsed}

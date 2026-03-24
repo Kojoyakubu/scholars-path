@@ -784,6 +784,10 @@ function Dashboard() {
             { label: 'Quizzes', value: stats.quizzes, icon: QuizIcon },
             { label: 'Resources', value: stats.resources, icon: AttachFileIcon },
           ]}
+          primaryAction={{
+            label: 'Pick Learning Topic',
+            onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+          }}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           collapsed={bannerCollapsed}

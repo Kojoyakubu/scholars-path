@@ -347,6 +347,10 @@ const AdminDashboard = () => {
         user={user}
         role="admin"
         stats={[]} // Admin uses stat cards
+        primaryAction={{
+          label: 'Open Analytics',
+          onClick: () => navigate('/admin/analytics'),
+        }}
         onRefresh={() => dispatch(getStats())}
         refreshing={isLoading}
         collapsed={false}
@@ -354,6 +358,8 @@ const AdminDashboard = () => {
         actions={
           // Time range selector
           <ButtonGroup variant="outlined" size="small" sx={{ 
+            width: { xs: '100%', md: 'auto' },
+            '& .MuiButtonGroup-grouped': { flex: { xs: 1, md: 'none' } },
             '& .MuiButton-outlined': { 
               color: 'white', 
               borderColor: alpha('#FFFFFF', 0.3),

@@ -1,6 +1,6 @@
 // /client/src/pages/SchoolDashboard.jsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Container,
@@ -11,6 +11,8 @@ import {
   CircularProgress,
   Divider,
   useTheme,
+  useMediaQuery,
+  Button,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
@@ -37,6 +39,8 @@ const AIInsightsCard = ({ title = 'AI Insights', content }) => {
 
 const SchoolDashboard = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const insightsRef = useRef(null);
   const { user } = useSelector((state) => state.auth || {});
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,14 +94,23 @@ const SchoolDashboard = () => {
   }
 
   return (
-    <Box sx={{ py: 8, bgcolor: theme.palette.background.default }}>
+    <Box sx={{ py: { xs: 4, md: 8 }, bgcolor: theme.palette.background.default }}>
       <Container maxWidth="xl">
-        <Typography variant="h4" fontWeight={700} gutterBottom>
+        <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.6rem', sm: '2rem', md: '2.125rem' } }}>
           School Dashboard
         </Typography>
         <Typography variant="subtitle1" color="text.secondary" gutterBottom>
           Welcome back, {user?.fullName || 'Administrator'} — here’s your school’s current overview.
         </Typography>
+        <Button
+          variant="contained"
+          size={isMobile ? 'large' : 'medium'}
+          fullWidth={isMobile}
+          sx={{ mt: 1.5, mb: 1.5, maxWidth: { xs: '100%', sm: 280 } }}
+          onClick={() => insightsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        >
+          View AI Insights
+        </Button>
 
         <Grid container spacing={3} sx={{ mt: 2 }}>
           <Grid item xs={12} sm={6} md={3}>
@@ -175,24 +188,26 @@ const SchoolDashboard = () => {
           </Grid>
         </Grid>
 
-        {/* AI Insights Section */}
-        {user && (
-          <>
-            {aiError ? (
-              <Typography color="error" sx={{ mt: 3 }}>
-                {aiError}
-              </Typography>
-            ) : (
-              <AIInsightsCard
-                title={`AI Insights for ${user.fullName || 'School Admin'}`}
-                content={
-                  aiInsights ||
-                  `Analyzing engagement trends for ${user?.schoolName || 'your institution'}...`
-                }
-              />
-            )}
-          </>
-        )}
+        <Box ref={insightsRef}>
+          {/* AI Insights Section */}
+          {user && (
+            <>
+              {aiError ? (
+                <Typography color="error" sx={{ mt: 3 }}>
+                  {aiError}
+                </Typography>
+              ) : (
+                <AIInsightsCard
+                  title={`AI Insights for ${user.fullName || 'School Admin'}`}
+                  content={
+                    aiInsights ||
+                    `Analyzing engagement trends for ${user?.schoolName || 'your institution'}...`
+                  }
+                />
+              )}
+            </>
+          )}
+        </Box>
       </Container>
     </Box>
   );

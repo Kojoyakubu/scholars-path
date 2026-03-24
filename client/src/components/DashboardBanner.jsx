@@ -1,7 +1,7 @@
 // /client/src/components/DashboardBanner.jsx
 // Unified Dashboard Banner for Student, Teacher, and Admin roles
 
-import { Box, Paper, Typography, Avatar, Stack, IconButton, Chip, alpha, useTheme, ButtonGroup, Button } from '@mui/material';
+import { Box, Paper, Typography, Avatar, Stack, IconButton, Chip, alpha, useTheme, useMediaQuery, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -16,8 +16,10 @@ const DashboardBanner = ({
   collapsed,
   onCollapse,
   actions, // Optional extra actions/filters for admin
+  primaryAction, // Optional CTA: { label, onClick }
 }) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Role-specific greeting and subtitle
   const greetingConfig = {
@@ -44,7 +46,7 @@ const DashboardBanner = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      sx={{ mb: 3 }}
+      sx={{ mb: { xs: 2.5, md: 3 } }}
     >
       <Paper
         elevation={0}
@@ -54,7 +56,7 @@ const DashboardBanner = ({
             ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
           backdropFilter: 'blur(20px)',
           borderRadius: { xs: 3, md: 4 },
-          p: { xs: 2.5, md: 3 },
+          p: { xs: 2, sm: 2.5, md: 3 },
           color: 'white',
           position: 'relative',
           overflow: 'hidden',
@@ -134,13 +136,18 @@ const DashboardBanner = ({
             <Stack 
               direction="row" 
               alignItems="center" 
-              spacing={1.5} 
+              spacing={1.2}
               flexWrap="wrap"
-              sx={{ width: { xs: '100%', md: 'auto' } }}
+              sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'space-between', md: 'flex-end' } }}
             >
               {/* Role-specific inline stats (for student/teacher) */}
               {!collapsed && stats.length > 0 && (
-                <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  flexWrap={{ xs: 'nowrap', md: 'wrap' }}
+                  sx={{ width: { xs: '100%', md: 'auto' }, overflowX: { xs: 'auto', md: 'visible' }, pb: { xs: 0.5, md: 0 } }}
+                >
                   {stats.map((stat, idx) => {
                     const StatIcon = stat.icon;
                     return (
@@ -155,6 +162,7 @@ const DashboardBanner = ({
                           backdropFilter: 'blur(10px)',
                           border: `1px solid ${alpha('#FFFFFF', 0.25)}`,
                           height: 32,
+                          flexShrink: 0,
                         }}
                       />
                     );
@@ -164,13 +172,34 @@ const DashboardBanner = ({
               
               {/* Admin-specific actions */}
               {actions}
+
+              {/* Role-specific primary CTA */}
+              {primaryAction?.onClick && primaryAction?.label && (
+                <Button
+                  variant="contained"
+                  onClick={primaryAction.onClick}
+                  fullWidth={isMobile}
+                  size={isMobile ? 'medium' : 'small'}
+                  sx={{
+                    bgcolor: 'white',
+                    color: theme.palette.primary.main,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    minWidth: { xs: '100%', md: 152 },
+                    '&:hover': { bgcolor: alpha('#FFFFFF', 0.92) },
+                  }}
+                >
+                  {primaryAction.label}
+                </Button>
+              )}
               
               {/* Common controls */}
-              <Stack direction="row" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: 'flex-end' }}>
                 {onRefresh && (
                   <IconButton 
                     onClick={onRefresh}
                     disabled={refreshing}
+                    size={isMobile ? 'medium' : 'small'}
                     sx={{ 
                       color: 'white',
                       bgcolor: alpha('#FFFFFF', 0.1),
@@ -192,6 +221,7 @@ const DashboardBanner = ({
                 {onCollapse && (
                   <IconButton
                     onClick={() => onCollapse(!collapsed)}
+                    size={isMobile ? 'medium' : 'small'}
                     sx={{ 
                       color: 'white',
                       bgcolor: alpha('#FFFFFF', 0.1),
