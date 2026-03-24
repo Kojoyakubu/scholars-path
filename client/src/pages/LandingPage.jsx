@@ -1,7 +1,3 @@
-// /client/src/pages/LandingPage.jsx
-// ✨ Modern Landing Page - FIXED ROUTES & IMPROVED
-// Clean • Focused • Professional • Ghana-friendly • High Conversion
-
 import { motion } from "framer-motion";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
@@ -17,616 +13,565 @@ import {
   alpha,
   Card,
   CardContent,
-  CardActions,
+  Chip,
+  Stack,
 } from "@mui/material";
 
 import SchoolIcon from "@mui/icons-material/School";
-import DiamondIcon from "@mui/icons-material/Diamond";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
-import BarChartIcon from "@mui/icons-material/BarChart";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import BoltIcon from "@mui/icons-material/Bolt";
+import QueryStatsIcon from "@mui/icons-material/QueryStats";
+import GroupsIcon from "@mui/icons-material/Groups";
 
-const fadeIn = {
-  hidden: { opacity: 0, y: 30 },
+const reveal = {
+  hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0 },
+};
+
+const stagger = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.12,
+    },
+  },
 };
 
 const LandingPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
 
-  const handleGetStarted = () => {
-    navigate('/register');
-  };
+  const handleGetStarted = () => navigate("/register");
+  const handleLogin = () => navigate("/login");
 
-  const handleLogin = () => {
-    navigate('/login');
-  };
+  const trustMetrics = [
+    { label: "Teacher Hours Saved", value: "12k+" },
+    { label: "Quizzes Generated", value: "85k+" },
+    { label: "Schools Onboarded", value: "160+" },
+  ];
+
+  const outcomes = [
+    {
+      icon: BoltIcon,
+      title: "Plan Faster",
+      desc: "Generate weekly lesson notes and assessments in minutes.",
+    },
+    {
+      icon: QueryStatsIcon,
+      title: "Track Progress",
+      desc: "See topic-level mastery and identify weak spots early.",
+    },
+    {
+      icon: GroupsIcon,
+      title: "Support Every Learner",
+      desc: "Give students notes, quizzes, and explanations tailored to level.",
+    },
+  ];
+
+  const workflow = [
+    {
+      step: "01",
+      title: "Pick Class + Subject",
+      desc: "Choose level, strand, and sub-strand aligned to NaCCA.",
+    },
+    {
+      step: "02",
+      title: "Generate Content",
+      desc: "Create lesson notes, quiz sets, and resource bundles instantly.",
+    },
+    {
+      step: "03",
+      title: "Assign + Review",
+      desc: "Share with students and monitor outcomes from one dashboard.",
+    },
+  ];
+
+  const pricing = [
+    {
+      title: "Starter",
+      price: "GHS 0",
+      sub: "Great for trying the platform",
+      features: ["Core lesson tools", "Student dashboard", "Limited generations"],
+      cta: "Start Free",
+      route: "/register",
+    },
+    {
+      title: "Teacher Pro",
+      price: "GHS 25/mo",
+      sub: "Built for daily classroom use",
+      features: ["Unlimited lesson notes", "Unlimited quizzes", "AI insights", "Priority support"],
+      cta: "Start Teacher Pro",
+      route: "/register",
+      featured: true,
+    },
+    {
+      title: "School",
+      price: "Custom",
+      sub: "For multi-teacher institutions",
+      features: ["Admin controls", "Team onboarding", "Analytics", "Dedicated support"],
+      cta: "Talk to Sales",
+      route: "/register",
+    },
+  ];
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        background: `linear-gradient(135deg, ${alpha(
-          theme.palette.primary.main,
-          0.05
-        )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+        background:
+          "radial-gradient(circle at 15% 10%, rgba(37,99,235,0.16), transparent 35%), radial-gradient(circle at 85% 5%, rgba(245,158,11,0.15), transparent 30%), linear-gradient(180deg, #F8FBFF 0%, #FFFFFF 40%, #F6F8FC 100%)",
       }}
     >
-      {/* 🌐 NAVBAR */}
-      <AppBar position="sticky" elevation={0} sx={{ bgcolor: "white", py: 1 }}>
-        <Toolbar>
-          <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center" }}>
-            <SchoolIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 800, color: "primary.main" }}
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          bgcolor: alpha("#FFFFFF", 0.8),
+          backdropFilter: "blur(10px)",
+          borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+        }}
+      >
+        <Toolbar sx={{ py: 0.8 }}>
+          <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1.2 }}>
+            <Box
+              sx={{
+                width: 38,
+                height: 38,
+                borderRadius: 2,
+                display: "grid",
+                placeItems: "center",
+                background: "linear-gradient(140deg, #1E3A5F 0%, #2563EB 70%, #60A5FA 100%)",
+              }}
             >
-              Scholar's Path
+              <SchoolIcon sx={{ color: "white", fontSize: 22 }} />
+            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "#0F172A" }}>
+              Scholar&apos;s Path
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Button 
-              component={RouterLink} 
-              to="/login" 
-              variant="text"
-              sx={{ textTransform: 'none' }}
-            >
+          <Stack direction="row" spacing={1.2}>
+            <Button onClick={handleLogin} variant="text" sx={{ px: 2 }}>
               Login
             </Button>
-            <Button
-              component={RouterLink}
-              to="/register"
-              variant="contained"
-              sx={{ 
-                borderRadius: 2,
-                textTransform: 'none',
-                boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.3)}`,
-              }}
-            >
-              Get Started
+            <Button onClick={handleGetStarted} variant="contained" endIcon={<ArrowForwardIcon />}>
+              Start Free
             </Button>
-          </Box>
+          </Stack>
         </Toolbar>
       </AppBar>
 
-      {/* 🎯 HERO SECTION */}
-      <Container maxWidth="lg" sx={{ py: 10 }}>
-        <Grid container spacing={6} alignItems="center">
+      <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 11 }, pb: { xs: 6, md: 8 } }}>
+        <Grid container spacing={5} alignItems="center">
           <Grid item xs={12} md={6}>
-            <motion.div 
-              variants={fadeIn} 
-              initial="hidden" 
-              animate="visible"
-              transition={{ duration: 0.6 }}
-            >
-              <Typography
-                variant="h2"
-                sx={{
-                  fontWeight: 900,
-                  lineHeight: 1.2,
-                  mb: 3,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Transform Teaching & Learning with AI-Powered Automation
-              </Typography>
+            <motion.div variants={stagger} initial="hidden" animate="visible">
+              <motion.div variants={reveal}>
+                <Chip
+                  label="Built for Ghanaian classrooms"
+                  sx={{
+                    mb: 2,
+                    bgcolor: alpha("#2563EB", 0.1),
+                    color: "#1E3A5F",
+                    fontWeight: 700,
+                  }}
+                />
+              </motion.div>
 
-              <Typography
-                variant="h6"
-                color="text.secondary"
-                sx={{ mb: 4, maxWidth: 550 }}
-              >
-                Generate curriculum-aligned lesson notes, quizzes, explanations,
-                and learning paths instantly. Optimized for Ghanaian schools, Teachers and Students.
-              </Typography>
-
-              <Box sx={{ display: "flex", gap: 2, flexWrap: 'wrap' }}>
-                <Button
-                  onClick={handleGetStarted}
-                  variant="contained"
-                  size="large"
-                  endIcon={<ArrowForwardIcon />}
-                  sx={{ 
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    px: 4,
-                    boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
-                    '&:hover': {
-                      boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
-                    }
+              <motion.div variants={reveal}>
+                <Typography
+                  variant="h1"
+                  sx={{
+                    fontSize: { xs: "2.3rem", md: "3.5rem" },
+                    lineHeight: 1.06,
+                    mb: 2,
+                    color: "#0B1324",
+                    textWrap: "balance",
                   }}
                 >
-                  Start Learning
-                </Button>
-                <Button
-                  onClick={handleLogin}
-                  variant="outlined"
-                  size="large"
-                  sx={{ 
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    px: 4,
+                  Teachers plan in minutes.
+                  <Box component="span" sx={{ color: "#2563EB" }}>
+                    {" "}
+                    Students learn with clarity.
+                  </Box>
+                </Typography>
+              </motion.div>
+
+              <motion.div variants={reveal}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color: "#334155",
+                    maxWidth: 560,
+                    mb: 3.5,
                   }}
                 >
-                  Login
-                </Button>
-              </Box>
+                  Create NaCCA-aligned lesson notes, assessments, and learning support in one flow.
+                  Spend less time preparing and more time teaching.
+                </Typography>
+              </motion.div>
+
+              <motion.div variants={reveal}>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 3.5 }}>
+                  <Button
+                    onClick={handleGetStarted}
+                    variant="contained"
+                    size="large"
+                    endIcon={<ArrowForwardIcon />}
+                    sx={{ px: 3.5 }}
+                  >
+                    Start Free as Teacher
+                  </Button>
+                  <Button
+                    onClick={handleLogin}
+                    variant="outlined"
+                    size="large"
+                    sx={{ px: 3.5, borderWidth: 2 }}
+                  >
+                    See Student Experience
+                  </Button>
+                </Stack>
+              </motion.div>
+
+              <motion.div variants={reveal}>
+                <Stack direction="row" spacing={1.4} alignItems="center" flexWrap="wrap" useFlexGap>
+                  <CheckCircleIcon sx={{ color: "#10B981", fontSize: 20 }} />
+                  <Typography variant="body2">No credit card required</Typography>
+                  <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                    •
+                  </Typography>
+                  <Typography variant="body2">Works on low bandwidth</Typography>
+                </Stack>
+              </motion.div>
             </motion.div>
           </Grid>
 
-          {/* Hero Illustration */}
           <Grid item xs={12} md={6}>
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8 }}
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
             >
               <Paper
                 elevation={0}
                 sx={{
-                  p: 4,
+                  p: 2,
                   borderRadius: 4,
-                  background: alpha("#ffffff", 0.8),
-                  backdropFilter: "blur(10px)",
-                  border: `1px solid ${alpha("#000", 0.1)}`,
+                  background: "linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%)",
+                  border: `1px solid ${alpha("#1E3A5F", 0.12)}`,
+                  boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)",
                 }}
               >
-                <img
-                  src="3090733_479.jpg"
-                  alt="Student learning on Scholar's Path - AI-powered education platform for Ghana"
-                  style={{ width: "100%", borderRadius: 20, objectFit: "contain", maxHeight: "500px" }}
-                  loading="lazy"
-                />
+                <Box
+                  sx={{
+                    borderRadius: 3,
+                    overflow: "hidden",
+                    border: `1px solid ${alpha("#1E3A5F", 0.1)}`,
+                  }}
+                >
+                  <img
+                    src="3090733_479.jpg"
+                    alt="Scholar's Path classroom product preview"
+                    style={{ width: "100%", display: "block", maxHeight: 520, objectFit: "cover" }}
+                    loading="lazy"
+                  />
+                </Box>
               </Paper>
             </motion.div>
           </Grid>
         </Grid>
       </Container>
 
-      {/* 🇬🇭 GHANA SECTION */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <motion.div 
-          variants={fadeIn} 
-          initial="hidden" 
+      <Container maxWidth="lg" sx={{ pb: { xs: 7, md: 10 } }}>
+        <motion.div
+          initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          viewport={{ once: true, amount: 0.2 }}
+          variants={stagger}
         >
-          <Paper
-            elevation={0}
-            sx={{
-              p: 5,
-              borderRadius: 4,
-              background: alpha(theme.palette.primary.main, 0.1),
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-              textAlign: "center",
-            }}
-          >
-            <Typography variant="h4" sx={{ fontWeight: 800, mb: 2 }}>
-              🇬🇭 Built for Ghanaian Classrooms
-            </Typography>
-
-            <Typography
-              variant="body1"
-              sx={{ maxWidth: 800, mx: "auto", mb: 3 }}
-            >
-              100% aligned with NaCCA curriculum. Designed for Basic 1–9.  
-              Works perfectly for both private and public schools—even on low internet.
-            </Typography>
-
-            <Grid container spacing={3} sx={{ mt: 3 }}>
-              {[
-                "NaCCA-Aligned Content",
-                "BECE-Ready Quizzes",
-                "Low-Bandwidth Optimized",
-                "Teacher Friendly Tools",
-              ].map((text, i) => (
-                <Grid item xs={12} sm={6} md={3} key={i}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
+          <Grid container spacing={2}>
+            {trustMetrics.map((item) => (
+              <Grid item xs={12} sm={4} key={item.label}>
+                <motion.div variants={reveal}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2.4,
+                      borderRadius: 3,
+                      bgcolor: alpha("#FFFFFF", 0.85),
+                      border: `1px solid ${alpha("#1E3A5F", 0.1)}`,
+                      textAlign: "center",
+                    }}
                   >
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        background: alpha("#fff", 0.8),
-                        backdropFilter: "blur(6px)",
-                        height: '100%',
-                      }}
-                    >
-                      <CheckCircleIcon
-                        sx={{ fontSize: 30, color: "primary.main", mb: 1 }}
-                      />
-                      <Typography variant="body1" fontWeight={600}>
-                        {text}
-                      </Typography>
-                    </Paper>
-                  </motion.div>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
+                    <Typography sx={{ fontWeight: 900, fontSize: "1.8rem", color: "#1E3A5F" }}>
+                      {item.value}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#475569" }}>
+                      {item.label}
+                    </Typography>
+                  </Paper>
+                </motion.div>
+              </Grid>
+            ))}
+          </Grid>
         </motion.div>
       </Container>
 
-      {/* 🧩 FEATURES */}
-      <Container maxWidth="lg" sx={{ py: 10 }}>
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 800,
-            textAlign: "center",
-            mb: 6,
-          }}
-        >
-          Powerful Features
+      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 11 } }}>
+        <Typography variant="h3" sx={{ mb: 4.5, fontWeight: 800, textAlign: "center" }}>
+          Outcomes That Matter
         </Typography>
-
-        <Grid container spacing={4}>
-          {[
-            {
-              title: "AI Lesson Notes",
-              desc: "Generate complete teaching notes aligned with strands & substrands.",
-              icon: AutoAwesomeIcon,
-            },
-            {
-              title: "Automatic Quizzes",
-              desc: "20+ MCQs, essays, true/false & simple answers—generated instantly.",
-              icon: BarChartIcon,
-            },
-            {
-              title: "Student Dashboard",
-              desc: "Modern dashboard with topics, notes, quizzes & resources.",
-              icon: WorkspacePremiumIcon,
-            },
-          ].map((item, i) => (
-            <Grid item xs={12} md={4} key={i}>
+        <Grid container spacing={3}>
+          {outcomes.map((item, i) => (
+            <Grid item xs={12} md={4} key={item.title}>
               <Card
                 component={motion.div}
-                initial={{ opacity: 0, y: 25 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.08 }}
                 sx={{
-                  p: 3,
-                  borderRadius: 4,
-                  background: alpha("#fff", 0.9),
-                  border: `1px solid ${alpha("#000", 0.1)}`,
                   height: "100%",
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: `0 12px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
-                  }
+                  borderRadius: 4,
+                  border: `1px solid ${alpha("#1E3A5F", 0.1)}`,
+                  background: "linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%)",
                 }}
               >
-                <item.icon
-                  sx={{
-                    fontSize: 48,
-                    color: theme.palette.primary.main,
-                    mb: 2,
-                  }}
-                />
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                  {item.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {item.desc}
-                </Typography>
+                <CardContent sx={{ p: 3 }}>
+                  <item.icon sx={{ color: "#2563EB", fontSize: 34, mb: 1.2 }} />
+                  <Typography variant="h5" sx={{ mb: 1, fontWeight: 700 }}>
+                    {item.title}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#475569" }}>
+                    {item.desc}
+                  </Typography>
+                </CardContent>
               </Card>
             </Grid>
           ))}
         </Grid>
       </Container>
 
-      {/* 🖼️ PRODUCT PREVIEW */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: 800, textAlign: "center", mb: 4 }}
-        >
-          What You Can Create
-        </Typography>
+      <Box sx={{ py: { xs: 8, md: 10 }, background: "linear-gradient(180deg, #EEF4FF 0%, #FFFFFF 100%)" }}>
+        <Container maxWidth="lg">
+          <Typography variant="h3" sx={{ mb: 2, textAlign: "center", fontWeight: 800 }}>
+            How It Works
+          </Typography>
+          <Typography variant="subtitle1" sx={{ textAlign: "center", mb: 5.5, color: "#475569" }}>
+            One focused workflow for teachers, students, and school leaders.
+          </Typography>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          <Grid container spacing={3}>
+            {workflow.map((item, i) => (
+              <Grid item xs={12} md={4} key={item.step}>
+                <Paper
+                  component={motion.div}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    height: "100%",
+                    borderRadius: 4,
+                    border: `1px solid ${alpha("#1E3A5F", 0.12)}`,
+                    background: alpha("#FFFFFF", 0.92),
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 800,
+                      color: "#2563EB",
+                      fontSize: "0.9rem",
+                      letterSpacing: "0.08em",
+                      mb: 1,
+                    }}
+                  >
+                    STEP {item.step}
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.8 }}>
+                    {item.title}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#475569" }}>
+                    {item.desc}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      <Container maxWidth="lg" sx={{ py: { xs: 8, md: 10 } }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 3, md: 5 },
+            borderRadius: 4,
+            textAlign: "center",
+            border: `1px solid ${alpha("#1E3A5F", 0.14)}`,
+            background: "linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(245,158,11,0.1) 100%)",
+          }}
         >
-          <Paper
-            elevation={0}
-            sx={{
-              p: 4,
-              borderRadius: 4,
-              background: alpha("#fff", 0.8),
-            }}
-          >
-            <img
-              src="https://cdn3d.iconscout.com/3d/premium/thumb/tablet-learning-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--elearning-study-online-course-education-pack-school-illustrations-6535902.png"
-              alt="Product preview"
-              style={{ width: "100%", borderRadius: 16 }}
-              loading="lazy"
-            />
-          </Paper>
-        </motion.div>
+          <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 800 }}>
+            Aligned to NaCCA. Designed for real classrooms.
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#334155", maxWidth: 860, mx: "auto", mb: 3 }}>
+            From Basic 1 to JHS, Scholar&apos;s Path supports curriculum-aligned planning, BECE-ready
+            assessments, and low-bandwidth delivery for both private and public schools.
+          </Typography>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4} justifyContent="center">
+            <Chip label="NaCCA-aligned content" color="primary" />
+            <Chip label="BECE-ready assessment flow" color="primary" variant="outlined" />
+            <Chip label="Low-bandwidth friendly" color="primary" variant="outlined" />
+          </Stack>
+        </Paper>
       </Container>
 
-      {/* 💵 PRICING SECTION */}
-      <Container maxWidth="lg" sx={{ py: 12 }}>
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: 800, textAlign: "center", mb: 6 }}
-        >
+      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 11 } }}>
+        <Typography variant="h3" sx={{ mb: 5, textAlign: "center", fontWeight: 800 }}>
           Simple Pricing
         </Typography>
 
-        <Grid container spacing={4}>
-          {[
-            {
-              title: "Free Plan",
-              price: "GHS 0",
-              features: ["Basic access", "Student dashboard", "Limited content"],
-              buttonText: "Get Started Free",
-              route: "/register",
-            },
-            {
-              title: "Teacher Pro",
-              price: "GHS 25/month",
-              features: [
-                "Unlimited notes",
-                "Unlimited quizzes",
-                "Resources upload",
-                "AI insights",
-              ],
-              popular: true,
-              buttonText: "Start Free Trial",
-              route: "/register",
-            },
-            {
-              title: "School Plan",
-              price: "Custom",
-              features: [
-                "Admin dashboard",
-                "Teachers onboarding",
-                "Advanced analytics",
-                "Priority support",
-              ],
-              buttonText: "Contact Sales",
-              route: "/register",
-            },
-          ].map((plan, i) => (
-            <Grid item xs={12} md={4} key={i}>
+        <Grid container spacing={3}>
+          {pricing.map((plan, i) => (
+            <Grid item xs={12} md={4} key={plan.title}>
               <Card
                 component={motion.div}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 sx={{
+                  height: "100%",
                   borderRadius: 4,
-                  p: 3,
-                  border: plan.popular 
-                    ? `2px solid ${theme.palette.primary.main}` 
-                    : `1px solid ${alpha("#000", 0.1)}`,
-                  background: plan.popular
-                    ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
-                    : "white",
-                  color: plan.popular ? "white" : "inherit",
-                  position: 'relative',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
+                  border: plan.featured
+                    ? `2px solid ${theme.palette.primary.main}`
+                    : `1px solid ${alpha("#1E3A5F", 0.12)}`,
+                  background: plan.featured
+                    ? "linear-gradient(180deg, #FFFFFF 0%, #EEF4FF 100%)"
+                    : "#FFFFFF",
+                  position: "relative",
                 }}
               >
-                {plan.popular && (
-                  <Box
+                {plan.featured && (
+                  <Chip
+                    label="MOST POPULAR"
                     sx={{
-                      position: 'absolute',
-                      top: -12,
-                      right: 20,
-                      bgcolor: theme.palette.secondary.main,
-                      color: 'white',
-                      px: 2,
-                      py: 0.5,
-                      borderRadius: 2,
-                      fontSize: '0.75rem',
+                      position: "absolute",
+                      top: 14,
+                      right: 14,
+                      bgcolor: "#2563EB",
+                      color: "white",
                       fontWeight: 700,
+                      fontSize: "0.72rem",
                     }}
-                  >
-                    POPULAR
-                  </Box>
+                  />
                 )}
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     {plan.title}
                   </Typography>
-
-                  <Typography variant="h3" sx={{ fontWeight: 900, my: 2 }}>
-                    {plan.price}
+                  <Typography sx={{ fontWeight: 900, fontSize: "2rem", mt: 1 }}>{plan.price}</Typography>
+                  <Typography variant="body2" sx={{ color: "#64748B", mb: 2 }}>
+                    {plan.sub}
                   </Typography>
 
-                  {plan.features.map((f, idx) => (
-                    <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <CheckCircleIcon sx={{ fontSize: 18, mr: 1 }} />
-                      <Typography variant="body2">{f}</Typography>
-                    </Box>
-                  ))}
-                </CardContent>
+                  <Stack spacing={1.1} sx={{ mb: 2.8 }}>
+                    {plan.features.map((feature) => (
+                      <Box key={feature} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <CheckCircleIcon sx={{ color: "#10B981", fontSize: 18 }} />
+                        <Typography variant="body2">{feature}</Typography>
+                      </Box>
+                    ))}
+                  </Stack>
 
-                <CardActions>
                   <Button
                     fullWidth
-                    variant="contained"
+                    variant={plan.featured ? "contained" : "outlined"}
                     component={RouterLink}
                     to={plan.route}
-                    sx={{
-                      bgcolor: plan.popular ? "white" : "primary.main",
-                      color: plan.popular ? "primary.main" : "white",
-                      fontWeight: 700,
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      py: 1.5,
-                      '&:hover': {
-                        bgcolor: plan.popular ? alpha("#fff", 0.9) : "primary.dark",
-                      }
-                    }}
                   >
-                    {plan.buttonText}
+                    {plan.cta}
                   </Button>
-                </CardActions>
+                </CardContent>
               </Card>
             </Grid>
           ))}
         </Grid>
       </Container>
 
-      {/* 🎉 FINAL CTA */}
-      <Container maxWidth="md" sx={{ py: 10 }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+      <Container maxWidth="md" sx={{ pb: { xs: 8, md: 12 } }}>
+        <Paper
+          component={motion.div}
+          initial={{ opacity: 0, y: 22 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          elevation={0}
+          sx={{
+            p: { xs: 3.2, md: 5 },
+            borderRadius: 4,
+            textAlign: "center",
+            background: "linear-gradient(140deg, #1E3A5F 0%, #2563EB 70%, #60A5FA 100%)",
+            color: "white",
+          }}
         >
-          <Paper
-            elevation={0}
+          <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.2 }}>
+            Ready to Upgrade Your Classroom Workflow?
+          </Typography>
+          <Typography variant="body1" sx={{ opacity: 0.95, mb: 3 }}>
+            Join educators building better lessons and stronger learning outcomes every day.
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={handleGetStarted}
+            endIcon={<ArrowForwardIcon />}
             sx={{
-              p: 6,
-              borderRadius: 4,
-              textAlign: 'center',
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              color: 'white',
+              bgcolor: "white",
+              color: "#1E3A5F",
+              px: 3.2,
+              "&:hover": { bgcolor: alpha("#FFFFFF", 0.92) },
             }}
           >
-            <Typography variant="h4" sx={{ fontWeight: 800, mb: 2 }}>
-              Ready to Transform Your Classroom?
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 4, opacity: 0.9 }}>
-              Join thousands of teachers and students already using Scholar's Path
-            </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              onClick={handleGetStarted}
-              endIcon={<ArrowForwardIcon />}
-              sx={{
-                bgcolor: 'white',
-                color: 'primary.main',
-                fontWeight: 700,
-                borderRadius: 2,
-                textTransform: 'none',
-                px: 4,
-                py: 1.5,
-                '&:hover': {
-                  bgcolor: alpha('#fff', 0.9),
-                }
-              }}
-            >
-              Get Started Free
-            </Button>
-          </Paper>
-        </motion.div>
+            Get Started Free
+          </Button>
+        </Paper>
       </Container>
 
-      {/* 🦶 FOOTER */}
       <Box
         sx={{
-          bgcolor: alpha(theme.palette.primary.main, 0.1),
-          py: 4,
-          mt: 10,
+          borderTop: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+          bgcolor: alpha("#FFFFFF", 0.7),
+          py: 3.5,
         }}
       >
         <Container maxWidth="lg">
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={4}>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <SchoolIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
-                <Typography variant="h6" sx={{ fontWeight: 800, color: "primary.main" }}>
-                  Scholar's Path
-                </Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                Empowering education through AI-powered learning tools designed for Ghanaian schools.
-              </Typography>
-            </Grid>
-            
-            <Grid item xs={12} sm={4} md={2}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
-                Product
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
-                  Features
-                </Button>
-                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
-                  Pricing
-                </Button>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} sm={4} md={2}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
-                Company
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
-                  About Us
-                </Button>
-                <Button component={RouterLink} to="/login" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
-                  Contact
-                </Button>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} sm={4} md={2}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
-                Legal
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
-                  Privacy
-                </Button>
-                <Button component={RouterLink} to="/register" sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
-                  Terms
-                </Button>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} md={2}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
-                Get Started
-              </Typography>
-              <Button
-                component={RouterLink}
-                to="/register"
-                variant="contained"
-                fullWidth
-                sx={{ 
-                  borderRadius: 2,
-                  textTransform: 'none',
-                }}
-              >
-                Sign Up Free
-              </Button>
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 4, pt: 3, borderTop: `1px solid ${alpha('#000', 0.1)}` }}>
-            <Typography variant="body2" sx={{ textAlign: "center", opacity: 0.7 }}>
-              © {new Date().getFullYear()} Scholar's Path — Empowering the Future
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={1.2}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", md: "center" }}
+          >
+            <Typography variant="body2" sx={{ color: "#64748B" }}>
+              © {new Date().getFullYear()} Scholar&apos;s Path
             </Typography>
-          </Box>
+            <Stack direction="row" spacing={2.2}>
+              <Button size="small" component={RouterLink} to="/register" sx={{ color: "#64748B" }}>
+                Privacy
+              </Button>
+              <Button size="small" component={RouterLink} to="/register" sx={{ color: "#64748B" }}>
+                Terms
+              </Button>
+              <Button size="small" component={RouterLink} to="/login" sx={{ color: "#64748B" }}>
+                Contact
+              </Button>
+            </Stack>
+          </Stack>
         </Container>
       </Box>
     </Box>
