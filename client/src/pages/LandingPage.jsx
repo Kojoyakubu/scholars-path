@@ -10,6 +10,7 @@ import {
   Grid,
   Paper,
   useTheme,
+  useMediaQuery,
   alpha,
   Card,
   CardContent,
@@ -42,6 +43,7 @@ const stagger = {
 
 const LandingPage = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
 
   const handleGetStarted = () => navigate("/register");
@@ -121,6 +123,7 @@ const LandingPage = () => {
     <Box
       sx={{
         minHeight: "100vh",
+        pb: { xs: 10, md: 0 },
         background:
           "radial-gradient(circle at 15% 10%, rgba(37,99,235,0.16), transparent 35%), radial-gradient(circle at 85% 5%, rgba(245,158,11,0.15), transparent 30%), linear-gradient(180deg, #F8FBFF 0%, #FFFFFF 40%, #F6F8FC 100%)",
       }}
@@ -134,7 +137,7 @@ const LandingPage = () => {
           borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
         }}
       >
-        <Toolbar sx={{ py: 0.8 }}>
+        <Toolbar sx={{ py: { xs: 0.6, sm: 0.8 } }}>
           <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1.2 }}>
             <Box
               sx={{
@@ -153,18 +156,18 @@ const LandingPage = () => {
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={1.2}>
-            <Button onClick={handleLogin} variant="text" sx={{ px: 2 }}>
+          <Stack direction="row" spacing={1}>
+            <Button onClick={handleLogin} variant="text" sx={{ px: 1.5, display: { xs: "none", sm: "inline-flex" } }}>
               Login
             </Button>
-            <Button onClick={handleGetStarted} variant="contained" endIcon={<ArrowForwardIcon />}>
+            <Button onClick={handleGetStarted} variant="contained" size={isMobile ? "medium" : "large"} endIcon={<ArrowForwardIcon />}>
               Start Free
             </Button>
           </Stack>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 11 }, pb: { xs: 6, md: 8 } }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 6.5, md: 11 }, pb: { xs: 6, md: 8 } }}>
         <Grid container spacing={5} alignItems="center">
           <Grid item xs={12} md={6}>
             <motion.div variants={stagger} initial="hidden" animate="visible">
@@ -184,7 +187,7 @@ const LandingPage = () => {
                 <Typography
                   variant="h1"
                   sx={{
-                    fontSize: { xs: "2.3rem", md: "3.5rem" },
+                    fontSize: { xs: "2rem", sm: "2.35rem", md: "3.5rem" },
                     lineHeight: 1.06,
                     mb: 2,
                     color: "#0B1324",
@@ -220,6 +223,7 @@ const LandingPage = () => {
                     variant="contained"
                     size="large"
                     endIcon={<ArrowForwardIcon />}
+                    fullWidth={isMobile}
                     sx={{ px: 3.5 }}
                   >
                     Start Free as Teacher
@@ -228,6 +232,7 @@ const LandingPage = () => {
                     onClick={handleLogin}
                     variant="outlined"
                     size="large"
+                    fullWidth={isMobile}
                     sx={{ px: 3.5, borderWidth: 2 }}
                   >
                     See Student Experience
@@ -320,7 +325,10 @@ const LandingPage = () => {
       </Container>
 
       <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 11 } }}>
-        <Typography variant="h3" sx={{ mb: 4.5, fontWeight: 800, textAlign: "center" }}>
+        <Typography
+          variant="h3"
+          sx={{ mb: 4.5, fontWeight: 800, textAlign: "center", fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
+        >
           Outcomes That Matter
         </Typography>
         <Grid container spacing={3}>
@@ -356,7 +364,10 @@ const LandingPage = () => {
 
       <Box sx={{ py: { xs: 8, md: 10 }, background: "linear-gradient(180deg, #EEF4FF 0%, #FFFFFF 100%)" }}>
         <Container maxWidth="lg">
-          <Typography variant="h3" sx={{ mb: 2, textAlign: "center", fontWeight: 800 }}>
+          <Typography
+            variant="h3"
+            sx={{ mb: 2, textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
+          >
             How It Works
           </Typography>
           <Typography variant="subtitle1" sx={{ textAlign: "center", mb: 5.5, color: "#475569" }}>
@@ -416,7 +427,7 @@ const LandingPage = () => {
             background: "linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(245,158,11,0.1) 100%)",
           }}
         >
-          <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 800 }}>
+          <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 800, fontSize: { xs: "1.5rem", sm: "1.9rem", md: "2.125rem" } }}>
             Aligned to NaCCA. Designed for real classrooms.
           </Typography>
           <Typography variant="body1" sx={{ color: "#334155", maxWidth: 860, mx: "auto", mb: 3 }}>
@@ -432,7 +443,10 @@ const LandingPage = () => {
       </Container>
 
       <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 11 } }}>
-        <Typography variant="h3" sx={{ mb: 5, textAlign: "center", fontWeight: 800 }}>
+        <Typography
+          variant="h3"
+          sx={{ mb: 5, textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
+        >
           Simple Pricing
         </Typography>
 
@@ -520,7 +534,7 @@ const LandingPage = () => {
             color: "white",
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.2 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.2, fontSize: { xs: "1.5rem", sm: "1.9rem", md: "2.125rem" } }}>
             Ready to Upgrade Your Classroom Workflow?
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.95, mb: 3 }}>
@@ -573,6 +587,33 @@ const LandingPage = () => {
             </Stack>
           </Stack>
         </Container>
+      </Box>
+
+      <Box
+        sx={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1400,
+          display: { xs: "block", md: "none" },
+          px: 1.5,
+          py: 1,
+          bgcolor: alpha("#FFFFFF", 0.88),
+          backdropFilter: "blur(10px)",
+          borderTop: `1px solid ${alpha("#1E3A5F", 0.14)}`,
+        }}
+      >
+        <Button
+          onClick={handleGetStarted}
+          variant="contained"
+          fullWidth
+          size="large"
+          endIcon={<ArrowForwardIcon />}
+          sx={{ py: 1.25 }}
+        >
+          Start Free as Teacher
+        </Button>
       </Box>
     </Box>
   );
