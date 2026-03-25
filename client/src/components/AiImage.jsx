@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import api from '../api/axios'; // ✅ THE FIX IS HERE: Import your centralized axios instance.
+import { fetchImageForQuery } from '../services/imageService';
 
 const AiImage = ({ text }) => {
   const [imageUrl, setImageUrl] = useState(null);
@@ -20,15 +20,13 @@ const AiImage = ({ text }) => {
 
     const fetchImage = async () => {
       try {
-        // Make the API call to your backend's new route
-        const response = await api.get(`/teacher/search-image?query=${query}`);
-        if (response.data.imageUrl) {
-          setImageUrl(response.data.imageUrl);
+        const resolvedImageUrl = await fetchImageForQuery(query);
+        if (resolvedImageUrl) {
+          setImageUrl(resolvedImageUrl);
         } else {
           setError(`No relevant image found for "${query}".`);
         }
-      } catch (err) {
-        console.error("Image fetch error:", err); // Log the actual error for debugging
+      } catch {
         setError('Failed to load image from the server.');
       } finally {
         setIsLoading(false);

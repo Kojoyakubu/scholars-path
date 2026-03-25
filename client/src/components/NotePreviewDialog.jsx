@@ -24,6 +24,8 @@ import {
   OpenInFull,
   CloseFullscreen,
 } from '@mui/icons-material';
+import DOMPurify from 'dompurify';
+import { useMemo } from 'react';
 
 function FullscreenTitle({ title, isFullscreen, onToggle }) {
   return (
@@ -100,6 +102,14 @@ export default function NotePreviewDialog({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const effectiveFullScreen = fullScreen || isMobile;
+  const sanitizedSegments = useMemo(
+    () => segments.map((segment) => (
+      segment.type === 'text'
+        ? { ...segment, safeHtml: DOMPurify.sanitize(segment.html || '') }
+        : segment
+    )),
+    [segments]
+  );
 
   return (
     <Dialog
@@ -136,9 +146,9 @@ export default function NotePreviewDialog({
           }}
         >
           <Box sx={isPdfExporting ? compactContentSx : contentSx}>
-            {segments.map((seg, idx) => {
+            {sanitizedSegments.map((seg, idx) => {
               if (seg.type === 'text') {
-                return <Box key={idx} dangerouslySetInnerHTML={{ __html: seg.html }} />;
+                return <Box key={idx} dangerouslySetInnerHTML={{ __html: seg.safeHtml }} />;
               }
               if (seg.type === 'image') {
                 if (seg.imgUrl === undefined) {

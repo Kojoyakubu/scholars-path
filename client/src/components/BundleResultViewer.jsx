@@ -19,7 +19,8 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import { useState } from 'react';
+import DOMPurify from 'dompurify';
+import { useMemo, useState } from 'react';
 import {
   Article,
   MenuBook,
@@ -65,6 +66,14 @@ function BundleResultViewer({
   if (!bundleData) return null;
 
   const { lessonNote, learnerNote, quiz } = bundleData;
+  const sanitizedLessonNoteContent = useMemo(
+    () => DOMPurify.sanitize(lessonNote?.content || ''),
+    [lessonNote?.content]
+  );
+  const sanitizedLearnerNoteContent = useMemo(
+    () => DOMPurify.sanitize(learnerNote?.content || ''),
+    [learnerNote?.content]
+  );
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -141,7 +150,7 @@ function BundleResultViewer({
             </Typography>
             <Divider sx={{ my: 2 }} />
             <Box
-              dangerouslySetInnerHTML={{ __html: lessonNote?.content || '' }}
+              dangerouslySetInnerHTML={{ __html: sanitizedLessonNoteContent }}
               sx={{
                 '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
                 '& h3': { fontSize: '1.25rem', fontWeight: 600, mt: 2, mb: 1 },
@@ -173,7 +182,7 @@ function BundleResultViewer({
               {learnerNote?.status === 'draft' && ' - Review and publish to make available to students'}
             </Alert>
             <Box
-              dangerouslySetInnerHTML={{ __html: learnerNote?.content || '' }}
+              dangerouslySetInnerHTML={{ __html: sanitizedLearnerNoteContent }}
               sx={{
                 '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2, color: 'primary.main' },
                 '& h3': { fontSize: '1.25rem', fontWeight: 600, mt: 2, mb: 1 },

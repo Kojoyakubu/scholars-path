@@ -591,7 +591,7 @@ function TeacherDashboard() {
 
     if (format === 'pdf') {
       const previewElement = document.getElementById('teacher-note-preview-content');
-      if (!window.html2pdf || !previewElement) {
+      if (!previewElement) {
         handleCloseDownloadMenu();
         setSnackbar({ open: true, message: 'PDF export is not available right now.', severity: 'error' });
         return;

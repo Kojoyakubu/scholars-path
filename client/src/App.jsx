@@ -6,7 +6,7 @@
 // ✅ SelectClass route for student class selection
 // ✅ NEW: All admin routes (Users, Schools, Curriculum, Analytics)
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from './features/auth/authSlice';
@@ -46,6 +46,23 @@ import RoleRoute from './components/RoleRoute';
 const AppRoutes = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      dispatch(logout()).finally(() => {
+        navigate('/login', {
+          replace: true,
+          state: { sessionExpired: true },
+        });
+      });
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, [dispatch, navigate]);
 
   // Logout handler for Layout component
   const handleLogout = () => {
