@@ -7,8 +7,9 @@
 // ✅ NEW: All admin routes (Users, Schools, Curriculum, Analytics)
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { logout } from './features/auth/authSlice';
 
 // Layout Component (provides sidebar for protected routes)
 import Layout from './components/Layout';
@@ -29,29 +30,32 @@ import LessonNoteView from './pages/LessonNoteView';
 import SelectClass from './pages/SelectClass';      // Class selection page
 import AccountProfile from './pages/AccountProfile';
 import AccountSettings from './pages/AccountSettings';
+import PricingPage from './pages/PricingPage';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
+import MyBadges from './pages/MyBadges';
+import SchoolDashboard from './pages/SchoolDashboard';
+import NotFound from './pages/NotFound';
 
-// ✅ UPDATED: Import QuizSeparated instead of TakeQuiz
 import QuizSeparated from './components/QuizSeparated';
 
 // Routes
 import PrivateRoute from './components/PrivateRoute';
 import RoleRoute from './components/RoleRoute';
 
-const App = () => {
+const AppRoutes = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // Logout handler for Layout component
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('studentClassSelection');
-    dispatch({ type: 'auth/logout' });
-    window.location.href = '/';
+    dispatch(logout()).finally(() => {
+      navigate('/', { replace: true });
+    });
   };
 
   return (
-    <Router>
-      <Routes>
+    <Routes>
         {/* ==========================================
             PUBLIC ROUTES (No Layout/Sidebar)
         ========================================== */}
@@ -63,6 +67,7 @@ const App = () => {
         <Route path="/auth" element={<AuthPortal />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/pricing" element={<PricingPage />} />
 
         {/* ==========================================
             PROTECTED ROUTES (With Layout/Sidebar)
@@ -71,11 +76,17 @@ const App = () => {
           <Route element={<PrivateRoute />}>
             <Route path="/account/profile" element={<AccountProfile />} />
             <Route path="/account/settings" element={<AccountSettings />} />
-            
-            {/* Teacher & School Admin Routes */}
-            <Route element={<RoleRoute allowedRoles={['teacher', 'school_admin']} />}>
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/failed" element={<PaymentFailed />} />
+            {/* Teacher Routes */}
+            <Route element={<RoleRoute allowedRoles={['teacher']} />}>
               <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
               <Route path="/teacher/notes/:id" element={<LessonNoteView />} />
+            </Route>
+
+            {/* School Admin Routes */}
+            <Route element={<RoleRoute allowedRoles={['school_admin']} />}>
+              <Route path="/school/dashboard" element={<SchoolDashboard />} />
             </Route>
 
             {/* ==========================================
@@ -95,16 +106,22 @@ const App = () => {
               <Route path="/student/dashboard" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/quiz/:id" element={<QuizSeparated />} />
+              <Route path="/student/badges" element={<MyBadges />} />
             </Route>
 
           </Route>
         </Route>
 
-        {/* Catch all - redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* 404 - catch all */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </Router>
   );
 };
+
+const App = () => (
+  <Router>
+    <AppRoutes />
+  </Router>
+);
 
 export default App;
