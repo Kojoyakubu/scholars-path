@@ -48,7 +48,6 @@ export const login = createAsyncThunk(
   async (userData, thunkAPI) => {
     try {
       const user = await authService.login(userData);
-      console.log('✅ Login service returned user:', user);
       return user;
     } catch (error) {
       const message =
@@ -145,7 +144,6 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.user = action.payload;
-        console.log('✅ Redux state updated with user:', action.payload);
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;

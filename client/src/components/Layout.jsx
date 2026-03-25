@@ -184,11 +184,8 @@ const Layout = ({ onLogout }) => {
   };
 
   const handleNavClick = (path) => {
-    console.log('🚀 Navigation clicked:', path); // Debug log
-    console.log('📍 Current location:', location.pathname); // Debug log
     navigate(path);
     setMobileOpen(false);
-    console.log('✅ Navigation executed'); // Debug log
   };
 
   // ═══════════════════════════════════════════════════════════

@@ -23,9 +23,7 @@ export const fetchItems = createAsyncThunk(
   'curriculum/fetchItems',
   async ({ entity }, thunkAPI) => {
     try {
-      console.log('🔍 Fetching curriculum items for:', entity);
       const data = await curriculumService.getItems(entity);
-      console.log('✅ Data received for', entity, ':', data);
       return { entity, data };
     } catch (e) {
       console.error('❌ Error fetching', entity, ':', e);
@@ -38,9 +36,7 @@ export const fetchChildren = createAsyncThunk(
   'curriculum/fetchChildren',
   async (arg, thunkAPI) => {
     try {
-      console.log('🔍 Fetching children:', arg);
       const data = await curriculumService.getChildrenOf(arg);
-      console.log('✅ Children received:', data);
       return { entity: arg.entity, data };
     } catch (e) {
       console.error('❌ Error fetching children:', e);
@@ -102,11 +98,9 @@ const curriculumSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchItems.fulfilled, (s, a) => {
-        console.log('📦 Storing', a.payload.entity, ':', a.payload.data);
         s[a.payload.entity] = a.payload.data;
       })
       .addCase(fetchChildren.fulfilled, (s, a) => {
-        console.log('📦 Storing children', a.payload.entity, ':', a.payload.data);
         s[a.payload.entity] = a.payload.data;
       })
       .addCase(createItem.fulfilled, (s, a) => s[a.payload.entity].push(a.payload.data))

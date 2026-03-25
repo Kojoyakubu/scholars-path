@@ -600,7 +600,6 @@ function Dashboard() {
   useEffect(() => {
     if (user && user.role === 'student') {
       if (!selections.level || !selections.class) {
-        console.log('⚠️ No class selection found, redirecting to selection page');
         navigate('/student/select-class');
       }
     }

@@ -41,19 +41,12 @@ const SelectClass = () => {
 
   // Load levels on mount
   useEffect(() => {
-    console.log('🔄 SelectClass: Loading levels...');
     dispatch(fetchItems({ entity: 'levels' })); // ✅ FIXED: Changed from fetchItems('levels')
   }, [dispatch]);
-
-  // Debug: Log when levels are loaded
-  useEffect(() => {
-    console.log('📊 SelectClass: Levels loaded:', levels);
-  }, [levels]);
 
   // Load classes when level is selected
   useEffect(() => {
     if (selectedLevel) {
-      console.log('🔄 SelectClass: Loading classes for level:', selectedLevel);
       setIsLoadingClasses(true);
       dispatch(
         fetchChildren({
@@ -68,25 +61,16 @@ const SelectClass = () => {
     }
   }, [selectedLevel, dispatch]);
 
-  // Debug: Log when classes are loaded
-  useEffect(() => {
-    console.log('📊 SelectClass: Classes loaded:', classes);
-  }, [classes]);
-
   const handleLevelChange = (event) => {
-    console.log('✅ Level selected:', event.target.value);
     setSelectedLevel(event.target.value);
   };
 
   const handleClassChange = (event) => {
-    console.log('✅ Class selected:', event.target.value);
     setSelectedClass(event.target.value);
   };
 
   const handleContinue = () => {
     if (selectedLevel && selectedClass) {
-      console.log('💾 Saving selections:', { levelId: selectedLevel, classId: selectedClass });
-      
       // Save selections to localStorage
       localStorage.setItem(
         'studentClassSelection',
@@ -96,7 +80,6 @@ const SelectClass = () => {
         })
       );
 
-      console.log('🚀 Navigating to dashboard...');
       // Navigate to dashboard
       navigate('/student/dashboard');
     }

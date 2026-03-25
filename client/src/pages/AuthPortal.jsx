@@ -87,12 +87,8 @@ const AuthPortal = () => {
   };
 
   useEffect(() => {
-    console.log('🔍 AuthPortal useEffect - isSuccess:', isSuccess, 'user:', user);
-    
     if (isSuccess && user) {
       const displayName = getUserDisplayName();
-      console.log('✅ User logged in:', user);
-      console.log('👤 User role:', user.role);
 
       // Set welcome message
       setAiTitle(
@@ -117,13 +113,11 @@ const AuthPortal = () => {
           default:
             targetRoute = '/dashboard';
         }
-        
-        console.log('🚀 Navigating to:', targetRoute);
+
         navigate(targetRoute, { replace: true });
       }, 1200);
 
       return () => {
-        console.log('🧹 Cleaning up timer');
         clearTimeout(timer);
       };
     }

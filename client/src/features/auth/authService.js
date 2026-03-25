@@ -24,17 +24,8 @@ const register = async (userData) => {
     throw new Error('Password is required');
   }
   
-  console.log('📤 Sending registration with exact format:', backendData);
-  console.log('📤 Data types:', {
-    fullName: typeof backendData.fullName,
-    email: typeof backendData.email,
-    password: typeof backendData.password,
-    role: typeof backendData.role,
-  });
-  
   try {
     const response = await api.post('/api/users/register', backendData);
-    console.log('✅ Registration successful:', response.data);
     return response.data;
   } catch (error) {
     console.error('❌ Registration failed');

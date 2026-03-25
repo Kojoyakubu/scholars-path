@@ -92,10 +92,6 @@ const QuizSeparated = () => {
         const response = await api.get(`/api/student/quiz/${id}`);
         const data = response.data;
         
-        console.log('Quiz data loaded:', data);
-        console.log('Total questions:', data.questions?.length);
-        console.log('Sample question structure:', data.questions?.[0]);
-        
         setQuiz(data);
         
         // Separate questions by type
@@ -132,14 +128,6 @@ const QuizSeparated = () => {
         
         setAutoGradedQuestions(autoGraded);
         setManualQuestions(manual);
-        
-        console.log(`Separated: ${autoGraded.length} auto-graded, ${manual.length} manual questions`);
-        console.log('Uncategorized questions:', uncategorized.length);
-        if (uncategorized.length > 0) {
-          console.log('Sample uncategorized question:', uncategorized[0]);
-        }
-        console.log('Auto-graded sample:', autoGraded[0]);
-        console.log('Manual sample:', manual[0]);
         
         // Initialize timer if quiz has time limit (only for auto-graded section)
         if (data.timeLimit && autoGraded.length > 0) {
@@ -210,35 +198,21 @@ const QuizSeparated = () => {
     let correct = 0;
     let total = autoGradedQuestions.length;
 
-    console.log('=== SCORING DEBUG ===');
-    console.log('Total questions to score:', total);
-    console.log('User answers:', answers);
-
     autoGradedQuestions.forEach((question, index) => {
       const userAnswer = answers[question._id];
-      
-      console.log(`\nQuestion ${index + 1}:`, question.text?.substring(0, 50) + '...');
-      console.log('User answered:', userAnswer);
-      
+
       if (!userAnswer) {
-        console.log('  ❌ No answer provided');
         return; // Skip unanswered questions
       }
       
       // Method 1: Check if question has correctAnswer field
       if (question.correctAnswer) {
-        console.log('  Using correctAnswer field:', question.correctAnswer);
         if (userAnswer === question.correctAnswer) {
           correct++;
-          console.log('  ✅ CORRECT');
-        } else {
-          console.log('  ❌ WRONG');
         }
       } 
       // Method 2: Check if options have isCorrect flag (most common)
       else if (question.options && Array.isArray(question.options)) {
-        console.log('  Options:', question.options.length);
-        
         const correctOption = question.options.find(opt => {
           if (typeof opt === 'object' && opt.isCorrect === true) {
             return true;
@@ -247,28 +221,15 @@ const QuizSeparated = () => {
         });
         
         if (correctOption) {
-          console.log('  Correct option found:', correctOption);
-          
           // Check if user's answer matches the correct option
           const correctValue = correctOption._id || correctOption.text;
-          console.log('  Comparing:', userAnswer, '===', correctValue);
-          
+
           if (userAnswer === correctValue || userAnswer === correctOption.text) {
             correct++;
-            console.log('  ✅ CORRECT');
-          } else {
-            console.log('  ❌ WRONG - Answer doesn\'t match');
           }
-        } else {
-          console.log('  ⚠️ No correct option found (no isCorrect flag)');
         }
       }
     });
-
-    console.log('\n=== FINAL SCORE ===');
-    console.log('Correct:', correct);
-    console.log('Total:', total);
-    console.log('Percentage:', Math.round((correct / total) * 100) + '%');
 
     return {
       correct,
@@ -282,20 +243,6 @@ const QuizSeparated = () => {
     setLoading(true);
     
     try {
-      console.log('=== DEBUG: ALL ANSWERS IN STATE ===');
-      console.log('Total answers in state:', Object.keys(answers).length);
-      console.log('All answers:', answers);
-      
-      console.log('\n=== DEBUG: AUTO-GRADED QUESTIONS ===');
-      console.log('Total auto-graded questions:', autoGradedQuestions.length);
-      autoGradedQuestions.forEach((q, index) => {
-        console.log(`Question ${index + 1} ID:`, q._id);
-        console.log(`  Has answer?`, answers[q._id] ? 'YES' : 'NO');
-        if (answers[q._id]) {
-          console.log(`  Answer:`, answers[q._id]);
-        }
-      });
-      
       // Only send auto-graded answers for scoring
       const autoGradedAnswers = {};
       autoGradedQuestions.forEach(q => {
@@ -303,24 +250,12 @@ const QuizSeparated = () => {
           autoGradedAnswers[q._id] = answers[q._id];
         }
       });
-      
-      console.log('\n=== SUBMITTING TO BACKEND ===');
-      console.log('Quiz ID:', id);
-      console.log('Answers being sent:', autoGradedAnswers);
-      console.log('Number of answers being sent:', Object.keys(autoGradedAnswers).length);
-      console.log('Total auto-graded questions:', autoGradedQuestions.length);
-      
+
       // Backend will calculate the score and return it
       const response = await api.post(`/api/student/quiz/${id}/submit-auto-graded`, {
         answers: autoGradedAnswers,
         completedAt: new Date().toISOString()
       });
-
-      console.log('=== BACKEND RESPONSE ===');
-      console.log('Score:', response.data.score);
-      console.log('Total Questions:', response.data.totalQuestions);
-      console.log('Percentage:', response.data.percentage);
-      console.log('Feedback:', response.data.feedback);
       
       // Use the score calculated by the backend
       const scoreData = {
@@ -390,7 +325,6 @@ const QuizSeparated = () => {
             <Button
               startIcon={<ArrowBackIcon />}
               onClick={() => {
-                console.log('Back to Results clicked');
                 setShowMCQAnswers(false);
               }}
               sx={{ mb: 3 }}
@@ -613,11 +547,7 @@ const QuizSeparated = () => {
                 size="large"
                 startIcon={<VisibilityIcon />}
                 onClick={() => {
-                  console.log('View Answers button clicked!');
-                  console.log('Current state - autoGradedSubmitted:', autoGradedSubmitted);
-                  console.log('Current state - activeTab:', activeTab);
                   setShowMCQAnswers(true);
-                  console.log('Set showMCQAnswers to true');
                 }}
                 color="primary"
               >
@@ -806,15 +736,6 @@ const QuizSeparated = () => {
                         </Typography>
                       </Box>
                     </Box>
-
-                    {/* Debug info for manual questions */}
-                    {activeTab === 1 && (
-                      <Box sx={{ display: 'none' }}>
-                        {console.log('Current manual question:', currentQuestion)}
-                        {console.log('Question keys:', currentQuestion ? Object.keys(currentQuestion) : 'No question')}
-                      </Box>
-                    )}
-
                     <Divider sx={{ my: 3 }} />
 
                     {/* Answer Options - Auto-graded Section */}
