@@ -212,12 +212,7 @@ const TakeQuiz = () => {
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        console.log('Fetching quiz with ID:', id);
         const res = await api.get(`/api/student/quiz/${id}`);
-        console.log('Quiz data received:', res.data);
-        console.log('Questions array:', res.data.questions);
-        console.log('First question:', res.data.questions?.[0]);
-        console.log('First question options:', res.data.questions?.[0]?.options);
         setQuestions(res.data.questions || []);
       } catch (err) {
         console.error('Failed to load quiz', err);
@@ -281,7 +276,6 @@ const TakeQuiz = () => {
     setIsLoadingAnswers(true);
     try {
       const res = await api.get(`/api/student/quiz/${id}/answers`);
-      console.log('Answer key received:', res.data);
       setAnswerKey(res.data);
       setShowAnswerKey(true);
     } catch (err) {
@@ -337,9 +331,7 @@ const TakeQuiz = () => {
                 // Handle both string options and object options
                 const optionText = typeof opt === 'string' ? opt : opt?.text;
                 const optionValue = typeof opt === 'string' ? opt : opt?._id;
-                
-                console.log('Rendering option', i, ':', { opt, optionText, optionValue });
-                
+
                 return (
                   <Button
                     key={i}
