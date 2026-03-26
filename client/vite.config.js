@@ -18,12 +18,24 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
 
+          if (id.includes('jspdf')) {
+            return 'vendor-jspdf';
+          }
+
+          if (id.includes('html2canvas')) {
+            return 'vendor-html2canvas';
+          }
+
           if (id.includes('react') || id.includes('scheduler')) {
             return 'vendor-react';
           }
 
           if (id.includes('@mui') || id.includes('@emotion')) {
             return 'vendor-mui';
+          }
+
+          if (id.includes('react-router-dom') || id.includes('@remix-run/router')) {
+            return 'vendor-router';
           }
 
           if (id.includes('framer-motion')) {
@@ -34,7 +46,26 @@ export default defineConfig({
             return 'vendor-redux';
           }
 
-          return 'vendor-misc';
+          if (
+            id.includes('react-markdown') ||
+            id.includes('remark-') ||
+            id.includes('rehype-') ||
+            id.includes('unified') ||
+            id.includes('micromark') ||
+            id.includes('mdast')
+          ) {
+            return 'vendor-markdown';
+          }
+
+          if (id.includes('axios') || id.includes('dompurify')) {
+            return 'vendor-utils';
+          }
+
+          if (id.includes('react-toastify') || id.includes('react-hot-toast') || id.includes('react-select')) {
+            return 'vendor-ui-extras';
+          }
+
+          return undefined;
         },
       },
     },
