@@ -2,6 +2,7 @@
  * Teacher Analytics dialog — extracted from TeacherDashboard.
  */
 import {
+  Box,
   Button,
   Chip,
   Dialog,
