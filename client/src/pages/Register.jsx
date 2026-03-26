@@ -384,6 +384,7 @@ const Register = () => {
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                           onClick={() => setShowPassword(!showPassword)}
                           edge="end"
                           disabled={isLoading}

@@ -15,25 +15,7 @@ import {
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import api from '../api/axios';
-
-// Inline AI card component
-const AIInsightsCard = ({ title = 'AI Insights', content }) => {
-  if (!content) return null;
-  return (
-    <Paper
-      sx={{ p: 3, mt: 4, borderLeft: '6px solid #6c63ff', borderRadius: 2 }}
-      component={motion.div}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Typography variant="h6" gutterBottom>{title}</Typography>
-      <Typography variant="body1" color="text.secondary" whiteSpace="pre-line">
-        {content}
-      </Typography>
-    </Paper>
-  );
-};
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const PricingPage = () => {
   const theme = useTheme();

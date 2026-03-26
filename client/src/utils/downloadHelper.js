@@ -1,6 +1,3 @@
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
-
 const sanitizeFileName = (topic, fallbackExtension) => {
   const baseName = String(topic || 'document')
     .trim()
@@ -46,6 +43,11 @@ const triggerDownload = (blob, fileName) => {
 export const downloadAsPdf = async (elementId, topic, options = {}) => {
   const element = document.getElementById(elementId);
   if (!element) return null;
+
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import('html2canvas'),
+    import('jspdf'),
+  ]);
 
   const defaultOptions = {
     margin: [10, 10, 10, 10],

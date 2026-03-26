@@ -104,12 +104,12 @@ function BundleResultViewer({
           <Stack direction="row" spacing={1}>
             {onToggleFullscreen && (
               <Tooltip title={fullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
-                <IconButton onClick={onToggleFullscreen}>
+                <IconButton aria-label={fullScreen ? 'Exit fullscreen' : 'Enter fullscreen'} onClick={onToggleFullscreen}>
                   {fullScreen ? <CloseFullscreen /> : <OpenInFull />}
                 </IconButton>
               </Tooltip>
             )}
-            <IconButton onClick={onClose}>
+            <IconButton aria-label="Close dialog" onClick={onClose}>
               <Close />
             </IconButton>
           </Stack>

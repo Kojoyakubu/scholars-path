@@ -90,7 +90,11 @@ function LessonNoteForm({
           </Box>
           {onToggleFullscreen && (
             <Tooltip title={fullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
-              <IconButton size="small" onClick={onToggleFullscreen}>
+              <IconButton
+                size="small"
+                aria-label={fullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                onClick={onToggleFullscreen}
+              >
                 {fullScreen ? <CloseFullscreen fontSize="small" /> : <OpenInFull fontSize="small" />}
               </IconButton>
             </Tooltip>

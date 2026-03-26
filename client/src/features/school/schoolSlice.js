@@ -10,9 +10,9 @@ const initialState = {
   message: '',
 };
 
-export const getSchoolDashboard = createAsyncThunk('school/getDashboard', async (schoolId, thunkAPI) => {
+export const getSchoolDashboard = createAsyncThunk('school/getDashboard', async (_, thunkAPI) => {
   try {
-    return await schoolService.getSchoolDashboard(schoolId);
+    return await schoolService.getSchoolDashboard();
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);

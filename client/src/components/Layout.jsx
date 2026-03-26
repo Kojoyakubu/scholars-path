@@ -368,6 +368,7 @@ const Layout = ({ onLogout }) => {
         <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
           <Tooltip title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} placement="right">
             <IconButton
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               onClick={handleCollapse}
               sx={{
                 width: '100%',
@@ -486,6 +487,7 @@ const Layout = ({ onLogout }) => {
             {/* Notifications */}
             <Tooltip title="Notifications">
               <IconButton
+                aria-label="Open notifications"
                 sx={{
                   color: 'white',
                   '&:hover': {
@@ -509,7 +511,7 @@ const Layout = ({ onLogout }) => {
 
             {/* User Avatar & Menu */}
             <Tooltip title="Account settings">
-              <IconButton onClick={handleMenuOpen} sx={{ ml: 0.5 }}>
+              <IconButton aria-label="Open account menu" onClick={handleMenuOpen} sx={{ ml: 0.5 }}>
                 <Avatar
                   alt={user?.fullName || user?.name}
                   src={user?.avatar}

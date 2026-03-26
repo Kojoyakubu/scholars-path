@@ -14,55 +14,25 @@ import {
   useMediaQuery,
   Button,
 } from '@mui/material';
-import { motion } from 'framer-motion';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import api from '../api/axios';
-
-// Inline AI Insights component
-const AIInsightsCard = ({ title = 'AI Insights', content }) => {
-  if (!content) return null;
-  return (
-    <Paper
-      sx={{ p: 3, mt: 4, borderLeft: '6px solid #6c63ff', borderRadius: 2 }}
-      component={motion.div}
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Typography variant="h6" gutterBottom>{title}</Typography>
-      <Typography variant="body1" color="text.secondary" whiteSpace="pre-line">
-        {content}
-      </Typography>
-    </Paper>
-  );
-};
+import AIInsightsCard from '../components/AIInsightsCard';
+import { getSchoolDashboard } from '../features/school/schoolSlice';
 
 const SchoolDashboard = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const dispatch = useDispatch();
   const insightsRef = useRef(null);
   const { user } = useSelector((state) => state.auth || {});
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { dashboardData, isLoading, isError, message } = useSelector((state) => state.school || {});
   const [aiInsights, setAiInsights] = useState('');
   const [aiError, setAiError] = useState('');
 
   // Load dashboard metrics
   useEffect(() => {
-    let isMounted = true;
-    const fetchDashboardData = async () => {
-      try {
-        const res = await api.get('/api/school/summary');
-        if (isMounted) setDashboardData(res.data);
-      } catch (err) {
-        console.error('Failed to load school dashboard', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchDashboardData();
-    return () => { isMounted = false; };
-  }, []);
+    dispatch(getSchoolDashboard());
+  }, [dispatch]);
 
   // Load personalized AI school insights
   useEffect(() => {
@@ -84,11 +54,21 @@ const SchoolDashboard = () => {
     return () => { isMounted = false; };
   }, [user]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Box textAlign="center" mt={10}>
         <CircularProgress />
         <Typography mt={2}>Loading school dashboard…</Typography>
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Box textAlign="center" mt={10}>
+        <Typography color="error">
+          {message || 'Failed to load school dashboard.'}
+        </Typography>
       </Box>
     );
   }

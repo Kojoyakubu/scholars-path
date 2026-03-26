@@ -2,24 +2,20 @@
  * Teacher Analytics dialog — extracted from TeacherDashboard.
  */
 import {
-  Box,
   Button,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Grid,
-  IconButton,
   List,
   ListItem,
   ListItemText,
   Paper,
   Stack,
-  Tooltip,
   Typography,
 } from '@mui/material';
-import { OpenInFull, CloseFullscreen } from '@mui/icons-material';
+import DialogFullscreenTitle from './DialogFullscreenTitle';
 
 const analyticsKpiCardSx = {
   p: 2,
@@ -37,23 +33,6 @@ const dialogBodySx = {
   py: 2,
 };
 
-function FullscreenTitle({ title, isFullscreen, onToggle }) {
-  return (
-    <DialogTitle sx={{ pb: 1.25, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-        <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
-          {title}
-        </Typography>
-        <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
-          <IconButton size="small" onClick={onToggle}>
-            {isFullscreen ? <CloseFullscreen fontSize="small" /> : <OpenInFull fontSize="small" />}
-          </IconButton>
-        </Tooltip>
-      </Box>
-    </DialogTitle>
-  );
-}
-
 export default function AnalyticsDialog({
   open,
   onClose,
@@ -70,7 +49,7 @@ export default function AnalyticsDialog({
       fullWidth
       maxWidth={fullScreen ? false : 'lg'}
     >
-      <FullscreenTitle title="Analytics" isFullscreen={fullScreen} onToggle={onToggleFullscreen} />
+      <DialogFullscreenTitle title="Analytics" isFullscreen={fullScreen} onToggle={onToggleFullscreen} />
       <DialogContent tabIndex={0} sx={dialogBodySx}>
         {/* KPI row */}
         <Grid container spacing={2} sx={{ mb: 3 }}>

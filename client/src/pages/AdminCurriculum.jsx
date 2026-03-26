@@ -1,4 +1,3 @@
-// /client/src/pages/AdminCurriculum.jsx
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -27,14 +26,21 @@ import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from 'framer-motion';
-import api from '../api/axios';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchItems,
+  fetchChildren,
+  createItem,
+  updateItem,
+  deleteItem,
+  clearChildren,
+} from '../features/curriculum/curriculumSlice';
+
+const normalizeEntity = (type) => (type === 'sub-strands' ? 'subStrands' : type);
 
 const AdminCurriculum = () => {
-  const [levels, setLevels] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [strands, setStrands] = useState([]);
-  const [subStrands, setSubStrands] = useState([]);
+  const dispatch = useDispatch();
+  const { levels, classes, subjects, strands, subStrands, isLoading } = useSelector((state) => state.curriculum);
 
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [selectedClass, setSelectedClass] = useState(null);
@@ -49,7 +55,6 @@ const AdminCurriculum = () => {
   const [editingItem, setEditingItem] = useState(null); // { type, id }
   const [editName, setEditName] = useState('');
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Fetch all levels on mount
@@ -59,90 +64,67 @@ const AdminCurriculum = () => {
 
   const fetchLevels = async () => {
     try {
-      setLoading(true);
       setError('');
-      const response = await api.get('/api/curriculum/levels');
-      setLevels(response.data || []);
-    } catch (error) {
-      console.error('Error fetching levels:', error);
+      await dispatch(fetchItems({ entity: 'levels' })).unwrap();
+    } catch {
       setError('Failed to load levels');
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchClassesForLevel = async (levelId) => {
     try {
-      setLoading(true);
       setError('');
-      const response = await api.get(`/api/curriculum/levels/${levelId}/classes`);
-      setClasses(response.data || []);
+      await dispatch(
+        fetchChildren({ entity: 'classes', parentEntity: 'levels', parentId: levelId })
+      ).unwrap();
       setSelectedLevel(levelId);
-      // Clear lower levels
-      setSubjects([]);
-      setStrands([]);
-      setSubStrands([]);
+      dispatch(clearChildren({ entities: ['subjects', 'strands', 'subStrands'] }));
       setSelectedClass(null);
       setSelectedSubject(null);
       setSelectedStrand(null);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
+    } catch {
       setError('Failed to load classes');
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchSubjectsForClass = async (classId) => {
     try {
-      setLoading(true);
       setError('');
-      const response = await api.get(`/api/curriculum/classes/${classId}/subjects`);
-      setSubjects(response.data || []);
+      await dispatch(
+        fetchChildren({ entity: 'subjects', parentEntity: 'classes', parentId: classId })
+      ).unwrap();
       setSelectedClass(classId);
-      // Clear lower levels
-      setStrands([]);
-      setSubStrands([]);
+      dispatch(clearChildren({ entities: ['strands', 'subStrands'] }));
       setSelectedSubject(null);
       setSelectedStrand(null);
-    } catch (error) {
-      console.error('Error fetching subjects:', error);
+    } catch {
       setError('Failed to load subjects');
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchStrandsForSubject = async (subjectId) => {
     try {
-      setLoading(true);
       setError('');
-      const response = await api.get(`/api/curriculum/subjects/${subjectId}/strands`);
-      setStrands(response.data || []);
+      await dispatch(
+        fetchChildren({ entity: 'strands', parentEntity: 'subjects', parentId: subjectId })
+      ).unwrap();
       setSelectedSubject(subjectId);
-      // Clear lower levels
-      setSubStrands([]);
+      dispatch(clearChildren({ entities: ['subStrands'] }));
       setSelectedStrand(null);
-    } catch (error) {
-      console.error('Error fetching strands:', error);
+    } catch {
       setError('Failed to load strands');
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchSubStrandsForStrand = async (strandId) => {
     try {
-      setLoading(true);
       setError('');
-      const response = await api.get(`/api/curriculum/strands/${strandId}/sub-strands`);
-      setSubStrands(response.data || []);
+      await dispatch(
+        fetchChildren({ entity: 'subStrands', parentEntity: 'strands', parentId: strandId })
+      ).unwrap();
       setSelectedStrand(strandId);
-    } catch (error) {
-      console.error('Error fetching sub-strands:', error);
+    } catch {
       setError('Failed to load sub-strands');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -150,70 +132,63 @@ const AdminCurriculum = () => {
   const handleCreate = async () => {
     try {
       if (!dialogType || !newName.trim()) return;
-      
-      setLoading(true);
+
       setError('');
-      
-      const payload = { name: newName.trim() };
+
+      const itemData = { name: newName.trim() };
       if (parentId) {
-        payload.parentId = parentId;
+        itemData.parentId = parentId;
       }
-      
-      await api.post(`/api/curriculum/${dialogType}`, payload);
+
+      await dispatch(
+        createItem({ entity: normalizeEntity(dialogType), itemData })
+      ).unwrap();
 
       // Refresh the appropriate list
       if (dialogType === 'levels') {
-        fetchLevels();
+        await fetchLevels();
       } else if (dialogType === 'classes' && selectedLevel) {
-        fetchClassesForLevel(selectedLevel);
+        await fetchClassesForLevel(selectedLevel);
       } else if (dialogType === 'subjects' && selectedClass) {
-        fetchSubjectsForClass(selectedClass);
+        await fetchSubjectsForClass(selectedClass);
       } else if (dialogType === 'strands' && selectedSubject) {
-        fetchStrandsForSubject(selectedSubject);
+        await fetchStrandsForSubject(selectedSubject);
       } else if (dialogType === 'sub-strands' && selectedStrand) {
-        fetchSubStrandsForStrand(selectedStrand);
+        await fetchSubStrandsForStrand(selectedStrand);
       }
 
       setNewName('');
       setDialogOpen(false);
-    } catch (error) {
-      console.error(`Error creating ${dialogType}:`, error);
+    } catch {
       setError(`Failed to create ${dialogType}`);
-    } finally {
-      setLoading(false);
     }
   };
 
   // Delete item
   const handleDelete = async (type, id) => {
     if (!window.confirm(`Are you sure you want to delete this ${type}?`)) return;
-    
+
     try {
-      setLoading(true);
       setError('');
-      await api.delete(`/api/curriculum/${type}/${id}`);
+      await dispatch(
+        deleteItem({ entity: normalizeEntity(type), itemId: id })
+      ).unwrap();
 
       // Refresh the appropriate list
       if (type === 'levels') {
-        fetchLevels();
-        setClasses([]);
-        setSubjects([]);
-        setStrands([]);
-        setSubStrands([]);
+        await fetchLevels();
+        dispatch(clearChildren({ entities: ['classes', 'subjects', 'strands', 'subStrands'] }));
       } else if (type === 'classes' && selectedLevel) {
-        fetchClassesForLevel(selectedLevel);
+        await fetchClassesForLevel(selectedLevel);
       } else if (type === 'subjects' && selectedClass) {
-        fetchSubjectsForClass(selectedClass);
+        await fetchSubjectsForClass(selectedClass);
       } else if (type === 'strands' && selectedSubject) {
-        fetchStrandsForSubject(selectedSubject);
+        await fetchStrandsForSubject(selectedSubject);
       } else if (type === 'sub-strands' && selectedStrand) {
-        fetchSubStrandsForStrand(selectedStrand);
+        await fetchSubStrandsForStrand(selectedStrand);
       }
-    } catch (error) {
-      console.error(`Error deleting ${type}:`, error);
+    } catch {
       setError(`Failed to delete ${type}`);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -233,29 +208,31 @@ const AdminCurriculum = () => {
     const { type, id } = editingItem;
 
     try {
-      setLoading(true);
       setError('');
-      await api.put(`/api/curriculum/${type}/${id}`, { name: editName.trim() });
+      await dispatch(
+        updateItem({
+          entity: normalizeEntity(type),
+          itemId: id,
+          itemData: { name: editName.trim() },
+        })
+      ).unwrap();
 
       // Refresh the appropriate list
       if (type === 'levels') {
-        fetchLevels();
+        await fetchLevels();
       } else if (type === 'classes' && selectedLevel) {
-        fetchClassesForLevel(selectedLevel);
+        await fetchClassesForLevel(selectedLevel);
       } else if (type === 'subjects' && selectedClass) {
-        fetchSubjectsForClass(selectedClass);
+        await fetchSubjectsForClass(selectedClass);
       } else if (type === 'strands' && selectedSubject) {
-        fetchStrandsForSubject(selectedSubject);
+        await fetchStrandsForSubject(selectedSubject);
       } else if (type === 'sub-strands' && selectedStrand) {
-        fetchSubStrandsForStrand(selectedStrand);
+        await fetchSubStrandsForStrand(selectedStrand);
       }
 
       cancelEditing();
-    } catch (error) {
-      console.error(`Error updating ${type}:`, error);
+    } catch {
       setError(`Failed to update ${type}`);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -279,7 +256,7 @@ const AdminCurriculum = () => {
             Curriculum Management
           </Typography>
           <Tooltip title="Refresh All">
-            <IconButton onClick={fetchLevels}>
+            <IconButton aria-label="Refresh curriculum" onClick={fetchLevels}>
               <RefreshIcon />
             </IconButton>
           </Tooltip>
@@ -323,6 +300,7 @@ const AdminCurriculum = () => {
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <IconButton 
+                      aria-label="Expand level"
                       size="small" 
                       onClick={() => fetchClassesForLevel(level._id)}
                       color={selectedLevel === level._id ? 'primary' : 'default'}
@@ -347,12 +325,12 @@ const AdminCurriculum = () => {
                   {editingItem?.type === 'levels' && editingItem?.id === level._id ? (
                     <>
                       <Tooltip title="Save">
-                        <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                        <IconButton aria-label="Save level" onClick={handleEdit} size="small" disabled={!editName.trim() || isLoading}>
                           <CheckIcon color="success" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Cancel">
-                        <IconButton onClick={cancelEditing} size="small">
+                        <IconButton aria-label="Cancel editing" onClick={cancelEditing} size="small">
                           <CloseIcon />
                         </IconButton>
                       </Tooltip>
@@ -360,17 +338,17 @@ const AdminCurriculum = () => {
                   ) : (
                     <>
                       <Tooltip title="Edit Level">
-                        <IconButton onClick={() => startEditing('levels', level._id, level.name)} size="small">
+                        <IconButton aria-label="Edit level" onClick={() => startEditing('levels', level._id, level.name)} size="small">
                           <EditIcon color="info" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Add Class">
-                        <IconButton onClick={() => openDialog('classes', level._id)} size="small">
+                        <IconButton aria-label="Add class" onClick={() => openDialog('classes', level._id)} size="small">
                           <AddIcon color="primary" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete Level">
-                        <IconButton onClick={() => handleDelete('levels', level._id)} size="small">
+                        <IconButton aria-label="Delete level" onClick={() => handleDelete('levels', level._id)} size="small">
                           <DeleteIcon color="error" />
                         </IconButton>
                       </Tooltip>
@@ -408,6 +386,7 @@ const AdminCurriculum = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <IconButton 
+                          aria-label="Expand class"
                           size="small" 
                           onClick={() => fetchSubjectsForClass(c._id)}
                           color={selectedClass === c._id ? 'primary' : 'default'}
@@ -433,12 +412,12 @@ const AdminCurriculum = () => {
                       {editingItem?.type === 'classes' && editingItem?.id === c._id ? (
                         <>
                           <Tooltip title="Save">
-                            <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                            <IconButton aria-label="Save class" onClick={handleEdit} size="small" disabled={!editName.trim() || isLoading}>
                               <CheckIcon color="success" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Cancel">
-                            <IconButton onClick={cancelEditing} size="small">
+                            <IconButton aria-label="Cancel editing" onClick={cancelEditing} size="small">
                               <CloseIcon />
                             </IconButton>
                           </Tooltip>
@@ -446,17 +425,17 @@ const AdminCurriculum = () => {
                       ) : (
                         <>
                           <Tooltip title="Edit Class">
-                            <IconButton onClick={() => startEditing('classes', c._id, c.name)} size="small">
+                            <IconButton aria-label="Edit class" onClick={() => startEditing('classes', c._id, c.name)} size="small">
                               <EditIcon color="info" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Add Subject">
-                            <IconButton onClick={() => openDialog('subjects', c._id)} size="small">
+                            <IconButton aria-label="Add subject" onClick={() => openDialog('subjects', c._id)} size="small">
                               <AddIcon color="primary" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete Class">
-                            <IconButton onClick={() => handleDelete('classes', c._id)} size="small">
+                            <IconButton aria-label="Delete class" onClick={() => handleDelete('classes', c._id)} size="small">
                               <DeleteIcon color="error" />
                             </IconButton>
                           </Tooltip>
@@ -496,6 +475,7 @@ const AdminCurriculum = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <IconButton 
+                          aria-label="Expand subject"
                           size="small" 
                           onClick={() => fetchStrandsForSubject(s._id)}
                           color={selectedSubject === s._id ? 'primary' : 'default'}
@@ -521,12 +501,12 @@ const AdminCurriculum = () => {
                       {editingItem?.type === 'subjects' && editingItem?.id === s._id ? (
                         <>
                           <Tooltip title="Save">
-                            <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                            <IconButton aria-label="Save subject" onClick={handleEdit} size="small" disabled={!editName.trim() || isLoading}>
                               <CheckIcon color="success" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Cancel">
-                            <IconButton onClick={cancelEditing} size="small">
+                            <IconButton aria-label="Cancel editing" onClick={cancelEditing} size="small">
                               <CloseIcon />
                             </IconButton>
                           </Tooltip>
@@ -534,17 +514,17 @@ const AdminCurriculum = () => {
                       ) : (
                         <>
                           <Tooltip title="Edit Subject">
-                            <IconButton onClick={() => startEditing('subjects', s._id, s.name)} size="small">
+                            <IconButton aria-label="Edit subject" onClick={() => startEditing('subjects', s._id, s.name)} size="small">
                               <EditIcon color="info" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Add Strand">
-                            <IconButton onClick={() => openDialog('strands', s._id)} size="small">
+                            <IconButton aria-label="Add strand" onClick={() => openDialog('strands', s._id)} size="small">
                               <AddIcon color="primary" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete Subject">
-                            <IconButton onClick={() => handleDelete('subjects', s._id)} size="small">
+                            <IconButton aria-label="Delete subject" onClick={() => handleDelete('subjects', s._id)} size="small">
                               <DeleteIcon color="error" />
                             </IconButton>
                           </Tooltip>
@@ -584,6 +564,7 @@ const AdminCurriculum = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <IconButton 
+                          aria-label="Expand strand"
                           size="small" 
                           onClick={() => fetchSubStrandsForStrand(st._id)}
                           color={selectedStrand === st._id ? 'primary' : 'default'}
@@ -609,12 +590,12 @@ const AdminCurriculum = () => {
                       {editingItem?.type === 'strands' && editingItem?.id === st._id ? (
                         <>
                           <Tooltip title="Save">
-                            <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                            <IconButton aria-label="Save strand" onClick={handleEdit} size="small" disabled={!editName.trim() || isLoading}>
                               <CheckIcon color="success" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Cancel">
-                            <IconButton onClick={cancelEditing} size="small">
+                            <IconButton aria-label="Cancel editing" onClick={cancelEditing} size="small">
                               <CloseIcon />
                             </IconButton>
                           </Tooltip>
@@ -622,17 +603,17 @@ const AdminCurriculum = () => {
                       ) : (
                         <>
                           <Tooltip title="Edit Strand">
-                            <IconButton onClick={() => startEditing('strands', st._id, st.name)} size="small">
+                            <IconButton aria-label="Edit strand" onClick={() => startEditing('strands', st._id, st.name)} size="small">
                               <EditIcon color="info" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Add Sub-Strand">
-                            <IconButton onClick={() => openDialog('sub-strands', st._id)} size="small">
+                            <IconButton aria-label="Add sub-strand" onClick={() => openDialog('sub-strands', st._id)} size="small">
                               <AddIcon color="primary" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete Strand">
-                            <IconButton onClick={() => handleDelete('strands', st._id)} size="small">
+                            <IconButton aria-label="Delete strand" onClick={() => handleDelete('strands', st._id)} size="small">
                               <DeleteIcon color="error" />
                             </IconButton>
                           </Tooltip>
@@ -682,12 +663,12 @@ const AdminCurriculum = () => {
                       {editingItem?.type === 'sub-strands' && editingItem?.id === ss._id ? (
                         <>
                           <Tooltip title="Save">
-                            <IconButton onClick={handleEdit} size="small" disabled={!editName.trim() || loading}>
+                            <IconButton aria-label="Save sub-strand" onClick={handleEdit} size="small" disabled={!editName.trim() || isLoading}>
                               <CheckIcon color="success" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Cancel">
-                            <IconButton onClick={cancelEditing} size="small">
+                            <IconButton aria-label="Cancel editing" onClick={cancelEditing} size="small">
                               <CloseIcon />
                             </IconButton>
                           </Tooltip>
@@ -695,12 +676,12 @@ const AdminCurriculum = () => {
                       ) : (
                         <>
                           <Tooltip title="Edit Sub-Strand">
-                            <IconButton onClick={() => startEditing('sub-strands', ss._id, ss.name)} size="small">
+                            <IconButton aria-label="Edit sub-strand" onClick={() => startEditing('sub-strands', ss._id, ss.name)} size="small">
                               <EditIcon color="info" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete Sub-Strand">
-                            <IconButton onClick={() => handleDelete('sub-strands', ss._id)} size="small">
+                            <IconButton aria-label="Delete sub-strand" onClick={() => handleDelete('sub-strands', ss._id)} size="small">
                               <DeleteIcon color="error" />
                             </IconButton>
                           </Tooltip>
@@ -730,7 +711,7 @@ const AdminCurriculum = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleCreate} disabled={!newName.trim() || loading}>
+          <Button variant="contained" onClick={handleCreate} disabled={!newName.trim() || isLoading}>
             Create
           </Button>
         </DialogActions>

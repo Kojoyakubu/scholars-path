@@ -4,7 +4,6 @@ import curriculumReducer from '../features/curriculum/curriculumSlice';
 import teacherReducer from '../features/teacher/teacherSlice';
 import studentReducer from '../features/student/studentSlice';
 import adminReducer from '../features/admin/adminSlice';
-import paymentReducer from '../features/payment/paymentSlice';
 import schoolReducer from '../features/school/schoolSlice';
 
 
@@ -15,7 +14,6 @@ export const store = configureStore({
     teacher: teacherReducer,
     student: studentReducer,
     admin: adminReducer,
-    payment: paymentReducer,
     school: schoolReducer,
   },
 });

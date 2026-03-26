@@ -244,6 +244,7 @@ const StudentDashboardBanner = ({
             >
               <Tooltip title={refreshing ? 'Refreshing...' : 'Refresh data'}>
                 <IconButton
+                  aria-label={refreshing ? 'Refreshing data' : 'Refresh data'}
                   onClick={onRefresh}
                   disabled={refreshing}
                   sx={{
@@ -260,6 +261,7 @@ const StudentDashboardBanner = ({
               </Tooltip>
               <Tooltip title={collapsed ? 'Expand' : 'Collapse'}>
                 <IconButton
+                  aria-label={collapsed ? 'Expand dashboard section' : 'Collapse dashboard section'}
                   onClick={() => setCollapsed(!collapsed)}
                   sx={{
                     color: 'white',
@@ -1234,6 +1236,7 @@ function Dashboard() {
                               </Button>
                               <Tooltip title="Download as PDF">
                                 <IconButton
+                                  aria-label="Download note as PDF"
                                   onClick={() => handleDownloadPdf(note)}
                                   sx={{
                                     border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
@@ -1247,6 +1250,7 @@ function Dashboard() {
                               </Tooltip>
                               <Tooltip title="Download as Word">
                                 <IconButton
+                                  aria-label="Download note as Word"
                                   onClick={() => handleDownloadWord(note)}
                                   sx={{
                                     border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
@@ -1333,7 +1337,7 @@ function Dashboard() {
                                  secondary={resource.fileType || 'File'}
                                  primaryTypographyProps={{ fontWeight: 500 }}
                                />
-                               <IconButton size="small" color="primary" href={resource.url} target="_blank">
+                               <IconButton aria-label="Open resource" size="small" color="primary" href={resource.url} target="_blank">
                                  <PlayArrowIcon />
                                </IconButton>
                              </Paper>
@@ -1420,6 +1424,7 @@ function Dashboard() {
                         </Box>
                       </Box>
                       <IconButton
+                        aria-label="Close note preview"
                         onClick={handleCloseNoteModal}
                         sx={{
                           color: 'white',

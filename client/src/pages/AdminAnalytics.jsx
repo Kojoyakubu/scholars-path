@@ -1,8 +1,13 @@
 // /client/src/pages/AdminAnalytics.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Grid, Paper, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-import adminService from '../features/admin/adminService';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  getAnalyticsOverview,
+  getTopTeachers,
+  getTopStudents,
+} from '../features/admin/adminSlice';
 
 const card = (label, value, delay = 0) => (
   <Grid item xs={12} sm={6} md={3}>
@@ -29,36 +34,47 @@ const card = (label, value, delay = 0) => (
 );
 
 const AdminAnalytics = () => {
-  const [overview, setOverview] = useState(null);
-  const [topTeachers, setTopTeachers] = useState([]);
-  const [topStudents, setTopStudents] = useState([]);
+  const dispatch = useDispatch();
+  const {
+    analyticsOverview,
+    topTeachers,
+    topStudents,
+    isLoading,
+    isError,
+    message,
+  } = useSelector((state) => state.admin);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [ov, tt, ts] = await Promise.all([
-          adminService.getAnalyticsOverview(),
-          adminService.getTopTeachers(),
-          adminService.getTopStudents(),
+        await Promise.all([
+          dispatch(getAnalyticsOverview()).unwrap(),
+          dispatch(getTopTeachers()).unwrap(),
+          dispatch(getTopStudents()).unwrap(),
         ]);
-        setOverview(ov);
-        setTopTeachers(tt || []);
-        setTopStudents(ts || []);
-      } catch (error) {
-        console.error('Error fetching analytics:', error);
+      } catch {
+        // Error state is handled by admin slice
       }
     };
 
     fetchAnalytics();
-  }, []);
+  }, [dispatch]);
+
+  if (isLoading && !analyticsOverview && topTeachers.length === 0 && topStudents.length === 0) {
+    return <Typography color="text.secondary">Loading analytics...</Typography>;
+  }
+
+  if (isError && !analyticsOverview) {
+    return <Typography color="error">{message || 'Failed to load analytics.'}</Typography>;
+  }
 
   return (
     <Grid container spacing={2}>
       {/* Overview cards */}
-      {card('Teachers', overview?.totalTeachers ?? 0, 0.05)}
-      {card('Students', overview?.totalStudents ?? 0, 0.1)}
-      {card('Notes', overview?.totalNotes ?? 0, 0.15)}
-      {card('Quizzes', overview?.totalQuizzes ?? 0, 0.2)}
+      {card('Teachers', analyticsOverview?.totalTeachers ?? 0, 0.05)}
+      {card('Students', analyticsOverview?.totalStudents ?? 0, 0.1)}
+      {card('Notes', analyticsOverview?.totalNotes ?? 0, 0.15)}
+      {card('Quizzes', analyticsOverview?.totalQuizzes ?? 0, 0.2)}
 
       {/* Top Teachers */}
       <Grid item xs={12} md={6}>

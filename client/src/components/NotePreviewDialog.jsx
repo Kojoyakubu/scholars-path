@@ -8,12 +8,9 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
-  IconButton,
   Menu,
   MenuItem,
   Paper,
-  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -21,28 +18,10 @@ import {
 import {
   Download,
   ExpandMore,
-  OpenInFull,
-  CloseFullscreen,
 } from '@mui/icons-material';
 import DOMPurify from 'dompurify';
 import { useMemo } from 'react';
-
-function FullscreenTitle({ title, isFullscreen, onToggle }) {
-  return (
-    <DialogTitle sx={{ pb: 1.25, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-        <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
-          {title}
-        </Typography>
-        <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
-          <IconButton size="small" onClick={onToggle}>
-            {isFullscreen ? <CloseFullscreen fontSize="small" /> : <OpenInFull fontSize="small" />}
-          </IconButton>
-        </Tooltip>
-      </Box>
-    </DialogTitle>
-  );
-}
+import DialogFullscreenTitle from './DialogFullscreenTitle';
 
 const contentSx = {
   '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
@@ -120,7 +99,7 @@ export default function NotePreviewDialog({
       fullWidth
       maxWidth={effectiveFullScreen ? false : 'md'}
     >
-      <FullscreenTitle
+      <DialogFullscreenTitle
         title="Preview Lesson Note"
         isFullscreen={fullScreen}
         onToggle={onToggleFullscreen}

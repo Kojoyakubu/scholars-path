@@ -10,6 +10,9 @@ const initialState = {
   schools: [],
   levels: [], // ✨ NEW: For curriculum levels
   aiInsights: null,
+  analyticsOverview: null,
+  topTeachers: [],
+  topStudents: [],
   isLoading: false,
   isError: false,
   isSuccess: false,
@@ -30,6 +33,24 @@ export const getUsers = createAsyncThunk('admin/getUsers', async (pageNumber, th
 export const approveUser = createAsyncThunk('admin/approveUser', async (userId, thunkAPI) => {
   try {
     return await adminService.approveUser(userId);
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const suspendUser = createAsyncThunk('admin/suspendUser', async (userId, thunkAPI) => {
+  try {
+    return await adminService.suspendUser(userId);
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const unsuspendUser = createAsyncThunk('admin/unsuspendUser', async (userId, thunkAPI) => {
+  try {
+    return await adminService.unsuspendUser(userId);
   } catch (error) {
     const message = error.response?.data?.message || error.message || error.toString();
     return thunkAPI.rejectWithValue(message);
@@ -99,6 +120,33 @@ export const getAiInsights = createAsyncThunk('admin/getAiInsights', async (_, t
   }
 });
 
+export const getAnalyticsOverview = createAsyncThunk('admin/getAnalyticsOverview', async (_, thunkAPI) => {
+  try {
+    return await adminService.getAnalyticsOverview();
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const getTopTeachers = createAsyncThunk('admin/getTopTeachers', async (_, thunkAPI) => {
+  try {
+    return await adminService.getTopTeachers();
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const getTopStudents = createAsyncThunk('admin/getTopStudents', async (_, thunkAPI) => {
+  try {
+    return await adminService.getTopStudents();
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 // ✨ NEW: Thunk for curriculum levels
 export const getCurriculumLevels = createAsyncThunk('admin/getCurriculumLevels', async (_, thunkAPI) => {
     try {
@@ -130,7 +178,7 @@ export const adminSlice = createSlice({
         state.pages = action.payload.pages || 1;
       })
       .addCase(approveUser.fulfilled, (state, action) => {
-        const updatedId = action.payload.id || action.payload._id;
+        const updatedId = action.payload?.id || action.payload?._id || action.meta.arg;
         const index = state.users.findIndex((user) => user._id === updatedId);
         if (index !== -1) {
           state.users[index].status = 'approved';
@@ -138,23 +186,55 @@ export const adminSlice = createSlice({
         state.isSuccess = true;
         state.message = action.payload.message || 'User approved successfully';
       })
+      .addCase(suspendUser.fulfilled, (state, action) => {
+        const updatedId = action.payload?.id || action.payload?._id || action.meta.arg;
+        const index = state.users.findIndex((user) => user._id === updatedId);
+        if (index !== -1) {
+          state.users[index].status = 'suspended';
+        }
+        state.isSuccess = true;
+        state.message = action.payload?.message || 'User suspended successfully';
+      })
+      .addCase(unsuspendUser.fulfilled, (state, action) => {
+        const updatedId = action.payload?.id || action.payload?._id || action.meta.arg;
+        const index = state.users.findIndex((user) => user._id === updatedId);
+        if (index !== -1) {
+          state.users[index].status = 'approved';
+        }
+        state.isSuccess = true;
+        state.message = action.payload?.message || 'User reactivated successfully';
+      })
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.users = state.users.filter((u) => u._id !== action.payload);
+        const deletedId = action.payload?.id || action.payload?._id || action.meta.arg;
+        state.users = state.users.filter((u) => u._id !== deletedId);
       })
       .addCase(getSchools.fulfilled, (state, action) => {
-        state.schools = action.payload;
+        state.schools = action.payload?.schools || action.payload || [];
       })
       .addCase(createSchool.fulfilled, (state, action) => {
-        state.schools.push(action.payload.school);
+        const createdSchool = action.payload?.school || action.payload;
+        if (createdSchool?._id) {
+          state.schools.push(createdSchool);
+        }
       })
       .addCase(deleteSchool.fulfilled, (state, action) => {
-        state.schools = state.schools.filter((s) => s._id !== action.payload);
+        const deletedId = action.payload?.id || action.payload?._id || action.meta.arg;
+        state.schools = state.schools.filter((s) => s._id !== deletedId);
       })
       .addCase(getStats.fulfilled, (state, action) => {
         state.stats = action.payload;
       })
       .addCase(getAiInsights.fulfilled, (state, action) => {
         state.aiInsights = action.payload;
+      })
+      .addCase(getAnalyticsOverview.fulfilled, (state, action) => {
+        state.analyticsOverview = action.payload;
+      })
+      .addCase(getTopTeachers.fulfilled, (state, action) => {
+        state.topTeachers = action.payload || [];
+      })
+      .addCase(getTopStudents.fulfilled, (state, action) => {
+        state.topStudents = action.payload || [];
       })
       // ✨ NEW: Reducer for curriculum levels
       .addCase(getCurriculumLevels.fulfilled, (state, action) => {

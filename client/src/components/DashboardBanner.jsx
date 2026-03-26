@@ -197,6 +197,7 @@ const DashboardBanner = ({
               <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: 'flex-end' }}>
                 {onRefresh && (
                   <IconButton 
+                    aria-label={refreshing ? 'Refreshing data' : 'Refresh data'}
                     onClick={onRefresh}
                     disabled={refreshing}
                     size={isMobile ? 'medium' : 'small'}
@@ -220,6 +221,7 @@ const DashboardBanner = ({
                 
                 {onCollapse && (
                   <IconButton
+                    aria-label={collapsed ? 'Expand dashboard banner' : 'Collapse dashboard banner'}
                     onClick={() => onCollapse(!collapsed)}
                     size={isMobile ? 'medium' : 'small'}
                     sx={{ 

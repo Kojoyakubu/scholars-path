@@ -23,6 +23,7 @@ import {
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import api from '../api/axios';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 // Utility to color-highlight AI feedback dynamically
 const highlightKeywords = (text) => {
@@ -40,29 +41,6 @@ const highlightKeywords = (text) => {
     );
   });
   return result;
-};
-
-// Inline AI card
-const AIInsightsCard = ({ title, content }) => {
-  if (!content) return null;
-  return (
-    <Paper
-      sx={{ p: 3, mt: 4, borderLeft: '6px solid #2E7D32', borderRadius: 2, bgcolor: '#f9faf8' }}
-      component={motion.div}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <Typography variant="h6" sx={{ color: '#003366', fontWeight: 700 }} gutterBottom>
-        {title}
-      </Typography>
-      <Typography
-        variant="body1"
-        color="text.secondary"
-        dangerouslySetInnerHTML={{ __html: highlightKeywords(content) }}
-      />
-    </Paper>
-  );
 };
 
 // Answer Key Card Component
@@ -401,10 +379,14 @@ const TakeQuiz = () => {
                 ) : (
                   <AIInsightsCard
                     title={`Your Quiz Insights, ${user.fullName || 'Student'}`}
-                    content={
+                    content={highlightKeywords(
                       aiInsights ||
                       'Analyzing your performance and generating personalized feedback...'
-                    }
+                    )}
+                    paperSx={{ borderLeft: '6px solid #2E7D32', bgcolor: '#f9faf8' }}
+                    titleSx={{ color: '#003366', fontWeight: 700 }}
+                    contentAsHtml
+                    initial={{ opacity: 0, y: 16 }}
                   />
                 )}
               </>

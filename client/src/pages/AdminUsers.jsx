@@ -27,41 +27,45 @@ import BlockIcon from '@mui/icons-material/Block';
 import ReplayIcon from '@mui/icons-material/Replay';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { motion } from 'framer-motion';
-import adminService from '../features/admin/adminService';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  getUsers,
+  getSchools,
+  approveUser,
+  suspendUser,
+  unsuspendUser,
+  deleteUser,
+  assignUserToSchool,
+} from '../features/admin/adminSlice';
 
 const AdminUsers = () => {
-  const [rows, setRows] = useState([]);
+  const dispatch = useDispatch();
+  const { users, schools, isLoading } = useSelector((state) => state.admin);
+
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [loading, setLoading] = useState(false);
 
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [schools, setSchools] = useState([]);
   const [schoolId, setSchoolId] = useState('');
 
   // 🧠 Load all users
   const fetchUsers = async () => {
     try {
-      setLoading(true);
-      const data = await adminService.getUsers(page + 1);
-      setRows(data.users || []);
+      const data = await dispatch(getUsers(page + 1)).unwrap();
       setTotal(data.total || 0);
     } catch (err) {
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
+      // Handled by admin slice error state
     }
   };
 
   // 🏫 Load all schools
   const fetchSchools = async () => {
     try {
-      const data = await adminService.getSchools();
-      setSchools(data || []);
+      await dispatch(getSchools()).unwrap();
     } catch (err) {
-      console.error('Error fetching schools:', err);
+      // Handled by admin slice error state
     }
   };
 
@@ -71,42 +75,42 @@ const AdminUsers = () => {
   }, [page, rowsPerPage]);
 
   // ✅ Approve user
-  const approveUser = async (id) => {
+  const onApproveUser = async (id) => {
     try {
-      await adminService.approveUser(id);
+      await dispatch(approveUser(id)).unwrap();
       fetchUsers();
     } catch (err) {
-      console.error('Error approving user:', err);
+      // Handled by admin slice error state
     }
   };
 
   // ⛔ Suspend user
-  const suspendUser = async (id) => {
+  const onSuspendUser = async (id) => {
     try {
-      await adminService.suspendUser(id);
+      await dispatch(suspendUser(id)).unwrap();
       fetchUsers();
     } catch (err) {
-      console.error('Error suspending user:', err);
+      // Handled by admin slice error state
     }
   };
 
   // 🔄 Unsuspend user
-  const unsuspendUser = async (id) => {
+  const onUnsuspendUser = async (id) => {
     try {
-      await adminService.unsuspendUser(id);
+      await dispatch(unsuspendUser(id)).unwrap();
       fetchUsers();
     } catch (err) {
-      console.error('Error unsuspending user:', err);
+      // Handled by admin slice error state
     }
   };
 
   // ❌ Delete user
-  const deleteUser = async (id) => {
+  const onDeleteUser = async (id) => {
     try {
-      await adminService.deleteUser(id);
+      await dispatch(deleteUser(id)).unwrap();
       fetchUsers();
     } catch (err) {
-      console.error('Error deleting user:', err);
+      // Handled by admin slice error state
     }
   };
 
@@ -121,16 +125,16 @@ const AdminUsers = () => {
   const assignToSchool = async () => {
     if (!selectedUser || !schoolId) return;
     try {
-      await adminService.assignUserToSchool({
+      await dispatch(assignUserToSchool({
         userId: selectedUser._id,
         schoolId,
-      });
+      })).unwrap();
       setAssignOpen(false);
       setSchoolId('');
       setSelectedUser(null);
       fetchUsers();
     } catch (err) {
-      console.error('Error assigning user:', err);
+      // Handled by admin slice error state
     }
   };
 
@@ -147,7 +151,7 @@ const AdminUsers = () => {
           <Typography variant="h6" fontWeight={700}>
             User Management
           </Typography>
-          <IconButton onClick={fetchUsers} title="Refresh">
+          <IconButton aria-label="Refresh users" onClick={fetchUsers} title="Refresh">
             <RefreshIcon />
           </IconButton>
         </Box>
@@ -164,7 +168,7 @@ const AdminUsers = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && rows.length === 0 && (
+            {!isLoading && users.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6}>
                   <Typography color="text.secondary">No users found.</Typography>
@@ -172,7 +176,7 @@ const AdminUsers = () => {
               </TableRow>
             )}
 
-            {rows.map((u) => (
+            {users.map((u) => (
               <TableRow key={u._id}>
                 <TableCell>{u.fullName || u.name || '—'}</TableCell>
                 <TableCell>{u.email}</TableCell>
@@ -200,24 +204,24 @@ const AdminUsers = () => {
                 <TableCell align="right">
                   {/* ✅ Only show Approve button if pending */}
                   {u.status === 'pending' && (
-                    <IconButton onClick={() => approveUser(u._id)} title="Approve">
+                    <IconButton aria-label="Approve user" onClick={() => onApproveUser(u._id)} title="Approve">
                       <CheckIcon color="success" />
                     </IconButton>
                   )}
                   {u.role !== 'admin' && u.status !== 'suspended' && (
-                    <IconButton onClick={() => suspendUser(u._id)} title="Suspend User">
+                    <IconButton aria-label="Suspend user" onClick={() => onSuspendUser(u._id)} title="Suspend User">
                       <BlockIcon color="warning" />
                     </IconButton>
                   )}
                   {u.role !== 'admin' && u.status === 'suspended' && (
-                    <IconButton onClick={() => unsuspendUser(u._id)} title="Reactivate User">
+                    <IconButton aria-label="Reactivate user" onClick={() => onUnsuspendUser(u._id)} title="Reactivate User">
                       <ReplayIcon color="primary" />
                     </IconButton>
                   )}
-                  <IconButton onClick={() => openAssign(u)} title="Assign to School">
+                  <IconButton aria-label="Assign user to school" onClick={() => openAssign(u)} title="Assign to School">
                     <SchoolIcon />
                   </IconButton>
-                  <IconButton onClick={() => deleteUser(u._id)} title="Delete">
+                  <IconButton aria-label="Delete user" onClick={() => onDeleteUser(u._id)} title="Delete">
                     <DeleteIcon color="error" />
                   </IconButton>
                 </TableCell>

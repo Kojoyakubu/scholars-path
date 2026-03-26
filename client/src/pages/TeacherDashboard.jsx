@@ -182,7 +182,7 @@ function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
           {title}
         </Typography>
         <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
-          <IconButton size="small" onClick={onToggle}>
+          <IconButton size="small" aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} onClick={onToggle}>
             {isFullscreen ? <CloseFullscreen fontSize="small" /> : <OpenInFull fontSize="small" />}
           </IconButton>
         </Tooltip>

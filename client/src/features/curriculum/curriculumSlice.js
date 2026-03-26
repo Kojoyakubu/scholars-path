@@ -26,7 +26,6 @@ export const fetchItems = createAsyncThunk(
       const data = await curriculumService.getItems(entity);
       return { entity, data };
     } catch (e) {
-      console.error('❌ Error fetching', entity, ':', e);
       return handleError(e, thunkAPI);
     }
   }
@@ -39,7 +38,6 @@ export const fetchChildren = createAsyncThunk(
       const data = await curriculumService.getChildrenOf(arg);
       return { entity: arg.entity, data };
     } catch (e) {
-      console.error('❌ Error fetching children:', e);
       return handleError(e, thunkAPI);
     }
   }
@@ -103,7 +101,12 @@ const curriculumSlice = createSlice({
       .addCase(fetchChildren.fulfilled, (s, a) => {
         s[a.payload.entity] = a.payload.data;
       })
-      .addCase(createItem.fulfilled, (s, a) => s[a.payload.entity].push(a.payload.data))
+      .addCase(createItem.fulfilled, (s, a) => {
+        const created = a.payload.data?.strand || a.payload.data;
+        if (created?._id) {
+          s[a.payload.entity].push(created);
+        }
+      })
       .addCase(updateItem.fulfilled, (s, a) => {
         const i = s[a.payload.entity].findIndex((x) => x._id === a.payload.data._id);
         if (i !== -1) s[a.payload.entity][i] = a.payload.data;
@@ -130,7 +133,6 @@ const curriculumSlice = createSlice({
           s.isLoading = false;
           s.isError = true;
           s.message = a.payload;
-          console.error('❌ Curriculum error:', a.payload);
         }
       );
   },

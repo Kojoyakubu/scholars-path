@@ -22,30 +22,27 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { motion } from 'framer-motion';
-import adminService from '../features/admin/adminService';
+import { useDispatch, useSelector } from 'react-redux';
+import { getSchools, createSchool, deleteSchool } from '../features/admin/adminSlice';
 
 const AdminSchools = () => {
-  const [rows, setRows] = useState([]);
+  const dispatch = useDispatch();
+  const { schools, isLoading } = useSelector((state) => state.admin);
+
   const [createOpen, setCreateOpen] = useState(false);
   const [schoolName, setSchoolName] = useState('');
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const [alert, setAlert] = useState({ open: false, type: 'success', message: '' });
 
   // 🔄 Fetch all schools
   const fetchSchools = async () => {
     try {
-      setLoading(true);
-      const data = await adminService.getSchools();
-      setRows(data || []);
+      await dispatch(getSchools()).unwrap();
     } catch (error) {
-      console.error('Error fetching schools:', error);
       setAlert({ open: true, type: 'error', message: 'Failed to load schools.' });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -54,14 +51,14 @@ const AdminSchools = () => {
   }, []);
 
   // ➕ Create new school
-  const createSchool = async () => {
+  const onCreateSchool = async () => {
     try {
-      await adminService.createSchool({
+      await dispatch(createSchool({
         name: schoolName,
         adminName,
         adminEmail,
         adminPassword,
-      });
+      })).unwrap();
       setAlert({ open: true, type: 'success', message: 'School created successfully!' });
       setCreateOpen(false);
       setSchoolName('');
@@ -82,13 +79,12 @@ const AdminSchools = () => {
   };
 
   // ❌ Delete school
-  const deleteSchool = async (id) => {
+  const onDeleteSchool = async (id) => {
     try {
-      await adminService.deleteSchool(id);
+      await dispatch(deleteSchool(id)).unwrap();
       setAlert({ open: true, type: 'success', message: 'School deleted successfully!' });
       fetchSchools();
     } catch (error) {
-      console.error('Error deleting school:', error);
       setAlert({ open: true, type: 'error', message: 'Failed to delete school.' });
     }
   };
@@ -110,7 +106,7 @@ const AdminSchools = () => {
           <Typography variant="h6" fontWeight={700}>
             School Management
           </Typography>
-          <IconButton onClick={fetchSchools} title="Refresh">
+          <IconButton aria-label="Refresh schools" onClick={fetchSchools} title="Refresh">
             <RefreshIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1 }} />
@@ -135,16 +131,16 @@ const AdminSchools = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.length === 0 ? (
+            {schools.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5}>
                   <Typography color="text.secondary">
-                    {loading ? 'Loading...' : 'No schools found.'}
+                    {isLoading ? 'Loading...' : 'No schools found.'}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((s) => (
+              schools.map((s) => (
                 <TableRow key={s._id}>
                   <TableCell>{s.name}</TableCell>
                   <TableCell>{s.admin?.email || '—'}</TableCell>
@@ -152,7 +148,8 @@ const AdminSchools = () => {
                   <TableCell>{s.studentCount ?? 0}</TableCell>
                   <TableCell align="right">
                     <IconButton
-                      onClick={() => deleteSchool(s._id)}
+                      aria-label="Delete school"
+                      onClick={() => onDeleteSchool(s._id)}
                       title="Delete"
                     >
                       <DeleteIcon color="error" />
@@ -210,7 +207,7 @@ const AdminSchools = () => {
         <DialogActions>
           <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
           <Button
-            onClick={createSchool}
+            onClick={onCreateSchool}
             variant="contained"
             disabled={!schoolName || !adminName || !adminEmail || !adminPassword}
           >

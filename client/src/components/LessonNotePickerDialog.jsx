@@ -15,6 +15,7 @@ import {
   DialogActions,
   DialogContent,
   Divider,
+  DialogTitle,
   Grid,
   List,
   ListItem,
@@ -24,6 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import { removeImageBlocks } from '../utils/imageExtractor';
+import DialogFullscreenTitle from './DialogFullscreenTitle';
 
 const selectableListItemSx = {
   alignItems: 'flex-start',
@@ -39,31 +41,6 @@ const dialogBodySx = {
   bgcolor: 'background.default',
   py: 2,
 };
-
-// Re-use the fullscreen header already defined in TeacherDashboard;
-// to keep things simple we accept it as a render-prop / child.
-// Instead, we import it directly from the file that exports it – but since
-// DialogTitleWithFullscreen lives inside TeacherDashboard (not exported),
-// we'll just duplicate the tiny header inline.
-import { Tooltip, IconButton, DialogTitle } from '@mui/material';
-import { OpenInFull, CloseFullscreen } from '@mui/icons-material';
-
-function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
-  return (
-    <DialogTitle sx={{ pb: 1.25, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-        <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
-          {title}
-        </Typography>
-        <Tooltip title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
-          <IconButton size="small" onClick={onToggle}>
-            {isFullscreen ? <CloseFullscreen fontSize="small" /> : <OpenInFull fontSize="small" />}
-          </IconButton>
-        </Tooltip>
-      </Box>
-    </DialogTitle>
-  );
-}
 
 export default function LessonNotePickerDialog({
   open,
@@ -90,7 +67,7 @@ export default function LessonNotePickerDialog({
       fullWidth
       maxWidth={fullScreen ? false : 'md'}
     >
-      <DialogTitleWithFullscreen
+      <DialogFullscreenTitle
         title={title}
         isFullscreen={fullScreen}
         onToggle={onToggleFullscreen}

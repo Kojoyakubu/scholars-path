@@ -24,34 +24,7 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { login, register, reset } from '../features/auth/authSlice';
-
-const AIInsightsCard = ({ title, content }) => {
-  if (!content) return null;
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        mt: 3,
-        p: 2.5,
-        borderRadius: 2,
-        borderLeft: '6px solid #145A32',
-        bgcolor: 'rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(6px)',
-      }}
-      component={motion.div}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#E8F5E9', mb: 0.5 }}>
-        {title}
-      </Typography>
-      <Typography variant="body2" sx={{ color: '#E8F5E9' }}>
-        {content}
-      </Typography>
-    </Paper>
-  );
-};
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const roles = [
   { value: 'student', label: 'Student' },
@@ -219,7 +192,26 @@ const AuthPortal = () => {
               >
                 {isSignUp ? 'SIGN IN' : 'SIGN UP'}
               </Button>
-              {aiGreeting && <AIInsightsCard title={aiTitle} content={aiGreeting} />}
+              {aiGreeting && (
+                <AIInsightsCard
+                  title={aiTitle}
+                  content={aiGreeting}
+                  elevation={0}
+                  paperSx={{
+                    mt: 3,
+                    p: 2.5,
+                    borderRadius: 2,
+                    borderLeft: '6px solid #145A32',
+                    bgcolor: 'rgba(255,255,255,0.08)',
+                    backdropFilter: 'blur(6px)',
+                  }}
+                  titleVariant="subtitle1"
+                  titleSx={{ fontWeight: 700, color: '#E8F5E9', mb: 0.5 }}
+                  contentVariant="body2"
+                  contentSx={{ color: '#E8F5E9' }}
+                  initial={{ opacity: 0, y: 16 }}
+                />
+              )}
             </Grid>
 
             {/* RIGHT PANEL */}
@@ -235,16 +227,16 @@ const AuthPortal = () => {
                   {isSignUp ? 'Create Account' : 'Sign In'}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                  <IconButton size="small">
+                  <IconButton size="small" aria-label="Continue with Google">
                     <GoogleIcon />
                   </IconButton>
-                  <IconButton size="small">
+                  <IconButton size="small" aria-label="Continue with Facebook">
                     <FacebookIcon />
                   </IconButton>
-                  <IconButton size="small">
+                  <IconButton size="small" aria-label="Continue with GitHub">
                     <GitHubIcon />
                   </IconButton>
-                  <IconButton size="small">
+                  <IconButton size="small" aria-label="Continue with LinkedIn">
                     <LinkedInIcon />
                   </IconButton>
                 </Stack>
