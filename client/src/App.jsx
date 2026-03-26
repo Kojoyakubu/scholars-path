@@ -6,7 +6,7 @@
 // ✅ SelectClass route for student class selection
 // ✅ NEW: All admin routes (Users, Schools, Curriculum, Analytics)
 
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from './features/auth/authSlice';
@@ -19,25 +19,25 @@ import LandingPage from './pages/LandingPage';     // Marketing homepage
 import AuthPortal from './pages/AuthPortal';        // Combined login/register
 import Login from './pages/Login';                  // Separate login
 import Register from './pages/Register';            // Separate register
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const AdminUsers = lazy(() => import('./pages/AdminUsers'));
-const AdminSchools = lazy(() => import('./pages/AdminSchools'));
-const AdminCurriculum = lazy(() => import('./pages/AdminCurriculum'));
-const AdminAnalytics = lazy(() => import('./pages/AdminAnalytics'));
-const LessonNoteView = lazy(() => import('./pages/LessonNoteView'));
-const SelectClass = lazy(() => import('./pages/SelectClass'));
-const AccountProfile = lazy(() => import('./pages/AccountProfile'));
-const AccountSettings = lazy(() => import('./pages/AccountSettings'));
-const PricingPage = lazy(() => import('./pages/PricingPage'));
-const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
-const PaymentFailed = lazy(() => import('./pages/PaymentFailed'));
-const MyBadges = lazy(() => import('./pages/MyBadges'));
-const SchoolDashboard = lazy(() => import('./pages/SchoolDashboard'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+import Dashboard from './pages/Dashboard';
+import TeacherDashboard from './pages/TeacherDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
+import AdminSchools from './pages/AdminSchools';
+import AdminCurriculum from './pages/AdminCurriculum';
+import AdminAnalytics from './pages/AdminAnalytics';
+import LessonNoteView from './pages/LessonNoteView';
+import SelectClass from './pages/SelectClass';
+import AccountProfile from './pages/AccountProfile';
+import AccountSettings from './pages/AccountSettings';
+import PricingPage from './pages/PricingPage';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
+import MyBadges from './pages/MyBadges';
+import SchoolDashboard from './pages/SchoolDashboard';
+import NotFound from './pages/NotFound';
 
-const QuizSeparated = lazy(() => import('./components/QuizSeparated'));
+import QuizSeparated from './components/QuizSeparated';
 
 // Routes
 import PrivateRoute from './components/PrivateRoute';
@@ -72,8 +72,7 @@ const AppRoutes = () => {
   };
 
   return (
-    <Suspense fallback={<div style={{ padding: 24, textAlign: 'center' }}>Loading...</div>}>
-      <Routes>
+    <Routes>
         {/* ==========================================
             PUBLIC ROUTES (No Layout/Sidebar)
         ========================================== */}
@@ -133,7 +132,6 @@ const AppRoutes = () => {
         {/* 404 - catch all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </Suspense>
   );
 };
 
