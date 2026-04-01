@@ -385,52 +385,100 @@ const logoutUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users/enable-2fa
 // @access  Private
 const enable2FA = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const user = await User.findById(req.user.id);
 
-  const user = await User.findOne({ email });
-
-  if (user && (await bcrypt.compare(password, user.password))) {
-    
-    // ✅ CHECK STATUS BEFORE ALLOWING LOGIN
-    if (user.status === 'pending') {
-      res.status(403).json({ 
-        message: 'Your account is pending admin approval. Please wait for approval before logging in.',
-        status: 'pending',
-        needsApproval: true,
-      });
-      return;
-    }
-
-    if (user.status === 'suspended') {
-      res.status(403).json({ 
-        message: 'Your account has been suspended. Please contact an administrator.',
-        status: 'suspended',
-      });
-      return;
-    }
-
-    // Only 'approved' users can login
-    const token = generateToken(user);
-
-    const subscription = await Subscription.findOne({ user: user._id, status: 'active' });
-
-    res.json({
-      message: 'Login successful',
-      user: {
-        id: user._id,
-        name: user.fullName,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        school: user.school,
-        status: user.status,
-        isSubscribed: !!subscription,
-        token,
-      },
-    });
-  } else {
-    res.status(401).json({ message: 'Invalid email or password' });
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
   }
+
+  if (user.twoFactorEnabled) {
+    res.status(400).json({ message: '2FA is already enabled' });
+    return;
+  }
+
+  const secret = speakeasy.generateSecret({
+    name: `Scholars Path (${user.email})`,
+    issuer: 'Scholars Path'
+  });
+
+  user.twoFactorSecret = secret.base32;
+  await user.save();
+
+  const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url);
+
+  res.json({
+    message: '2FA setup initiated',
+    secret: secret.base32,
+    qrCode: qrCodeUrl,
+    otpauth_url: secret.otpauth_url
+  });
+});
+
+// @desc    Verify and enable 2FA
+// @route   POST /api/users/verify-2fa
+// @access  Private
+const verify2FA = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  const user = await User.findById(req.user.id);
+
+  if (!user || !user.twoFactorSecret) {
+    res.status(400).json({ message: '2FA setup not initiated' });
+    return;
+  }
+
+  if (user.twoFactorEnabled) {
+    res.status(400).json({ message: '2FA is already enabled' });
+    return;
+  }
+
+  const verified = speakeasy.totp.verify({
+    secret: user.twoFactorSecret,
+    encoding: 'base32',
+    token,
+    window: 2
+  });
+
+  if (!verified) {
+    res.status(400).json({ message: 'Invalid 2FA token' });
+    return;
+  }
+
+  user.twoFactorEnabled = true;
+  await user.save();
+
+  res.json({ message: '2FA enabled successfully' });
+});
+
+// @desc    Disable 2FA
+// @route   POST /api/users/disable-2fa
+// @access  Private
+const disable2FA = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  const user = await User.findById(req.user.id);
+
+  if (!user || !user.twoFactorEnabled) {
+    res.status(400).json({ message: '2FA is not enabled' });
+    return;
+  }
+
+  const verified = speakeasy.totp.verify({
+    secret: user.twoFactorSecret,
+    encoding: 'base32',
+    token,
+    window: 2
+  });
+
+  if (!verified) {
+    res.status(400).json({ message: 'Invalid 2FA token' });
+    return;
+  }
+
+  user.twoFactorEnabled = false;
+  user.twoFactorSecret = undefined;
+  await user.save();
+
+  res.json({ message: '2FA disabled successfully' });
 });
 
 // @desc    Get all users (Admin only)
