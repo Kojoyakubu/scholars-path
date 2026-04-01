@@ -481,6 +481,71 @@ const disable2FA = asyncHandler(async (req, res) => {
   res.json({ message: '2FA disabled successfully' });
 });
 
+// @desc    Verify 2FA token during login
+// @route   POST /api/users/verify-2fa-login
+// @access  Public (requires tempToken from login)
+const verify2FALogin = asyncHandler(async (req, res) => {
+  const { token, tempToken } = req.body;
+
+  if (!token || !tempToken) {
+    res.status(400).json({ message: '2FA token and temporary token are required' });
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(tempToken, process.env.JWT_2FA_SECRET || process.env.JWT_SECRET);
+
+    if (decoded.type !== '2fa_temp') {
+      res.status(401).json({ message: 'Invalid temporary token' });
+      return;
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+      res.status(400).json({ message: '2FA is not enabled for this account' });
+      return;
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token,
+      window: 2,
+    });
+
+    if (!verified) {
+      res.status(400).json({ message: 'Invalid 2FA token' });
+      return;
+    }
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    const subscription = await Subscription.findOne({ user: user._id, status: 'active' });
+
+    res.json({
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        name: user.fullName,
+        email: user.email,
+        role: user.role,
+        school: user.school,
+        status: user.status,
+        emailVerified: user.emailVerified,
+        isSubscribed: !!subscription,
+      },
+      accessToken,
+      refreshToken,
+    });
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid or expired temporary token' });
+  }
+});
+
 // @desc    Get all users (Admin only)
 const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -670,7 +735,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       school: updatedUser.school,
       status: updatedUser.status,
       aiOnboarded: updatedUser.aiOnboarded,
-      token: generateToken(updatedUser),
+      accessToken: generateAccessToken(updatedUser),
     },
   });
 });
