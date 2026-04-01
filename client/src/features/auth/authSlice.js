@@ -124,9 +124,10 @@ const authSlice = createSlice({
         state.isError = false;
         state.message = '';
       })
-      .addCase(register.fulfilled, (state) => {
+      .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
+        state.message = action.payload?.message || 'Registration successful.';
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -143,7 +144,14 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
+        if (action.payload?.requires2FA) {
+          state.user = null;
+          state.message = action.payload.message || 'Two-factor authentication is required.';
+          return;
+        }
+
         state.user = action.payload;
+        state.message = '';
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;

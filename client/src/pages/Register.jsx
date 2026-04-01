@@ -44,7 +44,7 @@ const Register = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
-  const { isLoading, error } = useSelector((state) => state.auth);
+  const { isLoading, isError, message } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -82,8 +82,10 @@ const Register = () => {
     
     if (!formData.password) {
       errors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/.test(formData.password)) {
+      errors.password = 'Use uppercase, lowercase, number, and special character';
     }
     
     setValidationErrors(errors);
@@ -101,17 +103,15 @@ const Register = () => {
       const resultAction = await dispatch(register(formData));
       
       if (register.fulfilled.match(resultAction)) {
-        // Registration successful
-        const user = resultAction.payload;
-        
-        // Navigate based on role
-        if (user.role === 'student') {
-          navigate('/student/select-class');
-        } else if (user.role === 'teacher') {
-          navigate('/teacher/dashboard');
-        } else if (user.role === 'admin') {
-          navigate('/admin');
-        }
+        const payload = resultAction.payload || {};
+        const successMessage =
+          payload.message ||
+          'Registration successful. Please check your email for verification before logging in.';
+
+        navigate('/login', {
+          replace: true,
+          state: { message: successMessage },
+        });
       }
     } catch (err) {
       console.error('Registration failed:', err);
@@ -303,9 +303,9 @@ const Register = () => {
               </Box>
 
               {/* Error Alert */}
-              {error && (
+              {isError && (
                 <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-                  {error}
+                  {message}
                 </Alert>
               )}
 
@@ -372,7 +372,7 @@ const Register = () => {
                   onChange={handleChange}
                   error={!!validationErrors.password}
                   helperText={
-                    validationErrors.password || 'Minimum 6 characters'
+                    validationErrors.password || 'Min 8 chars with upper, lower, number, and special char'
                   }
                   disabled={isLoading}
                   InputProps={{

@@ -3,7 +3,7 @@
 // Beautiful • User-friendly • Professional
 
 import { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import {
@@ -40,9 +40,10 @@ import { login } from '../features/auth/authSlice';
 const Login = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   
-  const { isLoading, error } = useSelector((state) => state.auth);
+  const { isLoading, isError, message } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -52,6 +53,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [localNotice, setLocalNotice] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -90,8 +92,17 @@ const Login = () => {
       const resultAction = await dispatch(login(formData));
       
       if (login.fulfilled.match(resultAction)) {
-        // Login successful
-        const user = resultAction.payload;
+        const payload = resultAction.payload;
+
+        if (payload?.requires2FA) {
+          setLocalNotice(
+            payload.message ||
+              'Two-factor authentication is enabled for this account. Please complete 2FA in the next step.'
+          );
+          return;
+        }
+
+        const user = payload;
         
         // Navigate based on role
         if (user.role === 'student') {
@@ -292,9 +303,21 @@ const Login = () => {
               </Box>
 
               {/* Error Alert */}
-              {error && (
+              {location.state?.message && (
+                <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
+                  {location.state.message}
+                </Alert>
+              )}
+
+              {localNotice && (
+                <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+                  {localNotice}
+                </Alert>
+              )}
+
+              {isError && (
                 <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-                  {error}
+                  {message}
                 </Alert>
               )}
 

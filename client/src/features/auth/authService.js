@@ -26,7 +26,15 @@ const register = async (userData) => {
   
   try {
     const response = await api.post('/api/users/register', backendData);
-    return response.data;
+    const payload = response.data || {};
+    return {
+      message: payload.message,
+      needsApproval: !!payload.needsApproval,
+      needsVerification: !!payload.needsVerification,
+      user: payload.user || null,
+      accessToken: payload.accessToken || null,
+      refreshToken: payload.refreshToken || null,
+    };
   } catch (error) {
     console.error('❌ Registration failed');
     console.error('Request data:', backendData);
@@ -40,14 +48,33 @@ const register = async (userData) => {
 // -----------------------------------------------------------------------------
 const login = async (userData) => {
   const response = await api.post('/api/users/login', userData);
-  const user = response.data.user;
+  const payload = response.data || {};
+  const user = payload.user;
+  const accessToken = payload.accessToken || user?.token;
+  const refreshToken = payload.refreshToken;
 
-  if (user && user.token) {
-    localStorage.setItem('user', JSON.stringify(user));
-    return user;
+  if (payload.requires2FA) {
+    return {
+      requires2FA: true,
+      tempToken: payload.tempToken,
+      message: payload.message || 'Two-factor authentication is required.',
+      user: user || null,
+    };
   }
 
-  throw new Error('Invalid login response from server');
+  if (user && accessToken) {
+    const normalizedUser = {
+      ...user,
+      token: accessToken,
+      accessToken,
+      refreshToken: refreshToken || user?.refreshToken,
+    };
+
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    return normalizedUser;
+  }
+
+  throw new Error(payload.message || 'Invalid login response from server');
 };
 
 // -----------------------------------------------------------------------------
@@ -55,13 +82,15 @@ const login = async (userData) => {
 // -----------------------------------------------------------------------------
 const getProfile = async () => {
   const storedUser = JSON.parse(localStorage.getItem('user'));
-  if (!storedUser?.token) {
+  const token = storedUser?.token || storedUser?.accessToken;
+
+  if (!token) {
     throw new Error('No token found. Please log in again.');
   }
 
   const config = {
     headers: {
-      Authorization: `Bearer ${storedUser.token}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 
@@ -77,13 +106,15 @@ const getProfile = async () => {
 // -----------------------------------------------------------------------------
 const updateProfile = async (profileData) => {
   const storedUser = JSON.parse(localStorage.getItem('user'));
-  if (!storedUser?.token) {
+  const token = storedUser?.token || storedUser?.accessToken;
+
+  if (!token) {
     throw new Error('No token found. Please log in again.');
   }
 
   const config = {
     headers: {
-      Authorization: `Bearer ${storedUser.token}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 

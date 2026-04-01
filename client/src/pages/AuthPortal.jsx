@@ -52,6 +52,7 @@ const AuthPortal = () => {
 
   const [aiGreeting, setAiGreeting] = useState('');
   const [aiTitle, setAiTitle] = useState('');
+  const [localSuccessMessage, setLocalSuccessMessage] = useState('');
 
   // Helper function to get user's display name
   const getUserDisplayName = () => {
@@ -60,7 +61,7 @@ const AuthPortal = () => {
   };
 
   useEffect(() => {
-    if (isSuccess && user) {
+    if (isSuccess && user && !user.requires2FA) {
       const displayName = getUserDisplayName();
 
       // Set welcome message
@@ -98,7 +99,15 @@ const AuthPortal = () => {
 
   const onRegister = (e) => {
     e.preventDefault();
-    dispatch(register(signUpData));
+    dispatch(register(signUpData)).then((resultAction) => {
+      if (register.fulfilled.match(resultAction)) {
+        setIsSignUp(false);
+        setLocalSuccessMessage(
+          resultAction.payload?.message ||
+            'Registration successful. Please verify your email, then sign in.'
+        );
+      }
+    });
   };
 
   const onLogin = (e) => {
@@ -247,6 +256,12 @@ const AuthPortal = () => {
                 {isError && (
                   <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
                     {message}
+                  </Alert>
+                )}
+
+                {!isError && localSuccessMessage && (
+                  <Alert severity="success" sx={{ mt: 2, mb: 2 }}>
+                    {localSuccessMessage}
                   </Alert>
                 )}
 
