@@ -67,6 +67,19 @@ const apiLimiter = rateLimit({
 });
 app.use('/api', apiLimiter);
 
+// Specific rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per 15 minutes for auth endpoints
+  message: 'Too many authentication attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/register', authLimiter);
+app.use('/api/users/forgot-password', authLimiter);
+
 // -----------------------------------------------------------------------------
 // 📦 Routes
 // -----------------------------------------------------------------------------
