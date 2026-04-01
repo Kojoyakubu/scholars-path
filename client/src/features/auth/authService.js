@@ -78,6 +78,49 @@ const login = async (userData) => {
 };
 
 // -----------------------------------------------------------------------------
+// 🔓 GOOGLE AUTH (LOGIN / REGISTER)
+// -----------------------------------------------------------------------------
+const googleAuth = async ({ credential, mode = 'login', role = 'student' }) => {
+  const response = await api.post('/api/users/google-auth', {
+    credential,
+    mode,
+    role,
+  });
+
+  const payload = response.data || {};
+  const user = payload.user;
+  const accessToken = payload.accessToken || user?.token;
+  const refreshToken = payload.refreshToken;
+
+  if (payload.requires2FA) {
+    return {
+      requires2FA: true,
+      tempToken: payload.tempToken,
+      message: payload.message || 'Two-factor authentication is required.',
+      user: user || null,
+    };
+  }
+
+  if (user && accessToken) {
+    const normalizedUser = {
+      ...user,
+      token: accessToken,
+      accessToken,
+      refreshToken: refreshToken || user?.refreshToken,
+    };
+
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    return normalizedUser;
+  }
+
+  return {
+    message: payload.message || 'Google authentication completed.',
+    needsApproval: !!payload.needsApproval,
+    user: user || null,
+  };
+};
+
+// -----------------------------------------------------------------------------
 // 👤 GET USER PROFILE
 // -----------------------------------------------------------------------------
 const getProfile = async () => {
@@ -138,6 +181,7 @@ const logout = () => {
 const authService = {
   register,
   login,
+  googleAuth,
   getProfile,
   updateProfile,
   logout,

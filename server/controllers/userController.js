@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/userModel');
 const Subscription = require('../models/subscriptionModel');
 const {
@@ -12,6 +13,8 @@ const {
   sendAccountLocked,
   generateSecureToken
 } = require('../services/emailService');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const resolveJwtSecret = (primaryEnvKey, fallbackEnvKey) => {
   const primary = process.env[primaryEnvKey];
@@ -286,6 +289,151 @@ const loginUser = asyncHandler(async (req, res) => {
 
     res.status(401).json({ message: 'Invalid email or password' });
   }
+});
+
+// @desc    Authenticate user with Google
+// @route   POST /api/users/google-auth
+// @access  Public
+const googleAuth = asyncHandler(async (req, res) => {
+  const { credential, role = 'student', mode = 'login' } = req.body;
+
+  if (!credential) {
+    res.status(400).json({ message: 'Google credential is required' });
+    return;
+  }
+
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    res.status(500).json({ message: 'Google authentication is not configured' });
+    return;
+  }
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid Google token' });
+    return;
+  }
+
+  const email = (payload?.email || '').toLowerCase();
+  const fullName = payload?.name || 'Google User';
+  const emailVerifiedByGoogle = !!payload?.email_verified;
+
+  if (!email) {
+    res.status(400).json({ message: 'Google account did not provide an email' });
+    return;
+  }
+
+  let user = await User.findOne({ email });
+
+  if (!user) {
+    const hashedPassword = await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 12);
+    const userRole = ['student', 'teacher', 'school_admin'].includes(role) ? role : 'student';
+    const userStatus = userRole === 'student' ? 'approved' : 'pending';
+
+    user = await User.create({
+      fullName,
+      email,
+      password: hashedPassword,
+      role: userRole,
+      status: userStatus,
+      emailVerified: emailVerifiedByGoogle,
+    });
+  }
+
+  if (mode === 'register' && user.status === 'pending') {
+    res.status(201).json({
+      message: 'Registration successful with Google. Your account is pending admin approval.',
+      needsApproval: true,
+      user: {
+        id: user._id,
+        name: user.fullName,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        emailVerified: user.emailVerified,
+      },
+    });
+    return;
+  }
+
+  if (user.status === 'pending') {
+    res.status(403).json({
+      message: 'Your account is pending admin approval. Please wait for approval before logging in.',
+      status: 'pending',
+      needsApproval: true,
+    });
+    return;
+  }
+
+  if (user.status === 'suspended') {
+    res.status(403).json({
+      message: 'Your account has been suspended. Please contact an administrator.',
+      status: 'suspended',
+    });
+    return;
+  }
+
+  if (user.isLocked) {
+    res.status(423).json({
+      message: 'Account is temporarily locked due to multiple failed login attempts. Please try again later.',
+      locked: true,
+      lockUntil: user.lockUntil,
+    });
+    return;
+  }
+
+  await user.resetLoginAttempts();
+
+  if (user.twoFactorEnabled) {
+    const tempToken = jwt.sign(
+      { id: user._id, type: '2fa_temp' },
+      process.env.JWT_2FA_SECRET || process.env.JWT_SECRET,
+      { expiresIn: '5m' }
+    );
+
+    res.json({
+      message: 'Google account verified. Please provide 2FA code.',
+      requires2FA: true,
+      tempToken,
+      user: {
+        id: user._id,
+        name: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+    });
+    return;
+  }
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  const subscription = await Subscription.findOne({ user: user._id, status: 'active' });
+
+  res.status(200).json({
+    message: user.createdAt && Date.now() - new Date(user.createdAt).getTime() < 10000
+      ? 'Registration successful with Google'
+      : 'Login successful',
+    user: {
+      id: user._id,
+      name: user.fullName,
+      email: user.email,
+      role: user.role,
+      school: user.school,
+      status: user.status,
+      emailVerified: user.emailVerified,
+      isSubscribed: !!subscription,
+    },
+    accessToken,
+    refreshToken,
+  });
 });
 
 // @desc    Refresh access token
@@ -769,6 +917,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 
 module.exports = {
   registerUser,
+  googleAuth,
   verifyEmail,
   loginUser,
   refreshToken,

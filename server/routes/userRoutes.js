@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   registerUser,
+  googleAuth,
   verifyEmail,
   loginUser,
   refreshToken,
@@ -35,6 +36,11 @@ const {
 // @desc    Register a new user
 // @access  Public
 router.post('/register', validateRegistration, handleValidationErrors, registerUser);
+
+// @route   POST /api/users/google-auth
+// @desc    Authenticate/register with Google
+// @access  Public
+router.post('/google-auth', googleAuth);
 
 // @route   POST /api/users/verify-email
 // @desc    Verify user email

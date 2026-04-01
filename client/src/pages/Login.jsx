@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { GoogleLogin } from '@react-oauth/google';
 import { motion } from 'framer-motion';
 import {
   Box,
@@ -35,7 +36,7 @@ import {
   LockOpen,
 } from '@mui/icons-material';
 
-import { login } from '../features/auth/authSlice';
+import { login, googleAuth } from '../features/auth/authSlice';
 
 const Login = () => {
   const theme = useTheme();
@@ -116,6 +117,46 @@ const Login = () => {
     } catch (err) {
       console.error('Login failed:', err);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    if (!credentialResponse?.credential) {
+      setLocalNotice('Google login failed. Please try again.');
+      return;
+    }
+
+    const resultAction = await dispatch(
+      googleAuth({ credential: credentialResponse.credential, mode: 'login' })
+    );
+
+    if (!googleAuth.fulfilled.match(resultAction)) {
+      return;
+    }
+
+    const payload = resultAction.payload;
+
+    if (payload?.requires2FA) {
+      setLocalNotice(payload.message || 'Two-factor authentication is required for this account.');
+      return;
+    }
+
+    const user = payload;
+    if (!user?.role) {
+      setLocalNotice(payload?.message || 'Authentication completed. Please contact support if access is pending.');
+      return;
+    }
+
+    if (user.role === 'student') {
+      navigate('/student/select-class');
+    } else if (user.role === 'teacher' || user.role === 'school_admin') {
+      navigate('/teacher/dashboard');
+    } else if (user.role === 'admin') {
+      navigate('/admin');
+    }
+  };
+
+  const handleGoogleError = () => {
+    setLocalNotice('Google login was cancelled or failed. Please try again.');
   };
 
   const features = [
@@ -470,20 +511,9 @@ const Login = () => {
                   </Typography>
                 </Divider>
 
-                {/* Google Sign In (Coming Soon) */}
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  disabled
-                  sx={{
-                    py: 1.5,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    color: 'text.secondary',
-                  }}
-                >
-                  Continue with Google (Coming Soon)
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} useOneTap={false} />
+                </Box>
 
                 {/* Sign Up Link */}
                 <Box sx={{ textAlign: 'center', mt: 3 }}>

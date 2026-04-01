@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { GoogleLogin } from '@react-oauth/google';
 import { motion } from 'framer-motion';
 import {
   Box,
@@ -37,7 +38,7 @@ import {
   CheckCircle,
 } from '@mui/icons-material';
 
-import { register } from '../features/auth/authSlice';
+import { register, googleAuth } from '../features/auth/authSlice';
 
 const Register = () => {
   const theme = useTheme();
@@ -55,6 +56,7 @@ const Register = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [localNotice, setLocalNotice] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -116,6 +118,54 @@ const Register = () => {
     } catch (err) {
       console.error('Registration failed:', err);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    if (!credentialResponse?.credential) {
+      setLocalNotice('Google sign-up failed. Please try again.');
+      return;
+    }
+
+    const resultAction = await dispatch(
+      googleAuth({
+        credential: credentialResponse.credential,
+        mode: 'register',
+        role: formData.role,
+      })
+    );
+
+    if (!googleAuth.fulfilled.match(resultAction)) {
+      return;
+    }
+
+    const payload = resultAction.payload;
+
+    if (payload?.requires2FA) {
+      setLocalNotice(payload.message || 'Two-factor authentication is required for this account.');
+      return;
+    }
+
+    if (!payload?.role) {
+      navigate('/login', {
+        replace: true,
+        state: {
+          message: payload?.message || 'Google registration completed. Please continue to login.',
+        },
+      });
+      return;
+    }
+
+    if (payload.role === 'student') {
+      navigate('/student/select-class');
+    } else if (payload.role === 'teacher' || payload.role === 'school_admin') {
+      navigate('/teacher/dashboard');
+    } else if (payload.role === 'admin') {
+      navigate('/admin');
+    }
+  };
+
+  const handleGoogleError = () => {
+    setLocalNotice('Google sign-up was cancelled or failed. Please try again.');
   };
 
   const features = [
@@ -309,6 +359,12 @@ const Register = () => {
                 </Alert>
               )}
 
+              {localNotice && (
+                <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+                  {localNotice}
+                </Alert>
+              )}
+
               {/* Registration Form */}
               <form onSubmit={handleSubmit}>
                 {/* Full Name */}
@@ -460,20 +516,9 @@ const Register = () => {
                   </Typography>
                 </Divider>
 
-                {/* Google Sign Up (Coming Soon) */}
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  disabled
-                  sx={{
-                    py: 1.5,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    color: 'text.secondary',
-                  }}
-                >
-                  Sign up with Google (Coming Soon)
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} useOneTap={false} />
+                </Box>
 
                 {/* Sign In Link */}
                 <Box sx={{ textAlign: 'center', mt: 3 }}>

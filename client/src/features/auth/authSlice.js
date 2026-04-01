@@ -58,6 +58,23 @@ export const login = createAsyncThunk(
 );
 
 // -----------------------------------------------------------------------------
+// 🔐 GOOGLE AUTH
+// -----------------------------------------------------------------------------
+export const googleAuth = createAsyncThunk(
+  'auth/googleAuth',
+  async (googleData, thunkAPI) => {
+    try {
+      const response = await authService.googleAuth(googleData);
+      return response;
+    } catch (error) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// -----------------------------------------------------------------------------
 // 👤 GET PROFILE
 // -----------------------------------------------------------------------------
 export const getProfile = createAsyncThunk(
@@ -154,6 +171,38 @@ const authSlice = createSlice({
         state.message = '';
       })
       .addCase(login.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+        state.user = null;
+      })
+
+      // GOOGLE AUTH
+      .addCase(googleAuth.pending, (state) => {
+        state.isLoading = true;
+        state.isError = false;
+        state.message = '';
+      })
+      .addCase(googleAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+
+        if (action.payload?.requires2FA) {
+          state.user = null;
+          state.message = action.payload.message || 'Two-factor authentication is required.';
+          return;
+        }
+
+        if (action.payload?.token || action.payload?.accessToken) {
+          state.user = action.payload;
+          state.message = '';
+          return;
+        }
+
+        state.user = null;
+        state.message = action.payload?.message || 'Google authentication completed.';
+      })
+      .addCase(googleAuth.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
