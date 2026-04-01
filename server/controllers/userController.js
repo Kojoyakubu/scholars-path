@@ -1,5 +1,17 @@
+const asyncHandler = require('express-async-handler');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
+const User = require('../models/userModel');
+const Subscription = require('../models/subscriptionModel');
+const {
+  sendEmailVerification,
+  sendPasswordReset,
+  sendAccountLocked,
+  generateSecureToken
+} = require('../services/emailService');
 
 // Utility: Generate Access Token (short-lived)
 const generateAccessToken = (user) => {
