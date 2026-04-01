@@ -13,6 +13,18 @@ const {
   generateSecureToken
 } = require('../services/emailService');
 
+const resolveJwtSecret = (primaryEnvKey, fallbackEnvKey) => {
+  const primary = process.env[primaryEnvKey];
+  if (primary) return primary;
+
+  if (fallbackEnvKey && process.env[fallbackEnvKey]) {
+    console.warn(`Missing ${primaryEnvKey}. Falling back to ${fallbackEnvKey}.`);
+    return process.env[fallbackEnvKey];
+  }
+
+  throw new Error(`Server auth configuration error: missing ${primaryEnvKey}`);
+};
+
 // Utility: Generate Access Token (short-lived)
 const generateAccessToken = (user) => {
   return jwt.sign(
@@ -23,7 +35,7 @@ const generateAccessToken = (user) => {
       name: user.fullName,
       status: user.status,
     },
-    process.env.JWT_SECRET,
+    resolveJwtSecret('JWT_SECRET'),
     { expiresIn: '15m' } // Short-lived access token
   );
 };
@@ -35,7 +47,7 @@ const generateRefreshToken = (user) => {
       id: user._id,
       type: 'refresh'
     },
-    process.env.JWT_REFRESH_SECRET,
+    resolveJwtSecret('JWT_REFRESH_SECRET', 'JWT_SECRET'),
     { expiresIn: '7d' } // Long-lived refresh token
   );
 };
@@ -288,7 +300,7 @@ const refreshToken = asyncHandler(async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const decoded = jwt.verify(token, resolveJwtSecret('JWT_REFRESH_SECRET', 'JWT_SECRET'));
 
     const user = await User.findById(decoded.id);
 
