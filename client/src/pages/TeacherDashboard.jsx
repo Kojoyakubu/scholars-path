@@ -674,7 +674,7 @@ function TeacherDashboard() {
       // also close create tools if open
       setShowCreateTools(false);
     }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
-  }, [dispatch, displayNote]);
+  }, [dispatch, displayNote, closeDialog]);
 
   // quiz-from-lesson flow
   const handleGenerateQuizFromLesson = useCallback(() => {
@@ -717,7 +717,7 @@ function TeacherDashboard() {
         setSelectedLessonForQuiz('');
       })
       .catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
-  }, [dispatch, selectedLessonForQuiz, lessonNotes]);
+  }, [dispatch, selectedLessonForQuiz, lessonNotes, closeDialog]);
 
   // quiz-from-strands flow
   const handleGenerateQuizFromStrands = useCallback(() => {
@@ -748,7 +748,7 @@ function TeacherDashboard() {
       closeDialog();
       setQuizSelectedSubStrands([]);
     }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
-  }, [dispatch, quizSelectedSubStrands, subStrands]);
+  }, [dispatch, quizSelectedSubStrands, subStrands, closeDialog]);
 
   const handleGenerateBundleSubmit = useCallback((data) => {
     dispatch(generateLessonBundle(data)).unwrap().then(() => {
@@ -757,7 +757,7 @@ function TeacherDashboard() {
       setSnackbar({ open: true, message: 'Lesson bundle generated! 🎉', severity: 'success' });
       setShowCreateTools(false);
     }).catch((error) => setSnackbar({ open: true, message: error || 'Failed', severity: 'error' }));
-  }, [dispatch]);
+  }, [dispatch, closeDialog]);
 
   // form input change for strand dialog
   const handleStrandFormChange = useCallback((e) => {
@@ -769,7 +769,7 @@ function TeacherDashboard() {
     closeDialog();
     resetSelections();
     resetStrandForm();
-  }, [resetSelections, resetStrandForm]);
+  }, [closeDialog, resetSelections, resetStrandForm]);
 
   // dispatch generator for learner note from strand
   const handleGenerateLearnerFromStrand = useCallback(() => {
@@ -802,7 +802,7 @@ function TeacherDashboard() {
       .catch((err) => {
         setSnackbar({ open: true, message: err || 'Failed to generate learner note', severity: 'error' });
       });
-  }, [dispatch, selections.subStrand, strandForm, user, displayNote, resetSelections, resetStrandForm]);
+  }, [dispatch, selections.subStrand, strandForm, user, displayNote, closeDialog, resetSelections, resetStrandForm]);
 
   // Generate only lesson plan (first part of bundle)
   const handleGeneratePlan = useCallback(() => {
@@ -810,7 +810,7 @@ function TeacherDashboard() {
     // close selection and open lesson note form for user completion
     closeDialog();
     setActiveDialog('noteForm');
-  }, [selections.subStrand]);
+  }, [selections.subStrand, closeDialog]);
 
   const handlePublishBundle = useCallback((bundle) => {
     if (bundle.learnerNote?.id) {

@@ -63,9 +63,7 @@ function BundleResultViewer({
 }) {
   const [activeTab, setActiveTab] = useState(0);
 
-  if (!bundleData) return null;
-
-  const { lessonNote, learnerNote, quiz } = bundleData;
+  const { lessonNote, learnerNote, quiz } = bundleData || {};
   const sanitizedLessonNoteContent = useMemo(
     () => DOMPurify.sanitize(lessonNote?.content || ''),
     [lessonNote?.content]
@@ -74,6 +72,8 @@ function BundleResultViewer({
     () => DOMPurify.sanitize(learnerNote?.content || ''),
     [learnerNote?.content]
   );
+
+  if (!bundleData) return null;
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);

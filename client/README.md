@@ -1,16 +1,92 @@
-# React + Vite
+# Scholars Path Client (Web + Mobile)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This client remains a standard React + Vite web app and now also supports native Android and iOS builds using Capacitor.
 
-Currently, two official plugins are available:
+## What Changed
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Added Capacitor config in `capacitor.config.json`
+- Added native platform folders:
+  - `android/`
+  - `ios/`
+- Added npm scripts for build/sync/open mobile projects
 
-## React Compiler
+Your website still works normally with the same Vite commands.
 
-The React Compiler is not enabled on this template. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Web Workflow
 
-## Expanding the ESLint configuration
+Install dependencies:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+```
+
+Run web dev server:
+
+```bash
+npm run dev
+```
+
+Build web app:
+
+```bash
+npm run build
+```
+
+## Mobile Workflow (Capacitor)
+
+Build web assets and sync to native projects:
+
+```bash
+npm run build:mobile
+```
+
+Sync native projects without rebuilding web:
+
+```bash
+npm run cap:sync
+```
+
+Copy web assets only:
+
+```bash
+npm run cap:copy
+```
+
+Open Android project in Android Studio:
+
+```bash
+npm run cap:open:android
+```
+
+Open iOS project in Xcode:
+
+```bash
+npm run cap:open:ios
+```
+
+Run on Android device/emulator from CLI:
+
+```bash
+npm run cap:run:android
+```
+
+## Notes for iOS
+
+- You can keep the `ios/` project folder in git on any OS.
+- Building/running iOS requires macOS + Xcode.
+- On a Mac, run:
+
+```bash
+npm install
+npm run build:mobile
+npm run cap:open:ios
+```
+
+## API Base URL for Mobile
+
+Your app already uses:
+
+- `VITE_API_URL` when provided
+- fallback: `https://scholars-path-backend.onrender.com`
+
+For production mobile builds, keep an HTTPS backend URL. Avoid localhost for device builds unless you specifically configure a reachable LAN URL.

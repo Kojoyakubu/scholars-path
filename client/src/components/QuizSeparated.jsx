@@ -3,11 +3,9 @@
 // Part 1: Auto-graded MCQs and True/False (shown on dashboard)
 // Part 2: Short Answer and Essay (for exercise books, answers viewable after submission)
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 import api from '../api/axios';
 import {
@@ -60,7 +58,6 @@ const fadeInUp = {
 const QuizSeparated = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const theme = useTheme();
 
   // State management
@@ -119,13 +116,6 @@ const QuizSeparated = () => {
           return false;
         }) || [];
         
-        // Check for questions without type that also don't have options (might be written questions)
-        const uncategorized = data.questions?.filter(q => {
-          const isAutoGraded = autoGraded.includes(q);
-          const isManual = manual.includes(q);
-          return !isAutoGraded && !isManual;
-        }) || [];
-        
         setAutoGradedQuestions(autoGraded);
         setManualQuestions(manual);
         
@@ -146,23 +136,6 @@ const QuizSeparated = () => {
       fetchQuiz();
     }
   }, [id]);
-
-  // Timer countdown (only for auto-graded section)
-  useEffect(() => {
-    if (timeRemaining === null || timeRemaining <= 0 || autoGradedSubmitted || activeTab !== 0) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          handleSubmitAutoGraded(); // Auto-submit when time runs out
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeRemaining, autoGradedSubmitted, activeTab]);
 
   // Format time display
   const formatTime = (seconds) => {
@@ -193,53 +166,8 @@ const QuizSeparated = () => {
     }
   };
 
-  // Calculate score for auto-graded questions only
-  const calculateAutoGradedScore = () => {
-    let correct = 0;
-    let total = autoGradedQuestions.length;
-
-    autoGradedQuestions.forEach((question, index) => {
-      const userAnswer = answers[question._id];
-
-      if (!userAnswer) {
-        return; // Skip unanswered questions
-      }
-      
-      // Method 1: Check if question has correctAnswer field
-      if (question.correctAnswer) {
-        if (userAnswer === question.correctAnswer) {
-          correct++;
-        }
-      } 
-      // Method 2: Check if options have isCorrect flag (most common)
-      else if (question.options && Array.isArray(question.options)) {
-        const correctOption = question.options.find(opt => {
-          if (typeof opt === 'object' && opt.isCorrect === true) {
-            return true;
-          }
-          return false;
-        });
-        
-        if (correctOption) {
-          // Check if user's answer matches the correct option
-          const correctValue = correctOption._id || correctOption.text;
-
-          if (userAnswer === correctValue || userAnswer === correctOption.text) {
-            correct++;
-          }
-        }
-      }
-    });
-
-    return {
-      correct,
-      total,
-      percentage: total > 0 ? Math.round((correct / total) * 100) : 0
-    };
-  };
-
   // Submit auto-graded section - backend will calculate the score
-  const handleSubmitAutoGraded = async () => {
+  const handleSubmitAutoGraded = useCallback(async () => {
     setLoading(true);
     
     try {
@@ -274,7 +202,24 @@ const QuizSeparated = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [answers, autoGradedQuestions, id]);
+
+  // Timer countdown (only for auto-graded section)
+  useEffect(() => {
+    if (timeRemaining === null || timeRemaining <= 0 || autoGradedSubmitted || activeTab !== 0) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          handleSubmitAutoGraded(); // Auto-submit when time runs out
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeRemaining, autoGradedSubmitted, activeTab, handleSubmitAutoGraded]);
 
   // Handle tab change
   const handleTabChange = (event, newValue) => {
