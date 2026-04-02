@@ -30,16 +30,27 @@ app.use(express.urlencoded({ extended: true }));
 // -----------------------------------------------------------------------------
 const allowedOrigins = [
   'https://scholars-path-frontend.onrender.com', // deployed frontend
-  'http://localhost:5173',                      // local dev (vite)
-  'http://127.0.0.1:5173',                      // local alternative
+  'http://localhost:5173',                       // local dev (vite)
+  'http://127.0.0.1:5173',                       // local alternative
+  'http://localhost',                            // Capacitor Android/iOS webview
+  'https://localhost',                           // Capacitor secure localhost webview
+  'capacitor://localhost',                       // Capacitor custom scheme
+  'ionic://localhost',                           // Ionic/Capacitor compatibility
 ];
+
+const envAllowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const originAllowList = new Set([...allowedOrigins, ...envAllowedOrigins]);
 
 app.use(
   cors({
     origin: function (origin, callback) {
       // Allow Postman or curl requests (no origin)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      if (originAllowList.has(origin)) {
         return callback(null, true);
       } else {
         console.log(`❌ CORS blocked: ${origin}`);
