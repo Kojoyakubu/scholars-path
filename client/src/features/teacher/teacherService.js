@@ -126,6 +126,16 @@ const chargeDownload = async (payload) => {
   return response.data;
 };
 
+const initializeDownloadPayment = async (payload) => {
+  const response = await api.post('/api/payments/downloads/initialize', payload);
+  return response.data;
+};
+
+const verifyDownloadPayment = async (payload) => {
+  const response = await api.post('/api/payments/downloads/verify', payload);
+  return response.data;
+};
+
 const deleteQuiz = async (quizId) => {
   const response = await api.delete(`/api/quizzes/${quizId}`);
   return response.data;
@@ -153,6 +163,8 @@ const teacherService = {
   getMyQuizzes,
   getDownloadPricing,
   chargeDownload,
+  initializeDownloadPayment,
+  verifyDownloadPayment,
   deleteQuiz,
 
   // retrieve single quiz with populated questions/options

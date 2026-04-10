@@ -1,6 +1,7 @@
 // /server/controllers/paymentController.js
 
 const asyncHandler = require('express-async-handler');
+const axios = require('axios');
 const Payment = require('../models/paymentModel');
 const User = require('../models/userModel');
 const LessonNote = require('../models/lessonNoteModel');
@@ -10,6 +11,7 @@ const aiService = require('../services/aiService');
 const mongoose = require('mongoose');
 
 const DOWNLOAD_FEE_GHS = 0.5;
+const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
 const generateReference = (prefix = 'PAY') => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
@@ -35,6 +37,21 @@ const resolveDownloadTarget = async ({ itemType, itemId, teacherId }) => {
 
   return null;
 };
+
+const getPaystackConfig = () => {
+  const secretKey = process.env.PAYSTACK_SECRET_KEY;
+  const publicKey = process.env.PAYSTACK_PUBLIC_KEY;
+
+  if (!secretKey || !publicKey) {
+    const err = new Error('Paystack is not configured. Set PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY.');
+    err.statusCode = 500;
+    throw err;
+  }
+
+  return { secretKey, publicKey };
+};
+
+const amountToKobo = (amount) => Math.round(Number(amount) * 100);
 
 /**
  * @desc   Create a new payment record
@@ -136,6 +153,181 @@ const chargeDownload = asyncHandler(async (req, res) => {
       format: format || 'unknown',
     },
     payment,
+  });
+});
+
+/**
+ * @desc   Initialize Paystack payment for a downloadable asset
+ * @route  POST /api/payments/downloads/initialize
+ * @access Private (Teacher)
+ */
+const initializeDownloadPayment = asyncHandler(async (req, res) => {
+  const { itemType, itemId, format } = req.body;
+
+  if (!itemType || !itemId) {
+    res.status(400);
+    throw new Error('itemType and itemId are required.');
+  }
+
+  if (!['lesson_note', 'learner_note', 'quiz'].includes(itemType)) {
+    res.status(400);
+    throw new Error('Invalid itemType. Must be lesson_note, learner_note, or quiz.');
+  }
+
+  const teacher = await User.findById(req.user.id).select('_id email fullName');
+  if (!teacher) {
+    res.status(404);
+    throw new Error('Teacher account not found.');
+  }
+
+  const target = await resolveDownloadTarget({ itemType, itemId, teacherId: req.user.id });
+  if (!target) {
+    res.status(404);
+    throw new Error('Download target not found or you are not authorized to download it.');
+  }
+
+  const { secretKey, publicKey } = getPaystackConfig();
+  const reference = generateReference('DL');
+
+  const paystackPayload = {
+    email: teacher.email,
+    amount: amountToKobo(DOWNLOAD_FEE_GHS),
+    currency: 'GHS',
+    reference,
+    metadata: {
+      custom_fields: [
+        { display_name: 'Purpose', variable_name: 'purpose', value: 'download' },
+        { display_name: 'Item Type', variable_name: 'item_type', value: itemType },
+        { display_name: 'Item ID', variable_name: 'item_id', value: String(itemId) },
+        { display_name: 'Format', variable_name: 'format', value: format || 'pdf' },
+      ],
+    },
+  };
+
+  const paystackResponse = await axios.post(
+    `${PAYSTACK_BASE_URL}/transaction/initialize`,
+    paystackPayload,
+    {
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  );
+
+  if (!paystackResponse.data?.status || !paystackResponse.data?.data?.reference) {
+    res.status(502);
+    throw new Error('Unable to initialize payment with Paystack.');
+  }
+
+  const payment = await Payment.create({
+    user: req.user.id,
+    amount: DOWNLOAD_FEE_GHS,
+    currency: 'GHS',
+    method: 'paystack',
+    reference,
+    description: `Download charge for ${itemType}${format ? ` (${format})` : ''}`,
+    status: 'pending',
+    purpose: 'download',
+    itemType,
+    itemId,
+  });
+
+  res.status(201).json({
+    message: 'Download payment initialized.',
+    payment,
+    paystack: {
+      publicKey,
+      reference,
+      amount: DOWNLOAD_FEE_GHS,
+      currency: 'GHS',
+      accessCode: paystackResponse.data.data.access_code,
+      authorizationUrl: paystackResponse.data.data.authorization_url,
+      email: teacher.email,
+      displayName: teacher.fullName,
+    },
+  });
+});
+
+/**
+ * @desc   Verify Paystack payment for a downloadable asset
+ * @route  POST /api/payments/downloads/verify
+ * @access Private (Teacher)
+ */
+const verifyDownloadPayment = asyncHandler(async (req, res) => {
+  const { reference } = req.body;
+
+  if (!reference) {
+    res.status(400);
+    throw new Error('reference is required.');
+  }
+
+  const payment = await Payment.findOne({
+    user: req.user.id,
+    reference,
+    purpose: 'download',
+  });
+
+  if (!payment) {
+    res.status(404);
+    throw new Error('Payment reference not found.');
+  }
+
+  if (payment.status === 'success') {
+    return res.json({
+      message: 'Payment already verified.',
+      payment,
+      charge: {
+        amount: payment.amount,
+        currency: payment.currency || 'GHS',
+        itemType: payment.itemType,
+        itemId: payment.itemId,
+      },
+    });
+  }
+
+  const { secretKey } = getPaystackConfig();
+  const verifyResponse = await axios.get(
+    `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+      },
+      timeout: 15000,
+    }
+  );
+
+  const tx = verifyResponse.data?.data;
+  const isValidSuccess = Boolean(
+    verifyResponse.data?.status &&
+    tx?.status === 'success' &&
+    Number(tx?.amount) === amountToKobo(payment.amount) &&
+    String(tx?.currency || '').toUpperCase() === 'GHS'
+  );
+
+  if (!isValidSuccess) {
+    payment.status = 'failed';
+    await payment.save();
+
+    res.status(400);
+    throw new Error('Payment verification failed.');
+  }
+
+  payment.status = 'success';
+  payment.paidAt = tx?.paid_at ? new Date(tx.paid_at) : new Date();
+  payment.method = 'paystack';
+  await payment.save();
+
+  res.json({
+    message: 'Payment verified successfully.',
+    payment,
+    charge: {
+      amount: payment.amount,
+      currency: payment.currency || 'GHS',
+      itemType: payment.itemType,
+      itemId: payment.itemId,
+    },
   });
 });
 
@@ -252,6 +444,8 @@ module.exports = {
   createPayment,
   getDownloadPricing,
   chargeDownload,
+  initializeDownloadPayment,
+  verifyDownloadPayment,
   getAllPayments,
   getUserPayments,
   getPaymentSummary,

@@ -564,6 +564,78 @@ function TeacherDashboard() {
     error?.response?.data?.message || error?.message || 'Payment failed. Please try again.'
   ), []);
 
+  const loadPaystackScript = useCallback(async () => {
+    if (window.PaystackPop) return true;
+
+    const existingScript = document.querySelector('script[data-paystack-inline="true"]');
+    if (existingScript) {
+      await new Promise((resolve, reject) => {
+        existingScript.addEventListener('load', resolve, { once: true });
+        existingScript.addEventListener('error', reject, { once: true });
+      }).catch(() => false);
+      return Boolean(window.PaystackPop);
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    script.setAttribute('data-paystack-inline', 'true');
+
+    const loaded = await new Promise((resolve) => {
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+
+    return loaded && Boolean(window.PaystackPop);
+  }, []);
+
+  const processDownloadPayment = useCallback(async ({ itemType, itemId, format = 'pdf' }) => {
+    setIsChargingDownload(true);
+
+    try {
+      const initResponse = await teacherService.initializeDownloadPayment({ itemType, itemId, format });
+      const paystackConfig = initResponse?.paystack;
+
+      if (!paystackConfig?.publicKey || !paystackConfig?.reference) {
+        throw new Error('Payment gateway initialization failed.');
+      }
+
+      const scriptReady = await loadPaystackScript();
+      if (!scriptReady) {
+        throw new Error('Unable to load Paystack checkout.');
+      }
+
+      const referenceFromCheckout = await new Promise((resolve, reject) => {
+        const handler = window.PaystackPop.setup({
+          key: paystackConfig.publicKey,
+          email: paystackConfig.email,
+          amount: Math.round(Number(paystackConfig.amount || DOWNLOAD_FEE_GHS) * 100),
+          currency: paystackConfig.currency || 'GHS',
+          ref: paystackConfig.reference,
+          metadata: {
+            custom_fields: [
+              { display_name: 'Purpose', variable_name: 'purpose', value: 'download' },
+              { display_name: 'Item Type', variable_name: 'item_type', value: itemType },
+            ],
+          },
+          callback: (response) => resolve(response?.reference || paystackConfig.reference),
+          onClose: () => reject(new Error('Payment was cancelled.')),
+        });
+
+        handler.openIframe();
+      });
+
+      await teacherService.verifyDownloadPayment({ reference: referenceFromCheckout });
+      return true;
+    } catch (error) {
+      setSnackbar({ open: true, message: getDownloadErrorMessage(error), severity: 'error' });
+      return false;
+    } finally {
+      setIsChargingDownload(false);
+    }
+  }, [DOWNLOAD_FEE_GHS, getDownloadErrorMessage, loadPaystackScript]);
+
   const createQuizHtml = useCallback((quiz) => {
     const section = (title, items, rowBuilder) => {
       if (!Array.isArray(items) || items.length === 0) return '';
@@ -610,16 +682,10 @@ function TeacherDashboard() {
       return;
     }
 
-    setIsChargingDownload(true);
-    try {
-      await teacherService.chargeDownload({ itemType, itemId, format });
-    } catch (error) {
-      setSnackbar({ open: true, message: getDownloadErrorMessage(error), severity: 'error' });
-      setIsChargingDownload(false);
+    const paymentSuccessful = await processDownloadPayment({ itemType, itemId, format });
+    if (!paymentSuccessful) {
       return;
     }
-
-    setIsChargingDownload(false);
 
     const baseName = sanitizeDownloadBaseName(title, itemType);
     const elementId = `paid-download-${Date.now()}`;
@@ -662,26 +728,21 @@ function TeacherDashboard() {
         document.body.removeChild(tempDiv);
       }
     }
-  }, [DOWNLOAD_FEE_GHS, getDownloadErrorMessage, sanitizeDownloadBaseName]);
+  }, [DOWNLOAD_FEE_GHS, processDownloadPayment, sanitizeDownloadBaseName]);
 
   const handleDownloadViewingNote = useCallback(async (format) => {
     if (!viewingNote) return;
 
-    setIsChargingDownload(true);
-    try {
-      await teacherService.chargeDownload({
-        itemType: viewingNote?.teacher ? 'lesson_note' : 'learner_note',
-        itemId: viewingNote?._id,
-        format,
-      });
-    } catch (error) {
+    const paymentSuccessful = await processDownloadPayment({
+      itemType: viewingNote?.teacher ? 'lesson_note' : 'learner_note',
+      itemId: viewingNote?._id,
+      format,
+    });
+
+    if (!paymentSuccessful) {
       handleCloseDownloadMenu();
-      setSnackbar({ open: true, message: getDownloadErrorMessage(error), severity: 'error' });
-      setIsChargingDownload(false);
       return;
     }
-
-    setIsChargingDownload(false);
 
     const topic = viewingNote?.subStrand?.name || viewingNote?.subStrand || 'lesson-note';
     const safeFileName = topic.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '');
@@ -803,7 +864,7 @@ function TeacherDashboard() {
       message: `Payment successful (GHC ${DOWNLOAD_FEE_GHS.toFixed(2)}). Downloaded as .${extension}`,
       severity: 'success',
     });
-  }, [DOWNLOAD_FEE_GHS, getDownloadErrorMessage, handleCloseDownloadMenu, previewSegments, setSnackbar, viewingNote]);
+  }, [DOWNLOAD_FEE_GHS, handleCloseDownloadMenu, previewSegments, processDownloadPayment, setSnackbar, viewingNote]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
     dispatch(generateLessonNote(formData)).unwrap().then((createdNote) => {
