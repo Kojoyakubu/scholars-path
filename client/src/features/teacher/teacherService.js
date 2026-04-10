@@ -116,6 +116,16 @@ const getMyQuizzes = async () => {
   return response.data;
 };
 
+const getDownloadPricing = async () => {
+  const response = await api.get('/api/payments/download-pricing');
+  return response.data;
+};
+
+const chargeDownload = async (payload) => {
+  const response = await api.post('/api/payments/downloads/charge', payload);
+  return response.data;
+};
+
 const deleteQuiz = async (quizId) => {
   const response = await api.delete(`/api/quizzes/${quizId}`);
   return response.data;
@@ -141,6 +151,8 @@ const teacherService = {
   deleteBundle,
   duplicateBundle,
   getMyQuizzes,
+  getDownloadPricing,
+  chargeDownload,
   deleteQuiz,
 
   // retrieve single quiz with populated questions/options

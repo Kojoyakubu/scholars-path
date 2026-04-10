@@ -58,6 +58,8 @@ function BundleResultViewer({
   onClose,
   bundleData,
   onPublish,
+  onDownloadItem,
+  isDownloadingItem = false,
   fullScreen = false,
   onToggleFullscreen,
 }) {
@@ -83,6 +85,77 @@ function BundleResultViewer({
     if (onPublish) {
       onPublish(bundleData);
     }
+  };
+
+  const buildQuizHtml = () => {
+    const section = (title, items, lineBuilder) => {
+      if (!Array.isArray(items) || items.length === 0) return '';
+      return `
+        <h3>${title}</h3>
+        <ol>
+          ${items.map(lineBuilder).join('')}
+        </ol>
+      `;
+    };
+
+    return `
+      <h2>${quiz?.title || 'Quiz'}</h2>
+      ${section('Multiple Choice Questions', quiz?.mcq, (q) => `
+        <li>
+          <p><strong>${q.question || ''}</strong></p>
+          <ul>${(q.options || []).map((opt, idx) => `<li>${String.fromCharCode(65 + idx)}. ${opt}${idx === q.correctIndex ? ' (Correct)' : ''}</li>`).join('')}</ul>
+        </li>
+      `)}
+      ${section('True or False', quiz?.trueFalse, (q) => `
+        <li>
+          <p><strong>${q.statement || ''}</strong></p>
+          <p>Answer: ${q.answer ? 'True' : 'False'}</p>
+        </li>
+      `)}
+      ${section('Short Answer', quiz?.shortAnswer, (q) => `
+        <li>
+          <p><strong>${q.question || ''}</strong></p>
+          <p>Expected Answer: ${q.expectedAnswer || ''}</p>
+        </li>
+      `)}
+      ${section('Essay', quiz?.essay, (q) => `
+        <li>
+          <p><strong>${q.question || ''}</strong></p>
+          <p>Marking Guide: ${q.markingGuide || ''}</p>
+        </li>
+      `)}
+    `;
+  };
+
+  const handleDownload = (itemType) => {
+    if (!onDownloadItem) return;
+
+    if (itemType === 'lesson_note') {
+      onDownloadItem({
+        itemType,
+        itemId: lessonNote?.id || lessonNote?._id,
+        title: lessonNote?.subStrand || 'teacher-lesson-note',
+        htmlContent: sanitizedLessonNoteContent,
+      });
+      return;
+    }
+
+    if (itemType === 'learner_note') {
+      onDownloadItem({
+        itemType,
+        itemId: learnerNote?.id || learnerNote?._id,
+        title: learnerNote?.subStrand || 'learner-note',
+        htmlContent: sanitizedLearnerNoteContent,
+      });
+      return;
+    }
+
+    onDownloadItem({
+      itemType: 'quiz',
+      itemId: quiz?.id || quiz?._id,
+      title: quiz?.title || 'quiz',
+      htmlContent: buildQuizHtml(),
+    });
   };
 
   return (
@@ -145,6 +218,17 @@ function BundleResultViewer({
         {/* Tab 1: Teacher Note */}
         <TabPanel value={activeTab} index={0}>
           <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Download />}
+                disabled={isDownloadingItem}
+                onClick={() => handleDownload('lesson_note')}
+              >
+                {isDownloadingItem ? 'Processing...' : 'Pay GHC 0.5 & Download'}
+              </Button>
+            </Box>
             <Typography variant="caption" color="text.secondary" gutterBottom>
               Topic: {lessonNote?.subStrand}
             </Typography>
@@ -177,6 +261,17 @@ function BundleResultViewer({
         {/* Tab 2: Learner Note */}
         <TabPanel value={activeTab} index={1}>
           <Paper elevation={0} sx={{ p: 4, maxWidth: 900, mx: 'auto' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Download />}
+                disabled={isDownloadingItem}
+                onClick={() => handleDownload('learner_note')}
+              >
+                {isDownloadingItem ? 'Processing...' : 'Pay GHC 0.5 & Download'}
+              </Button>
+            </Box>
             <Alert severity="info" sx={{ mb: 3 }}>
               <strong>Status:</strong> {learnerNote?.status === 'draft' ? 'Draft' : 'Published'} 
               {learnerNote?.status === 'draft' && ' - Review and publish to make available to students'}
@@ -203,6 +298,17 @@ function BundleResultViewer({
         {/* Tab 3: Quiz */}
         <TabPanel value={activeTab} index={2}>
           <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Download />}
+                disabled={isDownloadingItem}
+                onClick={() => handleDownload('quiz')}
+              >
+                {isDownloadingItem ? 'Processing...' : 'Pay GHC 0.5 & Download'}
+              </Button>
+            </Box>
             <Typography variant="h5" gutterBottom fontWeight={600}>
               {quiz?.title}
             </Typography>

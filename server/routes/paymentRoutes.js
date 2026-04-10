@@ -3,6 +3,8 @@ const router = express.Router();
 
 const {
   createPayment,
+  getDownloadPricing,
+  chargeDownload,
   getAllPayments,
   getUserPayments,
   getPaymentSummary,
@@ -14,6 +16,8 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 // ==============================
 // Payments & Summaries
 // ==============================
+router.get('/download-pricing', protect, authorize('teacher', 'admin', 'school_admin'), getDownloadPricing);
+router.post('/downloads/charge', protect, authorize('teacher'), chargeDownload);
 router.post('/', protect, authorize('admin', 'school_admin'), createPayment);
 router.get('/', protect, authorize('admin', 'school_admin'), getAllPayments);
 router.get('/user/:id', protect, authorize('admin', 'school_admin'), getUserPayments);

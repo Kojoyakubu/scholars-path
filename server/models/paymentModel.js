@@ -20,6 +20,11 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       default: 'GHS', // 🇬🇭 Default to Ghanaian cedis
     },
+    method: {
+      type: String,
+      trim: true,
+      default: 'mobile_money',
+    },
     status: {
       type: String,
       enum: ['pending', 'success', 'failed'],
@@ -27,8 +32,19 @@ const paymentSchema = new mongoose.Schema(
     },
     purpose: {
       type: String,
-      enum: ['subscription', 'quiz', 'resource', 'other'],
+      enum: ['subscription', 'quiz', 'resource', 'download', 'other'],
       default: 'subscription',
+    },
+    itemType: {
+      type: String,
+      enum: ['lesson_note', 'learner_note', 'quiz'],
+    },
+    itemId: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
+    description: {
+      type: String,
+      trim: true,
     },
     paidAt: {
       type: Date,

@@ -31,6 +31,7 @@ import {
 import { segmentHtmlWithImages, removeImageBlocks } from '../utils/imageExtractor';
 import { fetchImageForQuery } from '../services/imageService';
 import { downloadAsPdf } from '../utils/downloadHelper';
+import teacherService from '../features/teacher/teacherService';
 import LessonBundleForm from '../components/LessonBundleForm'; 
 import BundleResultViewer from '../components/BundleResultViewer';
 import DashboardBanner from '../components/DashboardBanner';
@@ -206,6 +207,7 @@ function ToolTile({ label, imageUrl, onClick, toolTileSx, toolImageSx }) {
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
+  const DOWNLOAD_FEE_GHS = 0.5;
 
   // Redux state
   const { user } = useSelector((state) => state.auth || {});
@@ -236,6 +238,7 @@ function TeacherDashboard() {
   const [learnerNotesSubjectFilter, setLearnerNotesSubjectFilter] = useState('');
   const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
   const [isPdfExporting, setIsPdfExporting] = useState(false);
+  const [isChargingDownload, setIsChargingDownload] = useState(false);
   const [strandForm, setStrandForm] = useState(INITIAL_STRAND_FORM);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [learnerNoteToDelete, setLearnerNoteToDelete] = useState(null);
@@ -549,8 +552,136 @@ function TeacherDashboard() {
     setDownloadMenuAnchorEl(null);
   }, []);
 
-  const handleDownloadViewingNote = useCallback((format) => {
+  const sanitizeDownloadBaseName = useCallback((name, fallback = 'download') => (
+    String(name || fallback)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/(^-|-$)/g, '') || fallback
+  ), []);
+
+  const getDownloadErrorMessage = useCallback((error) => (
+    error?.response?.data?.message || error?.message || 'Payment failed. Please try again.'
+  ), []);
+
+  const createQuizHtml = useCallback((quiz) => {
+    const section = (title, items, rowBuilder) => {
+      if (!Array.isArray(items) || items.length === 0) return '';
+      return `
+        <h3>${title}</h3>
+        <ol>
+          ${items.map(rowBuilder).join('')}
+        </ol>
+      `;
+    };
+
+    return `
+      <h2>${quiz?.title || 'Quiz'}</h2>
+      ${section('Multiple Choice Questions', quiz?.mcq, (q) => `
+        <li>
+          <p><strong>${q.question || ''}</strong></p>
+          <ul>${(q.options || []).map((opt, idx) => `<li>${String.fromCharCode(65 + idx)}. ${opt}${idx === q.correctIndex ? ' (Correct)' : ''}</li>`).join('')}</ul>
+        </li>
+      `)}
+      ${section('True or False', quiz?.trueFalse, (q) => `
+        <li>
+          <p><strong>${q.statement || ''}</strong></p>
+          <p>Answer: ${q.answer ? 'True' : 'False'}</p>
+        </li>
+      `)}
+      ${section('Short Answer', quiz?.shortAnswer, (q) => `
+        <li>
+          <p><strong>${q.question || ''}</strong></p>
+          <p>Expected Answer: ${q.expectedAnswer || ''}</p>
+        </li>
+      `)}
+      ${section('Essay', quiz?.essay, (q) => `
+        <li>
+          <p><strong>${q.question || ''}</strong></p>
+          <p>Marking Guide: ${q.markingGuide || ''}</p>
+        </li>
+      `)}
+    `;
+  }, []);
+
+  const chargeAndDownloadHtml = useCallback(async ({ itemType, itemId, title, htmlContent, format = 'pdf' }) => {
+    if (!itemType || !itemId || !htmlContent) {
+      setSnackbar({ open: true, message: 'Missing download details.', severity: 'error' });
+      return;
+    }
+
+    setIsChargingDownload(true);
+    try {
+      await teacherService.chargeDownload({ itemType, itemId, format });
+    } catch (error) {
+      setSnackbar({ open: true, message: getDownloadErrorMessage(error), severity: 'error' });
+      setIsChargingDownload(false);
+      return;
+    }
+
+    setIsChargingDownload(false);
+
+    const baseName = sanitizeDownloadBaseName(title, itemType);
+    const elementId = `paid-download-${Date.now()}`;
+    const tempDiv = document.createElement('div');
+    tempDiv.id = elementId;
+    tempDiv.innerHTML = htmlContent;
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = '820px';
+    document.body.appendChild(tempDiv);
+
+    try {
+      if (format === 'pdf') {
+        await downloadAsPdf(elementId, baseName);
+      } else {
+        const htmlDocument = `<!doctype html><html><head><meta charset="utf-8" /><title>${baseName}</title></head><body>${htmlContent}</body></html>`;
+        const blobType = format === 'doc' ? 'application/msword;charset=utf-8' : 'text/html;charset=utf-8';
+        const extension = format === 'doc' ? 'doc' : 'html';
+        const blob = new Blob([htmlDocument], { type: blobType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${baseName}.${extension}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      setSnackbar({
+        open: true,
+        message: `Payment successful (GHC ${DOWNLOAD_FEE_GHS.toFixed(2)}). Download started.`,
+        severity: 'success',
+      });
+    } catch {
+      setSnackbar({ open: true, message: 'Payment succeeded, but file download failed.', severity: 'warning' });
+    } finally {
+      if (document.body.contains(tempDiv)) {
+        document.body.removeChild(tempDiv);
+      }
+    }
+  }, [DOWNLOAD_FEE_GHS, getDownloadErrorMessage, sanitizeDownloadBaseName]);
+
+  const handleDownloadViewingNote = useCallback(async (format) => {
     if (!viewingNote) return;
+
+    setIsChargingDownload(true);
+    try {
+      await teacherService.chargeDownload({
+        itemType: viewingNote?.teacher ? 'lesson_note' : 'learner_note',
+        itemId: viewingNote?._id,
+        format,
+      });
+    } catch (error) {
+      handleCloseDownloadMenu();
+      setSnackbar({ open: true, message: getDownloadErrorMessage(error), severity: 'error' });
+      setIsChargingDownload(false);
+      return;
+    }
+
+    setIsChargingDownload(false);
 
     const topic = viewingNote?.subStrand?.name || viewingNote?.subStrand || 'lesson-note';
     const safeFileName = topic.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '');
@@ -622,7 +753,11 @@ function TeacherDashboard() {
 
           Promise.resolve(pdfTask)
             .then(() => {
-              setSnackbar({ open: true, message: 'Downloaded as .pdf', severity: 'success' });
+              setSnackbar({
+                open: true,
+                message: `Payment successful (GHC ${DOWNLOAD_FEE_GHS.toFixed(2)}). Downloaded as .pdf`,
+                severity: 'success',
+              });
             })
             .catch(() => {
               setSnackbar({ open: true, message: 'Failed to generate PDF.', severity: 'error' });
@@ -663,8 +798,12 @@ function TeacherDashboard() {
     URL.revokeObjectURL(url);
 
     handleCloseDownloadMenu();
-    setSnackbar({ open: true, message: `Downloaded as .${extension}`, severity: 'success' });
-  }, [handleCloseDownloadMenu, previewSegments, setSnackbar, viewingNote]);
+    setSnackbar({
+      open: true,
+      message: `Payment successful (GHC ${DOWNLOAD_FEE_GHS.toFixed(2)}). Downloaded as .${extension}`,
+      severity: 'success',
+    });
+  }, [DOWNLOAD_FEE_GHS, getDownloadErrorMessage, handleCloseDownloadMenu, previewSegments, setSnackbar, viewingNote]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
     dispatch(generateLessonNote(formData)).unwrap().then((createdNote) => {
@@ -856,6 +995,18 @@ function TeacherDashboard() {
       .then(() => setActiveDialog('quizView'))
       .catch((err) => setSnackbar({ open: true, message: err || 'Failed to load quiz', severity: 'error' }));
   }, [dispatch]);
+
+  const handleDownloadCurrentQuiz = useCallback(async () => {
+    if (!currentQuiz?._id) return;
+
+    await chargeAndDownloadHtml({
+      itemType: 'quiz',
+      itemId: currentQuiz._id,
+      title: currentQuiz.title || 'quiz',
+      htmlContent: createQuizHtml(currentQuiz),
+      format: 'pdf',
+    });
+  }, [chargeAndDownloadHtml, createQuizHtml, currentQuiz]);
 
   const handleDeleteQuiz = useCallback((quizId) => {
     dispatch(deleteQuiz(quizId))
@@ -1740,6 +1891,9 @@ function TeacherDashboard() {
             )}
           </DialogContent>
           <DialogActions>
+            <Button onClick={handleDownloadCurrentQuiz} disabled={!currentQuiz || isChargingDownload || isLoading}>
+              {isChargingDownload ? 'Processing payment...' : 'Pay GHC 0.5 & Download'}
+            </Button>
             <Button onClick={() => { closeDialog(); }} >Close</Button>
           </DialogActions>
         </Dialog>
@@ -1760,6 +1914,8 @@ function TeacherDashboard() {
           onClose={() => closeDialog()}
           bundleData={bundleResult}
           onPublish={handlePublishBundle}
+          onDownloadItem={chargeAndDownloadHtml}
+          isDownloadingItem={isChargingDownload || isLoading}
           fullScreen={isDialogFullscreen('bundleResultViewer')}
           onToggleFullscreen={() => toggleDialogFullscreen('bundleResultViewer')}
         />
@@ -1797,6 +1953,7 @@ function TeacherDashboard() {
           onCloseDownloadMenu={handleCloseDownloadMenu}
           onDownload={handleDownloadViewingNote}
           isPdfExporting={isPdfExporting}
+          isChargingDownload={isChargingDownload}
           fullScreen={isDialogFullscreen('notePreview')}
           onToggleFullscreen={() => toggleDialogFullscreen('notePreview')}
         />
