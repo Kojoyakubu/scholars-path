@@ -21,11 +21,9 @@ import {
 } from "@mui/material";
 
 import SchoolIcon from "@mui/icons-material/School";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import BoltIcon from "@mui/icons-material/Bolt";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import GroupsIcon from "@mui/icons-material/Groups";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
@@ -66,6 +64,14 @@ const LandingPage = () => {
       accent: theme.palette.primary.main,
       details: ["NaCCA-aligned objectives", "Teaching steps and examples", "Export-ready teacher format"],
       stats: ["Basic 5 Science", "3 teaching steps", "Ready to share"],
+      mockLabel: "Basic 5 Science • Living Things",
+      mockRows: [
+        { label: "Objectives", value: "3 ready" },
+        { label: "Activities", value: "Guided + group work" },
+        { label: "Assessment", value: "Exit ticket included" },
+      ],
+      progress: 92,
+      footer: "Generated note ready for review and export",
     },
     {
       key: "quizzes",
@@ -76,6 +82,14 @@ const LandingPage = () => {
       accent: theme.palette.secondary.main,
       details: ["Multiple choice and written items", "Topic-based question flow", "Immediate practice support"],
       stats: ["15 questions", "Auto-graded", "Revision-ready"],
+      mockLabel: "Practice Quiz • Fractions",
+      mockRows: [
+        { label: "MCQ", value: "10 items" },
+        { label: "Short answer", value: "3 prompts" },
+        { label: "Essay", value: "2 reflection items" },
+      ],
+      progress: 78,
+      footer: "Quiz set balanced for classwork and revision",
     },
     {
       key: "progress",
@@ -86,6 +100,14 @@ const LandingPage = () => {
       accent: theme.palette.success.main,
       details: ["Topic-level performance view", "Progress snapshots", "Teacher-friendly summaries"],
       stats: ["78% mastery", "4 active topics", "2 learners need help"],
+      mockLabel: "Class Snapshot • Basic 6 Mathematics",
+      mockRows: [
+        { label: "Mastery", value: "78%" },
+        { label: "Needs support", value: "2 learners" },
+        { label: "Strongest topic", value: "Decimals" },
+      ],
+      progress: 78,
+      footer: "Teacher insight highlights where to revise next",
     },
     {
       key: "resources",
@@ -96,10 +118,134 @@ const LandingPage = () => {
       accent: theme.palette.warning.main,
       details: ["One place for learning assets", "Faster topic access", "Cleaner classroom workflow"],
       stats: ["12 resources", "Sorted by topic", "Easy student access"],
+      mockLabel: "Shared Folder • JHS English",
+      mockRows: [
+        { label: "Lesson notes", value: "4 files" },
+        { label: "Practice quizzes", value: "3 sets" },
+        { label: "Student resources", value: "5 items" },
+      ],
+      progress: 88,
+      footer: "Resources organized by topic for faster access",
     },
   ];
 
   const activeTab = previewTabs.find((tab) => tab.key === activePreview) || previewTabs[0];
+
+  const renderPreviewSurface = (tab) => (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 2.2,
+        borderRadius: 3,
+        border: `1px solid ${alpha(tab.accent, 0.18)}`,
+        bgcolor: alpha(tab.accent, 0.05),
+      }}
+    >
+      <Stack spacing={1.6}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              display: "grid",
+              placeItems: "center",
+              bgcolor: tab.accent,
+              color: "white",
+            }}
+          >
+            <tab.icon fontSize="small" />
+          </Box>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {tab.label}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#64748B" }}>
+              {tab.mockLabel}
+            </Typography>
+          </Box>
+          <Chip
+            label="Live"
+            size="small"
+            sx={{
+              bgcolor: alpha(tab.accent, 0.12),
+              color: tab.accent,
+              fontWeight: 700,
+            }}
+          />
+        </Stack>
+
+        <Divider />
+
+        <Grid container spacing={1.2}>
+          {tab.mockRows.map((row) => (
+            <Grid item xs={12} key={row.label}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2.5,
+                  bgcolor: "#FFFFFF",
+                  border: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+                }}
+              >
+                <Stack direction="row" justifyContent="space-between" spacing={1}>
+                  <Typography variant="body2" sx={{ color: "#64748B" }}>
+                    {row.label}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#0F172A", textAlign: "right" }}>
+                    {row.value}
+                  </Typography>
+                </Stack>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+
+        <Box>
+          <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.8 }}>
+            <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 600 }}>
+              Workflow readiness
+            </Typography>
+            <Typography variant="caption" sx={{ color: tab.accent, fontWeight: 700 }}>
+              {tab.progress}%
+            </Typography>
+          </Stack>
+          <Box
+            sx={{
+              height: 8,
+              borderRadius: 999,
+              bgcolor: alpha(tab.accent, 0.12),
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                width: `${tab.progress}%`,
+                height: "100%",
+                borderRadius: 999,
+                bgcolor: tab.accent,
+              }}
+            />
+          </Box>
+        </Box>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1.4,
+            borderRadius: 2.5,
+            bgcolor: alpha(tab.accent, 0.08),
+            border: `1px dashed ${alpha(tab.accent, 0.35)}`,
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "#334155", fontWeight: 600 }}>
+            {tab.footer}
+          </Typography>
+        </Paper>
+      </Stack>
+    </Paper>
+  );
 
   const trustMetrics = [
     { label: "Lesson Notes Generated", value: "12k+" },
@@ -437,52 +583,7 @@ const LandingPage = () => {
                       </Typography>
                     </Box>
 
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2.2,
-                        borderRadius: 3,
-                        border: `1px solid ${alpha(activeTab.accent, 0.18)}`,
-                        bgcolor: alpha(activeTab.accent, 0.05),
-                      }}
-                    >
-                      <Stack spacing={1.4}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 2,
-                              display: "grid",
-                              placeItems: "center",
-                              bgcolor: activeTab.accent,
-                              color: "white",
-                            }}
-                          >
-                            <activeTab.icon fontSize="small" />
-                          </Box>
-                          <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                              {activeTab.label}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: "#64748B" }}>
-                              A simpler workflow for classroom delivery
-                            </Typography>
-                          </Box>
-                        </Stack>
-
-                        <Divider />
-
-                        {activeTab.details.map((detail) => (
-                          <Stack key={detail} direction="row" spacing={1.2} alignItems="center">
-                            <TaskAltIcon sx={{ color: activeTab.accent, fontSize: 18 }} />
-                            <Typography variant="body2" sx={{ color: "#334155" }}>
-                              {detail}
-                            </Typography>
-                          </Stack>
-                        ))}
-                      </Stack>
-                    </Paper>
+                    {renderPreviewSurface(activeTab)}
 
                     <Grid container spacing={1.2}>
                       {activeTab.stats.map((stat) => (
