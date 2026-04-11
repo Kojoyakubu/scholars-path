@@ -10,14 +10,14 @@ import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
+  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
+    <React.StrictMode>
       <Provider store={store}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <App />
         </ThemeProvider>
       </Provider>
-    </GoogleOAuthProvider>
-  </React.StrictMode>
+    </React.StrictMode>
+  </GoogleOAuthProvider>
 );
