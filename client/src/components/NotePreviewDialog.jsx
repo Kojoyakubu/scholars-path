@@ -22,6 +22,7 @@ import {
 import DOMPurify from 'dompurify';
 import { useMemo } from 'react';
 import DialogFullscreenTitle from './DialogFullscreenTitle';
+import useContentProtection from '../hooks/useContentProtection';
 
 const contentSx = {
   '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
@@ -82,6 +83,7 @@ export default function NotePreviewDialog({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const effectiveFullScreen = fullScreen || isMobile;
+  const { protectionProps, protectionSx } = useContentProtection({ enabled: open });
   const sanitizedSegments = useMemo(
     () => segments.map((segment) => (
       segment.type === 'text'
@@ -107,11 +109,13 @@ export default function NotePreviewDialog({
       />
       <DialogContent
         tabIndex={0}
+        {...protectionProps}
         sx={{
           bgcolor: 'grey.50',
           overflowY: 'auto',
           px: { xs: 1, sm: 2.5 },
           py: { xs: 1, sm: 2 },
+          ...protectionSx,
         }}
       >
         <Paper

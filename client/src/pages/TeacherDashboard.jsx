@@ -41,6 +41,7 @@ import LessonNotePickerDialog from '../components/LessonNotePickerDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AnalyticsDialog from '../components/AnalyticsDialog';
 import NotePreviewDialog from '../components/NotePreviewDialog';
+import useContentProtection from '../hooks/useContentProtection';
 
 // MUI Imports
 import {
@@ -261,6 +262,9 @@ function TeacherDashboard() {
   //       | 'myLessonNotes' | 'myLearnerNotes' | 'myQuizzes' | 'quizView' | 'analytics'
   const [activeDialog, setActiveDialog] = useState(null);
   const closeDialog = useCallback(() => setActiveDialog(null), []);
+  const { protectionProps: quizProtectionProps, protectionSx: quizProtectionSx } = useContentProtection({
+    enabled: activeDialog === 'quizView',
+  });
 
   const overviewCards = [
     {
@@ -1530,7 +1534,7 @@ function TeacherDashboard() {
           maxWidth={isDialogFullscreen('myLearnerNotes') ? false : 'md'}
         >
           <DialogTitleWithFullscreen title="My Learner Notes" isFullscreen={isDialogFullscreen('myLearnerNotes')} onToggle={() => toggleDialogFullscreen('myLearnerNotes')} />
-          <DialogContent tabIndex={0} sx={dialogBodySx}>
+          <DialogContent tabIndex={0} {...quizProtectionProps} sx={{ ...dialogBodySx, ...quizProtectionSx }}>
             <Grid container spacing={2} sx={dialogFilterPanelSx}>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth size="small">

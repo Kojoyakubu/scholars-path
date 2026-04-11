@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import DOMPurify from 'dompurify';
 import { useMemo, useState } from 'react';
+import useContentProtection from '../hooks/useContentProtection';
 import {
   Article,
   MenuBook,
@@ -64,6 +65,7 @@ function BundleResultViewer({
   onToggleFullscreen,
 }) {
   const [activeTab, setActiveTab] = useState(0);
+  const { protectionProps, protectionSx } = useContentProtection({ enabled: open });
 
   const { lessonNote, learnerNote, quiz } = bundleData || {};
   const sanitizedLessonNoteContent = useMemo(
@@ -214,7 +216,11 @@ function BundleResultViewer({
       </Box>
 
       {/* Content */}
-      <DialogContent tabIndex={0} sx={{ bgcolor: 'grey.50', overflowY: 'auto' }}>
+      <DialogContent
+        tabIndex={0}
+        {...protectionProps}
+        sx={{ bgcolor: 'grey.50', overflowY: 'auto', ...protectionSx }}
+      >
         {/* Tab 1: Teacher Note */}
         <TabPanel value={activeTab} index={0}>
           <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
