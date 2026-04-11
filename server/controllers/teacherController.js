@@ -121,6 +121,56 @@ const getLessonNoteById = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Update a lesson note's saved template without regenerating lesson content
+ * @route   PATCH /api/teacher/lesson-notes/:id/template
+ * @access  Private (Teacher)
+ */
+const updateLessonNoteTemplate = asyncHandler(async (req, res) => {
+  const { templateDesign } = req.body;
+
+  if (!templateDesign) {
+    res.status(400);
+    throw new Error('Template design is required.');
+  }
+
+  const note = await LessonNote.findById(req.params.id).populate({
+    path: 'subStrand',
+    select: 'name',
+    populate: {
+      path: 'strand',
+      select: 'name',
+      populate: {
+        path: 'subject',
+        select: 'name',
+        populate: { path: 'class', select: 'name' },
+      },
+    },
+  });
+
+  if (!note) {
+    res.status(404);
+    throw new Error('Lesson note not found');
+  }
+
+  if (note.teacher.toString() !== req.user.id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to update this note');
+  }
+
+  note.content = aiService.restyleTeacherLessonNoteHTML(note.content, {
+    templateDesign,
+    subjectName: note.subStrand?.strand?.subject?.name || 'Subject',
+    className: note.subStrand?.strand?.subject?.class?.name || 'Class',
+    strandName: note.subStrand?.strand?.name || 'Strand',
+    subStrandName: note.subStrand?.name || 'Topic',
+  });
+  note.templateDesign = templateDesign;
+
+  await note.save();
+  res.json(note);
+});
+
+/**
  * @desc    Delete a lesson note
  * @route   DELETE /api/teacher/lesson-notes/:id
  * @access  Private (Teacher)
@@ -991,6 +1041,7 @@ module.exports = {
   generateLessonNote,
   getMyLessonNotes,
   getLessonNoteById,
+  updateLessonNoteTemplate,
   deleteLessonNote,
   generateLearnerNote,
   generateLearnerNoteFromStrand,

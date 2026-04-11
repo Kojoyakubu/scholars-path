@@ -1170,6 +1170,326 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
 </div>`;
 }
 
+function stripTeacherLessonNoteShell(html = '') {
+  let normalized = String(html || '').trim();
+  normalized = normalized.replace(/<style[\s\S]*?<\/style>/gi, '').trim();
+
+  if (/^<div[^>]*class=["'][^"']*lesson-note[^"']*["'][^>]*>/i.test(normalized)) {
+    normalized = normalized.replace(/^<div[^>]*>/i, '').trim();
+    normalized = normalized.replace(/<\/div>\s*$/i, '').trim();
+  }
+
+  return normalized;
+}
+
+function buildTeacherLessonNoteRestyleWrapper(templateDesign, metadata = {}, bodyHtml = '') {
+  const {
+    subjectName = 'Subject',
+    className = 'Class',
+    strandName = 'Strand',
+    subStrandName = 'Topic',
+  } = metadata;
+
+  if (templateDesign === 'clean-minimal') {
+    return `
+<div class="lesson-note restyled clean-minimal">
+  <style>
+    .lesson-note.restyled.clean-minimal {
+      font-family: 'Aptos', 'Segoe UI', Arial, sans-serif;
+      color: #1f2933;
+      background: #ffffff;
+      border: 1px solid #d9e2ec;
+      border-radius: 16px;
+      padding: 22px;
+      line-height: 1.6;
+    }
+    .lesson-note.restyled.clean-minimal .restyle-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      padding-bottom: 14px;
+      border-bottom: 2px solid #d9e2ec;
+      margin-bottom: 16px;
+    }
+    .lesson-note.restyled.clean-minimal .restyle-header h1 { margin: 0; font-size: 1.35rem; color: #102a43; }
+    .lesson-note.restyled.clean-minimal .restyle-subtitle { margin: 4px 0 0; color: #52606d; font-size: 0.9rem; }
+    .lesson-note.restyled.clean-minimal .restyle-chip-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .lesson-note.restyled.clean-minimal .restyle-chip {
+      border: 1px solid #bcccdc;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #334e68;
+      background: #f8fbff;
+    }
+    .lesson-note.restyled.clean-minimal .restyled-body > :first-child { margin-top: 0 !important; }
+    .lesson-note.restyled.clean-minimal .restyled-body h2,
+    .lesson-note.restyled.clean-minimal .restyled-body h3 { color: #102a43; }
+    .lesson-note.restyled.clean-minimal .restyled-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 0.94rem;
+    }
+    .lesson-note.restyled.clean-minimal .restyled-body th,
+    .lesson-note.restyled.clean-minimal .restyled-body td {
+      border: 1px solid #d9e2ec;
+      padding: 9px;
+      vertical-align: top;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .lesson-note.restyled.clean-minimal .restyled-body th { background: #f8fbff; }
+    @media (max-width: 720px) {
+      .lesson-note.restyled.clean-minimal { padding: 14px; }
+      .lesson-note.restyled.clean-minimal .restyle-header { display: block; }
+      .lesson-note.restyled.clean-minimal .restyle-chip-row { justify-content: flex-start; margin-top: 10px; }
+      .lesson-note.restyled.clean-minimal .restyled-body table { display: block; overflow-x: auto; }
+    }
+  </style>
+  <header class="restyle-header">
+    <div>
+      <h1>Teacher Lesson Note</h1>
+      <p class="restyle-subtitle">Clean Minimal design</p>
+    </div>
+    <div class="restyle-chip-row">
+      <span class="restyle-chip">${subjectName}</span>
+      <span class="restyle-chip">${className}</span>
+      <span class="restyle-chip">${strandName}</span>
+      <span class="restyle-chip">${subStrandName}</span>
+    </div>
+  </header>
+  <section class="restyled-body">${bodyHtml}</section>
+</div>`;
+  }
+
+  if (templateDesign === 'warm-community') {
+    return `
+<div class="lesson-note restyled warm-community">
+  <style>
+    .lesson-note.restyled.warm-community {
+      font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+      color: #4a3427;
+      background: linear-gradient(180deg, #fffaf3 0%, #fffdf9 100%);
+      border: 1px solid #ecd8c5;
+      border-radius: 18px;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .lesson-note.restyled.warm-community .restyle-header {
+      background: linear-gradient(135deg, #8b4c27 0%, #c77732 100%);
+      color: #fff8f0;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .lesson-note.restyled.warm-community .restyle-header h1 { margin: 0 0 8px 0; font-size: 1.4rem; }
+    .lesson-note.restyled.warm-community .restyle-subtitle { margin: 0 0 10px 0; opacity: 0.95; }
+    .lesson-note.restyled.warm-community .restyle-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .lesson-note.restyled.warm-community .restyle-chip {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .lesson-note.restyled.warm-community .restyled-body {
+      background: #fffaf5;
+      border: 1px solid #eddccc;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .lesson-note.restyled.warm-community .restyled-body > :first-child { margin-top: 0 !important; }
+    .lesson-note.restyled.warm-community .restyled-body h2,
+    .lesson-note.restyled.warm-community .restyled-body h3 { color: #8b4c27; }
+    .lesson-note.restyled.warm-community .restyled-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+    }
+    .lesson-note.restyled.warm-community .restyled-body th,
+    .lesson-note.restyled.warm-community .restyled-body td {
+      border: 1px solid #eddccc;
+      padding: 9px;
+      vertical-align: top;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .lesson-note.restyled.warm-community .restyled-body th { background: #fff1e2; }
+    @media (max-width: 720px) {
+      .lesson-note.restyled.warm-community { padding: 14px; }
+      .lesson-note.restyled.warm-community .restyled-body table { display: block; overflow-x: auto; }
+    }
+  </style>
+  <header class="restyle-header">
+    <h1>Teacher Lesson Note</h1>
+    <p class="restyle-subtitle">Warm Community design</p>
+    <div class="restyle-chip-row">
+      <span class="restyle-chip">${subjectName}</span>
+      <span class="restyle-chip">${className}</span>
+      <span class="restyle-chip">${strandName}</span>
+      <span class="restyle-chip">${subStrandName}</span>
+    </div>
+  </header>
+  <section class="restyled-body">${bodyHtml}</section>
+</div>`;
+  }
+
+  if (templateDesign === 'structured-workshop') {
+    return `
+<div class="lesson-note restyled structured-workshop">
+  <style>
+    .lesson-note.restyled.structured-workshop {
+      font-family: 'Segoe UI', 'Arial Narrow', sans-serif;
+      color: #1f2333;
+      background: #f7f5fb;
+      border: 1px solid #ddd2ee;
+      border-radius: 16px;
+      padding: 18px;
+      line-height: 1.56;
+    }
+    .lesson-note.restyled.structured-workshop .restyle-header {
+      background: linear-gradient(135deg, #362158 0%, #6f45a7 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .lesson-note.restyled.structured-workshop .restyle-header h1 { margin: 0 0 8px 0; font-size: 1.4rem; }
+    .lesson-note.restyled.structured-workshop .restyle-subtitle { margin: 0 0 10px 0; opacity: 0.95; }
+    .lesson-note.restyled.structured-workshop .restyle-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .lesson-note.restyled.structured-workshop .restyle-chip {
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.24);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .lesson-note.restyled.structured-workshop .restyled-body {
+      background: #fff;
+      border: 1px solid #ddd2ee;
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .lesson-note.restyled.structured-workshop .restyled-body > :first-child { margin-top: 0 !important; }
+    .lesson-note.restyled.structured-workshop .restyled-body h2,
+    .lesson-note.restyled.structured-workshop .restyled-body h3 { color: #4a2f78; }
+    .lesson-note.restyled.structured-workshop .restyled-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+    }
+    .lesson-note.restyled.structured-workshop .restyled-body th,
+    .lesson-note.restyled.structured-workshop .restyled-body td {
+      border: 1px solid #ddd2ee;
+      padding: 9px;
+      vertical-align: top;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .lesson-note.restyled.structured-workshop .restyled-body th { background: #f1ebfb; }
+    @media (max-width: 720px) {
+      .lesson-note.restyled.structured-workshop { padding: 14px; }
+      .lesson-note.restyled.structured-workshop .restyled-body table { display: block; overflow-x: auto; }
+    }
+  </style>
+  <header class="restyle-header">
+    <h1>Teacher Lesson Note</h1>
+    <p class="restyle-subtitle">Structured Workshop design</p>
+    <div class="restyle-chip-row">
+      <span class="restyle-chip">${subjectName}</span>
+      <span class="restyle-chip">${className}</span>
+      <span class="restyle-chip">${strandName}</span>
+      <span class="restyle-chip">${subStrandName}</span>
+    </div>
+  </header>
+  <section class="restyled-body">${bodyHtml}</section>
+</div>`;
+  }
+
+  return `
+<div class="lesson-note restyled modern-academic">
+  <style>
+    .lesson-note.restyled.modern-academic {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      color: #1f2937;
+      background: #f8fafc;
+      border: 1px solid #dbe4ee;
+      border-radius: 12px;
+      padding: 18px;
+      line-height: 1.56;
+    }
+    .lesson-note.restyled.modern-academic .restyle-header {
+      background: linear-gradient(135deg, #0f2a43 0%, #1f4d7a 100%);
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .lesson-note.restyled.modern-academic .restyle-header h1 { margin: 0 0 8px 0; font-size: 1.35rem; }
+    .lesson-note.restyled.modern-academic .restyle-subtitle { margin: 0 0 10px 0; opacity: 0.95; }
+    .lesson-note.restyled.modern-academic .restyle-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .lesson-note.restyled.modern-academic .restyle-chip {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .lesson-note.restyled.modern-academic .restyled-body {
+      background: #fff;
+      border: 1px solid #dbe4ee;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .lesson-note.restyled.modern-academic .restyled-body > :first-child { margin-top: 0 !important; }
+    .lesson-note.restyled.modern-academic .restyled-body h2,
+    .lesson-note.restyled.modern-academic .restyled-body h3 { color: #0f2a43; }
+    .lesson-note.restyled.modern-academic .restyled-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+    }
+    .lesson-note.restyled.modern-academic .restyled-body th,
+    .lesson-note.restyled.modern-academic .restyled-body td {
+      border: 1px solid #cfd8e3;
+      padding: 9px;
+      vertical-align: top;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .lesson-note.restyled.modern-academic .restyled-body th { background: #eef4fb; }
+    @media (max-width: 720px) {
+      .lesson-note.restyled.modern-academic { padding: 14px; }
+      .lesson-note.restyled.modern-academic .restyled-body table { display: block; overflow-x: auto; }
+    }
+  </style>
+  <header class="restyle-header">
+    <h1>Teacher Lesson Note</h1>
+    <p class="restyle-subtitle">Modern Academic design</p>
+    <div class="restyle-chip-row">
+      <span class="restyle-chip">${subjectName}</span>
+      <span class="restyle-chip">${className}</span>
+      <span class="restyle-chip">${strandName}</span>
+      <span class="restyle-chip">${subStrandName}</span>
+    </div>
+  </header>
+  <section class="restyled-body">${bodyHtml}</section>
+</div>`;
+}
+
+function restyleTeacherLessonNoteHTML(existingHtml, details = {}) {
+  const templateDesign = resolveTeacherNoteTemplate(details.templateDesign);
+  const bodyHtml = stripTeacherLessonNoteShell(existingHtml);
+
+  return buildTeacherLessonNoteRestyleWrapper(templateDesign, details, bodyHtml);
+}
+
 async function generateTeacherLessonNoteHTML(details = {}) {
   const { 
     school, 
@@ -1514,6 +1834,7 @@ module.exports = {
   getLandingInsights,
   // 🎓 New HTML-based bundle functions
   generateTeacherLessonNoteHTML,
+  restyleTeacherLessonNoteHTML,
   generateLearnerNoteHTML,
   generateStructuredQuizJSON,
 };
