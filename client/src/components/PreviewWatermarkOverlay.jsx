@@ -7,10 +7,23 @@ export default function PreviewWatermarkOverlay({
 }) {
   const timestamp = useMemo(() => new Date().toLocaleString(), [open]);
 
-  const tiles = useMemo(
-    () => Array.from({ length: 16 }, (_, index) => index),
-    []
-  );
+  const tiles = useMemo(() => {
+    const columns = 4;
+    const rows = 9;
+    const result = [];
+
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < columns; col += 1) {
+        result.push({
+          id: `${row}-${col}`,
+          left: `${(col + 0.5) * (100 / columns)}%`,
+          top: `${(row + 0.5) * (100 / rows)}%`,
+        });
+      }
+    }
+
+    return result;
+  }, []);
 
   if (!open) return null;
 
@@ -22,18 +35,17 @@ export default function PreviewWatermarkOverlay({
         inset: 0,
         zIndex: 3,
         pointerEvents: 'none',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        alignItems: 'center',
-        justifyItems: 'center',
         overflow: 'hidden',
       }}
     >
       {tiles.map((tile) => (
         <Box
-          key={tile}
+          key={tile.id}
           sx={{
-            transform: 'rotate(-24deg)',
+            position: 'absolute',
+            left: tile.left,
+            top: tile.top,
+            transform: 'translate(-50%, -50%) rotate(-24deg)',
             opacity: 0.12,
             color: 'text.primary',
             textAlign: 'center',
