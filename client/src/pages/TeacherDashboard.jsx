@@ -595,6 +595,11 @@ function TeacherDashboard() {
 
     try {
       const initResponse = await teacherService.initializeDownloadPayment({ itemType, itemId, format });
+
+      if (initResponse?.alreadyPaid) {
+        return true;
+      }
+
       const paystackConfig = initResponse?.paystack;
 
       if (!paystackConfig?.publicKey || !paystackConfig?.reference) {

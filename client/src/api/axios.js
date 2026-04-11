@@ -53,6 +53,14 @@ const shouldHandleUnauthorized = (error) => {
     return false;
   }
 
+  // Payment popup flows can outlive the access token; do not hard-logout here.
+  if (
+    requestUrl.includes('/api/payments/downloads/initialize') ||
+    requestUrl.includes('/api/payments/downloads/verify')
+  ) {
+    return false;
+  }
+
   return true;
 };
 

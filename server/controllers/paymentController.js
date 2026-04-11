@@ -12,6 +12,7 @@ const mongoose = require('mongoose');
 
 const DOWNLOAD_FEE_GHS = 0.5;
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
+const DOWNLOAD_RETRY_GRACE_MINUTES = 60;
 
 const generateReference = (prefix = 'PAY') => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
@@ -52,6 +53,20 @@ const getPaystackConfig = () => {
 };
 
 const amountToKobo = (amount) => Math.round(Number(amount) * 100);
+
+const verifyPaystackReference = async ({ secretKey, reference }) => {
+  const verifyResponse = await axios.get(
+    `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+      },
+      timeout: 15000,
+    }
+  );
+
+  return verifyResponse.data?.data;
+};
 
 /**
  * @desc   Create a new payment record
@@ -187,6 +202,70 @@ const initializeDownloadPayment = asyncHandler(async (req, res) => {
   }
 
   const { secretKey, publicKey } = getPaystackConfig();
+
+  const graceWindowStart = new Date(Date.now() - DOWNLOAD_RETRY_GRACE_MINUTES * 60 * 1000);
+
+  // If a successful payment already exists recently for this exact download item, reuse it.
+  const existingSuccessfulPayment = await Payment.findOne({
+    user: req.user.id,
+    purpose: 'download',
+    itemType,
+    itemId,
+    status: 'success',
+    createdAt: { $gte: graceWindowStart },
+  }).sort({ createdAt: -1 });
+
+  if (existingSuccessfulPayment) {
+    return res.status(200).json({
+      message: 'Existing successful payment found for this download.',
+      alreadyPaid: true,
+      payment: existingSuccessfulPayment,
+      paystack: null,
+    });
+  }
+
+  // If there is a pending payment for this item, verify it before creating a new charge.
+  const existingPendingPayment = await Payment.findOne({
+    user: req.user.id,
+    purpose: 'download',
+    itemType,
+    itemId,
+    status: 'pending',
+    createdAt: { $gte: graceWindowStart },
+  }).sort({ createdAt: -1 });
+
+  if (existingPendingPayment) {
+    try {
+      const tx = await verifyPaystackReference({
+        secretKey,
+        reference: existingPendingPayment.reference,
+      });
+
+      const isValidSuccess = Boolean(
+        tx?.status === 'success' &&
+        Number(tx?.amount) === amountToKobo(existingPendingPayment.amount) &&
+        String(tx?.currency || '').toUpperCase() === 'GHS'
+      );
+
+      if (isValidSuccess) {
+        existingPendingPayment.status = 'success';
+        existingPendingPayment.paidAt = tx?.paid_at ? new Date(tx.paid_at) : new Date();
+        existingPendingPayment.method = 'paystack';
+        await existingPendingPayment.save();
+
+        return res.status(200).json({
+          message: 'Recovered successful payment for this download.',
+          alreadyPaid: true,
+          payment: existingPendingPayment,
+          paystack: null,
+        });
+      }
+    } catch (error) {
+      // If Paystack verify fails transiently, continue with a fresh initialize.
+      console.warn('Pending payment verification during initialize failed:', error.message);
+    }
+  }
+
   const reference = generateReference('DL');
 
   const paystackPayload = {
@@ -236,6 +315,7 @@ const initializeDownloadPayment = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     message: 'Download payment initialized.',
+    alreadyPaid: false,
     payment,
     paystack: {
       publicKey,
@@ -288,19 +368,8 @@ const verifyDownloadPayment = asyncHandler(async (req, res) => {
   }
 
   const { secretKey } = getPaystackConfig();
-  const verifyResponse = await axios.get(
-    `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-      },
-      timeout: 15000,
-    }
-  );
-
-  const tx = verifyResponse.data?.data;
+  const tx = await verifyPaystackReference({ secretKey, reference });
   const isValidSuccess = Boolean(
-    verifyResponse.data?.status &&
     tx?.status === 'success' &&
     Number(tx?.amount) === amountToKobo(payment.amount) &&
     String(tx?.currency || '').toUpperCase() === 'GHS'
