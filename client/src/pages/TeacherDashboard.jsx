@@ -71,6 +71,8 @@ import {
   Chip,
   TextField,
   Checkbox,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 
 // Icon Imports
@@ -101,8 +103,8 @@ const INITIAL_STRAND_FORM = {
 /* ── shared style tokens (module-scope, stable references) ─────────────── */
 
 const overviewCardSx = {
-  p: 2.25,
-  minHeight: 184,
+  p: { xs: 1.75, sm: 2.25 },
+  minHeight: { xs: 140, sm: 184 },
   borderRadius: 3,
   display: 'flex',
   flexDirection: 'column',
@@ -128,9 +130,9 @@ const toolTileSx = {
 };
 
 const toolImageSx = {
-  width: 120,
-  height: 120,
-  margin: '0 auto 14px',
+  width: { xs: 80, sm: 120 },
+  height: { xs: 80, sm: 120 },
+  margin: '0 auto 12px',
   borderRadius: 2,
   backgroundSize: 'cover',
   backgroundPosition: 'center',
@@ -207,6 +209,8 @@ function ToolTile({ label, imageUrl, onClick, toolTileSx, toolImageSx }) {
 
 function TeacherDashboard() {
   const dispatch = useDispatch();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const DOWNLOAD_FEE_GHS = 0.5;
 
   // Redux state
@@ -293,7 +297,7 @@ function TeacherDashboard() {
     },
   ];
 
-  const isDialogFullscreen = useCallback((dialogKey) => !!dialogFullscreen[dialogKey], [dialogFullscreen]);
+  const isDialogFullscreen = useCallback((dialogKey) => isMobile || !!dialogFullscreen[dialogKey], [dialogFullscreen, isMobile]);
   const toggleDialogFullscreen = useCallback((dialogKey) => {
     setDialogFullscreen((prev) => ({ ...prev, [dialogKey]: !prev[dialogKey] }));
   }, []);
@@ -1218,7 +1222,7 @@ function TeacherDashboard() {
           </Typography>
           <Grid container spacing={3}>
             {overviewCards.map((card) => (
-              <Grid key={card.key} item xs={12} sm={6} md={3}>
+              <Grid key={card.key} item xs={6} md={3}>
                 <Paper
                   sx={(theme) => ({
                     ...overviewCardSx,
@@ -1243,7 +1247,7 @@ function TeacherDashboard() {
                   >
                     <card.Icon sx={{ fontSize: 18 }} />
                   </Box>
-                  <Typography variant="h3" sx={(theme) => ({ fontWeight: 800, lineHeight: 1, mb: 1.1, color: theme.palette[card.palette].main })}>
+                  <Typography variant="h3" sx={(theme) => ({ fontWeight: 800, lineHeight: 1, mb: 1.1, color: theme.palette[card.palette].main, fontSize: { xs: '1.75rem', sm: '3rem' } })}>
                     {card.value}
                   </Typography>
                   <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: 0.6, color: 'text.primary', display: 'block' }}>
@@ -1591,7 +1595,7 @@ function TeacherDashboard() {
                           />
                         )}
                       </Box>
-                      <Stack direction="row" spacing={1}>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
                         <Button
                           variant="outlined"
                           size="small"
@@ -1867,9 +1871,9 @@ function TeacherDashboard() {
               <List>
                 {quizzes.map((quiz) => (
                   <Paper key={quiz._id} sx={dialogListCardSx}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box>
-                        <Typography variant="h6">{quiz.title}</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1 }}>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography variant="h6" sx={{ wordBreak: 'break-word' }}>{quiz.title}</Typography>
                         <Typography variant="caption" color="text.secondary">
                           Created: {quiz.createdAt ? new Date(quiz.createdAt).toLocaleString() : 'Unknown'}
                         </Typography>
@@ -1879,7 +1883,7 @@ function TeacherDashboard() {
                           </Typography>
                         )}
                       </Box>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
                         <Button
                           variant="outlined"
                           size="small"
@@ -1895,7 +1899,7 @@ function TeacherDashboard() {
                         >
                           Delete
                         </Button>
-                      </Box>
+                      </Stack>
                     </Box>
                   </Paper>
                 ))}
