@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
@@ -16,6 +17,7 @@ import {
   CardContent,
   Chip,
   Stack,
+  Divider,
 } from "@mui/material";
 
 import SchoolIcon from "@mui/icons-material/School";
@@ -26,6 +28,10 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import BoltIcon from "@mui/icons-material/Bolt";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import GroupsIcon from "@mui/icons-material/Groups";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import QuizIcon from "@mui/icons-material/Quiz";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
 
 const reveal = {
   hidden: { opacity: 0, y: 24 },
@@ -45,76 +51,161 @@ const LandingPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
+  const [activePreview, setActivePreview] = useState("notes");
 
   const handleGetStarted = () => navigate("/register");
   const handleLogin = () => navigate("/login");
 
-  const trustMetrics = [
-    { label: "Teacher Hours Saved", value: "12k+" },
-    { label: "Quizzes Generated", value: "85k+" },
-    { label: "Schools Onboarded", value: "160+" },
+  const previewTabs = [
+    {
+      key: "notes",
+      label: "Lesson Notes",
+      title: "Create structured notes in minutes",
+      description: "Pick class, strand, and sub-strand, then generate a classroom-ready lesson note aligned to the topic you are teaching.",
+      icon: MenuBookIcon,
+      accent: theme.palette.primary.main,
+      details: ["NaCCA-aligned objectives", "Teaching steps and examples", "Export-ready teacher format"],
+      stats: ["Basic 5 Science", "3 teaching steps", "Ready to share"],
+    },
+    {
+      key: "quizzes",
+      label: "Quiz Builder",
+      title: "Build practice and assessment faster",
+      description: "Generate topic-based quizzes with multiple question types so students can revise and teachers can check understanding quickly.",
+      icon: QuizIcon,
+      accent: theme.palette.secondary.main,
+      details: ["Multiple choice and written items", "Topic-based question flow", "Immediate practice support"],
+      stats: ["15 questions", "Auto-graded", "Revision-ready"],
+    },
+    {
+      key: "progress",
+      label: "Student Progress",
+      title: "Track where learners need support",
+      description: "See how students are performing by topic and use the signals to guide revision, follow-up, and classroom support.",
+      icon: QueryStatsIcon,
+      accent: theme.palette.success.main,
+      details: ["Topic-level performance view", "Progress snapshots", "Teacher-friendly summaries"],
+      stats: ["78% mastery", "4 active topics", "2 learners need help"],
+    },
+    {
+      key: "resources",
+      label: "Resource Hub",
+      title: "Keep notes, quizzes, and materials together",
+      description: "Organize learning materials in one simple hub so teachers and students always know where to find the right content.",
+      icon: Inventory2Icon,
+      accent: theme.palette.warning.main,
+      details: ["One place for learning assets", "Faster topic access", "Cleaner classroom workflow"],
+      stats: ["12 resources", "Sorted by topic", "Easy student access"],
+    },
   ];
 
-  const outcomes = [
+  const activeTab = previewTabs.find((tab) => tab.key === activePreview) || previewTabs[0];
+
+  const trustMetrics = [
+    { label: "Lesson Notes Generated", value: "12k+" },
+    { label: "Quizzes Completed", value: "85k+" },
+    { label: "Schools Reached", value: "160+" },
+  ];
+
+  const capabilities = [
     {
-      icon: BoltIcon,
-      title: "Plan Faster",
-      desc: "Generate weekly lesson notes and assessments in minutes.",
+      icon: MenuBookIcon,
+      title: "Create Lesson Notes",
+      desc: "Generate structured lesson content quickly without losing curriculum focus.",
+    },
+    {
+      icon: QuizIcon,
+      title: "Build Better Quizzes",
+      desc: "Create classroom quizzes faster and support student revision with less admin work.",
     },
     {
       icon: QueryStatsIcon,
-      title: "Track Progress",
-      desc: "See topic-level mastery and identify weak spots early.",
+      title: "Track Learning Progress",
+      desc: "Review outcomes by topic so weak spots become visible earlier.",
+    },
+    {
+      icon: Inventory2Icon,
+      title: "Share Learning Resources",
+      desc: "Keep notes, quizzes, and supporting materials organized in one place.",
+    },
+  ];
+
+  const audiences = [
+    {
+      icon: WorkspacePremiumIcon,
+      title: "For Teachers",
+      desc: "Prepare lessons, create assessments, and manage teaching materials without switching between scattered tools.",
     },
     {
       icon: GroupsIcon,
-      title: "Support Every Learner",
-      desc: "Give students notes, quizzes, and explanations tailored to level.",
+      title: "For Students",
+      desc: "Access notes, revise with quizzes, and follow a clearer learning path by topic and subject.",
+    },
+    {
+      icon: SchoolIcon,
+      title: "For Schools",
+      desc: "Support consistent classroom delivery with a platform that gives structure across teachers and learners.",
     },
   ];
 
   const workflow = [
     {
       step: "01",
-      title: "Pick Class + Subject",
-      desc: "Choose level, strand, and sub-strand aligned to NaCCA.",
+      title: "Choose a class and topic",
+      desc: "Start from the subject, strand, and sub-strand you want to teach or revise.",
     },
     {
       step: "02",
-      title: "Generate Content",
-      desc: "Create lesson notes, quiz sets, and resource bundles instantly.",
+      title: "Generate and organize content",
+      desc: "Create lesson notes, quizzes, and supporting resources from one focused workflow.",
     },
     {
       step: "03",
-      title: "Assign + Review",
-      desc: "Share with students and monitor outcomes from one dashboard.",
+      title: "Teach, assess, and review",
+      desc: "Use the results to guide practice, follow-up, and learner support.",
     },
   ];
 
-  const pricing = [
+  const reasons = [
     {
-      title: "Starter",
-      price: "GHS 0",
-      sub: "Great for trying the platform",
-      features: ["Core lesson tools", "Student dashboard", "Limited generations"],
-      cta: "Start Free",
-      route: "/register",
+      title: "Curriculum-aware workflows",
+      desc: "The platform is shaped around real teaching tasks, not generic document tools.",
     },
     {
-      title: "Teacher Pro",
-      price: "GHS 25/mo",
-      sub: "Built for daily classroom use",
-      features: ["Unlimited lesson notes", "Unlimited quizzes", "AI insights", "Priority support"],
-      cta: "Start Teacher Pro",
+      title: "Less repetitive preparation",
+      desc: "Teachers spend less time formatting and more time focusing on learning outcomes.",
+    },
+    {
+      title: "Clearer student support",
+      desc: "Notes, practice, and progress work together so learners are easier to guide.",
+    },
+    {
+      title: "One connected workspace",
+      desc: "Lesson planning, quizzes, resources, and progress live in one system instead of many scattered files.",
+    },
+  ];
+
+  const paths = [
+    {
+      title: "Teacher",
+      subtitle: "For daily planning and classroom delivery",
+      features: ["Lesson note generation", "Quiz creation", "Resource organization"],
+      action: "Start as Teacher",
       route: "/register",
       featured: true,
     },
     {
+      title: "Student",
+      subtitle: "For revision, practice, and topic clarity",
+      features: ["Study notes", "Quiz practice", "Clearer learning structure"],
+      action: "See Student Flow",
+      route: "/login",
+    },
+    {
       title: "School",
-      price: "Custom",
-      sub: "For multi-teacher institutions",
-      features: ["Admin controls", "Team onboarding", "Analytics", "Dedicated support"],
-      cta: "Talk to Sales",
+      subtitle: "For shared visibility across teaching teams",
+      features: ["Coordinated classroom tools", "Consistency across teachers", "Scalable school use"],
+      action: "Talk to Us",
       route: "/register",
     },
   ];
@@ -172,7 +263,7 @@ const LandingPage = () => {
             <motion.div variants={stagger} initial="hidden" animate="visible">
               <motion.div variants={reveal}>
                 <Chip
-                  label="Built for Ghanaian classrooms"
+                  label="NaCCA-Aligned Teaching Platform"
                   sx={{
                     mb: 2,
                     bgcolor: alpha("#2563EB", 0.1),
@@ -193,10 +284,12 @@ const LandingPage = () => {
                     textWrap: "balance",
                   }}
                 >
-                  Teachers plan in minutes.
+                  Plan lessons faster.
                   <Box component="span" sx={{ color: "#2563EB" }}>
-                    {" "}
-                    Students learn with clarity.
+                    {" "}Build quizzes smarter.
+                  </Box>
+                  <Box component="span" sx={{ color: "#0B1324" }}>
+                    {" "}Support every learner in one place.
                   </Box>
                 </Typography>
               </motion.div>
@@ -210,8 +303,8 @@ const LandingPage = () => {
                     mb: 3.5,
                   }}
                 >
-                  Create NaCCA-aligned lesson notes, assessments, and learning support in one flow.
-                  Spend less time preparing and more time teaching.
+                  Scholar&apos;s Path helps teachers prepare, assess, and guide learning with
+                  curriculum-aligned tools designed for real classrooms.
                 </Typography>
               </motion.div>
 
@@ -225,16 +318,16 @@ const LandingPage = () => {
                     fullWidth={isMobile}
                     sx={{ px: 3.5 }}
                   >
-                    Start Free as Teacher
+                    Start Free
                   </Button>
                   <Button
-                    onClick={handleLogin}
+                    onClick={() => window.scrollTo({ top: 820, behavior: "smooth" })}
                     variant="outlined"
                     size="large"
                     fullWidth={isMobile}
                     sx={{ px: 3.5, borderWidth: 2 }}
                   >
-                    See Student Experience
+                    See How It Works
                   </Button>
                 </Stack>
               </motion.div>
@@ -242,12 +335,38 @@ const LandingPage = () => {
               <motion.div variants={reveal}>
                 <Stack direction="row" spacing={1.4} alignItems="center" flexWrap="wrap" useFlexGap>
                   <CheckCircleIcon sx={{ color: "#10B981", fontSize: 20 }} />
-                  <Typography variant="body2">No credit card required</Typography>
+                  <Typography variant="body2">Teacher-first workflow</Typography>
                   <Typography variant="body2" sx={{ color: "#94A3B8" }}>
                     •
                   </Typography>
                   <Typography variant="body2">Works on low bandwidth</Typography>
+                  <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                    •
+                  </Typography>
+                  <Typography variant="body2">Curriculum-aligned structure</Typography>
                 </Stack>
+              </motion.div>
+
+              <motion.div variants={reveal}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    mt: 3,
+                    p: 2.5,
+                    borderRadius: 3,
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                    bgcolor: alpha("#FFFFFF", 0.9),
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: "#475569", mb: 1.2 }}>
+                    Used by teachers, schools, and learners across Ghana.
+                  </Typography>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap>
+                    <Chip label="NaCCA-aware content flow" size="small" />
+                    <Chip label="Teacher-ready tools" size="small" />
+                    <Chip label="Student-friendly access" size="small" />
+                  </Stack>
+                </Paper>
               </motion.div>
             </motion.div>
           </Grid>
@@ -261,26 +380,132 @@ const LandingPage = () => {
               <Paper
                 elevation={0}
                 sx={{
-                  p: 2,
+                  p: 0,
                   borderRadius: 4,
                   background: "#FFFFFF",
                   border: `1px solid ${alpha("#1E3A5F", 0.12)}`,
                   boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)",
+                  overflow: "hidden",
                 }}
               >
                 <Box
                   sx={{
-                    borderRadius: 3,
-                    overflow: "hidden",
-                    border: `1px solid ${alpha("#1E3A5F", 0.1)}`,
+                    display: "flex",
+                    overflowX: "auto",
+                    borderBottom: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+                    bgcolor: alpha(theme.palette.primary.main, 0.03),
                   }}
                 >
-                  <img
-                    src="3090733_479.jpg"
-                    alt="Scholar's Path classroom product preview"
-                    style={{ width: "100%", display: "block", maxHeight: 520, objectFit: "cover" }}
-                    loading="lazy"
-                  />
+                  {previewTabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activePreview === tab.key;
+                    return (
+                      <Button
+                        key={tab.key}
+                        onClick={() => setActivePreview(tab.key)}
+                        startIcon={<Icon />}
+                        sx={{
+                          px: 2.2,
+                          py: 1.8,
+                          borderRadius: 0,
+                          flexShrink: 0,
+                          color: isActive ? "#0B1324" : "#64748B",
+                          bgcolor: isActive ? "#FFFFFF" : "transparent",
+                          borderBottom: isActive ? `2px solid ${tab.accent}` : "2px solid transparent",
+                        }}
+                      >
+                        {tab.label}
+                      </Button>
+                    );
+                  })}
+                </Box>
+
+                <Box sx={{ p: { xs: 2.2, md: 3 } }}>
+                  <Stack spacing={2.2}>
+                    <Box>
+                      <Typography
+                        variant="overline"
+                        sx={{ color: activeTab.accent, letterSpacing: "0.08em" }}
+                      >
+                        Product Preview
+                      </Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.6, mb: 1 }}>
+                        {activeTab.title}
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: "#475569" }}>
+                        {activeTab.description}
+                      </Typography>
+                    </Box>
+
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 2.2,
+                        borderRadius: 3,
+                        border: `1px solid ${alpha(activeTab.accent, 0.18)}`,
+                        bgcolor: alpha(activeTab.accent, 0.05),
+                      }}
+                    >
+                      <Stack spacing={1.4}>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 2,
+                              display: "grid",
+                              placeItems: "center",
+                              bgcolor: activeTab.accent,
+                              color: "white",
+                            }}
+                          >
+                            <activeTab.icon fontSize="small" />
+                          </Box>
+                          <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                              {activeTab.label}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: "#64748B" }}>
+                              A simpler workflow for classroom delivery
+                            </Typography>
+                          </Box>
+                        </Stack>
+
+                        <Divider />
+
+                        {activeTab.details.map((detail) => (
+                          <Stack key={detail} direction="row" spacing={1.2} alignItems="center">
+                            <TaskAltIcon sx={{ color: activeTab.accent, fontSize: 18 }} />
+                            <Typography variant="body2" sx={{ color: "#334155" }}>
+                              {detail}
+                            </Typography>
+                          </Stack>
+                        ))}
+                      </Stack>
+                    </Paper>
+
+                    <Grid container spacing={1.2}>
+                      {activeTab.stats.map((stat) => (
+                        <Grid item xs={4} key={stat}>
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              p: 1.4,
+                              borderRadius: 2.5,
+                              textAlign: "center",
+                              bgcolor: "#F8FAFC",
+                              border: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+                              height: "100%",
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "#0F172A" }}>
+                              {stat}
+                            </Typography>
+                          </Paper>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Stack>
                 </Box>
               </Paper>
             </motion.div>
@@ -328,11 +553,15 @@ const LandingPage = () => {
           variant="h3"
           sx={{ mb: 4.5, fontWeight: 800, textAlign: "center", fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
         >
-          Outcomes That Matter
+          Everything you need to move from planning to learning
+        </Typography>
+        <Typography variant="subtitle1" sx={{ textAlign: "center", color: "#475569", mb: 5, maxWidth: 760, mx: "auto" }}>
+          Scholar&apos;s Path brings lesson preparation, assessment, and student support into one
+          simple workspace built for everyday teaching.
         </Typography>
         <Grid container spacing={3}>
-          {outcomes.map((item, i) => (
-            <Grid item xs={12} md={4} key={item.title}>
+          {capabilities.map((item, i) => (
+            <Grid item xs={12} sm={6} key={item.title}>
               <Card
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -348,7 +577,7 @@ const LandingPage = () => {
               >
                 <CardContent sx={{ p: 3 }}>
                   <item.icon sx={{ color: "#2563EB", fontSize: 34, mb: 1.2 }} />
-                  <Typography variant="h5" sx={{ mb: 1, fontWeight: 700 }}>
+                  <Typography variant="h5" sx={{ mb: 1, fontWeight: 700, fontSize: "1.3rem" }}>
                     {item.title}
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#475569" }}>
@@ -356,6 +585,61 @@ const LandingPage = () => {
                   </Typography>
                 </CardContent>
               </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
+      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 10 } }}>
+        <Typography
+          variant="h3"
+          sx={{ mb: 2, textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
+        >
+          Built for every part of the learning journey
+        </Typography>
+        <Typography variant="subtitle1" sx={{ textAlign: "center", color: "#475569", mb: 5.5, maxWidth: 760, mx: "auto" }}>
+          Teacher-first at the top, but structured to support students and schools with the same
+          connected workflow.
+        </Typography>
+        <Grid container spacing={3}>
+          {audiences.map((item, i) => (
+            <Grid item xs={12} md={4} key={item.title}>
+              <Paper
+                component={motion.div}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                elevation={0}
+                sx={{
+                  p: 3,
+                  height: "100%",
+                  borderRadius: 4,
+                  border: `1px solid ${alpha("#1E3A5F", 0.12)}`,
+                  background: "#FFFFFF",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 2.5,
+                    display: "grid",
+                    placeItems: "center",
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: theme.palette.primary.main,
+                    mb: 2,
+                  }}
+                >
+                  <item.icon />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.1, fontSize: "1.3rem" }}>
+                  {item.title}
+                </Typography>
+                <Typography variant="body1" sx={{ color: "#475569" }}>
+                  {item.desc}
+                </Typography>
+              </Paper>
             </Grid>
           ))}
         </Grid>
@@ -370,7 +654,7 @@ const LandingPage = () => {
             How It Works
           </Typography>
           <Typography variant="subtitle1" sx={{ textAlign: "center", mb: 5.5, color: "#475569" }}>
-            One focused workflow for teachers, students, and school leaders.
+            One focused flow from classroom preparation to learner support.
           </Typography>
 
           <Grid container spacing={3}>
@@ -427,31 +711,53 @@ const LandingPage = () => {
           }}
         >
           <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 800, fontSize: { xs: "1.5rem", sm: "1.9rem", md: "2.125rem" } }}>
-            Aligned to NaCCA. Designed for real classrooms.
+            Why schools and teachers choose Scholar&apos;s Path
           </Typography>
-          <Typography variant="body1" sx={{ color: "#334155", maxWidth: 860, mx: "auto", mb: 3 }}>
-            From Basic 1 to JHS, Scholar&apos;s Path supports curriculum-aligned planning, BECE-ready
-            assessments, and low-bandwidth delivery for both private and public schools.
+          <Typography variant="body1" sx={{ color: "#334155", maxWidth: 860, mx: "auto", mb: 3.5 }}>
+            The platform is designed around what teachers actually need to do each week: plan,
+            assess, organize, and respond to learning progress without unnecessary complexity.
           </Typography>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4} justifyContent="center">
-            <Chip label="NaCCA-aligned content" color="primary" />
-            <Chip label="BECE-ready assessment flow" color="primary" variant="outlined" />
-            <Chip label="Low-bandwidth friendly" color="primary" variant="outlined" />
-          </Stack>
+          <Grid container spacing={1.4}>
+            {reasons.map((reason) => (
+              <Grid item xs={12} sm={6} key={reason.title}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    border: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+                    bgcolor: alpha("#FFFFFF", 0.7),
+                    textAlign: "left",
+                    height: "100%",
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    {reason.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#475569" }}>
+                    {reason.desc}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
         </Paper>
       </Container>
 
       <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 11 } }}>
         <Typography
           variant="h3"
-          sx={{ mb: 5, textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
+          sx={{ mb: 2, textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
         >
-          Simple Pricing
+          Start with the tools that matter most
+        </Typography>
+        <Typography variant="subtitle1" sx={{ textAlign: "center", color: "#475569", mb: 5 }}>
+          Choose the path that matches how Scholar&apos;s Path fits into your learning environment.
         </Typography>
 
         <Grid container spacing={3}>
-          {pricing.map((plan, i) => (
-            <Grid item xs={12} md={4} key={plan.title}>
+          {paths.map((path, i) => (
+            <Grid item xs={12} md={4} key={path.title}>
               <Card
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -461,16 +767,16 @@ const LandingPage = () => {
                 sx={{
                   height: "100%",
                   borderRadius: 4,
-                  border: plan.featured
+                  border: path.featured
                     ? `2px solid ${theme.palette.primary.main}`
                     : `1px solid ${alpha("#1E3A5F", 0.12)}`,
-                  background: plan.featured ? "#EEF4FF" : "#FFFFFF",
+                  background: path.featured ? alpha(theme.palette.primary.main, 0.04) : "#FFFFFF",
                   position: "relative",
                 }}
               >
-                {plan.featured && (
+                {path.featured && (
                   <Chip
-                    label="MOST POPULAR"
+                    label="BEST PLACE TO START"
                     sx={{
                       position: "absolute",
                       top: 14,
@@ -485,15 +791,14 @@ const LandingPage = () => {
 
                 <CardContent sx={{ p: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    {plan.title}
+                    {path.title}
                   </Typography>
-                  <Typography sx={{ fontWeight: 900, fontSize: "2rem", mt: 1 }}>{plan.price}</Typography>
-                  <Typography variant="body2" sx={{ color: "#64748B", mb: 2 }}>
-                    {plan.sub}
+                  <Typography variant="body2" sx={{ color: "#64748B", mt: 1, mb: 2.2 }}>
+                    {path.subtitle}
                   </Typography>
 
                   <Stack spacing={1.1} sx={{ mb: 2.8 }}>
-                    {plan.features.map((feature) => (
+                    {path.features.map((feature) => (
                       <Box key={feature} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <CheckCircleIcon sx={{ color: "#10B981", fontSize: 18 }} />
                         <Typography variant="body2">{feature}</Typography>
@@ -503,11 +808,11 @@ const LandingPage = () => {
 
                   <Button
                     fullWidth
-                    variant={plan.featured ? "contained" : "outlined"}
+                    variant={path.featured ? "contained" : "outlined"}
                     component={RouterLink}
-                    to={plan.route}
+                    to={path.route}
                   >
-                    {plan.cta}
+                    {path.action}
                   </Button>
                 </CardContent>
               </Card>
@@ -531,26 +836,41 @@ const LandingPage = () => {
             color: "white",
           }}
         >
-            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.2, fontSize: { xs: "1.5rem", sm: "1.9rem", md: "2.125rem" } }}>
-            Ready to Upgrade Your Classroom Workflow?
+          <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.2, fontSize: { xs: "1.5rem", sm: "1.9rem", md: "2.125rem" } }}>
+            Bring lesson planning, assessment, and learner support together
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.95, mb: 3 }}>
-            Join educators building better lessons and stronger learning outcomes every day.
+            Scholar&apos;s Path gives teachers and schools a simpler way to prepare, teach, and guide learning with confidence.
           </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleGetStarted}
-            endIcon={<ArrowForwardIcon />}
-            sx={{
-              bgcolor: "white",
-              color: "#1E3A5F",
-              px: 3.2,
-              "&:hover": { bgcolor: alpha("#FFFFFF", 0.92) },
-            }}
-          >
-            Get Started Free
-          </Button>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4} justifyContent="center">
+            <Button
+              variant="contained"
+              size="large"
+              onClick={handleGetStarted}
+              endIcon={<ArrowForwardIcon />}
+              sx={{
+                bgcolor: "white",
+                color: "#1E3A5F",
+                px: 3.2,
+                "&:hover": { bgcolor: alpha("#FFFFFF", 0.92) },
+              }}
+            >
+              Start Free
+            </Button>
+            <Button
+              variant="outlined"
+              size="large"
+              component={RouterLink}
+              to="/register"
+              sx={{
+                color: "white",
+                borderColor: alpha("#FFFFFF", 0.4),
+                "&:hover": { borderColor: "white", bgcolor: alpha("#FFFFFF", 0.08) },
+              }}
+            >
+              Talk to Us
+            </Button>
+          </Stack>
         </Paper>
       </Container>
 
@@ -609,7 +929,7 @@ const LandingPage = () => {
           endIcon={<ArrowForwardIcon />}
           sx={{ py: 1.25 }}
         >
-          Start Free as Teacher
+          Start Free
         </Button>
       </Box>
     </Box>
