@@ -23,6 +23,7 @@ import DOMPurify from 'dompurify';
 import { useMemo } from 'react';
 import DialogFullscreenTitle from './DialogFullscreenTitle';
 import useContentProtection from '../hooks/useContentProtection';
+import PreviewWatermarkOverlay from './PreviewWatermarkOverlay';
 
 const contentSx = {
   '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
@@ -111,6 +112,7 @@ export default function NotePreviewDialog({
         tabIndex={0}
         {...protectionProps}
         sx={{
+          position: 'relative',
           bgcolor: 'grey.50',
           overflowY: 'auto',
           px: { xs: 1, sm: 2.5 },
@@ -118,6 +120,7 @@ export default function NotePreviewDialog({
           ...protectionSx,
         }}
       >
+        <PreviewWatermarkOverlay open={open} label="CONFIDENTIAL NOTE PREVIEW" />
         <Paper
           id={contentId}
           elevation={0}

@@ -41,6 +41,7 @@ import LessonNotePickerDialog from '../components/LessonNotePickerDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AnalyticsDialog from '../components/AnalyticsDialog';
 import NotePreviewDialog from '../components/NotePreviewDialog';
+import PreviewWatermarkOverlay from '../components/PreviewWatermarkOverlay';
 import useContentProtection from '../hooks/useContentProtection';
 
 // MUI Imports
@@ -1929,7 +1930,8 @@ function TeacherDashboard() {
         {/* Quiz detail viewer */}
         <Dialog open={activeDialog === 'quizView'} onClose={() => { closeDialog(); }} fullScreen={isDialogFullscreen('quizView')} scroll="paper" fullWidth maxWidth={isDialogFullscreen('quizView') ? false : 'md'}>
           <DialogTitleWithFullscreen title="Quiz Details" isFullscreen={isDialogFullscreen('quizView')} onToggle={() => toggleDialogFullscreen('quizView')} />
-          <DialogContent tabIndex={0} sx={dialogBodySx}>
+          <DialogContent tabIndex={0} {...quizProtectionProps} sx={{ position: 'relative', ...dialogBodySx, ...quizProtectionSx }}>
+            <PreviewWatermarkOverlay open={activeDialog === 'quizView'} label="CONFIDENTIAL QUIZ PREVIEW" />
             {currentQuiz ? (
               <Box>
                 <Typography variant="h6" gutterBottom>{currentQuiz.title}</Typography>
