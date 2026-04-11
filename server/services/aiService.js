@@ -1174,6 +1174,14 @@ function stripTeacherLessonNoteShell(html = '') {
   let normalized = String(html || '').trim();
   normalized = normalized.replace(/<style[\s\S]*?<\/style>/gi, '').trim();
 
+  // For already-restyled notes, extract only the restyled-body section content
+  // to avoid carrying the old restyle header into the new template.
+  const restyledBodyMatch = /<section[^>]*class=["'][^"']*restyled-body[^"']*["'][^>]*>([\s\S]*)<\/section>\s*<\/div>\s*$/i.exec(normalized);
+  if (restyledBodyMatch) {
+    return restyledBodyMatch[1].trim();
+  }
+
+  // For original AI-generated notes, strip the outer lesson-note div wrapper.
   if (/^<div[^>]*class=["'][^"']*lesson-note[^"']*["'][^>]*>/i.test(normalized)) {
     normalized = normalized.replace(/^<div[^>]*>/i, '').trim();
     normalized = normalized.replace(/<\/div>\s*$/i, '').trim();
