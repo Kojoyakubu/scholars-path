@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -45,14 +45,75 @@ const stagger = {
   },
 };
 
+const sectionTitleSx = {
+  mb: { xs: 1.5, md: 2 },
+  textAlign: "center",
+  fontWeight: 800,
+  fontSize: { xs: "1.6rem", sm: "2rem", md: "2.6rem" },
+  lineHeight: 1.15,
+  letterSpacing: "-0.01em",
+  color: "#0F172A",
+};
+
+const sectionIntroSx = {
+  textAlign: "center",
+  color: "#475569",
+  maxWidth: 760,
+  mx: "auto",
+  mb: { xs: 4, md: 5.2 },
+  fontSize: { xs: "1rem", md: "1.05rem" },
+  lineHeight: 1.7,
+};
+
+const COPY_VARIANTS = {
+  A: {
+    badge: "NaCCA-Aligned Teaching Platform",
+    h1Start: "Plan lessons faster.",
+    h1Accent: "Build quizzes smarter.",
+    h1End: "Support every learner in one place.",
+    heroSubtext:
+      "Scholar’s Path helps teachers prepare, assess, and guide learning with curriculum-aligned tools designed for real classrooms.",
+    primaryCta: "Get Started Free",
+    secondaryCta: "View Product Tour",
+    ctaHelper: "No credit card required • Setup takes less than 2 minutes",
+  },
+  B: {
+    badge: "Classroom-Ready Learning Platform",
+    h1Start: "Prepare class content faster.",
+    h1Accent: "Assess learning with confidence.",
+    h1End: "Keep teaching and progress in one workflow.",
+    heroSubtext:
+      "Scholar’s Path gives teachers and schools a practical way to plan, assess, and support learning without extra complexity.",
+    primaryCta: "Start Free Today",
+    secondaryCta: "See It In Action",
+    ctaHelper: "Free to start • Built for real classroom timelines",
+  },
+};
+
 const LandingPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
+  const location = useLocation();
   const [activePreview, setActivePreview] = useState("notes");
+  const [isPreviewPaused, setIsPreviewPaused] = useState(false);
+  const [manualPauseUntil, setManualPauseUntil] = useState(0);
+
+  const ACTIVE_COPY = useMemo(() => {
+    const queryValue = new URLSearchParams(location.search).get("copy");
+    if (queryValue === "A" || queryValue === "B") return queryValue;
+    return "B";
+  }, [location.search]);
+  const copy = COPY_VARIANTS[ACTIVE_COPY];
 
   const handleGetStarted = () => navigate("/register");
   const handleLogin = () => navigate("/login");
+  const scrollToHowItWorks = () => {
+    const section = document.getElementById("how-it-works");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   const previewTabs = [
     {
@@ -130,6 +191,32 @@ const LandingPage = () => {
   ];
 
   const activeTab = previewTabs.find((tab) => tab.key === activePreview) || previewTabs[0];
+  const previewTabKeys = useMemo(() => previewTabs.map((tab) => tab.key), [previewTabs]);
+
+  useEffect(() => {
+    if (isPreviewPaused) return undefined;
+
+    const interval = setInterval(() => {
+      setActivePreview((prev) => {
+        const idx = previewTabKeys.indexOf(prev);
+        const nextIdx = idx === -1 ? 0 : (idx + 1) % previewTabKeys.length;
+        return previewTabKeys[nextIdx];
+      });
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, [isPreviewPaused, previewTabKeys]);
+
+  useEffect(() => {
+    if (!manualPauseUntil) return undefined;
+
+    const timeout = setTimeout(() => {
+      setIsPreviewPaused(false);
+      setManualPauseUntil(0);
+    }, Math.max(manualPauseUntil - Date.now(), 0));
+
+    return () => clearTimeout(timeout);
+  }, [manualPauseUntil]);
 
   const renderPreviewSurface = (tab) => (
     <Paper
@@ -336,7 +423,7 @@ const LandingPage = () => {
       title: "Teacher",
       subtitle: "For daily planning and classroom delivery",
       features: ["Lesson note generation", "Quiz creation", "Resource organization"],
-      action: "Start as Teacher",
+      action: "Get Started Free",
       route: "/register",
       featured: true,
     },
@@ -344,14 +431,14 @@ const LandingPage = () => {
       title: "Student",
       subtitle: "For revision, practice, and topic clarity",
       features: ["Study notes", "Quiz practice", "Clearer learning structure"],
-      action: "See Student Flow",
+      action: "Explore Student View",
       route: "/login",
     },
     {
       title: "School",
       subtitle: "For shared visibility across teaching teams",
       features: ["Coordinated classroom tools", "Consistency across teachers", "Scalable school use"],
-      action: "Talk to Us",
+      action: "Book a Demo",
       route: "/register",
     },
   ];
@@ -397,19 +484,19 @@ const LandingPage = () => {
               Login
             </Button>
             <Button onClick={handleGetStarted} variant="contained" size={isMobile ? "medium" : "large"} endIcon={<ArrowForwardIcon />}>
-              Start Free
+              {copy.primaryCta}
             </Button>
           </Stack>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ pt: { xs: 6.5, md: 11 }, pb: { xs: 6, md: 8 } }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 10 }, pb: { xs: 5.5, md: 8.5 } }}>
         <Grid container spacing={5} alignItems="center">
           <Grid item xs={12} md={6}>
             <motion.div variants={stagger} initial="hidden" animate="visible">
               <motion.div variants={reveal}>
                 <Chip
-                  label="NaCCA-Aligned Teaching Platform"
+                  label={copy.badge}
                   sx={{
                     mb: 2,
                     bgcolor: alpha("#2563EB", 0.1),
@@ -423,19 +510,20 @@ const LandingPage = () => {
                 <Typography
                   variant="h1"
                   sx={{
-                    fontSize: { xs: "2rem", sm: "2.35rem", md: "3.5rem" },
-                    lineHeight: 1.06,
-                    mb: 2,
+                    fontSize: { xs: "1.95rem", sm: "2.3rem", md: "3.25rem" },
+                    lineHeight: 1.08,
+                    mb: 2.2,
                     color: "#0B1324",
                     textWrap: "balance",
+                    letterSpacing: "-0.02em",
                   }}
                 >
-                  Plan lessons faster.
+                  {copy.h1Start}
                   <Box component="span" sx={{ color: "#2563EB" }}>
-                    {" "}Build quizzes smarter.
+                    {" "}{copy.h1Accent}
                   </Box>
                   <Box component="span" sx={{ color: "#0B1324" }}>
-                    {" "}Support every learner in one place.
+                    {" "}{copy.h1End}
                   </Box>
                 </Typography>
               </motion.div>
@@ -446,11 +534,12 @@ const LandingPage = () => {
                   sx={{
                     color: "#334155",
                     maxWidth: 560,
-                    mb: 3.5,
+                    mb: 3.2,
+                    fontSize: { xs: "1rem", md: "1.08rem" },
+                    lineHeight: 1.7,
                   }}
                 >
-                  Scholar&apos;s Path helps teachers prepare, assess, and guide learning with
-                  curriculum-aligned tools designed for real classrooms.
+                  {copy.heroSubtext}
                 </Typography>
               </motion.div>
 
@@ -464,18 +553,21 @@ const LandingPage = () => {
                     fullWidth={isMobile}
                     sx={{ px: 3.5 }}
                   >
-                    Start Free
+                    {copy.primaryCta}
                   </Button>
                   <Button
-                    onClick={() => window.scrollTo({ top: 820, behavior: "smooth" })}
+                    onClick={scrollToHowItWorks}
                     variant="outlined"
                     size="large"
                     fullWidth={isMobile}
                     sx={{ px: 3.5, borderWidth: 2 }}
                   >
-                    See How It Works
+                    {copy.secondaryCta}
                   </Button>
                 </Stack>
+                <Typography variant="caption" sx={{ color: "#64748B", display: "block", mt: 1.1, textAlign: { xs: "center", sm: "left" } }}>
+                  {copy.ctaHelper}
+                </Typography>
               </motion.div>
 
               <motion.div variants={reveal}>
@@ -541,6 +633,12 @@ const LandingPage = () => {
                     borderBottom: `1px solid ${alpha("#1E3A5F", 0.08)}`,
                     bgcolor: alpha(theme.palette.primary.main, 0.03),
                   }}
+                  onMouseEnter={() => setIsPreviewPaused(true)}
+                  onMouseLeave={() => {
+                    if (!manualPauseUntil) {
+                      setIsPreviewPaused(false);
+                    }
+                  }}
                 >
                   {previewTabs.map((tab) => {
                     const Icon = tab.icon;
@@ -548,7 +646,11 @@ const LandingPage = () => {
                     return (
                       <Button
                         key={tab.key}
-                        onClick={() => setActivePreview(tab.key)}
+                        onClick={() => {
+                          setActivePreview(tab.key);
+                          setIsPreviewPaused(true);
+                          setManualPauseUntil(Date.now() + 10000);
+                        }}
                         startIcon={<Icon />}
                         sx={{
                           px: 2.2,
@@ -628,7 +730,7 @@ const LandingPage = () => {
                   <Paper
                     elevation={0}
                     sx={{
-                      p: 2.4,
+                      p: { xs: 2.1, md: 2.4 },
                       borderRadius: 3,
                       bgcolor: alpha("#FFFFFF", 0.85),
                       border: `1px solid ${alpha("#1E3A5F", 0.1)}`,
@@ -649,14 +751,11 @@ const LandingPage = () => {
         </motion.div>
       </Container>
 
-      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 11 } }}>
-        <Typography
-          variant="h3"
-          sx={{ mb: 4.5, fontWeight: 800, textAlign: "center", fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
-        >
+      <Container maxWidth="lg" sx={{ pb: { xs: 7.5, md: 10.5 } }}>
+        <Typography variant="h3" sx={sectionTitleSx}>
           Everything you need to move from planning to learning
         </Typography>
-        <Typography variant="subtitle1" sx={{ textAlign: "center", color: "#475569", mb: 5, maxWidth: 760, mx: "auto" }}>
+        <Typography variant="subtitle1" sx={sectionIntroSx}>
           Scholar&apos;s Path brings lesson preparation, assessment, and student support into one
           simple workspace built for everyday teaching.
         </Typography>
@@ -691,14 +790,11 @@ const LandingPage = () => {
         </Grid>
       </Container>
 
-      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 10 } }}>
-        <Typography
-          variant="h3"
-          sx={{ mb: 2, textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
-        >
+      <Container maxWidth="lg" sx={{ pb: { xs: 7.5, md: 10 } }}>
+        <Typography variant="h3" sx={sectionTitleSx}>
           Built for every part of the learning journey
         </Typography>
-        <Typography variant="subtitle1" sx={{ textAlign: "center", color: "#475569", mb: 5.5, maxWidth: 760, mx: "auto" }}>
+        <Typography variant="subtitle1" sx={sectionIntroSx}>
           Teacher-first at the top, but structured to support students and schools with the same
           connected workflow.
         </Typography>
@@ -746,15 +842,12 @@ const LandingPage = () => {
         </Grid>
       </Container>
 
-      <Box sx={{ py: { xs: 8, md: 10 }, background: "#EEF4FF" }}>
+      <Box id="how-it-works" sx={{ py: { xs: 7.5, md: 9.5 }, background: "#EEF4FF" }}>
         <Container maxWidth="lg">
-          <Typography
-            variant="h3"
-            sx={{ mb: 2, textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
-          >
+          <Typography variant="h3" sx={sectionTitleSx}>
             How It Works
           </Typography>
-          <Typography variant="subtitle1" sx={{ textAlign: "center", mb: 5.5, color: "#475569" }}>
+          <Typography variant="subtitle1" sx={sectionIntroSx}>
             One focused flow from classroom preparation to learner support.
           </Typography>
 
@@ -800,7 +893,7 @@ const LandingPage = () => {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: { xs: 8, md: 10 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 7.5, md: 9.5 } }}>
         <Paper
           elevation={0}
           sx={{
@@ -811,10 +904,10 @@ const LandingPage = () => {
             background: alpha("#2563EB", 0.1),
           }}
         >
-          <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 800, fontSize: { xs: "1.5rem", sm: "1.9rem", md: "2.125rem" } }}>
+          <Typography variant="h4" sx={{ mb: 1.7, fontWeight: 800, fontSize: { xs: "1.45rem", sm: "1.8rem", md: "2rem" } }}>
             Why schools and teachers choose Scholar&apos;s Path
           </Typography>
-          <Typography variant="body1" sx={{ color: "#334155", maxWidth: 860, mx: "auto", mb: 3.5 }}>
+          <Typography variant="body1" sx={{ color: "#334155", maxWidth: 860, mx: "auto", mb: 3.5, lineHeight: 1.7 }}>
             The platform is designed around what teachers actually need to do each week: plan,
             assess, organize, and respond to learning progress without unnecessary complexity.
           </Typography>
@@ -845,14 +938,11 @@ const LandingPage = () => {
         </Paper>
       </Container>
 
-      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 11 } }}>
-        <Typography
-          variant="h3"
-          sx={{ mb: 2, textAlign: "center", fontWeight: 800, fontSize: { xs: "1.7rem", sm: "2.1rem", md: "3rem" } }}
-        >
+      <Container maxWidth="lg" sx={{ pb: { xs: 7.5, md: 10.5 } }}>
+        <Typography variant="h3" sx={sectionTitleSx}>
           Start with the tools that matter most
         </Typography>
-        <Typography variant="subtitle1" sx={{ textAlign: "center", color: "#475569", mb: 5 }}>
+        <Typography variant="subtitle1" sx={sectionIntroSx}>
           Choose the path that matches how Scholar&apos;s Path fits into your learning environment.
         </Typography>
 
@@ -922,7 +1012,7 @@ const LandingPage = () => {
         </Grid>
       </Container>
 
-      <Container maxWidth="md" sx={{ pb: { xs: 8, md: 12 } }}>
+      <Container maxWidth="md" sx={{ pb: { xs: 7.5, md: 11 } }}>
         <Paper
           component={motion.div}
           initial={{ opacity: 0, y: 22 }}
@@ -937,10 +1027,10 @@ const LandingPage = () => {
             color: "white",
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.2, fontSize: { xs: "1.5rem", sm: "1.9rem", md: "2.125rem" } }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.3, fontSize: { xs: "1.45rem", sm: "1.8rem", md: "2.05rem" }, lineHeight: 1.2 }}>
             Bring lesson planning, assessment, and learner support together
           </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.95, mb: 3 }}>
+          <Typography variant="body1" sx={{ opacity: 0.95, mb: 3, lineHeight: 1.7 }}>
             Scholar&apos;s Path gives teachers and schools a simpler way to prepare, teach, and guide learning with confidence.
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4} justifyContent="center">
@@ -956,7 +1046,7 @@ const LandingPage = () => {
                 "&:hover": { bgcolor: alpha("#FFFFFF", 0.92) },
               }}
             >
-              Start Free
+              {copy.primaryCta}
             </Button>
             <Button
               variant="outlined"
@@ -969,7 +1059,7 @@ const LandingPage = () => {
                 "&:hover": { borderColor: "white", bgcolor: alpha("#FFFFFF", 0.08) },
               }}
             >
-              Talk to Us
+              Book a Demo
             </Button>
           </Stack>
         </Paper>
@@ -1014,7 +1104,7 @@ const LandingPage = () => {
           right: 0,
           bottom: 0,
           zIndex: 1400,
-          display: { xs: "block", md: "none" },
+          display: { xs: "block", lg: "none" },
           px: 1.5,
           py: 1,
           bgcolor: alpha("#FFFFFF", 0.88),
@@ -1030,7 +1120,7 @@ const LandingPage = () => {
           endIcon={<ArrowForwardIcon />}
           sx={{ py: 1.25 }}
         >
-          Start Free
+          {copy.primaryCta}
         </Button>
       </Box>
     </Box>
