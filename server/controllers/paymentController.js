@@ -53,6 +53,10 @@ const getPaystackConfig = () => {
 };
 
 const amountToKobo = (amount) => Math.round(Number(amount) * 100);
+const normalizeDownloadFormat = (format) => {
+  const normalized = String(format || 'pdf').trim().toLowerCase();
+  return ['pdf', 'html', 'doc', 'txt'].includes(normalized) ? normalized : 'pdf';
+};
 
 const verifyPaystackReference = async ({ secretKey, reference }) => {
   const verifyResponse = await axios.get(
@@ -127,6 +131,7 @@ const getDownloadPricing = asyncHandler(async (req, res) => {
  */
 const chargeDownload = asyncHandler(async (req, res) => {
   const { itemType, itemId, format, method } = req.body;
+  const normalizedFormat = normalizeDownloadFormat(format);
 
   if (!itemType || !itemId) {
     res.status(400);
@@ -150,11 +155,12 @@ const chargeDownload = asyncHandler(async (req, res) => {
     currency: 'GHS',
     method: method || 'mobile_money',
     reference: generateReference('DL'),
-    description: `Download charge for ${itemType}${format ? ` (${format})` : ''}`,
+    description: `Download charge for ${itemType} (${normalizedFormat})`,
     status: 'success',
     purpose: 'download',
     itemType,
     itemId,
+    downloadFormat: normalizedFormat,
     paidAt: new Date(),
   });
 
@@ -165,7 +171,7 @@ const chargeDownload = asyncHandler(async (req, res) => {
       currency: 'GHS',
       itemType,
       itemId,
-      format: format || 'unknown',
+      format: normalizedFormat,
     },
     payment,
   });
@@ -178,6 +184,7 @@ const chargeDownload = asyncHandler(async (req, res) => {
  */
 const initializeDownloadPayment = asyncHandler(async (req, res) => {
   const { itemType, itemId, format } = req.body;
+  const normalizedFormat = normalizeDownloadFormat(format);
 
   if (!itemType || !itemId) {
     res.status(400);
@@ -211,6 +218,7 @@ const initializeDownloadPayment = asyncHandler(async (req, res) => {
     purpose: 'download',
     itemType,
     itemId,
+    downloadFormat: normalizedFormat,
     status: 'success',
     createdAt: { $gte: graceWindowStart },
   }).sort({ createdAt: -1 });
@@ -230,6 +238,7 @@ const initializeDownloadPayment = asyncHandler(async (req, res) => {
     purpose: 'download',
     itemType,
     itemId,
+    downloadFormat: normalizedFormat,
     status: 'pending',
     createdAt: { $gte: graceWindowStart },
   }).sort({ createdAt: -1 });
@@ -278,7 +287,7 @@ const initializeDownloadPayment = asyncHandler(async (req, res) => {
         { display_name: 'Purpose', variable_name: 'purpose', value: 'download' },
         { display_name: 'Item Type', variable_name: 'item_type', value: itemType },
         { display_name: 'Item ID', variable_name: 'item_id', value: String(itemId) },
-        { display_name: 'Format', variable_name: 'format', value: format || 'pdf' },
+        { display_name: 'Format', variable_name: 'format', value: normalizedFormat },
       ],
     },
   };
@@ -306,11 +315,12 @@ const initializeDownloadPayment = asyncHandler(async (req, res) => {
     currency: 'GHS',
     method: 'paystack',
     reference,
-    description: `Download charge for ${itemType}${format ? ` (${format})` : ''}`,
+    description: `Download charge for ${itemType} (${normalizedFormat})`,
     status: 'pending',
     purpose: 'download',
     itemType,
     itemId,
+    downloadFormat: normalizedFormat,
   });
 
   res.status(201).json({

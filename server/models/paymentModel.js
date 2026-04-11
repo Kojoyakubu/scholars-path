@@ -42,6 +42,10 @@ const paymentSchema = new mongoose.Schema(
     itemId: {
       type: mongoose.Schema.Types.ObjectId,
     },
+    downloadFormat: {
+      type: String,
+      enum: ['pdf', 'html', 'doc', 'txt'],
+    },
     description: {
       type: String,
       trim: true,

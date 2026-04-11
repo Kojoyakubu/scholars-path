@@ -167,7 +167,7 @@ export default function NotePreviewDialog({
           onClick={onOpenDownloadMenu}
           disabled={!note || isPdfExporting || isChargingDownload}
         >
-          {isChargingDownload ? 'Processing payment...' : 'Download (GHC 0.5)'}
+          {isChargingDownload ? 'Processing payment...' : 'Download (GHC 0.5 per option)'}
         </Button>
         <Menu
           anchorEl={downloadMenuAnchorEl}
