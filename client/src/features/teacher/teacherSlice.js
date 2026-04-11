@@ -35,7 +35,6 @@ export const getMyLessonNotes = createTeacherThunk('getMyLessonNotes', teacherSe
 export const generateLessonNote = createTeacherThunk('generateLessonNote', teacherService.generateLessonNote);
 export const getLessonNoteById = createTeacherThunk('getLessonNoteById', teacherService.getLessonNoteById);
 export const deleteLessonNote = createTeacherThunk('deleteLessonNote', teacherService.deleteLessonNote);
-export const updateLessonNoteTemplate = createTeacherThunk('updateLessonNoteTemplate', teacherService.updateLessonNoteTemplate);
 export const generateLearnerNote = createTeacherThunk('generateLearnerNote', teacherService.generateLearnerNote);
 export const generateLearnerNoteFromStrand = createTeacherThunk('generateLearnerNoteFromStrand', teacherService.generateLearnerNoteFromStrand);
 export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
@@ -89,16 +88,6 @@ export const teacherSlice = createSlice({
       .addCase(getLessonNoteById.fulfilled, (state, action) => {
         state.currentNote = action.payload;
         state.isSuccess = true;
-      })
-      .addCase(updateLessonNoteTemplate.fulfilled, (state, action) => {
-        state.lessonNotes = state.lessonNotes.map((note) => (
-          note._id === action.payload._id ? action.payload : note
-        ));
-        if (state.currentNote?._id === action.payload._id) {
-          state.currentNote = action.payload;
-        }
-        state.isSuccess = true;
-        state.message = 'Lesson note design updated successfully!';
       })
       .addCase(deleteLessonNote.fulfilled, (state, action) => {
         state.lessonNotes = state.lessonNotes.filter(

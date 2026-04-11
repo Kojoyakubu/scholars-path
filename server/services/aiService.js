@@ -1514,16 +1514,13 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     indicatorCodes, 
     dayDate, 
     facilitatorName,
-    templateDesign,
     preferredModel, 
     preferredProvider 
   } = details;
 
   const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
   const facilitatorDisplayName = String(facilitatorName || '').trim() || '..................................................';
-  const resolvedTemplateDesign = resolveTeacherNoteTemplate(templateDesign);
-  const selectedTemplate = TEACHER_NOTE_TEMPLATE_CONFIGS[resolvedTemplateDesign];
-  const templateMarkup = buildTeacherLessonNoteTemplate(resolvedTemplateDesign, {
+  const templateMarkup = buildTeacherLessonNoteTemplate('modern-academic', {
     school,
     className,
     subjectName,
@@ -1559,9 +1556,6 @@ TRANSFORMATION LOGIC EXAMPLE:
 - THEN Another: "The learner can explain the advantages of fourth-generation computers."
 ---
 
-Selected template: ${selectedTemplate.label}
-Template guidance: ${selectedTemplate.guidance}
-
 Generate HTML in this exact template structure:
 
 ${templateMarkup}
@@ -1586,7 +1580,6 @@ REMEMBER: Return ONLY the HTML above, filled with appropriate content. Keep the 
     model,
     task: 'teacherLessonNoteHTML',
     timestamp,
-    templateDesign: resolvedTemplateDesign,
   };
 }
 
@@ -1842,7 +1835,6 @@ module.exports = {
   getLandingInsights,
   // 🎓 New HTML-based bundle functions
   generateTeacherLessonNoteHTML,
-  restyleTeacherLessonNoteHTML,
   generateLearnerNoteHTML,
   generateStructuredQuizJSON,
 };

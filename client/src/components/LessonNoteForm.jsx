@@ -4,7 +4,6 @@ import {
   DialogContent,
   DialogTitle,
   Button,
-  ButtonBase,
   TextField,
   CircularProgress,
   Stack,
@@ -15,14 +14,9 @@ import {
   StepLabel,
   Tooltip,
   IconButton,
-  Chip,
 } from '@mui/material';
 import { Article, OpenInFull, CloseFullscreen } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
-import {
-  DEFAULT_LESSON_NOTE_TEMPLATE,
-  LESSON_NOTE_TEMPLATE_OPTIONS,
-} from '../constants/lessonNoteTemplates';
 
 // 💡 Fix 1: Add subStrandId to the props
 function LessonNoteForm({
@@ -48,7 +42,6 @@ function LessonNoteForm({
     contentStandardCode: '',
     indicatorCodes: '',
     reference: '',
-    templateDesign: DEFAULT_LESSON_NOTE_TEMPLATE,
   });
 
   useEffect(() => {
@@ -65,7 +58,6 @@ function LessonNoteForm({
         contentStandardCode: '',
         indicatorCodes: '',
         reference: '',
-        templateDesign: DEFAULT_LESSON_NOTE_TEMPLATE,
       });
     }
   }, [open, defaultFacilitatorName]);
@@ -144,77 +136,6 @@ function LessonNoteForm({
                   Selected Topic:
                 </Typography>
                 <Typography variant="h6">{subStrandName || 'N/A'}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                  Lesson Note Design
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                  Choose the presentation style you want the AI to use for this teacher note.
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                    gap: 1.5,
-                  }}
-                >
-                  {LESSON_NOTE_TEMPLATE_OPTIONS.map((template) => {
-                    const selected = formData.templateDesign === template.id;
-
-                    return (
-                      <ButtonBase
-                        key={template.id}
-                        onClick={() => setFormData((prev) => ({ ...prev, templateDesign: template.id }))}
-                        sx={{ borderRadius: 2, textAlign: 'left' }}
-                      >
-                        <Box
-                          sx={{
-                            width: '100%',
-                            p: 2,
-                            borderRadius: 2,
-                            border: '1px solid',
-                            borderColor: selected ? template.accent : 'divider',
-                            background: selected
-                              ? `linear-gradient(180deg, ${template.accent}14 0%, rgba(255,255,255,0.98) 100%)`
-                              : 'background.paper',
-                            boxShadow: selected ? `0 0 0 1px ${template.accent} inset` : 'none',
-                            transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 10px 24px rgba(15, 23, 42, 0.08)',
-                            },
-                          }}
-                        >
-                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                            <Box>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                {template.label}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                {template.description}
-                              </Typography>
-                            </Box>
-                            {selected && <Chip label="Selected" size="small" sx={{ bgcolor: template.accent, color: '#fff' }} />}
-                          </Stack>
-
-                          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" sx={{ mt: 1.5 }}>
-                            {template.highlights.map((highlight) => (
-                              <Chip
-                                key={highlight}
-                                label={highlight}
-                                size="small"
-                                variant="outlined"
-                                sx={{ borderColor: selected ? template.accent : 'divider' }}
-                              />
-                            ))}
-                          </Stack>
-                        </Box>
-                      </ButtonBase>
-                    );
-                  })}
-                </Box>
               </Box>
 
               {/* School Information */}

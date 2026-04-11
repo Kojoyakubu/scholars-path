@@ -8,8 +8,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  ListItemIcon,
-  ListItemText,
   Menu,
   MenuItem,
   Paper,
@@ -18,17 +16,14 @@ import {
   useTheme,
 } from '@mui/material';
 import {
-  Check,
   Download,
   ExpandMore,
-  Palette,
 } from '@mui/icons-material';
 import DOMPurify from 'dompurify';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import DialogFullscreenTitle from './DialogFullscreenTitle';
 import useContentProtection from '../hooks/useContentProtection';
 import PreviewWatermarkOverlay from './PreviewWatermarkOverlay';
-import { LESSON_NOTE_TEMPLATE_OPTIONS } from '../constants/lessonNoteTemplates';
 
 const contentSx = {
   '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
@@ -81,17 +76,14 @@ export default function NotePreviewDialog({
   onOpenDownloadMenu,
   onCloseDownloadMenu,
   onDownload,
-  onChangeTemplate,
   isPdfExporting = false,
   isChargingDownload = false,
-  isUpdatingTemplate = false,
   fullScreen = false,
   onToggleFullscreen,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const effectiveFullScreen = fullScreen || isMobile;
-  const [templateMenuAnchorEl, setTemplateMenuAnchorEl] = useState(null);
   const { protectionProps, protectionSx } = useContentProtection({ enabled: open });
   const sanitizedSegments = useMemo(
     () => segments.map((segment) => (
@@ -101,22 +93,6 @@ export default function NotePreviewDialog({
     )),
     [segments]
   );
-  const canChangeTemplate = Boolean(note?.teacher && onChangeTemplate);
-
-  const handleOpenTemplateMenu = (event) => {
-    setTemplateMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseTemplateMenu = () => {
-    setTemplateMenuAnchorEl(null);
-  };
-
-  const handleSelectTemplate = (templateDesign) => {
-    handleCloseTemplateMenu();
-    if (templateDesign !== note?.templateDesign) {
-      onChangeTemplate(templateDesign);
-    }
-  };
 
   return (
     <Dialog
@@ -191,33 +167,6 @@ export default function NotePreviewDialog({
         </Paper>
       </DialogContent>
       <DialogActions>
-        {canChangeTemplate && (
-          <>
-            <Button
-              variant="outlined"
-              startIcon={<Palette />}
-              endIcon={<ExpandMore />}
-              onClick={handleOpenTemplateMenu}
-              disabled={!note || isPdfExporting || isChargingDownload || isUpdatingTemplate}
-            >
-              {isUpdatingTemplate ? 'Updating design...' : 'Change design'}
-            </Button>
-            <Menu
-              anchorEl={templateMenuAnchorEl}
-              open={Boolean(templateMenuAnchorEl)}
-              onClose={handleCloseTemplateMenu}
-            >
-              {LESSON_NOTE_TEMPLATE_OPTIONS.map((template) => (
-                <MenuItem key={template.id} onClick={() => handleSelectTemplate(template.id)}>
-                  <ListItemIcon>
-                    {note?.templateDesign === template.id ? <Check fontSize="small" /> : <Box sx={{ width: 20 }} />}
-                  </ListItemIcon>
-                  <ListItemText primary={template.label} secondary={template.description} />
-                </MenuItem>
-              ))}
-            </Menu>
-          </>
-        )}
         <Button
           variant="outlined"
           startIcon={<Download />}

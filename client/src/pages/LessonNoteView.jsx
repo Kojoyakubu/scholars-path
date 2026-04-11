@@ -10,7 +10,6 @@ import {
   Stack,
   Button,
   CircularProgress,
-  Chip,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -36,7 +35,6 @@ import AiImage from '../components/AiImage';
 
 /* ✅ ADDED: PDF-only view */
 import LessonNotePdfView from '../components/LessonNotePdfView';
-import { getLessonNoteTemplateOption } from '../constants/lessonNoteTemplates';
 
 const LessonNoteView = () => {
   const { id } = useParams();
@@ -55,10 +53,6 @@ const LessonNoteView = () => {
 
   /* ✅ ADDED: PDF element ID */
   const pdfElementId = useMemo(() => `pdf-lesson-note-${id}`, [id]);
-  const templateOption = useMemo(
-    () => getLessonNoteTemplateOption(currentNote?.templateDesign),
-    [currentNote?.templateDesign]
-  );
 
   const handleDownload = useCallback(
     (type) => {
@@ -244,12 +238,6 @@ const LessonNoteView = () => {
             Created on{' '}
             {new Date(currentNote.createdAt).toLocaleDateString()}
           </Typography>
-
-          <Chip
-            label={`Template: ${templateOption.label}`}
-            size="small"
-            sx={{ mb: 3, bgcolor: `${templateOption.accent}18`, color: templateOption.accent, fontWeight: 700 }}
-          />
 
           <Box id={elementId}>
             <ReactMarkdown

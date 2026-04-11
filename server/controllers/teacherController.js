@@ -58,7 +58,6 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     provider: aiProvider,
     model: aiModel,
     timestamp,
-    templateDesign,
   } = await aiService.generateTeacherLessonNoteHTML(aiDetails);
 
   const lessonNote = await LessonNote.create({
@@ -66,7 +65,6 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: subStrandId,
     content: teacherNoteHTML,
-    templateDesign,
     aiProvider,
     aiModel,
     aiGeneratedAt: new Date(timestamp),
@@ -117,56 +115,6 @@ const getLessonNoteById = asyncHandler(async (req, res) => {
     throw new Error('Not authorized to view this note');
   }
 
-  res.json(note);
-});
-
-/**
- * @desc    Update a lesson note's saved template without regenerating lesson content
- * @route   PATCH /api/teacher/lesson-notes/:id/template
- * @access  Private (Teacher)
- */
-const updateLessonNoteTemplate = asyncHandler(async (req, res) => {
-  const { templateDesign } = req.body;
-
-  if (!templateDesign) {
-    res.status(400);
-    throw new Error('Template design is required.');
-  }
-
-  const note = await LessonNote.findById(req.params.id).populate({
-    path: 'subStrand',
-    select: 'name',
-    populate: {
-      path: 'strand',
-      select: 'name',
-      populate: {
-        path: 'subject',
-        select: 'name',
-        populate: { path: 'class', select: 'name' },
-      },
-    },
-  });
-
-  if (!note) {
-    res.status(404);
-    throw new Error('Lesson note not found');
-  }
-
-  if (note.teacher.toString() !== req.user.id.toString()) {
-    res.status(403);
-    throw new Error('Not authorized to update this note');
-  }
-
-  note.content = aiService.restyleTeacherLessonNoteHTML(note.content, {
-    templateDesign,
-    subjectName: note.subStrand?.strand?.subject?.name || 'Subject',
-    className: note.subStrand?.strand?.subject?.class?.name || 'Class',
-    strandName: note.subStrand?.strand?.name || 'Strand',
-    subStrandName: note.subStrand?.name || 'Topic',
-  });
-  note.templateDesign = templateDesign;
-
-  await note.save();
   res.json(note);
 });
 
@@ -542,7 +490,6 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     provider: p1,
     model: m1,
     timestamp: t1,
-    templateDesign,
   } = await aiService.generateTeacherLessonNoteHTML(curriculumDetails);
 
   // PIPELINE STEP 2: Generate Learner Note (HTML)
@@ -574,7 +521,6 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: subStrandId,
     content: teacherNoteHTML,
-    templateDesign,
     aiProvider: p1,
     aiModel: m1,
     aiGeneratedAt: new Date(t1),
@@ -960,7 +906,6 @@ const duplicateBundle = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: originalBundle.subStrand,
     content: originalBundle.lessonNote.content,
-    templateDesign: originalBundle.lessonNote.templateDesign || 'modern-academic',
     aiProvider: originalBundle.lessonNote.aiProvider,
     aiModel: originalBundle.lessonNote.aiModel,
   });
@@ -1041,7 +986,6 @@ module.exports = {
   generateLessonNote,
   getMyLessonNotes,
   getLessonNoteById,
-  updateLessonNoteTemplate,
   deleteLessonNote,
   generateLearnerNote,
   generateLearnerNoteFromStrand,

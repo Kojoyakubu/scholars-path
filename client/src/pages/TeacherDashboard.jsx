@@ -12,7 +12,6 @@ import {
   generateLessonNote,
   getMyLessonNotes,
   deleteLessonNote,
-  updateLessonNoteTemplate,
   generateLearnerNote,
   generateLearnerNoteFromStrand,
   getDraftLearnerNotes,
@@ -897,18 +896,6 @@ function TeacherDashboard() {
       setShowCreateTools(false);
     }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
   }, [dispatch, displayNote, closeDialog]);
-
-  const handleUpdateViewingNoteTemplate = useCallback((templateDesign) => {
-    if (!viewingNote?._id) return;
-
-    dispatch(updateLessonNoteTemplate({ noteId: viewingNote._id, templateDesign }))
-      .unwrap()
-      .then((updatedNote) => {
-        displayNote(updatedNote);
-        setSnackbar({ open: true, message: 'Lesson note design updated.', severity: 'success' });
-      })
-      .catch((err) => setSnackbar({ open: true, message: err || 'Failed to update lesson note design.', severity: 'error' }));
-  }, [dispatch, viewingNote, displayNote]);
 
   // quiz-from-lesson flow
   const handleGenerateQuizFromLesson = useCallback(() => {
@@ -2048,10 +2035,8 @@ function TeacherDashboard() {
           onOpenDownloadMenu={handleOpenDownloadMenu}
           onCloseDownloadMenu={handleCloseDownloadMenu}
           onDownload={handleDownloadViewingNote}
-          onChangeTemplate={handleUpdateViewingNoteTemplate}
           isPdfExporting={isPdfExporting}
           isChargingDownload={isChargingDownload}
-          isUpdatingTemplate={isLoading}
           fullScreen={isDialogFullscreen('notePreview')}
           onToggleFullscreen={() => toggleDialogFullscreen('notePreview')}
         />

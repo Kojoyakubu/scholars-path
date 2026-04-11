@@ -22,11 +22,6 @@ const deleteLessonNote = async (noteId) => {
   return response.data;
 };
 
-const updateLessonNoteTemplate = async ({ noteId, templateDesign }) => {
-  const response = await api.patch(`/api/teacher/lesson-notes/${noteId}/template`, { templateDesign });
-  return response.data;
-};
-
 // ✅ FIX: Changed from /generate-learner-note to /ai/generate-learner-note
 const generateLearnerNote = async (lessonNoteId) => {
   const response = await api.post('/api/teacher/ai/generate-learner-note', { lessonNoteId });
@@ -151,7 +146,6 @@ const teacherService = {
   generateLessonNote,
   getLessonNoteById,
   deleteLessonNote,
-  updateLessonNoteTemplate,
   generateLearnerNote,
   generateLearnerNoteFromStrand,
   getTeacherAnalytics,
