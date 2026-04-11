@@ -75,6 +75,15 @@ export const assignUserToSchool = createAsyncThunk('admin/assignUserToSchool', a
   }
 });
 
+export const setDownloadExemption = createAsyncThunk('admin/setDownloadExemption', async (data, thunkAPI) => {
+  try {
+    return await adminService.setDownloadExemption(data);
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 export const getStats = createAsyncThunk('admin/getStats', async (_, thunkAPI) => {
   try {
     return await adminService.getStats();
@@ -210,6 +219,17 @@ export const adminSlice = createSlice({
       })
       .addCase(getSchools.fulfilled, (state, action) => {
         state.schools = action.payload?.schools || action.payload || [];
+      })
+      .addCase(setDownloadExemption.fulfilled, (state, action) => {
+        const updatedUser = action.payload?.user;
+        if (updatedUser?._id) {
+          const index = state.users.findIndex((user) => user._id === updatedUser._id);
+          if (index !== -1) {
+            state.users[index] = updatedUser;
+          }
+        }
+        state.isSuccess = true;
+        state.message = action.payload?.message || 'Download exemption updated.';
       })
       .addCase(createSchool.fulfilled, (state, action) => {
         const createdSchool = action.payload?.school || action.payload;

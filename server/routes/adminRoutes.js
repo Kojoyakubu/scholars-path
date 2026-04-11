@@ -9,6 +9,7 @@ const {
   unsuspendUser,
   deleteUser,
   assignUserToSchool,
+  setDownloadExemption,
 
   // Teachers & Students
   getAllTeachers,
@@ -42,6 +43,7 @@ router.put('/users/:id/suspend', protect, authorize('admin'), suspendUser);
 router.put('/users/:id/unsuspend', protect, authorize('admin'), unsuspendUser);
 router.delete('/users/:id', protect, authorize('admin'), deleteUser);
 router.put('/users/:id/assign-school', protect, authorize('admin'), assignUserToSchool);
+router.patch('/users/:id/download-exemption', protect, authorize('admin'), setDownloadExemption);
 
 /* ============================================================================
  * TEACHERS & STUDENTS

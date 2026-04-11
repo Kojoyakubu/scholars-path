@@ -606,6 +606,13 @@ function TeacherDashboard() {
       const initResponse = await teacherService.initializeDownloadPayment({ itemType, itemId, format });
 
       if (initResponse?.alreadyPaid) {
+        if (initResponse?.waived) {
+          setSnackbar({
+            open: true,
+            message: 'Download fee waived by admin. Download will start now.',
+            severity: 'info',
+          });
+        }
         return true;
       }
 

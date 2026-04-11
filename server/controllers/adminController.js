@@ -339,6 +339,60 @@ const assignUserToSchool = asyncHandler(async (req, res) => {
   res.json({ message: `Assigned ${user.fullName} to ${school.name}.`, user });
 });
 
+// PATCH /api/admin/users/:id/download-exemption
+const setDownloadExemption = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { isExempt, reason, until } = req.body;
+
+  if (typeof isExempt !== 'boolean') {
+    res.status(400);
+    throw new Error('isExempt must be a boolean.');
+  }
+
+  const user = await User.findById(id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (user.role !== 'teacher') {
+    res.status(400);
+    throw new Error('Download exemption can only be applied to teacher accounts.');
+  }
+
+  if (isExempt) {
+    let parsedUntil = null;
+    if (until) {
+      const dateCandidate = new Date(until);
+      if (Number.isNaN(dateCandidate.getTime())) {
+        res.status(400);
+        throw new Error('Invalid until date. Use a valid ISO date string.');
+      }
+      parsedUntil = dateCandidate;
+    }
+
+    user.downloadPaymentExempt = true;
+    user.downloadPaymentExemptReason = reason ? String(reason).trim() : '';
+    user.downloadPaymentExemptUntil = parsedUntil;
+    user.downloadPaymentExemptSetBy = req.user.id;
+    user.downloadPaymentExemptSetAt = new Date();
+  } else {
+    user.downloadPaymentExempt = false;
+    user.downloadPaymentExemptReason = '';
+    user.downloadPaymentExemptUntil = null;
+    user.downloadPaymentExemptSetBy = req.user.id;
+    user.downloadPaymentExemptSetAt = new Date();
+  }
+
+  await user.save();
+
+  const safeUser = await User.findById(user._id).select('-password').populate('school', 'name');
+  res.json({
+    message: isExempt ? 'Download payment exemption enabled.' : 'Download payment exemption removed.',
+    user: safeUser,
+  });
+});
+
 /* ============================================================================
  * ANALYTICS & INSIGHTS
  * ============================================================================
@@ -496,6 +550,7 @@ module.exports = {
   unsuspendUser,
   deleteUser,
   assignUserToSchool,
+  setDownloadExemption,
   getAllTeachers,
   getAllStudents,
   deleteTeacher,

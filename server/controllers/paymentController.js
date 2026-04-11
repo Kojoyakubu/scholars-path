@@ -58,6 +58,12 @@ const normalizeDownloadFormat = (format) => {
   return ['pdf', 'html', 'doc', 'txt'].includes(normalized) ? normalized : 'pdf';
 };
 
+const hasActiveDownloadExemption = (user) => {
+  if (!user?.downloadPaymentExempt) return false;
+  if (!user?.downloadPaymentExemptUntil) return true;
+  return new Date(user.downloadPaymentExemptUntil).getTime() >= Date.now();
+};
+
 const verifyPaystackReference = async ({ secretKey, reference }) => {
   const verifyResponse = await axios.get(
     `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
@@ -196,7 +202,9 @@ const initializeDownloadPayment = asyncHandler(async (req, res) => {
     throw new Error('Invalid itemType. Must be lesson_note, learner_note, or quiz.');
   }
 
-  const teacher = await User.findById(req.user.id).select('_id email fullName');
+  const teacher = await User.findById(req.user.id).select(
+    '_id email fullName downloadPaymentExempt downloadPaymentExemptReason downloadPaymentExemptUntil'
+  );
   if (!teacher) {
     res.status(404);
     throw new Error('Teacher account not found.');
@@ -206,6 +214,31 @@ const initializeDownloadPayment = asyncHandler(async (req, res) => {
   if (!target) {
     res.status(404);
     throw new Error('Download target not found or you are not authorized to download it.');
+  }
+
+  if (hasActiveDownloadExemption(teacher)) {
+    const exemptPayment = await Payment.create({
+      user: req.user.id,
+      amount: 0,
+      currency: 'GHS',
+      method: 'admin_exemption',
+      reference: generateReference('DLX'),
+      description: `Download fee waived by admin for ${itemType} (${normalizedFormat})${teacher.downloadPaymentExemptReason ? ` - ${teacher.downloadPaymentExemptReason}` : ''}`,
+      status: 'success',
+      purpose: 'download',
+      itemType,
+      itemId,
+      downloadFormat: normalizedFormat,
+      paidAt: new Date(),
+    });
+
+    return res.status(200).json({
+      message: 'Download payment waived by admin.',
+      alreadyPaid: true,
+      waived: true,
+      payment: exemptPayment,
+      paystack: null,
+    });
   }
 
   const { secretKey, publicKey } = getPaystackConfig();

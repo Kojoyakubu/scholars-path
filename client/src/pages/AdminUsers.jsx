@@ -36,6 +36,7 @@ import {
   unsuspendUser,
   deleteUser,
   assignUserToSchool,
+  setDownloadExemption,
 } from '../features/admin/adminSlice';
 
 const AdminUsers = () => {
@@ -114,6 +115,29 @@ const AdminUsers = () => {
     }
   };
 
+  const onToggleDownloadExemption = async (user) => {
+    const enabling = !user.downloadPaymentExempt;
+    let reason = '';
+    let until = '';
+
+    if (enabling) {
+      reason = window.prompt('Reason for exempting this account (optional):', user.downloadPaymentExemptReason || '') || '';
+      until = window.prompt('Optional expiry date (YYYY-MM-DD), leave blank for no expiry:', '') || '';
+    }
+
+    try {
+      await dispatch(setDownloadExemption({
+        userId: user._id,
+        isExempt: enabling,
+        reason,
+        until,
+      })).unwrap();
+      fetchUsers();
+    } catch (err) {
+      // Handled by admin slice error state
+    }
+  };
+
   // 🏫 Open assign dialog
   const openAssign = async (user) => {
     setSelectedUser(user);
@@ -164,13 +188,14 @@ const AdminUsers = () => {
               <TableCell>Role</TableCell>
               <TableCell>School</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell>Download Fee</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {!isLoading && users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <Typography color="text.secondary">No users found.</Typography>
                 </TableCell>
               </TableRow>
@@ -201,6 +226,21 @@ const AdminUsers = () => {
                   </Typography>
                 </TableCell>
 
+                <TableCell>
+                  {u.role === 'teacher' ? (
+                    <Typography
+                      sx={{
+                        color: u.downloadPaymentExempt ? 'success.main' : 'text.secondary',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {u.downloadPaymentExempt ? 'Exempt' : 'Charge applies'}
+                    </Typography>
+                  ) : (
+                    <Typography color="text.secondary">N/A</Typography>
+                  )}
+                </TableCell>
+
                 <TableCell align="right">
                   {/* ✅ Only show Approve button if pending */}
                   {u.status === 'pending' && (
@@ -221,6 +261,17 @@ const AdminUsers = () => {
                   <IconButton aria-label="Assign user to school" onClick={() => openAssign(u)} title="Assign to School">
                     <SchoolIcon />
                   </IconButton>
+                  {u.role === 'teacher' && (
+                    <Button
+                      size="small"
+                      variant={u.downloadPaymentExempt ? 'outlined' : 'contained'}
+                      color={u.downloadPaymentExempt ? 'warning' : 'success'}
+                      onClick={() => onToggleDownloadExemption(u)}
+                      sx={{ mr: 1 }}
+                    >
+                      {u.downloadPaymentExempt ? 'Remove Exemption' : 'Exempt Download Fee'}
+                    </Button>
+                  )}
                   <IconButton aria-label="Delete user" onClick={() => onDeleteUser(u._id)} title="Delete">
                     <DeleteIcon color="error" />
                   </IconButton>

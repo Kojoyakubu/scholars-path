@@ -41,6 +41,13 @@ const userSchema = new mongoose.Schema(
     refreshToken: String,
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: String,
+
+    // Download payment exemption (managed by admin)
+    downloadPaymentExempt: { type: Boolean, default: false },
+    downloadPaymentExemptReason: { type: String, trim: true },
+    downloadPaymentExemptUntil: { type: Date, default: null },
+    downloadPaymentExemptSetBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    downloadPaymentExemptSetAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

@@ -53,6 +53,16 @@ const assignUserToSchool = async (data) => {
   return response.data;
 };
 
+const setDownloadExemption = async (data) => {
+  const { userId, isExempt, reason, until } = data;
+  const response = await api.patch(`/api/admin/users/${userId}/download-exemption`, {
+    isExempt,
+    reason,
+    until,
+  });
+  return response.data;
+};
+
 const getAiInsights = async () => {
   const response = await api.get('/api/admin/analytics/insights');
   return response.data;
@@ -91,6 +101,7 @@ const adminService = {
   createSchool,
   deleteSchool,
   assignUserToSchool,
+  setDownloadExemption,
   getAiInsights,
   getAnalyticsOverview,
   getTopTeachers,
