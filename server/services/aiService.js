@@ -418,49 +418,534 @@ Example:
  * Generate NaCCA-compliant Teacher Lesson Note in HTML format.
  * This is for the new "bundle" endpoint that generates everything at once.
  */
-async function generateTeacherLessonNoteHTML(details = {}) {
-  const { 
-    school, 
-    className, 
-    subjectName, 
-    strandName, 
-    subStrandName, 
-    week, 
-    term, 
-    duration, 
-    classSize, 
-    reference, 
-    contentStandardCode, 
-    indicatorCodes, 
-    dayDate, 
-    facilitatorName,
-    preferredModel, 
-    preferredProvider 
-  } = details;
+const DEFAULT_TEACHER_NOTE_TEMPLATE = 'modern-academic';
 
-  const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
-  const facilitatorDisplayName = String(facilitatorName || '').trim() || '..................................................';
-  
-  const prompt = `
-You are a Ghanaian master teacher and curriculum expert. Generate a professionally formatted HTML lesson note following Ghana's NaCCA (National Council for Curriculum and Assessment) structure.
+const TEACHER_NOTE_TEMPLATE_CONFIGS = {
+  'modern-academic': {
+    label: 'Modern Academic',
+    guidance: 'Use a refined academic palette, pill chips, curriculum cards, and a clean three-part lesson phase table.',
+  },
+  'clean-minimal': {
+    label: 'Clean Minimal',
+    guidance: 'Use a restrained minimalist layout with subtle borders, a slim summary grid, and plenty of white space.',
+  },
+  'warm-community': {
+    label: 'Warm Community',
+    guidance: 'Use warm classroom tones, welcoming section cards, and grouped blocks that feel approachable and teacher-friendly.',
+  },
+  'structured-workshop': {
+    label: 'Structured Workshop',
+    guidance: 'Use a workshop-board aesthetic with bold labels, action panels, and strong assessment callouts.',
+  },
+};
 
-CRITICAL RULES:
-1. Return ONLY valid HTML - no markdown, no code blocks, no explanations
-2. Start directly with HTML tags - no introductory text
-3. Use proper HTML tags: <h2>, <h3>, <p>, <table>, <ul>, <li>, <strong>, <br>
-4. The layout must be clean, professional, and ready to display in a web browser
-5. Use the "Transformation Logic" to convert the "Official NaCCA Indicator" into learner-centric "Performance Indicators"
-6. Derive the Week Ending (Friday date) from the provided Day/Date
+function resolveTeacherNoteTemplate(templateDesign) {
+  return TEACHER_NOTE_TEMPLATE_CONFIGS[templateDesign]
+    ? templateDesign
+    : DEFAULT_TEACHER_NOTE_TEMPLATE;
+}
 
----
-TRANSFORMATION LOGIC EXAMPLE:
-- IF Official Indicator: "Discuss the fourth-generation computers"
-- THEN Performance Indicator: "The learner can identify the features of fourth-generation computers."
-- THEN Another: "The learner can explain the advantages of fourth-generation computers."
----
+function buildTeacherLessonNoteTemplate(templateDesign, fields) {
+  const {
+    school,
+    className,
+    subjectName,
+    strandName,
+    subStrandName,
+    week,
+    term,
+    duration,
+    classSize,
+    reference,
+    contentStandardCode,
+    officialIndicatorText,
+    dayDate,
+    facilitatorDisplayName,
+  } = fields;
 
-Generate HTML in this exact "Modern Academic" style (use semantic sections and clean CSS classes):
+  if (templateDesign === 'clean-minimal') {
+    return `
+<div class="lesson-note clean-minimal">
+  <style>
+    .lesson-note.clean-minimal {
+      font-family: 'Aptos', 'Segoe UI', Arial, sans-serif;
+      color: #1f2933;
+      background: #ffffff;
+      border: 1px solid #d7dee5;
+      border-radius: 14px;
+      padding: 22px;
+      line-height: 1.55;
+    }
+    .clean-minimal .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      border-bottom: 2px solid #d7dee5;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+    .clean-minimal .topbar h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.02em; }
+    .clean-minimal .muted { color: #52606d; font-size: 0.9rem; }
+    .clean-minimal .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .clean-minimal .summary-item,
+    .clean-minimal .panel {
+      border: 1px solid #d7dee5;
+      border-radius: 12px;
+      background: #fcfdff;
+    }
+    .clean-minimal .summary-item { padding: 12px; }
+    .clean-minimal .summary-label { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em; color: #7b8794; }
+    .clean-minimal .summary-value { margin-top: 6px; font-weight: 700; color: #102a43; }
+    .clean-minimal .panel { padding: 14px 16px; margin-bottom: 12px; }
+    .clean-minimal .panel h3 { margin: 0 0 10px 0; font-size: 1rem; color: #102a43; }
+    .clean-minimal .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 16px;
+    }
+    .clean-minimal .info-grid p,
+    .clean-minimal .panel p { margin: 0; }
+    .clean-minimal .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .clean-minimal .phase {
+      border: 1px solid #d7dee5;
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+    }
+    .clean-minimal .phase h4 { margin: 0 0 8px 0; color: #0b3c5d; }
+    .clean-minimal .signoff-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #e6ebf1;
+    }
+    .clean-minimal .signoff-row:last-child { border-bottom: 0; }
+    @media (max-width: 720px) {
+      .lesson-note.clean-minimal { padding: 14px; }
+      .clean-minimal .topbar,
+      .clean-minimal .summary-grid,
+      .clean-minimal .info-grid,
+      .clean-minimal .phase-grid,
+      .clean-minimal .signoff-row {
+        display: block;
+      }
+      .clean-minimal .summary-item,
+      .clean-minimal .phase,
+      .clean-minimal .signoff-row { margin-bottom: 10px; }
+    }
+  </style>
 
+  <section class="topbar">
+    <div>
+      <h2>Teacher Lesson Note</h2>
+      <p class="muted">Minimal planning sheet for focused classroom delivery</p>
+    </div>
+    <div class="muted">${subjectName} | ${className}</div>
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-item"><div class="summary-label">Term</div><div class="summary-value">${term}</div></div>
+    <div class="summary-item"><div class="summary-label">Week</div><div class="summary-value">${week}</div></div>
+    <div class="summary-item"><div class="summary-label">Topic</div><div class="summary-value">${subStrandName}</div></div>
+    <div class="summary-item"><div class="summary-label">Duration</div><div class="summary-value">${duration}</div></div>
+  </section>
+
+  <section class="panel">
+    <h3>Lesson Overview</h3>
+    <div class="info-grid">
+      <p><strong>School:</strong> ${school}</p>
+      <p><strong>Class:</strong> ${className}</p>
+      <p><strong>Subject:</strong> ${subjectName}</p>
+      <p><strong>Class Size:</strong> ${classSize}</p>
+      <p><strong>Strand:</strong> ${strandName}</p>
+      <p><strong>Day/Date:</strong> ${dayDate}</p>
+      <p><strong>Week Ending:</strong> [AI: Compute Friday from ${dayDate}]</p>
+      <p><strong>Facilitator:</strong> ${facilitatorDisplayName}</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>Curriculum Alignment</h3>
+    <p><strong>Content Standard Code:</strong> ${contentStandardCode}</p>
+    <p><strong>Official Indicator(s):</strong><br>${officialIndicatorText}</p>
+    <p><strong>Performance Indicator(s):</strong><br>[AI: Generate 2-3 learner-centred indicators from the official indicator text]</p>
+    <p><strong>Core Competencies:</strong><br>[AI: List 3-4 relevant NaCCA core competencies]</p>
+    <p><strong>Teaching & Learning Materials:</strong><br>[AI: Suggest realistic classroom materials for this topic]</p>
+    <p><strong>Reference:</strong> ${reference}</p>
+  </section>
+
+  <section class="panel">
+    <h3>Teaching Sequence</h3>
+    <div class="phase-grid">
+      <div class="phase">
+        <h4>Starter</h4>
+        <p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>
+        <p><strong>Hook:</strong><br>[AI: Short engaging opener]</p>
+        <p><strong>Lesson Focus:</strong><br>[AI: State the learning intention clearly]</p>
+      </div>
+      <div class="phase">
+        <h4>Main Learning</h4>
+        <p><strong>Teacher Input:</strong><br>[AI: Introduce and explain the main concept]</p>
+        <p><strong>Learner Activity:</strong><br>[AI: Practical or collaborative task]</p>
+        <p><strong>Assessment:</strong><br>[AI: 2-3 checks for understanding]</p>
+      </div>
+      <div class="phase">
+        <h4>Closure</h4>
+        <p><strong>Recap:</strong><br>[AI: Summarize the key ideas]</p>
+        <p><strong>Reflection:</strong><br>[AI: Learner reflection prompt]</p>
+        <p><strong>Assignment:</strong><br>[AI: Short take-home task]</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>Sign-off</h3>
+    <div class="signoff-row"><strong>Facilitator</strong><span>${facilitatorDisplayName}</span></div>
+    <div class="signoff-row"><strong>Vetted By</strong><span></span></div>
+    <div class="signoff-row"><strong>Signature</strong><span></span></div>
+    <div class="signoff-row"><strong>Date</strong><span></span></div>
+  </section>
+</div>`;
+  }
+
+  if (templateDesign === 'warm-community') {
+    return `
+<div class="lesson-note warm-community">
+  <style>
+    .lesson-note.warm-community {
+      font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+      color: #4a3427;
+      background: linear-gradient(180deg, #fff9f2 0%, #fffdf9 100%);
+      border: 1px solid #ecd8c5;
+      border-radius: 18px;
+      padding: 20px;
+      line-height: 1.58;
+    }
+    .warm-community .hero {
+      background: linear-gradient(135deg, #8b4c27 0%, #c77732 100%);
+      color: #fff7ed;
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .warm-community .hero h2 { margin: 0 0 8px 0; font-size: 1.45rem; }
+    .warm-community .badge-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .warm-community .badge {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .warm-community .section {
+      background: #fffaf5;
+      border: 1px solid #ecd8c5;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 0 rgba(139, 76, 39, 0.04);
+    }
+    .warm-community .section h3 {
+      margin: 0 0 10px 0;
+      color: #8b4c27;
+      font-size: 1.02rem;
+    }
+    .warm-community .overview {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 16px;
+    }
+    .warm-community .phase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .warm-community .phase-card {
+      background: #ffffff;
+      border: 1px solid #eddccc;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .warm-community .phase-card.full { grid-column: 1 / -1; }
+    .warm-community .phase-card h4 { margin: 0 0 8px 0; color: #6e3819; }
+    .warm-community .line-item {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px dashed #eddccc;
+    }
+    .warm-community .line-item:last-child { border-bottom: 0; }
+    @media (max-width: 720px) {
+      .lesson-note.warm-community { padding: 14px; }
+      .warm-community .overview,
+      .warm-community .phase-grid,
+      .warm-community .line-item {
+        display: block;
+      }
+      .warm-community .phase-card,
+      .warm-community .line-item { margin-bottom: 10px; }
+    }
+  </style>
+
+  <header class="hero">
+    <h2>Teacher Lesson Note</h2>
+    <div class="badge-row">
+      <span class="badge">${subjectName}</span>
+      <span class="badge">${className}</span>
+      <span class="badge">Term ${term}</span>
+      <span class="badge">Week ${week}</span>
+      <span class="badge">${subStrandName}</span>
+    </div>
+  </header>
+
+  <section class="section">
+    <h3>Classroom Snapshot</h3>
+    <div class="overview">
+      <p><strong>School:</strong> ${school}</p>
+      <p><strong>Facilitator:</strong> ${facilitatorDisplayName}</p>
+      <p><strong>Strand:</strong> ${strandName}</p>
+      <p><strong>Class Size:</strong> ${classSize}</p>
+      <p><strong>Duration:</strong> ${duration}</p>
+      <p><strong>Day/Date:</strong> ${dayDate}</p>
+      <p><strong>Week Ending:</strong> [AI: Compute Friday from ${dayDate}]</p>
+      <p><strong>Reference:</strong> ${reference}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h3>Curriculum Promise</h3>
+    <p><strong>Content Standard Code:</strong> ${contentStandardCode}</p>
+    <p><strong>Official Indicator(s):</strong><br>${officialIndicatorText}</p>
+    <p><strong>Performance Indicator(s):</strong><br>[AI: Generate 2-3 learner-centred indicators using simple classroom language]</p>
+    <p><strong>Core Competencies:</strong><br>[AI: List 3-4 relevant NaCCA core competencies]</p>
+    <p><strong>Teaching & Learning Materials:</strong><br>[AI: Suggest realistic materials including local classroom resources]</p>
+  </section>
+
+  <section class="section">
+    <h3>Teaching Journey</h3>
+    <div class="phase-grid">
+      <div class="phase-card">
+        <h4>Starter Circle</h4>
+        <p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>
+        <p><strong>Starter Activity:</strong><br>[AI: Engaging warm-up task]</p>
+        <p><strong>Lesson Intent:</strong><br>[AI: State the lesson purpose simply]</p>
+      </div>
+      <div class="phase-card">
+        <h4>Guided Learning</h4>
+        <p><strong>Teaching Points:</strong><br>[AI: Explain the concept in manageable steps]</p>
+        <p><strong>Learner Participation:</strong><br>[AI: Describe pair/group or hands-on work]</p>
+        <p><strong>Checks for Understanding:</strong><br>[AI: 2-3 quick formative questions]</p>
+      </div>
+      <div class="phase-card full">
+        <h4>Reflection & Next Step</h4>
+        <p><strong>Closure:</strong><br>[AI: Summarize the key ideas and classroom takeaways]</p>
+        <p><strong>Real-Life Connection:</strong><br>[AI: Link the lesson to everyday Ghanaian life]</p>
+        <p><strong>Home Practice:</strong><br>[AI: Short assignment or reflection task]</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h3>Approval Lines</h3>
+    <div class="line-item"><strong>Facilitator</strong><span>${facilitatorDisplayName}</span></div>
+    <div class="line-item"><strong>Vetted By</strong><span></span></div>
+    <div class="line-item"><strong>Signature</strong><span></span></div>
+    <div class="line-item"><strong>Date</strong><span></span></div>
+  </section>
+</div>`;
+  }
+
+  if (templateDesign === 'structured-workshop') {
+    return `
+<div class="lesson-note structured-workshop">
+  <style>
+    .lesson-note.structured-workshop {
+      font-family: 'Segoe UI', 'Arial Narrow', sans-serif;
+      color: #1f2333;
+      background: #f7f5fb;
+      border: 1px solid #ddd2ee;
+      border-radius: 16px;
+      padding: 18px;
+      line-height: 1.5;
+    }
+    .structured-workshop .banner {
+      background: linear-gradient(135deg, #362158 0%, #6f45a7 100%);
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .structured-workshop .banner h2 { margin: 0 0 8px 0; font-size: 1.42rem; }
+    .structured-workshop .tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .structured-workshop .tag {
+      border-radius: 8px;
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.22);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .structured-workshop .board {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .structured-workshop .panel {
+      background: #ffffff;
+      border: 1px solid #ddd2ee;
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .structured-workshop .panel h3 {
+      margin: 0 0 10px 0;
+      color: #4a2f78;
+      font-size: 1rem;
+    }
+    .structured-workshop .checklist p { margin: 0 0 8px 0; }
+    .structured-workshop .phase-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.92rem;
+    }
+    .structured-workshop .phase-table th,
+    .structured-workshop .phase-table td {
+      border: 1px solid #ddd2ee;
+      padding: 10px;
+      vertical-align: top;
+      background: #fff;
+    }
+    .structured-workshop .phase-table th {
+      background: #f1ebfb;
+      color: #43296d;
+      text-align: left;
+    }
+    .structured-workshop .sign-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .structured-workshop .sign-box {
+      border: 1px dashed #bca8dd;
+      border-radius: 12px;
+      padding: 10px 12px;
+      min-height: 60px;
+      background: #fcfbff;
+    }
+    .structured-workshop .sign-box strong {
+      display: block;
+      color: #4a2f78;
+      margin-bottom: 6px;
+    }
+    @media (max-width: 720px) {
+      .lesson-note.structured-workshop { padding: 14px; }
+      .structured-workshop .board,
+      .structured-workshop .sign-grid {
+        grid-template-columns: 1fr;
+      }
+      .structured-workshop .phase-table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+
+  <header class="banner">
+    <h2>Teacher Lesson Note</h2>
+    <div class="tag-row">
+      <span class="tag">${subjectName}</span>
+      <span class="tag">${className}</span>
+      <span class="tag">Term ${term}</span>
+      <span class="tag">Week ${week}</span>
+      <span class="tag">${duration}</span>
+    </div>
+  </header>
+
+  <section class="board">
+    <div class="panel">
+      <h3>Lesson Setup</h3>
+      <p><strong>School:</strong> ${school}</p>
+      <p><strong>Strand:</strong> ${strandName}</p>
+      <p><strong>Sub-Strand:</strong> ${subStrandName}</p>
+      <p><strong>Day/Date:</strong> ${dayDate}</p>
+      <p><strong>Week Ending:</strong> [AI: Compute Friday from ${dayDate}]</p>
+      <p><strong>Facilitator:</strong> ${facilitatorDisplayName}</p>
+    </div>
+    <div class="panel checklist">
+      <h3>Teaching Checks</h3>
+      <p><strong>Class Size:</strong> ${classSize}</p>
+      <p><strong>Content Standard Code:</strong> ${contentStandardCode}</p>
+      <p><strong>Official Indicator(s):</strong><br>${officialIndicatorText}</p>
+      <p><strong>Reference:</strong> ${reference}</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>Competency and Resource Focus</h3>
+    <p><strong>Performance Indicator(s):</strong><br>[AI: Generate 2-3 learner-centred performance indicators]</p>
+    <p><strong>Core Competencies:</strong><br>[AI: List 3-4 relevant NaCCA core competencies]</p>
+    <p><strong>Teaching & Learning Materials:</strong><br>[AI: Suggest practical materials for a workshop-style lesson]</p>
+  </section>
+
+  <section class="panel">
+    <h3>Workshop Flow</h3>
+    <table class="phase-table">
+      <thead>
+        <tr>
+          <th>Launch</th>
+          <th>Explore</th>
+          <th>Demonstrate Mastery</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>
+            <p><strong>Starter Task:</strong><br>[AI: Quick energizer or prompt]</p>
+            <p><strong>Goal:</strong><br>[AI: State the lesson objective clearly]</p>
+          </td>
+          <td>
+            <p><strong>Input:</strong><br>[AI: Main explanation and modeling]</p>
+            <p><strong>Practice:</strong><br>[AI: Guided or collaborative learner task]</p>
+            <p><strong>Checkpoint:</strong><br>[AI: Questions or observable checks]</p>
+          </td>
+          <td>
+            <p><strong>Reflection:</strong><br>[AI: Learner reflection questions]</p>
+            <p><strong>Application:</strong><br>[AI: Real-life or community connection]</p>
+            <p><strong>Assignment:</strong><br>[AI: Short take-home activity]</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h3>Sign-off Boxes</h3>
+    <div class="sign-grid">
+      <div class="sign-box"><strong>Facilitator</strong>${facilitatorDisplayName}</div>
+      <div class="sign-box"><strong>Vetted By</strong></div>
+      <div class="sign-box"><strong>Signature</strong></div>
+      <div class="sign-box"><strong>Date</strong></div>
+    </div>
+  </section>
+</div>`;
+  }
+
+  return `
 <div class="lesson-note modern-academic">
   <style>
     .lesson-note.modern-academic {
@@ -682,7 +1167,76 @@ Generate HTML in this exact "Modern Academic" style (use semantic sections and c
     <div class="sign-row"><span class="sign-label">Signature:</span><span class="sign-line"></span></div>
     <div class="sign-row"><span class="sign-label">Date:</span><span class="sign-line"></span></div>
   </section>
-</div>
+</div>`;
+}
+
+async function generateTeacherLessonNoteHTML(details = {}) {
+  const { 
+    school, 
+    className, 
+    subjectName, 
+    strandName, 
+    subStrandName, 
+    week, 
+    term, 
+    duration, 
+    classSize, 
+    reference, 
+    contentStandardCode, 
+    indicatorCodes, 
+    dayDate, 
+    facilitatorName,
+    templateDesign,
+    preferredModel, 
+    preferredProvider 
+  } = details;
+
+  const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
+  const facilitatorDisplayName = String(facilitatorName || '').trim() || '..................................................';
+  const resolvedTemplateDesign = resolveTeacherNoteTemplate(templateDesign);
+  const selectedTemplate = TEACHER_NOTE_TEMPLATE_CONFIGS[resolvedTemplateDesign];
+  const templateMarkup = buildTeacherLessonNoteTemplate(resolvedTemplateDesign, {
+    school,
+    className,
+    subjectName,
+    strandName,
+    subStrandName,
+    week,
+    term,
+    duration,
+    classSize,
+    reference,
+    contentStandardCode,
+    officialIndicatorText,
+    dayDate,
+    facilitatorDisplayName,
+  });
+  
+  const prompt = `
+You are a Ghanaian master teacher and curriculum expert. Generate a professionally formatted HTML lesson note following Ghana's NaCCA (National Council for Curriculum and Assessment) structure.
+
+CRITICAL RULES:
+1. Return ONLY valid HTML - no markdown, no code blocks, no explanations
+2. Start directly with HTML tags - no introductory text
+3. Use proper HTML tags: <h2>, <h3>, <p>, <table>, <ul>, <li>, <strong>, <br>
+4. The layout must be clean, professional, and ready to display in a web browser
+5. Use the "Transformation Logic" to convert the "Official NaCCA Indicator" into learner-centric "Performance Indicators"
+6. Derive the Week Ending (Friday date) from the provided Day/Date
+7. Keep the chosen visual template structure exactly as provided while filling the content professionally
+
+---
+TRANSFORMATION LOGIC EXAMPLE:
+- IF Official Indicator: "Discuss the fourth-generation computers"
+- THEN Performance Indicator: "The learner can identify the features of fourth-generation computers."
+- THEN Another: "The learner can explain the advantages of fourth-generation computers."
+---
+
+Selected template: ${selectedTemplate.label}
+Template guidance: ${selectedTemplate.guidance}
+
+Generate HTML in this exact template structure:
+
+${templateMarkup}
 
 REMEMBER: Return ONLY the HTML above, filled with appropriate content. Keep the same class names/style block and structure. No markdown, no code fences, no explanations.
 `;
@@ -698,7 +1252,14 @@ REMEMBER: Return ONLY the HTML above, filled with appropriate content. Keep the 
   // convert any placeholder tokens into real <img> tags
   text = replacePlaceholdersWithImages(text);
 
-  return { text, provider, model, task: 'teacherLessonNoteHTML', timestamp };
+  return {
+    text,
+    provider,
+    model,
+    task: 'teacherLessonNoteHTML',
+    timestamp,
+    templateDesign: resolvedTemplateDesign,
+  };
 }
 
 /**

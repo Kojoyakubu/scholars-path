@@ -58,6 +58,7 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     provider: aiProvider,
     model: aiModel,
     timestamp,
+    templateDesign,
   } = await aiService.generateTeacherLessonNoteHTML(aiDetails);
 
   const lessonNote = await LessonNote.create({
@@ -65,6 +66,7 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: subStrandId,
     content: teacherNoteHTML,
+    templateDesign,
     aiProvider,
     aiModel,
     aiGeneratedAt: new Date(timestamp),
@@ -490,6 +492,7 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     provider: p1,
     model: m1,
     timestamp: t1,
+    templateDesign,
   } = await aiService.generateTeacherLessonNoteHTML(curriculumDetails);
 
   // PIPELINE STEP 2: Generate Learner Note (HTML)
@@ -521,6 +524,7 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: subStrandId,
     content: teacherNoteHTML,
+    templateDesign,
     aiProvider: p1,
     aiModel: m1,
     aiGeneratedAt: new Date(t1),
@@ -906,6 +910,7 @@ const duplicateBundle = asyncHandler(async (req, res) => {
     school: req.user.school,
     subStrand: originalBundle.subStrand,
     content: originalBundle.lessonNote.content,
+    templateDesign: originalBundle.lessonNote.templateDesign || 'modern-academic',
     aiProvider: originalBundle.lessonNote.aiProvider,
     aiModel: originalBundle.lessonNote.aiModel,
   });
