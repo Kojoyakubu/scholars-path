@@ -129,9 +129,7 @@ const StudentDashboardBanner = ({
       <Paper
         elevation={0}
         sx={{
-          background: `linear-gradient(135deg, 
-            ${alpha(theme.palette.primary.main, 0.95)} 0%, 
-            ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
+          background: theme.palette.primary.main,
           backdropFilter: 'blur(18px)',
           borderRadius: { xs: '16px', md: '24px' },
           p: { xs: 2.5, sm: 3, md: 4 },
@@ -305,9 +303,7 @@ const SectionCard = ({ children, gradient, ...props }) => {
       viewport={{ once: true, amount: 0.2 }}
       sx={{
         height: '100%',
-        background: gradient || `linear-gradient(135deg, 
-          ${alpha(theme.palette.background.paper, 0.8)} 0%, 
-          ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
+        background: gradient || alpha(theme.palette.background.paper, 0.92),
         backdropFilter: 'blur(14px)',
         borderRadius: { xs: 2, md: 3 },
         border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
@@ -344,9 +340,7 @@ const QuickActionCard = ({ icon: Icon, title, description, color, onClick, to, b
       sx={{
         p: 3,
         cursor: 'pointer',
-        background: `linear-gradient(135deg, 
-          ${alpha(color, 0.1)} 0%, 
-          ${alpha(color, 0.05)} 100%)`,
+        background: alpha(color, 0.08),
         backdropFilter: 'blur(10px)',
         border: `2px solid ${alpha(color, 0.2)}`,
         borderRadius: 3,
@@ -421,9 +415,7 @@ const ProgressCard = ({ title, value, max, color, icon: Icon }) => {
       variants={cardVariants}
       sx={{
         p: 3,
-        background: `linear-gradient(135deg, 
-          ${alpha(color, 0.08)} 0%, 
-          ${alpha(color, 0.02)} 100%)`,
+        background: alpha(color, 0.06),
         backdropFilter: 'blur(10px)',
         border: `1px solid ${alpha(color, 0.2)}`,
         borderRadius: 3,
@@ -767,9 +759,7 @@ function Dashboard() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: `linear-gradient(135deg, 
-          ${alpha(theme.palette.primary.main, 0.02)} 0%, 
-          ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
+        background: theme.palette.background.default,
       }}
     >
       <Container
@@ -889,10 +879,7 @@ function Dashboard() {
                   sx={{
                     typography: { xs: 'h6', md: 'h5' },
                     fontWeight: 700,
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
+                    color: theme.palette.primary.main,
                   }}
                 >
                   📚 Your Subjects
@@ -1071,10 +1058,7 @@ function Dashboard() {
                   typography: { xs: 'h6', md: 'h5' },
                   fontWeight: 700,
                   mb: 3,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
+                  color: theme.palette.primary.main,
                 }}
               >
                 🎯 Select Topic
@@ -1177,9 +1161,7 @@ function Dashboard() {
                             component={motion.div}
                             variants={cardVariants}
                             sx={{
-                              background: `linear-gradient(135deg, 
-                                ${alpha(theme.palette.primary.main, 0.05)} 0%, 
-                                ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
+                              background: alpha(theme.palette.primary.main, 0.04),
                               backdropFilter: 'blur(10px)',
                               border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
                               transition: 'all 0.3s ease',
@@ -1228,7 +1210,7 @@ function Dashboard() {
                                 startIcon={<PlayArrowIcon />}
                                 onClick={() => handleViewNote(note)}
                                 sx={{
-                                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                  background: theme.palette.primary.main,
                                   fontWeight: 600,
                                 }}
                               >
@@ -1402,7 +1384,7 @@ function Dashboard() {
                   >
                     <Box
                       sx={{
-                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                        background: theme.palette.primary.main,
                         p: 3,
                         color: 'white',
                         display: 'flex',

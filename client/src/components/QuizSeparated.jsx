@@ -407,7 +407,7 @@ const QuizSeparated = () => {
               mt: 4,
               borderRadius: 3,
               textAlign: 'center',
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)}, ${alpha(theme.palette.success.main, 0.05)})`
+              background: alpha(theme.palette.primary.main, 0.05)
             }}
           >
             <Avatar
@@ -542,7 +542,7 @@ const QuizSeparated = () => {
           sx={{
             p: 3,
             mb: 3,
-            background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+            background: theme.palette.primary.main,
             color: 'white',
             borderRadius: 2,
           }}

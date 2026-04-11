@@ -87,7 +87,7 @@ const LessonNoteView = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: '#1E3A5F',
         }}
       >
         <Box textAlign="center">
@@ -108,7 +108,7 @@ const LessonNoteView = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: '#1E3A5F',
         }}
       >
         <Box textAlign="center">
@@ -135,7 +135,7 @@ const LessonNoteView = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: '#1E3A5F',
         }}
       >
         <Box textAlign="center">
@@ -158,7 +158,7 @@ const LessonNoteView = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: '#1E3A5F',
         py: 4,
       }}
     >

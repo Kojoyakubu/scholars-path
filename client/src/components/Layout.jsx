@@ -82,14 +82,14 @@ const StyledNavItem = styled(ListItemButton)(({ theme, active }) => ({
   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   color: active ? '#FFFFFF' : alpha('#FFFFFF', 0.85), // ← FIXED: Brighter (was 0.65)
   background: active 
-    ? `linear-gradient(90deg, ${alpha(ACCENT_COLOR, 0.25)} 0%, ${alpha(ACCENT_COLOR, 0.18)} 100%)` // ← FIXED: Stronger gradient
+    ? alpha(ACCENT_COLOR, 0.25)
     : 'transparent',
   borderLeft: active ? `4px solid ${ACCENT_COLOR}` : '4px solid transparent',
   
   '&:hover': {
     background: active 
-      ? `linear-gradient(90deg, ${alpha(ACCENT_COLOR, 0.35)} 0%, ${alpha(ACCENT_COLOR, 0.28)} 100%)` // ← FIXED: Stronger hover
-      : `linear-gradient(90deg, ${alpha(ACCENT_COLOR, 0.15)} 0%, ${alpha(ACCENT_COLOR, 0.08)} 100%)`, // ← FIXED: Visible hover gradient
+      ? alpha(ACCENT_COLOR, 0.35)
+      : alpha(ACCENT_COLOR, 0.15),
     transform: 'translateX(3px)',
     color: '#FFFFFF', // ← Always white on hover
     borderLeft: `4px solid ${alpha(ACCENT_COLOR, 0.7)}`, // ← FIXED: More visible (was 0.5)
@@ -214,7 +214,7 @@ const Layout = ({ onLogout }) => {
                 width: 40,
                 height: 40,
                 borderRadius: 0, // ← FIXED: No rounded corners
-                background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, #2563EB 100%)`,
+                background: ACCENT_COLOR,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -258,7 +258,7 @@ const Layout = ({ onLogout }) => {
                 width: 40,
                 height: 40,
                 borderRadius: 0, // ← FIXED: No rounded corners
-                background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, #2563EB 100%)`,
+                background: ACCENT_COLOR,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

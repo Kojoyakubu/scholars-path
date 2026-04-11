@@ -180,10 +180,7 @@ const Register = () => {
       sx={{
         minHeight: '100vh',
         display: 'flex',
-        background: `linear-gradient(135deg, ${alpha(
-          theme.palette.primary.main,
-          0.05
-        )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+        background: alpha(theme.palette.primary.main, 0.05),
       }}
     >
       {/* Left Side - Branding */}
@@ -192,7 +189,7 @@ const Register = () => {
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           width: '40%',
-          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          background: theme.palette.primary.main,
           p: 6,
           color: 'white', // ✅ FIXED: Ensure all text is white
         }}

@@ -171,10 +171,7 @@ const Login = () => {
       sx={{
         minHeight: '100vh',
         display: 'flex',
-        background: `linear-gradient(135deg, ${alpha(
-          theme.palette.primary.main,
-          0.05
-        )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+        background: alpha(theme.palette.primary.main, 0.05),
       }}
     >
       {/* Left Side - Branding */}
@@ -183,7 +180,7 @@ const Login = () => {
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           width: '40%',
-          background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+          background: theme.palette.primary.dark,
           p: 6,
           color: 'white', // ✅ FIXED: Ensure all text is white
         }}

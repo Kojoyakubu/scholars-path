@@ -60,8 +60,8 @@ const theme = createTheme({
     background: {
       default: '#F3F4F6',   // Gray-100: Subtle Backgrounds
       paper: '#FFFFFF',      // White: Cards & Surfaces
-      gradient: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)', // Hero gradient
-      aiGradient: 'linear-gradient(135deg, #8B5CF6 0%, #2563EB 100%)', // AI Feature gradient
+      gradient: '#1E3A5F',
+      aiGradient: '#8B5CF6',
     },
     
     // 📝 Text System (Neutrals)
@@ -211,9 +211,9 @@ const theme = createTheme({
           },
         },
         contained: {
-          background: 'linear-gradient(135deg, #2563EB 0%, #1E3A5F 100%)',
+          background: '#2563EB',
           '&:hover': {
-            background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
+            background: '#1E3A5F',
             boxShadow: '0 12px 32px rgba(37, 99, 235, 0.3)',
           },
         },
@@ -291,7 +291,7 @@ const theme = createTheme({
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
         },
         colorPrimary: {
-          background: 'linear-gradient(90deg, #1E3A5F 0%, #2563EB 100%)',
+          background: '#1E3A5F',
           color: '#FFFFFF',
         },
       },

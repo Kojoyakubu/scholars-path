@@ -85,7 +85,7 @@ function Header() {
                   width: 40,
                   height: 40,
                   borderRadius: 2,
-                  background: theme.palette.background.gradient,
+                  background: theme.palette.primary.main,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -98,10 +98,7 @@ function Header() {
                 variant="h6"
                 sx={{
                   fontWeight: 800,
-                  background: theme.palette.background.gradient,
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
+                  color: theme.palette.primary.dark,
                   display: { xs: 'none', sm: 'block' },
                 }}
               >

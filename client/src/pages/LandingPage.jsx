@@ -124,8 +124,7 @@ const LandingPage = () => {
       sx={{
         minHeight: "100vh",
         pb: { xs: 10, md: 0 },
-        background:
-          "radial-gradient(circle at 15% 10%, rgba(37,99,235,0.16), transparent 35%), radial-gradient(circle at 85% 5%, rgba(245,158,11,0.15), transparent 30%), linear-gradient(180deg, #F8FBFF 0%, #FFFFFF 40%, #F6F8FC 100%)",
+        background: "#F8FBFF",
       }}
     >
       <AppBar
@@ -146,7 +145,7 @@ const LandingPage = () => {
                 borderRadius: 2,
                 display: "grid",
                 placeItems: "center",
-                background: "linear-gradient(140deg, #1E3A5F 0%, #2563EB 70%, #60A5FA 100%)",
+                background: "#2563EB",
               }}
             >
               <SchoolIcon sx={{ color: "white", fontSize: 22 }} />
@@ -264,7 +263,7 @@ const LandingPage = () => {
                 sx={{
                   p: 2,
                   borderRadius: 4,
-                  background: "linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%)",
+                  background: "#FFFFFF",
                   border: `1px solid ${alpha("#1E3A5F", 0.12)}`,
                   boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)",
                 }}
@@ -344,7 +343,7 @@ const LandingPage = () => {
                   height: "100%",
                   borderRadius: 4,
                   border: `1px solid ${alpha("#1E3A5F", 0.1)}`,
-                  background: "linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%)",
+                  background: "#FFFFFF",
                 }}
               >
                 <CardContent sx={{ p: 3 }}>
@@ -362,7 +361,7 @@ const LandingPage = () => {
         </Grid>
       </Container>
 
-      <Box sx={{ py: { xs: 8, md: 10 }, background: "linear-gradient(180deg, #EEF4FF 0%, #FFFFFF 100%)" }}>
+      <Box sx={{ py: { xs: 8, md: 10 }, background: "#EEF4FF" }}>
         <Container maxWidth="lg">
           <Typography
             variant="h3"
@@ -424,7 +423,7 @@ const LandingPage = () => {
             borderRadius: 4,
             textAlign: "center",
             border: `1px solid ${alpha("#1E3A5F", 0.14)}`,
-            background: "linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(245,158,11,0.1) 100%)",
+            background: alpha("#2563EB", 0.1),
           }}
         >
           <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 800, fontSize: { xs: "1.5rem", sm: "1.9rem", md: "2.125rem" } }}>
@@ -465,9 +464,7 @@ const LandingPage = () => {
                   border: plan.featured
                     ? `2px solid ${theme.palette.primary.main}`
                     : `1px solid ${alpha("#1E3A5F", 0.12)}`,
-                  background: plan.featured
-                    ? "linear-gradient(180deg, #FFFFFF 0%, #EEF4FF 100%)"
-                    : "#FFFFFF",
+                  background: plan.featured ? "#EEF4FF" : "#FFFFFF",
                   position: "relative",
                 }}
               >
@@ -530,7 +527,7 @@ const LandingPage = () => {
             p: { xs: 3.2, md: 5 },
             borderRadius: 4,
             textAlign: "center",
-            background: "linear-gradient(140deg, #1E3A5F 0%, #2563EB 70%, #60A5FA 100%)",
+            background: "#1E3A5F",
             color: "white",
           }}
         >

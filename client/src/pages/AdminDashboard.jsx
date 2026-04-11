@@ -104,7 +104,7 @@ const InsightCard = ({ insight, index }) => {
               width: 44,
               height: 44,
               borderRadius: 2,
-              background: `linear-gradient(135deg, ${config.color} 0%, ${alpha(config.color, 0.8)} 100%)`,
+              background: config.color,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -219,7 +219,7 @@ const PerformanceMetric = ({ label, value, max = 100, color }) => {
             bgcolor: alpha(color, 0.1),
             '& .MuiLinearProgress-bar': {
               borderRadius: 5,
-              background: `linear-gradient(90deg, ${color} 0%, ${alpha(color, 0.8)} 100%)`,
+              background: color,
             }
           }}
         />
@@ -458,7 +458,7 @@ const AdminDashboard = () => {
                   borderRadius: 3,
                   border: '1px solid #E0E0E0',
                   height: '100%',
-                  background: 'linear-gradient(135deg, #FAFBFC 0%, #FFFFFF 100%)',
+                  background: '#FFFFFF',
                 }}
               >
                 <Typography 
@@ -500,7 +500,7 @@ const AdminDashboard = () => {
                   borderRadius: 3,
                   border: '1px solid #E0E0E0',
                   height: '100%',
-                  background: 'linear-gradient(135deg, #FAFBFC 0%, #FFFFFF 100%)',
+                  background: '#FFFFFF',
                 }}
               >
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2.5}>

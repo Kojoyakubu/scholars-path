@@ -51,9 +51,7 @@ const DashboardBanner = ({
       <Paper
         elevation={0}
         sx={{
-          background: `linear-gradient(135deg, 
-            ${alpha(theme.palette.primary.main, 0.95)} 0%, 
-            ${alpha(theme.palette.secondary.main, 0.85)} 100%)`,
+          background: theme.palette.primary.main,
           backdropFilter: 'blur(20px)',
           borderRadius: { xs: 3, md: 4 },
           p: { xs: 2, sm: 2.5, md: 3 },

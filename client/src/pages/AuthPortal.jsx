@@ -126,7 +126,7 @@ const AuthPortal = () => {
   };
 
   const gradient = useMemo(
-    () => 'linear-gradient(135deg, #145A32 0%, #1E8449 100%)',
+    () => '#145A32',
     []
   );
 

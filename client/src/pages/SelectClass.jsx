@@ -95,7 +95,7 @@ const SelectClass = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+        background: alpha(theme.palette.primary.main, 0.05),
         display: 'flex',
         alignItems: 'center',
         py: 4,
@@ -125,10 +125,7 @@ const SelectClass = () => {
               fontWeight={700}
               gutterBottom
               sx={{
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                color: theme.palette.primary.main,
               }}
             >
               Welcome, {user?.name?.split(' ')[0] || 'Student'}!
@@ -239,7 +236,7 @@ const SelectClass = () => {
                   textTransform: 'none',
                   fontSize: '1rem',
                   fontWeight: 600,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  background: theme.palette.primary.main,
                   boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
                   '&:hover': {
                     boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.4)}`,

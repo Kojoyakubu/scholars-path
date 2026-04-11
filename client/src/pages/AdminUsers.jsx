@@ -19,6 +19,8 @@ import {
   Select,
   FormControl,
   InputLabel,
+  TextField,
+  Alert,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -50,6 +52,11 @@ const AdminUsers = () => {
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [schoolId, setSchoolId] = useState('');
+  const [exemptionOpen, setExemptionOpen] = useState(false);
+  const [exemptionUser, setExemptionUser] = useState(null);
+  const [exemptionReason, setExemptionReason] = useState('');
+  const [exemptionUntil, setExemptionUntil] = useState('');
+  const [exemptionError, setExemptionError] = useState('');
 
   // 🧠 Load all users
   const fetchUsers = async () => {
@@ -117,21 +124,64 @@ const AdminUsers = () => {
 
   const onToggleDownloadExemption = async (user) => {
     const enabling = !user.downloadPaymentExempt;
-    let reason = '';
-    let until = '';
 
-    if (enabling) {
-      reason = window.prompt('Reason for exempting this account (optional):', user.downloadPaymentExemptReason || '') || '';
-      until = window.prompt('Optional expiry date (YYYY-MM-DD), leave blank for no expiry:', '') || '';
+    try {
+      if (enabling) {
+        setExemptionUser(user);
+        setExemptionReason(user.downloadPaymentExemptReason || '');
+        setExemptionUntil(
+          user.downloadPaymentExemptUntil
+            ? new Date(user.downloadPaymentExemptUntil).toISOString().slice(0, 10)
+            : ''
+        );
+        setExemptionError('');
+        setExemptionOpen(true);
+      } else {
+        await dispatch(setDownloadExemption({
+          userId: user._id,
+          isExempt: false,
+          reason: '',
+          until: '',
+        })).unwrap();
+        fetchUsers();
+      }
+    } catch (err) {
+      // Handled by admin slice error state
+    }
+  };
+
+  const closeExemptionDialog = () => {
+    setExemptionOpen(false);
+    setExemptionUser(null);
+    setExemptionReason('');
+    setExemptionUntil('');
+    setExemptionError('');
+  };
+
+  const saveExemption = async () => {
+    if (!exemptionUser?._id) return;
+
+    if (exemptionUntil) {
+      const selectedDate = new Date(`${exemptionUntil}T23:59:59`);
+      if (Number.isNaN(selectedDate.getTime())) {
+        setExemptionError('Enter a valid expiry date or leave it blank.');
+        return;
+      }
+
+      if (selectedDate.getTime() < Date.now()) {
+        setExemptionError('Expiry date must be today or later.');
+        return;
+      }
     }
 
     try {
       await dispatch(setDownloadExemption({
-        userId: user._id,
-        isExempt: enabling,
-        reason,
-        until,
+        userId: exemptionUser._id,
+        isExempt: true,
+        reason: exemptionReason,
+        until: exemptionUntil,
       })).unwrap();
+      closeExemptionDialog();
       fetchUsers();
     } catch (err) {
       // Handled by admin slice error state
@@ -321,6 +371,46 @@ const AdminUsers = () => {
           <Button onClick={() => setAssignOpen(false)}>Cancel</Button>
           <Button variant="contained" onClick={assignToSchool} disabled={!schoolId}>
             Assign
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={exemptionOpen} onClose={closeExemptionDialog} fullWidth maxWidth="sm">
+        <DialogTitle>Exempt Teacher From Download Fees</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            {exemptionUser?.fullName || exemptionUser?.name} ({exemptionUser?.email})
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            This teacher will be allowed to download paid content without checkout until the exemption is removed or expires.
+          </Typography>
+          {exemptionError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {exemptionError}
+            </Alert>
+          )}
+          <TextField
+            label="Reason (optional)"
+            fullWidth
+            multiline
+            minRows={3}
+            value={exemptionReason}
+            onChange={(event) => setExemptionReason(event.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Expiry date (optional)"
+            type="date"
+            fullWidth
+            value={exemptionUntil}
+            onChange={(event) => setExemptionUntil(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeExemptionDialog}>Cancel</Button>
+          <Button variant="contained" onClick={saveExemption}>
+            Save Exemption
           </Button>
         </DialogActions>
       </Dialog>

@@ -1239,7 +1239,7 @@ function TeacherDashboard() {
                   sx={(theme) => ({
                     ...overviewCardSx,
                     borderColor: alpha(theme.palette[card.palette].main, 0.2),
-                    background: `linear-gradient(145deg, ${alpha(theme.palette[card.palette].main, 0.2)} 0%, ${alpha(theme.palette[card.palette].main, 0.06)} 100%)`,
+                    background: alpha(theme.palette[card.palette].main, 0.12),
                     boxShadow: `0 10px 24px ${alpha(theme.palette[card.palette].main, 0.18)}`,
                   })}
                 >
