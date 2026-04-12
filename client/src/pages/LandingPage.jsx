@@ -72,10 +72,10 @@ const COPY_VARIANTS = {
     h1Accent: "Build quizzes smarter.",
     h1End: "Support every learner in one place.",
     heroSubtext:
-      "Scholar’s Path helps teachers prepare, assess, and guide learning with curriculum-aligned tools designed for real classrooms.",
+      "Curriculum-aligned tools for planning, assessment, and learner support.",
     primaryCta: "Get Started Free",
     secondaryCta: "View Product Tour",
-    ctaHelper: "No credit card required • Setup takes less than 2 minutes",
+    ctaHelper: "Free to start • Fast setup",
   },
   B: {
     badge: "Classroom-Ready Learning Platform",
@@ -83,12 +83,167 @@ const COPY_VARIANTS = {
     h1Accent: "Assess learning with confidence.",
     h1End: "Keep teaching and progress in one workflow.",
     heroSubtext:
-      "Scholar’s Path gives teachers and schools a practical way to plan, assess, and support learning without extra complexity.",
+      "A simpler teaching workflow for planning, assessment, and student progress.",
     primaryCta: "Start Free Today",
     secondaryCta: "See It In Action",
-    ctaHelper: "Free to start • Built for real classroom timelines",
+    ctaHelper: "Free to start • Built for classrooms",
   },
 };
+
+const AnimatedHeroGraphic = () => (
+  <Box
+    sx={{
+      mt: 3,
+      p: { xs: 2, md: 2.4 },
+      borderRadius: 4,
+      border: `1px solid ${alpha("#4F6678", 0.12)}`,
+      bgcolor: alpha("#FFFFFF", 0.82),
+      overflow: "hidden",
+    }}
+  >
+    <motion.svg
+      viewBox="0 0 520 250"
+      width="100%"
+      height="100%"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      <defs>
+        <linearGradient id="heroPanel" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#EEF4F8" />
+          <stop offset="100%" stopColor="#F9F4EA" />
+        </linearGradient>
+      </defs>
+
+      <rect x="18" y="18" width="484" height="214" rx="28" fill="url(#heroPanel)" />
+
+      <motion.circle
+        cx="94"
+        cy="78"
+        r="36"
+        fill="#6F889D"
+        animate={{ cy: [78, 66, 78] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.rect
+        x="146"
+        y="52"
+        width="138"
+        height="18"
+        rx="9"
+        fill="#A7BBCB"
+        animate={{ width: [138, 120, 138] }}
+        transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <rect x="146" y="84" width="112" height="12" rx="6" fill="#D1DDE6" />
+      <rect x="146" y="106" width="152" height="12" rx="6" fill="#D1DDE6" />
+
+      <motion.rect
+        x="64"
+        y="148"
+        width="168"
+        height="50"
+        rx="16"
+        fill="#FFFFFF"
+        animate={{ x: [64, 72, 64] }}
+        transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <circle cx="92" cy="173" r="11" fill="#10B981" />
+      <rect x="114" y="164" width="88" height="10" rx="5" fill="#B7C8D5" />
+      <rect x="114" y="180" width="66" height="8" rx="4" fill="#D5E0E8" />
+
+      <motion.g
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <rect x="300" y="48" width="152" height="132" rx="24" fill="#FFFFFF" />
+        <rect x="326" y="74" width="98" height="12" rx="6" fill="#B7C8D5" />
+        <rect x="326" y="98" width="78" height="12" rx="6" fill="#D5E0E8" />
+        <rect x="326" y="122" width="58" height="12" rx="6" fill="#D5E0E8" />
+        <motion.path
+          d="M326 156 C350 136, 372 150, 392 130 C406 116, 424 122, 438 106"
+          fill="none"
+          stroke="#6F889D"
+          strokeWidth="8"
+          strokeLinecap="round"
+          initial={{ pathLength: 0.2, opacity: 0.5 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ duration: 2.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+        />
+      </motion.g>
+    </motion.svg>
+
+    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1.4 }}>
+      <Chip label="AI notes" size="small" />
+      <Chip label="Quiz flow" size="small" />
+      <Chip label="Progress view" size="small" />
+    </Stack>
+  </Box>
+);
+
+const AnimatedFlowGraphic = () => (
+  <Box
+    sx={{
+      p: { xs: 2.2, md: 2.8 },
+      borderRadius: 4,
+      background: alpha("#FFFFFF", 0.72),
+      border: `1px solid ${alpha("#4F6678", 0.12)}`,
+      minHeight: 300,
+      display: "grid",
+      placeItems: "center",
+    }}
+  >
+    <motion.svg viewBox="0 0 420 250" width="100%" height="100%">
+      <motion.path
+        d="M52 172 C110 82, 164 82, 208 126 S304 198, 368 82"
+        fill="none"
+        stroke="#A7BBCB"
+        strokeWidth="10"
+        strokeLinecap="round"
+        strokeDasharray="10 14"
+        animate={{ strokeDashoffset: [0, -96] }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: "linear" }}
+      />
+
+      {[
+        { x: 56, y: 172, label: "Plan", color: "#6F889D", delay: 0 },
+        { x: 204, y: 126, label: "Assess", color: "#D28B4D", delay: 0.2 },
+        { x: 364, y: 82, label: "Support", color: "#10B981", delay: 0.4 },
+      ].map((node) => (
+        <motion.g
+          key={node.label}
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: node.delay, duration: 0.45 }}
+          animate={{ y: [0, -6, 0] }}
+          style={{ transformOrigin: `${node.x}px ${node.y}px` }}
+        >
+          <circle cx={node.x} cy={node.y} r="28" fill={node.color} />
+          <circle cx={node.x} cy={node.y} r="38" fill={alpha(node.color, 0.14)} />
+          <text x={node.x} y={node.y + 4} textAnchor="middle" fontSize="12" fontWeight="700" fill="#FFFFFF">
+            {node.label}
+          </text>
+        </motion.g>
+      ))}
+
+      <motion.rect
+        x="120"
+        y="176"
+        width="184"
+        height="34"
+        rx="17"
+        fill="#FFFFFF"
+        animate={{ y: [176, 168, 176] }}
+        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <text x="212" y="198" textAnchor="middle" fontSize="13" fontWeight="700" fill="#4F6678">
+        One connected workflow
+      </text>
+    </motion.svg>
+  </Box>
+);
 
 const LandingPage = () => {
   const theme = useTheme();
@@ -344,22 +499,22 @@ const LandingPage = () => {
     {
       icon: MenuBookIcon,
       title: "Create Lesson Notes",
-      desc: "Generate structured lesson content quickly without losing curriculum focus.",
+      desc: "Generate structured lesson content fast.",
     },
     {
       icon: QuizIcon,
       title: "Build Better Quizzes",
-      desc: "Create classroom quizzes faster and support student revision with less admin work.",
+      desc: "Create quizzes faster with less admin work.",
     },
     {
       icon: QueryStatsIcon,
       title: "Track Learning Progress",
-      desc: "Review outcomes by topic so weak spots become visible earlier.",
+      desc: "See weak spots by topic earlier.",
     },
     {
       icon: Inventory2Icon,
       title: "Share Learning Resources",
-      desc: "Keep notes, quizzes, and supporting materials organized in one place.",
+      desc: "Keep notes and resources in one place.",
     },
   ];
 
@@ -367,17 +522,17 @@ const LandingPage = () => {
     {
       icon: WorkspacePremiumIcon,
       title: "For Teachers",
-      desc: "Prepare lessons, create assessments, and manage teaching materials without switching between scattered tools.",
+      desc: "Plan, assess, and organize from one workspace.",
     },
     {
       icon: GroupsIcon,
       title: "For Students",
-      desc: "Access notes, revise with quizzes, and follow a clearer learning path by topic and subject.",
+      desc: "Revise with notes and quizzes by topic.",
     },
     {
       icon: SchoolIcon,
       title: "For Schools",
-      desc: "Support consistent classroom delivery with a platform that gives structure across teachers and learners.",
+      desc: "Create more consistent teaching across classes.",
     },
   ];
 
@@ -385,36 +540,36 @@ const LandingPage = () => {
     {
       step: "01",
       title: "Choose a class and topic",
-      desc: "Start from the subject, strand, and sub-strand you want to teach or revise.",
+      desc: "Pick the lesson focus.",
     },
     {
       step: "02",
       title: "Generate and organize content",
-      desc: "Create lesson notes, quizzes, and supporting resources from one focused workflow.",
+      desc: "Create notes, quizzes, and materials.",
     },
     {
       step: "03",
       title: "Teach, assess, and review",
-      desc: "Use the results to guide practice, follow-up, and learner support.",
+      desc: "Use results to guide next steps.",
     },
   ];
 
   const reasons = [
     {
       title: "Curriculum-aware workflows",
-      desc: "The platform is shaped around real teaching tasks, not generic document tools.",
+      desc: "Built around real teaching tasks.",
     },
     {
       title: "Less repetitive preparation",
-      desc: "Teachers spend less time formatting and more time focusing on learning outcomes.",
+      desc: "Less formatting, more teaching time.",
     },
     {
       title: "Clearer student support",
-      desc: "Notes, practice, and progress work together so learners are easier to guide.",
+      desc: "Notes, practice, and progress stay connected.",
     },
     {
       title: "One connected workspace",
-      desc: "Lesson planning, quizzes, resources, and progress live in one system instead of many scattered files.",
+      desc: "Planning, quizzes, resources, and progress in one place.",
     },
   ];
 
@@ -586,25 +741,7 @@ const LandingPage = () => {
               </motion.div>
 
               <motion.div variants={reveal}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    mt: 3,
-                    p: 2.5,
-                    borderRadius: 3,
-                    border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
-                    bgcolor: alpha("#FFFFFF", 0.9),
-                  }}
-                >
-                  <Typography variant="body2" sx={{ color: "#5D6A75", mb: 1.2 }}>
-                    Used by teachers, schools, and learners across Ghana.
-                  </Typography>
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap>
-                    <Chip label="NaCCA-aware content flow" size="small" />
-                    <Chip label="Teacher-ready tools" size="small" />
-                    <Chip label="Student-friendly access" size="small" />
-                  </Stack>
-                </Paper>
+                <AnimatedHeroGraphic />
               </motion.div>
             </motion.div>
           </Grid>
@@ -753,11 +890,10 @@ const LandingPage = () => {
 
       <Container maxWidth="lg" sx={{ pb: { xs: 7.5, md: 10.5 } }}>
         <Typography variant="h3" sx={sectionTitleSx}>
-          Everything you need to move from planning to learning
+          From planning to progress
         </Typography>
         <Typography variant="subtitle1" sx={sectionIntroSx}>
-          Scholar&apos;s Path brings lesson preparation, assessment, and student support into one
-          simple workspace built for everyday teaching.
+          Lesson prep, assessment, and learner support in one workspace.
         </Typography>
         <Grid container spacing={3}>
           {capabilities.map((item, i) => (
@@ -792,11 +928,10 @@ const LandingPage = () => {
 
       <Container maxWidth="lg" sx={{ pb: { xs: 7.5, md: 10 } }}>
         <Typography variant="h3" sx={sectionTitleSx}>
-          Built for every part of the learning journey
+          Built for teachers, students, and schools
         </Typography>
         <Typography variant="subtitle1" sx={sectionIntroSx}>
-          Teacher-first at the top, but structured to support students and schools with the same
-          connected workflow.
+          One platform, shaped for each role.
         </Typography>
         <Grid container spacing={3}>
           {audiences.map((item, i) => (
@@ -899,41 +1034,43 @@ const LandingPage = () => {
           sx={{
             p: { xs: 3, md: 5 },
             borderRadius: 4,
-            textAlign: "center",
             border: `1px solid ${alpha("#4F6678", 0.14)}`,
             background: alpha("#6F889D", 0.1),
           }}
         >
-          <Typography variant="h4" sx={{ mb: 1.7, fontWeight: 800, fontSize: { xs: "1.45rem", sm: "1.8rem", md: "2rem" } }}>
-            Why schools and teachers choose Scholar&apos;s Path
-          </Typography>
-          <Typography variant="body1" sx={{ color: "#4C5C68", maxWidth: 860, mx: "auto", mb: 3.5, lineHeight: 1.7 }}>
-            The platform is designed around what teachers actually need to do each week: plan,
-            assess, organize, and respond to learning progress without unnecessary complexity.
-          </Typography>
-          <Grid container spacing={1.4}>
-            {reasons.map((reason) => (
-              <Grid item xs={12} sm={6} key={reason.title}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    borderRadius: 3,
-                    border: `1px solid ${alpha("#4F6678", 0.08)}`,
-                    bgcolor: alpha("#FFFFFF", 0.7),
-                    textAlign: "left",
-                    height: "100%",
-                  }}
-                >
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
-                    {reason.title}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#5D6A75" }}>
-                    {reason.desc}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
+          <Grid container spacing={3.2} alignItems="center">
+            <Grid item xs={12} md={5}>
+              <Typography variant="h4" sx={{ mb: 1.4, fontWeight: 800, fontSize: { xs: "1.45rem", sm: "1.8rem", md: "2rem" } }}>
+                Less reading. More movement.
+              </Typography>
+              <Typography variant="body1" sx={{ color: "#4C5C68", mb: 2.6, lineHeight: 1.65, maxWidth: 520 }}>
+                Scholar&apos;s Path keeps the workflow simple: plan, assess, and support learners from one clear system.
+              </Typography>
+              <Stack spacing={1.2}>
+                {reasons.map((reason) => (
+                  <Paper
+                    key={reason.title}
+                    elevation={0}
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 3,
+                      border: `1px solid ${alpha("#4F6678", 0.08)}`,
+                      bgcolor: alpha("#FFFFFF", 0.72),
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.2 }}>
+                      {reason.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#5D6A75" }}>
+                      {reason.desc}
+                    </Typography>
+                  </Paper>
+                ))}
+              </Stack>
+            </Grid>
+            <Grid item xs={12} md={7}>
+              <AnimatedFlowGraphic />
+            </Grid>
           </Grid>
         </Paper>
       </Container>
@@ -943,7 +1080,7 @@ const LandingPage = () => {
           Start with the tools that matter most
         </Typography>
         <Typography variant="subtitle1" sx={sectionIntroSx}>
-          Choose the path that matches how Scholar&apos;s Path fits into your learning environment.
+          Choose the path that fits your role.
         </Typography>
 
         <Grid container spacing={3}>
@@ -1031,7 +1168,7 @@ const LandingPage = () => {
             Bring lesson planning, assessment, and learner support together
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.95, mb: 3, lineHeight: 1.7 }}>
-            Scholar&apos;s Path gives teachers and schools a simpler way to prepare, teach, and guide learning with confidence.
+            A simpler way to prepare, teach, and guide learning.
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4} justifyContent="center">
             <Button
