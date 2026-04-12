@@ -163,21 +163,25 @@ const AuthPortal = () => {
               sx={{
                 background: gradient,
                 color: '#ECE5D8',
-                p: { xs: 5, md: 6 },
+                p: { xs: 4, md: 4.5, lg: 5 },
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                minHeight: { md: 560 },
+                minHeight: { md: '100vh' },
               }}
               component={motion.div}
               initial={{ opacity: 0.9 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
             >
-              <Typography variant="h4" fontWeight={800} sx={{ mb: 1 }}>
+              <Typography
+                variant="h4"
+                fontWeight={800}
+                sx={{ mb: 1, fontSize: { md: '2rem', lg: '2.25rem' }, lineHeight: 1.15 }}
+              >
                 {isSignUp ? 'Welcome Back!' : 'Hello, Friend!'}
               </Typography>
-              <Typography variant="body1" sx={{ opacity: 0.9, mb: 3 }}>
+              <Typography variant="body1" sx={{ opacity: 0.9, mb: 2.2 }}>
                 {isSignUp
                   ? "Enter your personal details to continue exploring Scholar's Path."
                   : 'Register with your details to enjoy AI-powered teaching and learning.'}
@@ -207,8 +211,8 @@ const AuthPortal = () => {
                   content={aiGreeting}
                   elevation={0}
                   paperSx={{
-                    mt: 3,
-                    p: 2.5,
+                    mt: 2,
+                    p: 2,
                     borderRadius: 2,
                     borderLeft: '6px solid #4F6678',
                     bgcolor: 'rgba(255,255,255,0.08)',

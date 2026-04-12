@@ -188,9 +188,11 @@ const Register = () => {
         sx={{
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
-          width: '40%',
+          justifyContent: 'center',
+          width: '38%',
+          minHeight: '100vh',
           background: theme.palette.primary.main,
-          p: 6,
+          p: { md: 3.5, lg: 4.5 },
           color: 'white', // ✅ FIXED: Ensure all text is white
         }}
       >
@@ -200,7 +202,7 @@ const Register = () => {
           transition={{ duration: 0.6 }}
         >
           {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 6 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3.5 }}>
             <School sx={{ fontSize: 40, mr: 2, color: 'white' }} /> {/* ✅ Explicit white */}
             <Typography
               variant="h4"
@@ -218,7 +220,7 @@ const Register = () => {
             variant="h5" 
             sx={{ 
               fontWeight: 700, 
-              mb: 2,
+              mb: 1,
               color: 'white', // ✅ FIXED: Explicit white color
             }}
           >
@@ -227,7 +229,7 @@ const Register = () => {
           <Typography 
             variant="body1" 
             sx={{ 
-              mb: 6,
+              mb: 3,
               color: 'rgba(255, 255, 255, 0.9)', // ✅ FIXED: White with 90% opacity
             }}
           >
@@ -239,12 +241,12 @@ const Register = () => {
             elevation={0}
             sx={{
               p: 4,
+              py: 2.5,
               borderRadius: 3,
               background: alpha('#ffffff', 0.1),
               backdropFilter: 'blur(10px)',
               border: `1px solid ${alpha('#ffffff', 0.2)}`,
-              mb: 6,
-              minHeight: 200,
+              mb: 3,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -254,9 +256,9 @@ const Register = () => {
               sx={{
                 borderRadius: 3,
                 overflow: 'hidden',
-                mb: 6,
+                mb: 0,
                 background: alpha('#ffffff', 0.1),
-                p: 2,
+                p: 1.5,
               }}
             >
               <img
@@ -264,7 +266,8 @@ const Register = () => {
                 alt="Welcome to Scholar's Path"
                 style={{
                   width: '100%',
-                  height: 'auto',
+                  maxHeight: '220px',
+                  objectFit: 'contain',
                   display: 'block',
                   borderRadius: 12,
                 }}
@@ -285,13 +288,13 @@ const Register = () => {
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    mb: 2,
+                    mb: 1.1,
                   }}
                 >
                   <CheckCircle sx={{ mr: 2, fontSize: 20, color: 'white' }} /> {/* ✅ FIXED */}
                   <Typography 
                     variant="body2"
-                    sx={{ color: 'white' }} // ✅ FIXED: Explicit white color
+                    sx={{ color: 'white', fontSize: '0.9rem' }} // ✅ FIXED: Explicit white color
                   >
                     {feature}
                   </Typography>
