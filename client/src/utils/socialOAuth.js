@@ -88,6 +88,11 @@ const getSocialOAuthConfig = (provider) => {
   };
 };
 
+export const isSocialProviderConfigured = (provider) => {
+  const config = getSocialOAuthConfig(provider);
+  return !!(config && config.clientId);
+};
+
 export const startSocialOAuth = async ({ provider, mode, role }) => {
   const config = getSocialOAuthConfig(provider);
   if (!config) {

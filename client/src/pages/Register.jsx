@@ -23,6 +23,7 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  Tooltip,
   useTheme,
   alpha,
   Link,
@@ -41,7 +42,15 @@ import {
   LinkedIn,
 } from '@mui/icons-material';
 import { FaTiktok, FaXTwitter } from 'react-icons/fa6';
-import { startSocialOAuth } from '../utils/socialOAuth';
+import { startSocialOAuth, isSocialProviderConfigured } from '../utils/socialOAuth';
+
+const SOCIAL_PROVIDERS = [
+  { id: 'facebook', label: 'Facebook', icon: <Facebook fontSize="small" /> },
+  { id: 'github',   label: 'GitHub',   icon: <GitHub fontSize="small" /> },
+  { id: 'linkedin', label: 'LinkedIn', icon: <LinkedIn fontSize="small" /> },
+  { id: 'tiktok',  label: 'TikTok',   icon: <FaTiktok size={16} /> },
+  { id: 'x',       label: 'X',        icon: <FaXTwitter size={16} /> },
+];
 
 import { register, googleAuth } from '../features/auth/authSlice';
 
@@ -547,56 +556,30 @@ const Register = () => {
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.2 }}>
-                    <IconButton
-                      aria-label="Sign up with Facebook"
-                      onClick={() => handleSocialAuth('facebook')}
-                      sx={{
-                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                        bgcolor: alpha('#FFFFFF', 0.8),
-                      }}
-                    >
-                      <Facebook fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      aria-label="Sign up with GitHub"
-                      onClick={() => handleSocialAuth('github')}
-                      sx={{
-                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                        bgcolor: alpha('#FFFFFF', 0.8),
-                      }}
-                    >
-                      <GitHub fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      aria-label="Sign up with LinkedIn"
-                      onClick={() => handleSocialAuth('linkedin')}
-                      sx={{
-                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                        bgcolor: alpha('#FFFFFF', 0.8),
-                      }}
-                    >
-                      <LinkedIn fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      aria-label="Sign up with TikTok"
-                      onClick={() => handleSocialAuth('tiktok')}
-                      sx={{
-                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                        bgcolor: alpha('#FFFFFF', 0.8),
-                      }}
-                    >
-                      <FaTiktok size={16} />
-                    </IconButton>
-                    <IconButton
-                      aria-label="Sign up with X"
-                      onClick={() => handleSocialAuth('x')}
-                      sx={{
-                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                        bgcolor: alpha('#FFFFFF', 0.8),
-                      }}
-                    >
-                      <FaXTwitter size={16} />
-                    </IconButton>
+                    {SOCIAL_PROVIDERS.map(({ id, label, icon }) => {
+                      const isConfigured = isSocialProviderConfigured(id);
+                      return (
+                        <Tooltip
+                          key={id}
+                          title={isConfigured ? `Sign up with ${label}` : `${label} — coming soon`}
+                        >
+                          <span>
+                            <IconButton
+                              aria-label={`Sign up with ${label}`}
+                              onClick={() => handleSocialAuth(id)}
+                              disabled={!isConfigured}
+                              sx={{
+                                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                                bgcolor: alpha('#FFFFFF', 0.8),
+                                opacity: isConfigured ? 1 : 0.4,
+                              }}
+                            >
+                              {icon}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      );
+                    })}
                   </Box>
                 </Box>
 
