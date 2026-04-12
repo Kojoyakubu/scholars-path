@@ -110,74 +110,139 @@ const AnimatedHeroGraphic = () => (
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
       <defs>
-        <linearGradient id="heroPanel" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#EEF4F8" />
-          <stop offset="100%" stopColor="#F9F4EA" />
+        <linearGradient id="classroomWall" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F4F7FA" />
+          <stop offset="100%" stopColor="#F8EFE1" />
+        </linearGradient>
+        <linearGradient id="boardGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#37586D" />
+          <stop offset="100%" stopColor="#6F889D" />
         </linearGradient>
       </defs>
 
-      <rect x="18" y="18" width="484" height="214" rx="28" fill="url(#heroPanel)" />
+      <rect x="18" y="18" width="484" height="214" rx="28" fill="url(#classroomWall)" />
+      <rect x="18" y="180" width="484" height="52" rx="0" fill="#E9D6B8" />
 
+      <rect x="52" y="40" width="300" height="92" rx="18" fill="url(#boardGlow)" />
+      <rect x="66" y="54" width="126" height="10" rx="5" fill={alpha("#FFFFFF", 0.82)} />
+      <rect x="66" y="72" width="104" height="8" rx="4" fill={alpha("#D9E4EB", 0.92)} />
+      <motion.path
+        d="M68 103 C120 87, 164 112, 215 92 C248 79, 275 83, 332 66"
+        fill="none"
+        stroke="#F7D27D"
+        strokeWidth="6"
+        strokeLinecap="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 3.4, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+      />
       <motion.circle
-        cx="94"
-        cy="78"
-        r="36"
-        fill="#6F889D"
-        animate={{ cy: [78, 66, 78] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.rect
-        x="146"
-        y="52"
-        width="138"
-        height="18"
-        rx="9"
-        fill="#A7BBCB"
-        animate={{ width: [138, 120, 138] }}
-        transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <rect x="146" y="84" width="112" height="12" rx="6" fill="#D1DDE6" />
-      <rect x="146" y="106" width="152" height="12" rx="6" fill="#D1DDE6" />
-
-      <motion.rect
-        x="64"
-        y="148"
-        width="168"
-        height="50"
-        rx="16"
+        cx="312"
+        cy="104"
+        r="10"
         fill="#FFFFFF"
-        animate={{ x: [64, 72, 64] }}
-        transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ cy: [104, 98, 104] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
-      <circle cx="92" cy="173" r="11" fill="#10B981" />
-      <rect x="114" y="164" width="88" height="10" rx="5" fill="#B7C8D5" />
-      <rect x="114" y="180" width="66" height="8" rx="4" fill="#D5E0E8" />
+
+      <rect x="382" y="34" width="88" height="110" rx="20" fill="#FFFFFF" />
+      <rect x="398" y="48" width="58" height="12" rx="6" fill="#B8CAD7" />
+      <rect x="398" y="70" width="44" height="10" rx="5" fill="#D5E0E8" />
+      <rect x="398" y="88" width="52" height="10" rx="5" fill="#D5E0E8" />
+      <motion.rect
+        x="404"
+        y="108"
+        width="40"
+        height="12"
+        rx="6"
+        fill="#10B981"
+        animate={{ width: [40, 48, 40] }}
+        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <g>
+        <rect x="88" y="154" width="98" height="14" rx="7" fill="#C58A57" />
+        <rect x="104" y="168" width="10" height="28" rx="5" fill="#9B6B43" />
+        <rect x="160" y="168" width="10" height="28" rx="5" fill="#9B6B43" />
+
+        <rect x="214" y="154" width="98" height="14" rx="7" fill="#C58A57" />
+        <rect x="230" y="168" width="10" height="28" rx="5" fill="#9B6B43" />
+        <rect x="286" y="168" width="10" height="28" rx="5" fill="#9B6B43" />
+      </g>
 
       <motion.g
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ x: [0, 3, 0] }}
+        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <rect x="300" y="48" width="152" height="132" rx="24" fill="#FFFFFF" />
-        <rect x="326" y="74" width="98" height="12" rx="6" fill="#B7C8D5" />
-        <rect x="326" y="98" width="78" height="12" rx="6" fill="#D5E0E8" />
-        <rect x="326" y="122" width="58" height="12" rx="6" fill="#D5E0E8" />
-        <motion.path
-          d="M326 156 C350 136, 372 150, 392 130 C406 116, 424 122, 438 106"
-          fill="none"
-          stroke="#6F889D"
-          strokeWidth="8"
-          strokeLinecap="round"
-          initial={{ pathLength: 0.2, opacity: 0.5 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+        <circle cx="92" cy="128" r="14" fill="#A96D4F" />
+        <rect x="77" y="142" width="30" height="26" rx="14" fill="#F0B44D" />
+        <motion.rect
+          x="104"
+          y="140"
+          width="26"
+          height="8"
+          rx="4"
+          fill="#F0B44D"
+          animate={{ rotate: [-8, 12, -8] }}
+          style={{ transformOrigin: "104px 144px" }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
         />
       </motion.g>
+
+      <motion.g
+        animate={{ y: [0, -2, 0] }}
+        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <circle cx="246" cy="128" r="14" fill="#6E4C3A" />
+        <rect x="231" y="142" width="30" height="26" rx="14" fill="#5CA4A9" />
+      </motion.g>
+
+      <motion.g
+        animate={{ y: [0, -5, 0] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <circle cx="336" cy="92" r="16" fill="#8C5E46" />
+        <rect x="320" y="108" width="32" height="46" rx="16" fill="#E88B6B" />
+        <rect x="348" y="114" width="32" height="8" rx="4" fill="#E88B6B" />
+        <motion.rect
+          x="349"
+          y="114"
+          width="34"
+          height="8"
+          rx="4"
+          fill="#E88B6B"
+          animate={{ rotate: [-12, 10, -12] }}
+          style={{ transformOrigin: "349px 118px" }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <rect x="328" y="152" width="8" height="28" rx="4" fill="#496A81" />
+        <rect x="344" y="152" width="8" height="28" rx="4" fill="#496A81" />
+      </motion.g>
+
+      <motion.g
+        animate={{ opacity: [0.65, 1, 0.65] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <circle cx="420" cy="164" r="18" fill="#FFFFFF" />
+        <text x="420" y="170" textAnchor="middle" fontSize="18" fontWeight="700" fill="#6F889D">A+</text>
+      </motion.g>
+
+      <motion.g
+        animate={{ opacity: [0.35, 0.8, 0.35], y: [0, -4, 0] }}
+        transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <circle cx="454" cy="168" r="12" fill="#FFFFFF" />
+        <text x="454" y="173" textAnchor="middle" fontSize="12" fontWeight="700" fill="#10B981">✓</text>
+      </motion.g>
+
+      <rect x="42" y="32" width="12" height="92" rx="6" fill="#D7B68A" />
+      <rect x="350" y="32" width="12" height="92" rx="6" fill="#D7B68A" />
     </motion.svg>
 
     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1.4 }}>
-      <Chip label="AI notes" size="small" />
-      <Chip label="Quiz flow" size="small" />
-      <Chip label="Progress view" size="small" />
+      <Chip label="Teacher board" size="small" />
+      <Chip label="Active learners" size="small" />
+      <Chip label="Progress cues" size="small" />
     </Stack>
   </Box>
 );
