@@ -2,14 +2,15 @@
 
 /* These variables can still be useful for non-MUI components if needed */
 :root {
-  --dark-navy: #011C40;
-  --medium-navy: #023859;
-  --primary-blue: #26658C;
-  --muted-blue: #54ACBF;
-  --light-blue: #A7EBF2;
+  --deep-slate: #2E3A44;
+  --dusty-blue: #6F889D;
+  --dusty-blue-soft: #B9C8D6;
+  --warm-tan: #B78552;
+  --soft-cream: #F4F1EA;
 }
 
 /* Minimal body reset, as CssBaseline handles most of it */
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', 'Poppins', sans-serif;
+  background-color: var(--soft-cream);
 }

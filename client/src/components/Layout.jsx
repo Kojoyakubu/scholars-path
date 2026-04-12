@@ -47,11 +47,11 @@ import SettingsIcon from '@mui/icons-material/Settings';
 const DRAWER_WIDTH_EXPANDED = 240;
 const DRAWER_WIDTH_COLLAPSED = 72;
 
-// Professional Dark Theme
-const TOPBAR_BG = '#1E293B';      // Slate 800
-const SIDEBAR_BG = '#0F172A';     // Slate 900  
-const ACCENT_COLOR = '#3B82F6';   // Blue 500
-const CONTENT_BG = '#F1F5F9';     // Slate 100
+// Outfit-inspired shell palette
+const TOPBAR_BG = '#2E3A44';
+const SIDEBAR_BG = '#2E3A44';
+const ACCENT_COLOR = '#6F889D';
+const CONTENT_BG = '#F4F1EA';
 
 // ═══════════════════════════════════════════════════════════
 // 🎨 STYLED COMPONENTS - NO ROUNDED CORNERS

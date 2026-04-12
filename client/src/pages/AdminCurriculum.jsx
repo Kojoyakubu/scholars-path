@@ -293,8 +293,8 @@ const AdminCurriculum = () => {
               <TableRow 
                 key={level._id}
                 sx={{ 
-                  bgcolor: selectedLevel === level._id ? '#E8F5E9' : 'transparent',
-                  '&:hover': { bgcolor: '#F1F8E9' }
+                  bgcolor: selectedLevel === level._id ? '#ECE5D8' : 'transparent',
+                  '&:hover': { bgcolor: '#F4F1EA' }
                 }}
               >
                 <TableCell>
@@ -379,8 +379,8 @@ const AdminCurriculum = () => {
                   <TableRow 
                     key={c._id}
                     sx={{ 
-                      bgcolor: selectedClass === c._id ? '#E8F5E9' : 'transparent',
-                      '&:hover': { bgcolor: '#F1F8E9' }
+                      bgcolor: selectedClass === c._id ? '#ECE5D8' : 'transparent',
+                      '&:hover': { bgcolor: '#F4F1EA' }
                     }}
                   >
                     <TableCell>
@@ -468,8 +468,8 @@ const AdminCurriculum = () => {
                   <TableRow 
                     key={s._id}
                     sx={{ 
-                      bgcolor: selectedSubject === s._id ? '#E8F5E9' : 'transparent',
-                      '&:hover': { bgcolor: '#F1F8E9' }
+                      bgcolor: selectedSubject === s._id ? '#ECE5D8' : 'transparent',
+                      '&:hover': { bgcolor: '#F4F1EA' }
                     }}
                   >
                     <TableCell>
@@ -557,8 +557,8 @@ const AdminCurriculum = () => {
                   <TableRow 
                     key={st._id}
                     sx={{ 
-                      bgcolor: selectedStrand === st._id ? '#E8F5E9' : 'transparent',
-                      '&:hover': { bgcolor: '#F1F8E9' }
+                      bgcolor: selectedStrand === st._id ? '#ECE5D8' : 'transparent',
+                      '&:hover': { bgcolor: '#F4F1EA' }
                     }}
                   >
                     <TableCell>

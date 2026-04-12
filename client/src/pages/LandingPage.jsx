@@ -52,12 +52,12 @@ const sectionTitleSx = {
   fontSize: { xs: "1.6rem", sm: "2rem", md: "2.6rem" },
   lineHeight: 1.15,
   letterSpacing: "-0.01em",
-  color: "#0F172A",
+  color: "#2E3A44",
 };
 
 const sectionIntroSx = {
   textAlign: "center",
-  color: "#475569",
+  color: "#5D6A75",
   maxWidth: 760,
   mx: "auto",
   mb: { xs: 4, md: 5.2 },
@@ -247,7 +247,7 @@ const LandingPage = () => {
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               {tab.label}
             </Typography>
-            <Typography variant="body2" sx={{ color: "#64748B" }}>
+            <Typography variant="body2" sx={{ color: "#7A8794" }}>
               {tab.mockLabel}
             </Typography>
           </Box>
@@ -273,14 +273,14 @@ const LandingPage = () => {
                   p: 1.5,
                   borderRadius: 2.5,
                   bgcolor: "#FFFFFF",
-                  border: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+                  border: `1px solid ${alpha("#4F6678", 0.08)}`,
                 }}
               >
                 <Stack direction="row" justifyContent="space-between" spacing={1}>
-                  <Typography variant="body2" sx={{ color: "#64748B" }}>
+                  <Typography variant="body2" sx={{ color: "#7A8794" }}>
                     {row.label}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#0F172A", textAlign: "right" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#2E3A44", textAlign: "right" }}>
                     {row.value}
                   </Typography>
                 </Stack>
@@ -291,7 +291,7 @@ const LandingPage = () => {
 
         <Box>
           <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.8 }}>
-            <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 600 }}>
+            <Typography variant="caption" sx={{ color: "#7A8794", fontWeight: 600 }}>
               Workflow readiness
             </Typography>
             <Typography variant="caption" sx={{ color: tab.accent, fontWeight: 700 }}>
@@ -326,7 +326,7 @@ const LandingPage = () => {
             border: `1px dashed ${alpha(tab.accent, 0.35)}`,
           }}
         >
-          <Typography variant="body2" sx={{ color: "#334155", fontWeight: 600 }}>
+          <Typography variant="body2" sx={{ color: "#4C5C68", fontWeight: 600 }}>
             {tab.footer}
           </Typography>
         </Paper>
@@ -448,7 +448,7 @@ const LandingPage = () => {
       sx={{
         minHeight: "100vh",
         pb: { xs: 10, md: 0 },
-        background: "#F8FBFF",
+        background: "#F4F1EA",
       }}
     >
       <AppBar
@@ -469,12 +469,12 @@ const LandingPage = () => {
                 borderRadius: 2,
                 display: "grid",
                 placeItems: "center",
-                background: "#2563EB",
+                background: "#6F889D",
               }}
             >
               <SchoolIcon sx={{ color: "white", fontSize: 22 }} />
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: "#0F172A" }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "#2E3A44" }}>
               Scholar&apos;s Path
             </Typography>
           </Box>
@@ -499,8 +499,8 @@ const LandingPage = () => {
                   label={copy.badge}
                   sx={{
                     mb: 2,
-                    bgcolor: alpha("#2563EB", 0.1),
-                    color: "#1E3A5F",
+                    bgcolor: alpha("#6F889D", 0.1),
+                    color: "#4F6678",
                     fontWeight: 700,
                   }}
                 />
@@ -513,16 +513,16 @@ const LandingPage = () => {
                     fontSize: { xs: "1.95rem", sm: "2.3rem", md: "3.25rem" },
                     lineHeight: 1.08,
                     mb: 2.2,
-                    color: "#0B1324",
+                    color: "#2E3A44",
                     textWrap: "balance",
                     letterSpacing: "-0.02em",
                   }}
                 >
                   {copy.h1Start}
-                  <Box component="span" sx={{ color: "#2563EB" }}>
+                  <Box component="span" sx={{ color: "#6F889D" }}>
                     {" "}{copy.h1Accent}
                   </Box>
-                  <Box component="span" sx={{ color: "#0B1324" }}>
+                  <Box component="span" sx={{ color: "#2E3A44" }}>
                     {" "}{copy.h1End}
                   </Box>
                 </Typography>
@@ -532,7 +532,7 @@ const LandingPage = () => {
                 <Typography
                   variant="subtitle1"
                   sx={{
-                    color: "#334155",
+                    color: "#4C5C68",
                     maxWidth: 560,
                     mb: 3.2,
                     fontSize: { xs: "1rem", md: "1.08rem" },
@@ -565,7 +565,7 @@ const LandingPage = () => {
                     {copy.secondaryCta}
                   </Button>
                 </Stack>
-                <Typography variant="caption" sx={{ color: "#64748B", display: "block", mt: 1.1, textAlign: { xs: "center", sm: "left" } }}>
+                <Typography variant="caption" sx={{ color: "#7A8794", display: "block", mt: 1.1, textAlign: { xs: "center", sm: "left" } }}>
                   {copy.ctaHelper}
                 </Typography>
               </motion.div>
@@ -574,11 +574,11 @@ const LandingPage = () => {
                 <Stack direction="row" spacing={1.4} alignItems="center" flexWrap="wrap" useFlexGap>
                   <CheckCircleIcon sx={{ color: "#10B981", fontSize: 20 }} />
                   <Typography variant="body2">Teacher-first workflow</Typography>
-                  <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                  <Typography variant="body2" sx={{ color: "#9AA6B2" }}>
                     •
                   </Typography>
                   <Typography variant="body2">Works on low bandwidth</Typography>
-                  <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                  <Typography variant="body2" sx={{ color: "#9AA6B2" }}>
                     •
                   </Typography>
                   <Typography variant="body2">Curriculum-aligned structure</Typography>
@@ -596,7 +596,7 @@ const LandingPage = () => {
                     bgcolor: alpha("#FFFFFF", 0.9),
                   }}
                 >
-                  <Typography variant="body2" sx={{ color: "#475569", mb: 1.2 }}>
+                  <Typography variant="body2" sx={{ color: "#5D6A75", mb: 1.2 }}>
                     Used by teachers, schools, and learners across Ghana.
                   </Typography>
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap>
@@ -621,7 +621,7 @@ const LandingPage = () => {
                   p: 0,
                   borderRadius: 4,
                   background: "#FFFFFF",
-                  border: `1px solid ${alpha("#1E3A5F", 0.12)}`,
+                  border: `1px solid ${alpha("#4F6678", 0.12)}`,
                   boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)",
                   overflow: "hidden",
                 }}
@@ -630,7 +630,7 @@ const LandingPage = () => {
                   sx={{
                     display: "flex",
                     overflowX: "auto",
-                    borderBottom: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+                    borderBottom: `1px solid ${alpha("#4F6678", 0.08)}`,
                     bgcolor: alpha(theme.palette.primary.main, 0.03),
                   }}
                   onMouseEnter={() => setIsPreviewPaused(true)}
@@ -657,7 +657,7 @@ const LandingPage = () => {
                           py: 1.8,
                           borderRadius: 0,
                           flexShrink: 0,
-                          color: isActive ? "#0B1324" : "#64748B",
+                          color: isActive ? "#2E3A44" : "#7A8794",
                           bgcolor: isActive ? "#FFFFFF" : "transparent",
                           borderBottom: isActive ? `2px solid ${tab.accent}` : "2px solid transparent",
                         }}
@@ -680,7 +680,7 @@ const LandingPage = () => {
                       <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.6, mb: 1 }}>
                         {activeTab.title}
                       </Typography>
-                      <Typography variant="body1" sx={{ color: "#475569" }}>
+                      <Typography variant="body1" sx={{ color: "#5D6A75" }}>
                         {activeTab.description}
                       </Typography>
                     </Box>
@@ -697,11 +697,11 @@ const LandingPage = () => {
                               borderRadius: 2.5,
                               textAlign: "center",
                               bgcolor: "#F8FAFC",
-                              border: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+                              border: `1px solid ${alpha("#4F6678", 0.08)}`,
                               height: "100%",
                             }}
                           >
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: "#0F172A" }}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "#2E3A44" }}>
                               {stat}
                             </Typography>
                           </Paper>
@@ -733,14 +733,14 @@ const LandingPage = () => {
                       p: { xs: 2.1, md: 2.4 },
                       borderRadius: 3,
                       bgcolor: alpha("#FFFFFF", 0.85),
-                      border: `1px solid ${alpha("#1E3A5F", 0.1)}`,
+                      border: `1px solid ${alpha("#4F6678", 0.1)}`,
                       textAlign: "center",
                     }}
                   >
-                    <Typography sx={{ fontWeight: 900, fontSize: "1.8rem", color: "#1E3A5F" }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: "1.8rem", color: "#4F6678" }}>
                       {item.value}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "#475569" }}>
+                    <Typography variant="body2" sx={{ color: "#5D6A75" }}>
                       {item.label}
                     </Typography>
                   </Paper>
@@ -771,16 +771,16 @@ const LandingPage = () => {
                 sx={{
                   height: "100%",
                   borderRadius: 4,
-                  border: `1px solid ${alpha("#1E3A5F", 0.1)}`,
+                  border: `1px solid ${alpha("#4F6678", 0.1)}`,
                   background: "#FFFFFF",
                 }}
               >
                 <CardContent sx={{ p: 3 }}>
-                  <item.icon sx={{ color: "#2563EB", fontSize: 34, mb: 1.2 }} />
+                  <item.icon sx={{ color: "#6F889D", fontSize: 34, mb: 1.2 }} />
                   <Typography variant="h5" sx={{ mb: 1, fontWeight: 700, fontSize: "1.3rem" }}>
                     {item.title}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: "#475569" }}>
+                  <Typography variant="body1" sx={{ color: "#5D6A75" }}>
                     {item.desc}
                   </Typography>
                 </CardContent>
@@ -812,7 +812,7 @@ const LandingPage = () => {
                   p: 3,
                   height: "100%",
                   borderRadius: 4,
-                  border: `1px solid ${alpha("#1E3A5F", 0.12)}`,
+                  border: `1px solid ${alpha("#4F6678", 0.12)}`,
                   background: "#FFFFFF",
                 }}
               >
@@ -833,7 +833,7 @@ const LandingPage = () => {
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.1, fontSize: "1.3rem" }}>
                   {item.title}
                 </Typography>
-                <Typography variant="body1" sx={{ color: "#475569" }}>
+                <Typography variant="body1" sx={{ color: "#5D6A75" }}>
                   {item.desc}
                 </Typography>
               </Paper>
@@ -842,7 +842,7 @@ const LandingPage = () => {
         </Grid>
       </Container>
 
-      <Box id="how-it-works" sx={{ py: { xs: 7.5, md: 9.5 }, background: "#EEF4FF" }}>
+      <Box id="how-it-works" sx={{ py: { xs: 7.5, md: 9.5 }, background: "#ECE5D8" }}>
         <Container maxWidth="lg">
           <Typography variant="h3" sx={sectionTitleSx}>
             How It Works
@@ -865,14 +865,14 @@ const LandingPage = () => {
                     p: 3,
                     height: "100%",
                     borderRadius: 4,
-                    border: `1px solid ${alpha("#1E3A5F", 0.12)}`,
+                    border: `1px solid ${alpha("#4F6678", 0.12)}`,
                     background: alpha("#FFFFFF", 0.92),
                   }}
                 >
                   <Typography
                     sx={{
                       fontWeight: 800,
-                      color: "#2563EB",
+                      color: "#6F889D",
                       fontSize: "0.9rem",
                       letterSpacing: "0.08em",
                       mb: 1,
@@ -883,7 +883,7 @@ const LandingPage = () => {
                   <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.8 }}>
                     {item.title}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: "#475569" }}>
+                  <Typography variant="body1" sx={{ color: "#5D6A75" }}>
                     {item.desc}
                   </Typography>
                 </Paper>
@@ -900,14 +900,14 @@ const LandingPage = () => {
             p: { xs: 3, md: 5 },
             borderRadius: 4,
             textAlign: "center",
-            border: `1px solid ${alpha("#1E3A5F", 0.14)}`,
-            background: alpha("#2563EB", 0.1),
+            border: `1px solid ${alpha("#4F6678", 0.14)}`,
+            background: alpha("#6F889D", 0.1),
           }}
         >
           <Typography variant="h4" sx={{ mb: 1.7, fontWeight: 800, fontSize: { xs: "1.45rem", sm: "1.8rem", md: "2rem" } }}>
             Why schools and teachers choose Scholar&apos;s Path
           </Typography>
-          <Typography variant="body1" sx={{ color: "#334155", maxWidth: 860, mx: "auto", mb: 3.5, lineHeight: 1.7 }}>
+          <Typography variant="body1" sx={{ color: "#4C5C68", maxWidth: 860, mx: "auto", mb: 3.5, lineHeight: 1.7 }}>
             The platform is designed around what teachers actually need to do each week: plan,
             assess, organize, and respond to learning progress without unnecessary complexity.
           </Typography>
@@ -919,7 +919,7 @@ const LandingPage = () => {
                   sx={{
                     p: 2,
                     borderRadius: 3,
-                    border: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+                    border: `1px solid ${alpha("#4F6678", 0.08)}`,
                     bgcolor: alpha("#FFFFFF", 0.7),
                     textAlign: "left",
                     height: "100%",
@@ -928,7 +928,7 @@ const LandingPage = () => {
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
                     {reason.title}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#475569" }}>
+                  <Typography variant="body2" sx={{ color: "#5D6A75" }}>
                     {reason.desc}
                   </Typography>
                 </Paper>
@@ -960,7 +960,7 @@ const LandingPage = () => {
                   borderRadius: 4,
                   border: path.featured
                     ? `2px solid ${theme.palette.primary.main}`
-                    : `1px solid ${alpha("#1E3A5F", 0.12)}`,
+                    : `1px solid ${alpha("#4F6678", 0.12)}`,
                   background: path.featured ? alpha(theme.palette.primary.main, 0.04) : "#FFFFFF",
                   position: "relative",
                 }}
@@ -972,7 +972,7 @@ const LandingPage = () => {
                       position: "absolute",
                       top: 14,
                       right: 14,
-                      bgcolor: "#2563EB",
+                      bgcolor: "#6F889D",
                       color: "white",
                       fontWeight: 700,
                       fontSize: "0.72rem",
@@ -984,7 +984,7 @@ const LandingPage = () => {
                   <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     {path.title}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#64748B", mt: 1, mb: 2.2 }}>
+                  <Typography variant="body2" sx={{ color: "#7A8794", mt: 1, mb: 2.2 }}>
                     {path.subtitle}
                   </Typography>
 
@@ -1023,7 +1023,7 @@ const LandingPage = () => {
             p: { xs: 3.2, md: 5 },
             borderRadius: 4,
             textAlign: "center",
-            background: "#1E3A5F",
+            background: "#4F6678",
             color: "white",
           }}
         >
@@ -1041,7 +1041,7 @@ const LandingPage = () => {
               endIcon={<ArrowForwardIcon />}
               sx={{
                 bgcolor: "white",
-                color: "#1E3A5F",
+                color: "#4F6678",
                 px: 3.2,
                 "&:hover": { bgcolor: alpha("#FFFFFF", 0.92) },
               }}
@@ -1067,7 +1067,7 @@ const LandingPage = () => {
 
       <Box
         sx={{
-          borderTop: `1px solid ${alpha("#1E3A5F", 0.08)}`,
+          borderTop: `1px solid ${alpha("#4F6678", 0.08)}`,
           bgcolor: alpha("#FFFFFF", 0.7),
           py: 3.5,
         }}
@@ -1079,17 +1079,17 @@ const LandingPage = () => {
             justifyContent="space-between"
             alignItems={{ xs: "flex-start", md: "center" }}
           >
-            <Typography variant="body2" sx={{ color: "#64748B" }}>
+            <Typography variant="body2" sx={{ color: "#7A8794" }}>
               © {new Date().getFullYear()} Scholar&apos;s Path
             </Typography>
             <Stack direction="row" spacing={2.2}>
-              <Button size="small" component={RouterLink} to="/register" sx={{ color: "#64748B" }}>
+              <Button size="small" component={RouterLink} to="/register" sx={{ color: "#7A8794" }}>
                 Privacy
               </Button>
-              <Button size="small" component={RouterLink} to="/register" sx={{ color: "#64748B" }}>
+              <Button size="small" component={RouterLink} to="/register" sx={{ color: "#7A8794" }}>
                 Terms
               </Button>
-              <Button size="small" component={RouterLink} to="/login" sx={{ color: "#64748B" }}>
+              <Button size="small" component={RouterLink} to="/login" sx={{ color: "#7A8794" }}>
                 Contact
               </Button>
             </Stack>
@@ -1109,7 +1109,7 @@ const LandingPage = () => {
           py: 1,
           bgcolor: alpha("#FFFFFF", 0.88),
           backdropFilter: "blur(10px)",
-          borderTop: `1px solid ${alpha("#1E3A5F", 0.14)}`,
+          borderTop: `1px solid ${alpha("#4F6678", 0.14)}`,
         }}
       >
         <Button

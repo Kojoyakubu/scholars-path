@@ -20,7 +20,7 @@ const card = (label, value, delay = 0) => (
         p: 3,
         borderRadius: 3,
         textAlign: 'center',
-        borderLeft: '6px solid #1E8449',
+        borderLeft: '6px solid #966844',
       }}
     >
       <Typography variant="body2" color="text.secondary">
@@ -83,7 +83,7 @@ const AdminAnalytics = () => {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.25 }}
-          sx={{ p: 3, borderRadius: 3, borderLeft: '6px solid #1D8348' }}
+          sx={{ p: 3, borderRadius: 3, borderLeft: '6px solid #966844' }}
         >
           <Typography variant="h6" fontWeight={700} color="primary" gutterBottom>
             Top Teachers
@@ -107,7 +107,7 @@ const AdminAnalytics = () => {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.3 }}
-          sx={{ p: 3, borderRadius: 3, borderLeft: '6px solid #28B463' }}
+          sx={{ p: 3, borderRadius: 3, borderLeft: '6px solid #B78552' }}
         >
           <Typography variant="h6" fontWeight={700} color="primary" gutterBottom>
             Top Students

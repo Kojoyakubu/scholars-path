@@ -87,7 +87,7 @@ const LessonNoteView = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#1E3A5F',
+          background: '#4F6678',
         }}
       >
         <Box textAlign="center">
@@ -108,7 +108,7 @@ const LessonNoteView = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#1E3A5F',
+          background: '#4F6678',
         }}
       >
         <Box textAlign="center">
@@ -135,7 +135,7 @@ const LessonNoteView = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#1E3A5F',
+          background: '#4F6678',
         }}
       >
         <Box textAlign="center">
@@ -158,7 +158,7 @@ const LessonNoteView = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: '#1E3A5F',
+        background: '#4F6678',
         py: 4,
       }}
     >

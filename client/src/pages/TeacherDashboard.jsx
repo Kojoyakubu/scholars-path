@@ -789,7 +789,7 @@ function TeacherDashboard() {
           <title>${topic}</title>
           <meta charset="utf-8" />
           <style>
-            body { font-family: Arial, sans-serif; color: #111827; margin: 24px; line-height: 1.6; }
+            body { font-family: Arial, sans-serif; color: #2E3A44; margin: 24px; line-height: 1.6; }
             h2, h3 { margin-top: 20px; margin-bottom: 10px; }
             table { width: 100%; border-collapse: collapse; margin: 12px 0; }
             td, th { border: 1px solid #d1d5db; padding: 8px; text-align: left; }

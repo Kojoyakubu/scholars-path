@@ -126,7 +126,7 @@ const AuthPortal = () => {
   };
 
   const gradient = useMemo(
-    () => '#145A32',
+    () => '#4F6678',
     []
   );
 
@@ -162,7 +162,7 @@ const AuthPortal = () => {
               md={5}
               sx={{
                 background: gradient,
-                color: '#E8F5E9',
+                color: '#ECE5D8',
                 p: { xs: 5, md: 6 },
                 display: 'flex',
                 flexDirection: 'column',
@@ -192,7 +192,7 @@ const AuthPortal = () => {
                 sx={{
                   alignSelf: 'flex-start',
                   borderColor: 'rgba(255,255,255,0.6)',
-                  color: '#E8F5E9',
+                  color: '#ECE5D8',
                   '&:hover': {
                     borderColor: '#fff',
                     background: 'rgba(255,255,255,0.1)',
@@ -210,14 +210,14 @@ const AuthPortal = () => {
                     mt: 3,
                     p: 2.5,
                     borderRadius: 2,
-                    borderLeft: '6px solid #145A32',
+                    borderLeft: '6px solid #4F6678',
                     bgcolor: 'rgba(255,255,255,0.08)',
                     backdropFilter: 'blur(6px)',
                   }}
                   titleVariant="subtitle1"
-                  titleSx={{ fontWeight: 700, color: '#E8F5E9', mb: 0.5 }}
+                  titleSx={{ fontWeight: 700, color: '#ECE5D8', mb: 0.5 }}
                   contentVariant="body2"
-                  contentSx={{ color: '#E8F5E9' }}
+                  contentSx={{ color: '#ECE5D8' }}
                   initial={{ opacity: 0, y: 16 }}
                 />
               )}
@@ -315,8 +315,8 @@ const AuthPortal = () => {
                         size="large"
                         disabled={isLoading}
                         sx={{
-                          backgroundColor: '#28B463',
-                          '&:hover': { backgroundColor: '#1D8348' },
+                          backgroundColor: '#B78552',
+                          '&:hover': { backgroundColor: '#966844' },
                         }}
                       >
                         {isLoading ? (
@@ -359,8 +359,8 @@ const AuthPortal = () => {
                         size="large"
                         disabled={isLoading}
                         sx={{
-                          backgroundColor: '#28B463',
-                          '&:hover': { backgroundColor: '#1D8348' },
+                          backgroundColor: '#B78552',
+                          '&:hover': { backgroundColor: '#966844' },
                         }}
                       >
                         {isLoading ? (
@@ -383,7 +383,7 @@ const AuthPortal = () => {
                       setIsSignUp((v) => !v);
                       dispatch(reset());
                     }}
-                    sx={{ textTransform: 'none', color: '#1E8449' }}
+                    sx={{ textTransform: 'none', color: '#966844' }}
                   >
                     {isSignUp ? 'Sign In' : 'Create one'}
                   </Button>

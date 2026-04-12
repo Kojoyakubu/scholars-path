@@ -29,9 +29,9 @@ import AIInsightsCard from '../components/AIInsightsCard';
 const highlightKeywords = (text) => {
   if (!text) return '';
   const patterns = [
-    { regex: /\b(excellent|great|strong|amazing|outstanding|well done)\b/gi, color: '#2E7D32' }, // earthy green
-    { regex: /\b(improve|could|needs|attention|try|focus)\b/gi, color: '#CDAA00' }, // deep gold
-    { regex: /\b(recommended|suggests?|next step|consider)\b/gi, color: '#003366' }, // dark blue
+    { regex: /\b(excellent|great|strong|amazing|outstanding|well done)\b/gi, color: '#4F6678' }, // earthy green
+    { regex: /\b(improve|could|needs|attention|try|focus)\b/gi, color: '#B78552' }, // deep gold
+    { regex: /\b(recommended|suggests?|next step|consider)\b/gi, color: '#2E3A44' }, // dark blue
   ];
   let result = text;
   patterns.forEach(({ regex, color }) => {
@@ -152,7 +152,7 @@ const AnswerKeyCard = ({ question, index }) => {
             <Box sx={{ bgcolor: 'rgba(0, 51, 102, 0.04)', p: 2.5, borderRadius: 1.5 }}>
               <Typography 
                 variant="subtitle2" 
-                sx={{ color: '#003366', fontWeight: 700, mb: 1 }}
+                sx={{ color: '#2E3A44', fontWeight: 700, mb: 1 }}
               >
                 ✨ Explanation
               </Typography>
@@ -383,8 +383,8 @@ const TakeQuiz = () => {
                       aiInsights ||
                       'Analyzing your performance and generating personalized feedback...'
                     )}
-                    paperSx={{ borderLeft: '6px solid #2E7D32', bgcolor: '#f9faf8' }}
-                    titleSx={{ color: '#003366', fontWeight: 700 }}
+                    paperSx={{ borderLeft: '6px solid #4F6678', bgcolor: '#f9faf8' }}
+                    titleSx={{ color: '#2E3A44', fontWeight: 700 }}
                     contentAsHtml
                     initial={{ opacity: 0, y: 16 }}
                   />
