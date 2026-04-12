@@ -123,12 +123,45 @@ function pickProvider({ task = 'generic', jsonNeeded = false, preferredProvider 
 // automatically display an image instead of raw text.
 function replacePlaceholdersWithImages(html) {
   if (!html || typeof html !== 'string') return html;
+
+  const escapeHtml = (value = '') => String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  const buildImageFigure = ({ query = '', title = '', purpose = '' }) => {
+    const resolvedQuery = (query || title || purpose || 'educational concept illustration').trim();
+    const src = `https://source.unsplash.com/1200x700/?${encodeURIComponent(resolvedQuery)}`;
+    const altText = title || query || 'Learning illustration';
+    const caption = title || purpose || resolvedQuery;
+
+    return `
+<figure class="generated-image" style="margin:16px 0;text-align:center;">
+  <img src="${src}" alt="${escapeHtml(altText)}" loading="lazy" style="max-width:100%;height:auto;border-radius:10px;" />
+  <figcaption style="font-size:0.92rem;color:#4b5563;margin-top:6px;">${escapeHtml(caption)}</figcaption>
+</figure>`;
+  };
+
   return html
+    .replace(/\[IMAGE\]([\s\S]*?)\[\/IMAGE\]/gi, (_, jsonPayload) => {
+      try {
+        const data = JSON.parse(String(jsonPayload || '').trim());
+        return buildImageFigure({
+          query: data?.search_query,
+          title: data?.title,
+          purpose: data?.purpose,
+        });
+      } catch (_err) {
+        return '';
+      }
+    })
     .replace(/\[image:\s*([^\]]+)\]/gi, (_, desc) =>
-      `<img src="https://via.placeholder.com/800x400?text=${encodeURIComponent(desc.trim())}" alt="${desc.trim()}" style="max-width:100%;height:auto;"/>`
+      buildImageFigure({ query: desc.trim(), title: desc.trim() })
     )
     .replace(/\[Image suggestion:\s*([^\]]+)\]/gi, (_, desc) =>
-      `<img src="https://via.placeholder.com/800x400?text=${encodeURIComponent(desc.trim())}" alt="${desc.trim()}" style="max-width:100%;height:auto;"/>`
+      buildImageFigure({ query: desc.trim(), title: desc.trim() })
     )
     .replace(/\[DIAGRAM:\s*([^\]]+)\]/gi, (_, desc) =>
       `<div style="border:1px solid #ccc;padding:8px;margin:8px 0;text-align:center;"><em>Diagram: ${desc.trim()}</em></div>`
@@ -1591,71 +1624,105 @@ async function generateLearnerNoteHTML(teacherNoteHTML, details = {}) {
   if (!teacherNoteHTML || typeof teacherNoteHTML !== 'string') {
     throw new Error('Teacher note HTML must be provided as a non-empty string.');
   }
-
-  const { subStrandName = 'Topic', className = 'Class', subjectName = 'General' } = details;
+  const {
+    subStrandName = 'Topic',
+    className = 'Class',
+    subjectName = 'General',
+    preferredProvider,
+    preferredModel,
+  } = details;
   const master = MASTER_SUBJECT_PROMPT(subjectName);
 
   const prompt = `${master}
-You are a friendly Ghanaian teacher creating an engaging study note for ${className} students.
+You are a friendly Ghanaian teacher creating a well-structured, textbook-style study note for ${className} students.
 
-Transform the formal teacher's lesson note below into a rich, student-friendly HTML study guide.
+Transform the teacher lesson note into rich, student-friendly HTML.
 
 CRITICAL RULES:
-1. Return ONLY valid HTML - no markdown, no code blocks, no explanations
-2. Start directly with HTML tags - no introductory text
-3. Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <br>
-4. Make it engaging and easy to understand for Ghanaian students
+1. Return ONLY valid HTML. No markdown, no code blocks, no explanations.
+2. Start directly with HTML tags.
+3. Use semantic HTML tags: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <strong>, <em>, <figure>, <figcaption>, <hr>.
+4. Keep language age-appropriate for ${className}, and explain difficult terms simply.
 
-GUIDELINES:
-1. **Main Heading:** Use "${subStrandName}" as the main topic heading
-2. **Detailed Explanations:** Read the teacher's Phase 2 section and explain key concepts in detail with:
-   - Simple definitions
-   - Clear explanations
-   - Local Ghanaian examples (use familiar contexts)
-   - Step-by-step breakdowns where needed
-3. **Visuals:** 
-   - When an image would help, insert the JSON block defined above.
-4. **Structure:** Use HTML headings (<h2>, <h3>), paragraphs (<p>), lists (<ul>, <li>), and bold/italic for emphasis
-5. **Engagement:** End with a "Check Your Understanding" section with 2-3 simple questions
-6. **Tone:** Friendly, encouraging, age-appropriate for ${className}
+CONTENT REQUIREMENTS:
+1. Main title must be "${subStrandName}".
+2. Follow this section order exactly:
+   - Meaning/overview of the topic
+   - Key words or tools in a table (minimum 2 rows)
+   - Core concepts (minimum 2 concept sections)
+   - Real-life application in Ghana
+   - Check your understanding (exactly 3 short questions)
+3. In each core concept section, include:
+   - one concise explanation paragraph
+   - one bullet list with 2-4 points
+   - one Ghanaian real-world example
+4. Include at least TWO image placeholders using one of these formats:
+   - [image: concise search query]
+   - [IMAGE]\n{ "title": "...", "search_query": "...", "purpose": "..." }\n[/IMAGE]
 
-Generate HTML following this structure:
-
+OUTPUT TEMPLATE:
 <div class="learner-note">
-  <h2>${subStrandName}</h2>
-  
-  <div class="introduction">
-    <p>[AI: Engaging introduction explaining what students will learn]</p>
+  <h1>${subStrandName}</h1>
+
+  <div class="overview">
+    <h2>Meaning of ${subStrandName}</h2>
+    <p>[AI content]</p>
   </div>
 
-  <div class="main-content">
-    <h3>[AI: First Key Concept]</h3>
-    <p>[AI: Clear explanation with examples]</p>
-    <p><em>[Image suggestion: if helpful]</em></p>
-    
-    <h3>[AI: Second Key Concept]</h3>
-    <p>[AI: Clear explanation with Ghanaian examples]</p>
-    <ul>
-      <li>[AI: Key point 1]</li>
-      <li>[AI: Key point 2]</li>
-      <li>[AI: Key point 3]</li>
-    </ul>
-
-    [AI: Continue with more concepts as needed]
+  <div class="key-words">
+    <h2>Key Words / Tools</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Word / Tool</th>
+          <th>Meaning / Use</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>[AI]</td><td>[AI]</td></tr>
+        <tr><td>[AI]</td><td>[AI]</td></tr>
+      </tbody>
+    </table>
   </div>
 
-  <div class="practice">
-    <h3>✍️ Check Your Understanding</h3>
-    <ol>
-      <li>[AI: Simple question 1]</li>
-      <li>[AI: Simple question 2]</li>
-      <li>[AI: Simple question 3 - optional]</li>
-    </ol>
+  <div class="concepts">
+    <h2>Core Concepts</h2>
+
+    <section>
+      <h3>[AI: Concept 1 heading]</h3>
+      <p>[AI: clear explanation]</p>
+      <ul>
+        <li>[AI: key point]</li>
+        <li>[AI: key point]</li>
+      </ul>
+      <p><strong>Ghana Example:</strong> [AI example]</p>
+      <p>[image: AI concise search query for concept 1]</p>
+    </section>
+
+    <section>
+      <h3>[AI: Concept 2 heading]</h3>
+      <p>[AI: clear explanation]</p>
+      <ul>
+        <li>[AI: key point]</li>
+        <li>[AI: key point]</li>
+      </ul>
+      <p><strong>Ghana Example:</strong> [AI example]</p>
+      <p>[image: AI concise search query for concept 2]</p>
+    </section>
   </div>
 
   <div class="real-life">
-    <h3>🌍 In Real Life</h3>
-    <p>[AI: How this topic relates to everyday life in Ghana]</p>
+    <h2>In Real Life (Ghana Context)</h2>
+    <p>[AI content]</p>
+  </div>
+
+  <div class="practice">
+    <h2>Check Your Understanding</h2>
+    <ol>
+      <li>[AI question]</li>
+      <li>[AI question]</li>
+      <li>[AI question]</li>
+    </ol>
   </div>
 </div>
 
@@ -1671,8 +1738,8 @@ REMEMBER: Return ONLY the HTML above, filled with student-friendly content. No m
     prompt, 
     task: 'learnerNoteHTML', 
     temperature: 0.45, 
-    preferredProvider: details.preferredProvider, 
-    providerModelOverride: details.preferredModel 
+    preferredProvider,
+    providerModelOverride: preferredModel,
   });
 
   text = replacePlaceholdersWithImages(text);

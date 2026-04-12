@@ -26,6 +26,7 @@ import useContentProtection from '../hooks/useContentProtection';
 import PreviewWatermarkOverlay from './PreviewWatermarkOverlay';
 
 const contentSx = {
+  '& h1': { fontSize: '1.8rem', fontWeight: 700, mt: 2, mb: 2 },
   '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2 },
   '& h3': { fontSize: '1.25rem', fontWeight: 600, mt: 2, mb: 1 },
   '& table': {
@@ -37,6 +38,16 @@ const contentSx = {
   },
   '& p': { lineHeight: 1.7, mb: 1 },
   '& ul, & ol': { pl: 3, mb: 2 },
+  '& section': { border: '1px solid #eceff3', borderRadius: 2, p: 2, my: 2 },
+  '& figure': { my: 2, mx: 0 },
+  '& img': {
+    display: 'block',
+    maxWidth: '100%',
+    height: 'auto',
+    borderRadius: 8,
+    border: '1px solid #d8dee9',
+  },
+  '& figcaption': { mt: 1, fontSize: '0.86rem', color: 'text.secondary', textAlign: 'center' },
 };
 
 const compactContentSx = {

@@ -287,17 +287,54 @@ function BundleResultViewer({
             <Box
               dangerouslySetInnerHTML={{ __html: sanitizedLearnerNoteContent }}
               sx={{
-                '& h2': { fontSize: '1.5rem', fontWeight: 600, mt: 3, mb: 2, color: 'primary.main' },
+                '& h1': { fontSize: '1.85rem', fontWeight: 700, mt: 1, mb: 2, color: 'text.primary' },
+                '& h2': { fontSize: '1.45rem', fontWeight: 700, mt: 3, mb: 1.5, color: 'primary.main' },
                 '& h3': { fontSize: '1.25rem', fontWeight: 600, mt: 2, mb: 1 },
                 '& table': {
                   width: '100%',
                   borderCollapse: 'collapse',
                   my: 2,
+                  bgcolor: '#fff',
+                  '& td, & th': {
+                    border: '1px solid #d8dee9',
+                    padding: '10px 12px',
+                    verticalAlign: 'top',
+                  },
+                  '& th': {
+                    bgcolor: '#edf2ff',
+                    color: '#243b7a',
+                    fontWeight: 700,
+                  },
                 },
                 '& p': { lineHeight: 1.8, mb: 2, fontSize: '1.05rem' },
                 '& ul, & ol': { pl: 3, mb: 2, lineHeight: 1.8 },
                 '& li': { mb: 1 },
                 '& em': { color: 'text.secondary', fontSize: '0.95rem' },
+                '& section': {
+                  border: '1px solid #e6eaf2',
+                  borderRadius: 2,
+                  p: 2,
+                  my: 2,
+                  bgcolor: '#fcfdff',
+                },
+                '& figure': { my: 2, mx: 0 },
+                '& figure img, & img': {
+                  display: 'block',
+                  width: '100%',
+                  maxHeight: 360,
+                  objectFit: 'cover',
+                  borderRadius: 2,
+                  border: '1px solid #d8dee9',
+                  backgroundColor: '#f6f8fb',
+                },
+                '& figcaption': {
+                  mt: 1,
+                  fontSize: '0.88rem',
+                  color: 'text.secondary',
+                  fontStyle: 'italic',
+                  textAlign: 'center',
+                },
+                '& hr': { border: 0, borderTop: '1px solid #e4e7ee', my: 2.5 },
               }}
             />
           </Paper>
