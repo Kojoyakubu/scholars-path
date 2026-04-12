@@ -19,6 +19,7 @@ import LandingPage from './pages/LandingPage';     // Marketing homepage
 import AuthPortal from './pages/AuthPortal';        // Combined login/register
 import Login from './pages/Login';                  // Separate login
 import Register from './pages/Register';            // Separate register
+import SocialAuthCallback from './pages/SocialAuthCallback';
 import Dashboard from './pages/Dashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -84,6 +85,7 @@ const AppRoutes = () => {
         <Route path="/auth" element={<AuthPortal />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth/social/callback" element={<SocialAuthCallback />} />
         <Route path="/pricing" element={<PricingPage />} />
 
         {/* ==========================================

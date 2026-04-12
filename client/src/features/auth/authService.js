@@ -121,6 +121,51 @@ const googleAuth = async ({ credential, mode = 'login', role = 'student' }) => {
 };
 
 // -----------------------------------------------------------------------------
+// 🔓 GENERIC SOCIAL AUTH (FACEBOOK / GITHUB / LINKEDIN / TIKTOK / X)
+// -----------------------------------------------------------------------------
+const socialAuth = async ({ provider, accessToken, mode = 'login', role = 'student', email }) => {
+  const response = await api.post('/api/users/social-auth', {
+    provider,
+    accessToken,
+    mode,
+    role,
+    email,
+  });
+
+  const payload = response.data || {};
+  const user = payload.user;
+  const token = payload.accessToken || user?.token;
+  const refreshToken = payload.refreshToken;
+
+  if (payload.requires2FA) {
+    return {
+      requires2FA: true,
+      tempToken: payload.tempToken,
+      message: payload.message || 'Two-factor authentication is required.',
+      user: user || null,
+    };
+  }
+
+  if (user && token) {
+    const normalizedUser = {
+      ...user,
+      token,
+      accessToken: token,
+      refreshToken: refreshToken || user?.refreshToken,
+    };
+
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    return normalizedUser;
+  }
+
+  return {
+    message: payload.message || `${provider} authentication completed.`,
+    needsApproval: !!payload.needsApproval,
+    user: user || null,
+  };
+};
+
+// -----------------------------------------------------------------------------
 // 👤 GET USER PROFILE
 // -----------------------------------------------------------------------------
 const getProfile = async () => {
@@ -182,6 +227,7 @@ const authService = {
   register,
   login,
   googleAuth,
+  socialAuth,
   getProfile,
   updateProfile,
   logout,

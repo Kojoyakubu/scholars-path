@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const axios = require('axios');
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const { OAuth2Client } = require('google-auth-library');
@@ -53,6 +54,375 @@ const generateRefreshToken = (user) => {
     resolveJwtSecret('JWT_REFRESH_SECRET', 'JWT_SECRET'),
     { expiresIn: '7d' } // Long-lived refresh token
   );
+};
+
+const normalizeRole = (role) => {
+  return ['student', 'teacher', 'school_admin'].includes(role) ? role : 'student';
+};
+
+const findOrCreateSocialUser = async ({ email, fullName, role, emailVerified = false }) => {
+  let user = await User.findOne({ email });
+
+  if (!user) {
+    const hashedPassword = await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 12);
+    const userRole = normalizeRole(role);
+    const userStatus = userRole === 'student' ? 'approved' : 'pending';
+
+    user = await User.create({
+      fullName,
+      email,
+      password: hashedPassword,
+      role: userRole,
+      status: userStatus,
+      emailVerified,
+    });
+  }
+
+  return user;
+};
+
+const issueSocialAuthResponse = async ({ user, res, mode = 'login', providerLabel = 'Social account' }) => {
+  if (mode === 'register' && user.status === 'pending') {
+    res.status(201).json({
+      message: `Registration successful with ${providerLabel}. Your account is pending admin approval.`,
+      needsApproval: true,
+      user: {
+        id: user._id,
+        name: user.fullName,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        emailVerified: user.emailVerified,
+      },
+    });
+    return;
+  }
+
+  if (user.status === 'pending') {
+    res.status(403).json({
+      message: 'Your account is pending admin approval. Please wait for approval before logging in.',
+      status: 'pending',
+      needsApproval: true,
+    });
+    return;
+  }
+
+  if (user.status === 'suspended') {
+    res.status(403).json({
+      message: 'Your account has been suspended. Please contact an administrator.',
+      status: 'suspended',
+    });
+    return;
+  }
+
+  if (user.isLocked) {
+    res.status(423).json({
+      message: 'Account is temporarily locked due to multiple failed login attempts. Please try again later.',
+      locked: true,
+      lockUntil: user.lockUntil,
+    });
+    return;
+  }
+
+  await user.resetLoginAttempts();
+
+  if (user.twoFactorEnabled) {
+    const tempToken = jwt.sign(
+      { id: user._id, type: '2fa_temp' },
+      process.env.JWT_2FA_SECRET || process.env.JWT_SECRET,
+      { expiresIn: '5m' }
+    );
+
+    res.json({
+      message: `${providerLabel} verified. Please provide 2FA code.`,
+      requires2FA: true,
+      tempToken,
+      user: {
+        id: user._id,
+        name: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+    });
+    return;
+  }
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  const subscription = await Subscription.findOne({ user: user._id, status: 'active' });
+
+  res.status(200).json({
+    message:
+      user.createdAt && Date.now() - new Date(user.createdAt).getTime() < 10000
+        ? `Registration successful with ${providerLabel}`
+        : 'Login successful',
+    user: {
+      id: user._id,
+      name: user.fullName,
+      email: user.email,
+      role: user.role,
+      school: user.school,
+      status: user.status,
+      emailVerified: user.emailVerified,
+      isSubscribed: !!subscription,
+    },
+    accessToken,
+    refreshToken,
+  });
+};
+
+const verifyGoogleToken = async (credential) => {
+  const ticket = await googleClient.verifyIdToken({
+    idToken: credential,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+  const payload = ticket.getPayload();
+
+  const email = (payload?.email || '').toLowerCase();
+  if (!email) {
+    throw new Error('Google account did not provide an email');
+  }
+
+  return {
+    email,
+    fullName: payload?.name || 'Google User',
+    emailVerified: !!payload?.email_verified,
+    providerLabel: 'Google',
+  };
+};
+
+const verifyFacebookToken = async (accessToken) => {
+  const { data } = await axios.get('https://graph.facebook.com/me', {
+    params: {
+      fields: 'id,name,email',
+      access_token: accessToken,
+    },
+  });
+
+  const email = (data?.email || '').toLowerCase();
+  if (!email) {
+    throw new Error('Facebook account did not provide an email. Ensure email permission is granted.');
+  }
+
+  return {
+    email,
+    fullName: data?.name || 'Facebook User',
+    emailVerified: true,
+    providerLabel: 'Facebook',
+  };
+};
+
+const verifyGithubToken = async (accessToken) => {
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  const { data: profile } = await axios.get('https://api.github.com/user', { headers });
+  const { data: emails } = await axios.get('https://api.github.com/user/emails', { headers });
+
+  const primary = Array.isArray(emails)
+    ? emails.find((entry) => entry.primary && entry.verified) || emails.find((entry) => entry.verified)
+    : null;
+  const email = (primary?.email || profile?.email || '').toLowerCase();
+
+  if (!email) {
+    throw new Error('GitHub account did not provide a verified email.');
+  }
+
+  return {
+    email,
+    fullName: profile?.name || profile?.login || 'GitHub User',
+    emailVerified: !!primary?.verified,
+    providerLabel: 'GitHub',
+  };
+};
+
+const verifyLinkedInToken = async (accessToken) => {
+  const { data } = await axios.get('https://api.linkedin.com/v2/userinfo', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const email = (data?.email || '').toLowerCase();
+  if (!email) {
+    throw new Error('LinkedIn account did not provide an email.');
+  }
+
+  const fullName =
+    data?.name ||
+    `${data?.given_name || ''} ${data?.family_name || ''}`.trim() ||
+    'LinkedIn User';
+
+  return {
+    email,
+    fullName,
+    emailVerified: true,
+    providerLabel: 'LinkedIn',
+  };
+};
+
+const verifyTiktokToken = async (accessToken, fallbackEmail) => {
+  const { data } = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    params: {
+      fields: 'open_id,display_name,username',
+    },
+  });
+
+  const userInfo = data?.data?.user || {};
+  const synthesizedEmail = userInfo.open_id ? `${userInfo.open_id}@tiktok.local` : '';
+  const email = (fallbackEmail || synthesizedEmail || '').toLowerCase();
+
+  if (!email) {
+    throw new Error('Unable to derive TikTok email identity.');
+  }
+
+  return {
+    email,
+    fullName: userInfo.display_name || userInfo.username || 'TikTok User',
+    emailVerified: false,
+    providerLabel: 'TikTok',
+  };
+};
+
+const verifyXToken = async (accessToken, fallbackEmail) => {
+  const { data } = await axios.get('https://api.x.com/2/users/me', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    params: {
+      'user.fields': 'name,username',
+    },
+  });
+
+  const userData = data?.data || {};
+  const synthesizedEmail = userData.id ? `${userData.id}@x.local` : '';
+  const email = (fallbackEmail || synthesizedEmail || '').toLowerCase();
+
+  if (!email) {
+    throw new Error('Unable to derive X email identity.');
+  }
+
+  return {
+    email,
+    fullName: userData.name || userData.username || 'X User',
+    emailVerified: false,
+    providerLabel: 'X',
+  };
+};
+
+const exchangeSocialCodeForAccessToken = async ({ provider, code, redirectUri, codeVerifier }) => {
+  switch (provider) {
+    case 'facebook': {
+      const clientId = process.env.FACEBOOK_CLIENT_ID;
+      const clientSecret = process.env.FACEBOOK_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error('Facebook OAuth is not configured on server');
+      }
+
+      const { data } = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+        params: {
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          code,
+        },
+      });
+      return data?.access_token;
+    }
+    case 'github': {
+      const clientId = process.env.GITHUB_CLIENT_ID;
+      const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error('GitHub OAuth is not configured on server');
+      }
+
+      const { data } = await axios.post(
+        'https://github.com/login/oauth/access_token',
+        {
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        },
+        { headers: { Accept: 'application/json' } }
+      );
+      return data?.access_token;
+    }
+    case 'linkedin': {
+      const clientId = process.env.LINKEDIN_CLIENT_ID;
+      const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error('LinkedIn OAuth is not configured on server');
+      }
+
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        client_secret: clientSecret,
+      });
+
+      const { data } = await axios.post('https://www.linkedin.com/oauth/v2/accessToken', body, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+      return data?.access_token;
+    }
+    case 'tiktok': {
+      const clientId = process.env.TIKTOK_CLIENT_KEY;
+      const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error('TikTok OAuth is not configured on server');
+      }
+
+      const body = new URLSearchParams({
+        client_key: clientId,
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+      });
+
+      const { data } = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', body, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+      return data?.access_token;
+    }
+    case 'x': {
+      const clientId = process.env.X_CLIENT_ID;
+      if (!clientId) {
+        throw new Error('X OAuth is not configured on server');
+      }
+
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+      });
+
+      if (codeVerifier) {
+        body.append('code_verifier', codeVerifier);
+      }
+
+      const { data } = await axios.post('https://api.x.com/2/oauth2/token', body, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+
+      return data?.access_token;
+    }
+    default:
+      throw new Error(`Unsupported provider for code exchange: ${provider}`);
+  }
 };
 
 // @desc    Register a new user
@@ -307,133 +677,225 @@ const googleAuth = asyncHandler(async (req, res) => {
     return;
   }
 
-  let payload;
   try {
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const socialProfile = await verifyGoogleToken(credential);
+    const user = await findOrCreateSocialUser({
+      email: socialProfile.email,
+      fullName: socialProfile.fullName,
+      role,
+      emailVerified: socialProfile.emailVerified,
     });
-    payload = ticket.getPayload();
+
+    await issueSocialAuthResponse({
+      user,
+      res,
+      mode,
+      providerLabel: socialProfile.providerLabel,
+    });
   } catch (error) {
-    res.status(401).json({ message: 'Invalid Google token' });
+    res.status(401).json({ message: error.message || 'Invalid Google token' });
     return;
   }
+});
 
-  const email = (payload?.email || '').toLowerCase();
-  const fullName = payload?.name || 'Google User';
-  const emailVerifiedByGoogle = !!payload?.email_verified;
-
-  if (!email) {
-    res.status(400).json({ message: 'Google account did not provide an email' });
-    return;
-  }
-
-  let user = await User.findOne({ email });
-
-  if (!user) {
-    const hashedPassword = await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 12);
-    const userRole = ['student', 'teacher', 'school_admin'].includes(role) ? role : 'student';
-    const userStatus = userRole === 'student' ? 'approved' : 'pending';
-
-    user = await User.create({
-      fullName,
-      email,
-      password: hashedPassword,
-      role: userRole,
-      status: userStatus,
-      emailVerified: emailVerifiedByGoogle,
-    });
-  }
-
-  if (mode === 'register' && user.status === 'pending') {
-    res.status(201).json({
-      message: 'Registration successful with Google. Your account is pending admin approval.',
-      needsApproval: true,
-      user: {
-        id: user._id,
-        name: user.fullName,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        emailVerified: user.emailVerified,
-      },
-    });
-    return;
-  }
-
-  if (user.status === 'pending') {
-    res.status(403).json({
-      message: 'Your account is pending admin approval. Please wait for approval before logging in.',
-      status: 'pending',
-      needsApproval: true,
-    });
-    return;
-  }
-
-  if (user.status === 'suspended') {
-    res.status(403).json({
-      message: 'Your account has been suspended. Please contact an administrator.',
-      status: 'suspended',
-    });
-    return;
-  }
-
-  if (user.isLocked) {
-    res.status(423).json({
-      message: 'Account is temporarily locked due to multiple failed login attempts. Please try again later.',
-      locked: true,
-      lockUntil: user.lockUntil,
-    });
-    return;
-  }
-
-  await user.resetLoginAttempts();
-
-  if (user.twoFactorEnabled) {
-    const tempToken = jwt.sign(
-      { id: user._id, type: '2fa_temp' },
-      process.env.JWT_2FA_SECRET || process.env.JWT_SECRET,
-      { expiresIn: '5m' }
-    );
-
-    res.json({
-      message: 'Google account verified. Please provide 2FA code.',
-      requires2FA: true,
-      tempToken,
-      user: {
-        id: user._id,
-        name: user.fullName,
-        email: user.email,
-        role: user.role,
-      },
-    });
-    return;
-  }
-
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken(user);
-  user.refreshToken = refreshToken;
-  await user.save();
-
-  const subscription = await Subscription.findOne({ user: user._id, status: 'active' });
-
-  res.status(200).json({
-    message: user.createdAt && Date.now() - new Date(user.createdAt).getTime() < 10000
-      ? 'Registration successful with Google'
-      : 'Login successful',
-    user: {
-      id: user._id,
-      name: user.fullName,
-      email: user.email,
-      role: user.role,
-      school: user.school,
-      status: user.status,
-      emailVerified: user.emailVerified,
-      isSubscribed: !!subscription,
-    },
+// @desc    Authenticate user with supported social providers
+// @route   POST /api/users/social-auth
+// @access  Public
+const socialAuth = asyncHandler(async (req, res) => {
+  const {
+    provider,
     accessToken,
-    refreshToken,
-  });
+    credential,
+    idToken,
+    email,
+    role = 'student',
+    mode = 'login',
+  } = req.body;
+
+  if (!provider) {
+    res.status(400).json({ message: 'Provider is required' });
+    return;
+  }
+
+  const normalizedProvider = String(provider).toLowerCase();
+  const supportedProviders = ['google', 'facebook', 'github', 'linkedin', 'tiktok', 'x'];
+  if (!supportedProviders.includes(normalizedProvider)) {
+    res.status(400).json({ message: `Unsupported provider: ${provider}` });
+    return;
+  }
+
+  try {
+    let socialProfile;
+
+    switch (normalizedProvider) {
+      case 'google': {
+        const token = credential || idToken;
+        if (!token) {
+          res.status(400).json({ message: 'Google credential is required' });
+          return;
+        }
+
+        if (!process.env.GOOGLE_CLIENT_ID) {
+          res.status(500).json({ message: 'Google authentication is not configured' });
+          return;
+        }
+
+        socialProfile = await verifyGoogleToken(token);
+        break;
+      }
+      case 'facebook': {
+        if (!accessToken) {
+          res.status(400).json({ message: 'Facebook access token is required' });
+          return;
+        }
+        socialProfile = await verifyFacebookToken(accessToken);
+        break;
+      }
+      case 'github': {
+        if (!accessToken) {
+          res.status(400).json({ message: 'GitHub access token is required' });
+          return;
+        }
+        socialProfile = await verifyGithubToken(accessToken);
+        break;
+      }
+      case 'linkedin': {
+        if (!accessToken) {
+          res.status(400).json({ message: 'LinkedIn access token is required' });
+          return;
+        }
+        socialProfile = await verifyLinkedInToken(accessToken);
+        break;
+      }
+      case 'tiktok': {
+        if (!accessToken) {
+          res.status(400).json({ message: 'TikTok access token is required' });
+          return;
+        }
+        socialProfile = await verifyTiktokToken(accessToken, email);
+        break;
+      }
+      case 'x': {
+        if (!accessToken) {
+          res.status(400).json({ message: 'X access token is required' });
+          return;
+        }
+        socialProfile = await verifyXToken(accessToken, email);
+        break;
+      }
+      default:
+        res.status(400).json({ message: 'Unsupported provider' });
+        return;
+    }
+
+    const user = await findOrCreateSocialUser({
+      email: socialProfile.email,
+      fullName: socialProfile.fullName,
+      role,
+      emailVerified: socialProfile.emailVerified,
+    });
+
+    await issueSocialAuthResponse({
+      user,
+      res,
+      mode,
+      providerLabel: socialProfile.providerLabel,
+    });
+  } catch (error) {
+    const statusCode = error.response?.status === 401 ? 401 : 400;
+    const providerLabel = String(provider || 'social').toLowerCase();
+    res.status(statusCode).json({
+      message:
+        error.response?.data?.error?.message ||
+        error.message ||
+        `Invalid ${providerLabel} token`,
+    });
+  }
+});
+
+// @desc    Exchange OAuth code and authenticate/register user
+// @route   POST /api/users/social-auth/exchange
+// @access  Public
+const socialAuthExchange = asyncHandler(async (req, res) => {
+  const {
+    provider,
+    code,
+    redirectUri,
+    codeVerifier,
+    role = 'student',
+    mode = 'login',
+    email,
+  } = req.body;
+
+  if (!provider || !code || !redirectUri) {
+    res.status(400).json({ message: 'provider, code, and redirectUri are required' });
+    return;
+  }
+
+  const normalizedProvider = String(provider).toLowerCase();
+  const supportedProviders = ['facebook', 'github', 'linkedin', 'tiktok', 'x'];
+  if (!supportedProviders.includes(normalizedProvider)) {
+    res.status(400).json({ message: `Unsupported provider for exchange: ${provider}` });
+    return;
+  }
+
+  try {
+    const exchangedAccessToken = await exchangeSocialCodeForAccessToken({
+      provider: normalizedProvider,
+      code,
+      redirectUri,
+      codeVerifier,
+    });
+
+    if (!exchangedAccessToken) {
+      res.status(400).json({ message: `Failed to exchange ${provider} authorization code` });
+      return;
+    }
+
+    let socialProfile;
+    switch (normalizedProvider) {
+      case 'facebook':
+        socialProfile = await verifyFacebookToken(exchangedAccessToken);
+        break;
+      case 'github':
+        socialProfile = await verifyGithubToken(exchangedAccessToken);
+        break;
+      case 'linkedin':
+        socialProfile = await verifyLinkedInToken(exchangedAccessToken);
+        break;
+      case 'tiktok':
+        socialProfile = await verifyTiktokToken(exchangedAccessToken, email);
+        break;
+      case 'x':
+        socialProfile = await verifyXToken(exchangedAccessToken, email);
+        break;
+      default:
+        res.status(400).json({ message: 'Unsupported provider' });
+        return;
+    }
+
+    const user = await findOrCreateSocialUser({
+      email: socialProfile.email,
+      fullName: socialProfile.fullName,
+      role,
+      emailVerified: socialProfile.emailVerified,
+    });
+
+    await issueSocialAuthResponse({
+      user,
+      res,
+      mode,
+      providerLabel: socialProfile.providerLabel,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message:
+        error.response?.data?.error_description ||
+        error.response?.data?.error?.message ||
+        error.message ||
+        `Failed to complete ${provider} authentication`,
+    });
+  }
 });
 
 // @desc    Refresh access token
@@ -918,6 +1380,8 @@ const deleteUser = asyncHandler(async (req, res) => {
 module.exports = {
   registerUser,
   googleAuth,
+  socialAuth,
+  socialAuthExchange,
   verifyEmail,
   loginUser,
   refreshToken,

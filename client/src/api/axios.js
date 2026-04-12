@@ -49,7 +49,12 @@ const shouldHandleUnauthorized = (error) => {
   }
 
   // Do not redirect for authentication endpoints where a 401 can be expected.
-  if (requestUrl.includes('/api/users/login') || requestUrl.includes('/api/users/register')) {
+  if (
+    requestUrl.includes('/api/users/login') ||
+    requestUrl.includes('/api/users/register') ||
+    requestUrl.includes('/api/users/google-auth') ||
+    requestUrl.includes('/api/users/social-auth')
+  ) {
     return false;
   }
 

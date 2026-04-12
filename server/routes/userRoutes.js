@@ -3,6 +3,8 @@ const router = express.Router();
 const {
   registerUser,
   googleAuth,
+  socialAuth,
+  socialAuthExchange,
   verifyEmail,
   loginUser,
   refreshToken,
@@ -41,6 +43,16 @@ router.post('/register', validateRegistration, handleValidationErrors, registerU
 // @desc    Authenticate/register with Google
 // @access  Public
 router.post('/google-auth', googleAuth);
+
+// @route   POST /api/users/social-auth
+// @desc    Authenticate/register with supported social providers
+// @access  Public
+router.post('/social-auth', socialAuth);
+
+// @route   POST /api/users/social-auth/exchange
+// @desc    Exchange OAuth code for token and authenticate/register
+// @access  Public
+router.post('/social-auth/exchange', socialAuthExchange);
 
 // @route   POST /api/users/verify-email
 // @desc    Verify user email

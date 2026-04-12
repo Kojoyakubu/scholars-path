@@ -34,7 +34,12 @@ import {
   ArrowForward,
   CheckCircle,
   LockOpen,
+  Facebook,
+  GitHub,
+  LinkedIn,
 } from '@mui/icons-material';
+import { FaTiktok, FaXTwitter } from 'react-icons/fa6';
+import { startSocialOAuth } from '../utils/socialOAuth';
 
 import { login, googleAuth } from '../features/auth/authSlice';
 
@@ -157,6 +162,18 @@ const Login = () => {
 
   const handleGoogleError = () => {
     setLocalNotice('Google login was cancelled or failed. Please try again.');
+  };
+
+  const handleSocialAuth = async (provider) => {
+    const result = await startSocialOAuth({
+      provider,
+      mode: 'login',
+      role: 'student',
+    });
+
+    if (!result?.ok) {
+      setLocalNotice(result?.message || `${provider} sign-in is not configured.`);
+    }
   };
 
   const features = [
@@ -511,8 +528,71 @@ const Login = () => {
                   </Typography>
                 </Divider>
 
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} useOneTap={false} />
+                <Box sx={{ mb: 2.5 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 1.5 }}>
+                    Continue with social account
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      useOneTap={false}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.2 }}>
+                    <IconButton
+                      aria-label="Sign in with Facebook"
+                      onClick={() => handleSocialAuth('facebook')}
+                      sx={{
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                        bgcolor: alpha('#FFFFFF', 0.8),
+                      }}
+                    >
+                      <Facebook fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Sign in with GitHub"
+                      onClick={() => handleSocialAuth('github')}
+                      sx={{
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                        bgcolor: alpha('#FFFFFF', 0.8),
+                      }}
+                    >
+                      <GitHub fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Sign in with LinkedIn"
+                      onClick={() => handleSocialAuth('linkedin')}
+                      sx={{
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                        bgcolor: alpha('#FFFFFF', 0.8),
+                      }}
+                    >
+                      <LinkedIn fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Sign in with TikTok"
+                      onClick={() => handleSocialAuth('tiktok')}
+                      sx={{
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                        bgcolor: alpha('#FFFFFF', 0.8),
+                      }}
+                    >
+                      <FaTiktok size={16} />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Sign in with X"
+                      onClick={() => handleSocialAuth('x')}
+                      sx={{
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                        bgcolor: alpha('#FFFFFF', 0.8),
+                      }}
+                    >
+                      <FaXTwitter size={16} />
+                    </IconButton>
+                  </Box>
                 </Box>
 
                 {/* Sign Up Link */}

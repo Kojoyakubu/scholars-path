@@ -75,6 +75,23 @@ export const googleAuth = createAsyncThunk(
 );
 
 // -----------------------------------------------------------------------------
+// 🔐 SOCIAL AUTH
+// -----------------------------------------------------------------------------
+export const socialAuth = createAsyncThunk(
+  'auth/socialAuth',
+  async (socialData, thunkAPI) => {
+    try {
+      const response = await authService.socialAuth(socialData);
+      return response;
+    } catch (error) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// -----------------------------------------------------------------------------
 // 👤 GET PROFILE
 // -----------------------------------------------------------------------------
 export const getProfile = createAsyncThunk(
@@ -203,6 +220,38 @@ const authSlice = createSlice({
         state.message = action.payload?.message || 'Google authentication completed.';
       })
       .addCase(googleAuth.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+        state.user = null;
+      })
+
+      // SOCIAL AUTH
+      .addCase(socialAuth.pending, (state) => {
+        state.isLoading = true;
+        state.isError = false;
+        state.message = '';
+      })
+      .addCase(socialAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+
+        if (action.payload?.requires2FA) {
+          state.user = null;
+          state.message = action.payload.message || 'Two-factor authentication is required.';
+          return;
+        }
+
+        if (action.payload?.token || action.payload?.accessToken) {
+          state.user = action.payload;
+          state.message = '';
+          return;
+        }
+
+        state.user = null;
+        state.message = action.payload?.message || 'Social authentication completed.';
+      })
+      .addCase(socialAuth.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
