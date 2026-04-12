@@ -240,9 +240,9 @@ const AnimatedHeroGraphic = () => (
     </motion.svg>
 
     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1.4 }}>
-      <Chip label="Teacher board" size="small" />
-      <Chip label="Active learners" size="small" />
-      <Chip label="Progress cues" size="small" />
+      <Chip label="Teacher board" size="small" sx={{ width: 132, justifyContent: "center" }} />
+      <Chip label="Active learners" size="small" sx={{ width: 132, justifyContent: "center" }} />
+      <Chip label="Progress cues" size="small" sx={{ width: 132, justifyContent: "center" }} />
     </Stack>
   </Box>
 );
