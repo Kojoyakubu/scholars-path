@@ -962,7 +962,7 @@ const LandingPage = () => {
         </Typography>
         <Grid container spacing={3}>
           {capabilities.map((item, i) => (
-            <Grid item xs={12} sm={6} key={item.title}>
+            <Grid item xs={12} sm={6} key={item.title} sx={{ display: "flex" }}>
               <Card
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -970,18 +970,20 @@ const LandingPage = () => {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
                 sx={{
+                  width: "100%",
                   height: "100%",
+                  minHeight: { xs: 200, md: 214 },
                   borderRadius: 4,
                   border: `1px solid ${alpha("#4F6678", 0.1)}`,
                   background: "#FFFFFF",
                 }}
               >
-                <CardContent sx={{ p: 3 }}>
+                <CardContent sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
                   <item.icon sx={{ color: "#6F889D", fontSize: 34, mb: 1.2 }} />
                   <Typography variant="h5" sx={{ mb: 1, fontWeight: 700, fontSize: "1.3rem" }}>
                     {item.title}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: "#5D6A75" }}>
+                  <Typography variant="body1" sx={{ color: "#5D6A75", mt: "auto" }}>
                     {item.desc}
                   </Typography>
                 </CardContent>
@@ -1000,7 +1002,7 @@ const LandingPage = () => {
         </Typography>
         <Grid container spacing={3}>
           {audiences.map((item, i) => (
-            <Grid item xs={12} md={4} key={item.title}>
+            <Grid item xs={12} sm={6} lg={4} key={item.title} sx={{ display: "flex" }}>
               <Paper
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -1009,8 +1011,12 @@ const LandingPage = () => {
                 transition={{ delay: i * 0.08 }}
                 elevation={0}
                 sx={{
+                  width: "100%",
                   p: 3,
                   height: "100%",
+                  minHeight: { xs: 200, md: 220 },
+                  display: "flex",
+                  flexDirection: "column",
                   borderRadius: 4,
                   border: `1px solid ${alpha("#4F6678", 0.12)}`,
                   background: "#FFFFFF",
@@ -1033,7 +1039,7 @@ const LandingPage = () => {
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.1, fontSize: "1.3rem" }}>
                   {item.title}
                 </Typography>
-                <Typography variant="body1" sx={{ color: "#5D6A75" }}>
+                <Typography variant="body1" sx={{ color: "#5D6A75", mt: "auto" }}>
                   {item.desc}
                 </Typography>
               </Paper>
@@ -1053,7 +1059,7 @@ const LandingPage = () => {
 
           <Grid container spacing={3}>
             {workflow.map((item, i) => (
-              <Grid item xs={12} md={4} key={item.step}>
+              <Grid item xs={12} md={4} key={item.step} sx={{ display: "flex" }}>
                 <Paper
                   component={motion.div}
                   initial={{ opacity: 0, y: 24 }}
@@ -1062,8 +1068,12 @@ const LandingPage = () => {
                   transition={{ delay: i * 0.1 }}
                   elevation={0}
                   sx={{
+                    width: "100%",
                     p: 3,
                     height: "100%",
+                    minHeight: { xs: 188, md: 210 },
+                    display: "flex",
+                    flexDirection: "column",
                     borderRadius: 4,
                     border: `1px solid ${alpha("#4F6678", 0.12)}`,
                     background: alpha("#FFFFFF", 0.92),
@@ -1083,7 +1093,7 @@ const LandingPage = () => {
                   <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.8 }}>
                     {item.title}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: "#5D6A75" }}>
+                  <Typography variant="body1" sx={{ color: "#5D6A75", mt: "auto" }}>
                     {item.desc}
                   </Typography>
                 </Paper>
