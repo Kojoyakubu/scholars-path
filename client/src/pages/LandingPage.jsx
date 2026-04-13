@@ -90,98 +90,6 @@ const COPY_VARIANTS = {
   },
 };
 
-const AnimatedHeroGraphic = () => (
-  <Box
-    sx={{
-      mt: 3,
-      p: { xs: 2, md: 2.4 },
-      borderRadius: 4,
-      border: `1px solid ${alpha("#4F6678", 0.12)}`,
-      bgcolor: alpha("#FFFFFF", 0.82),
-      overflow: "hidden",
-    }}
-  >
-    <motion.svg
-      viewBox="0 0 520 250"
-      width="100%"
-      height="100%"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-    >
-      <defs>
-        <linearGradient id="heroPanel" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#EEF4F8" />
-          <stop offset="100%" stopColor="#F9F4EA" />
-        </linearGradient>
-      </defs>
-
-      <rect x="18" y="18" width="484" height="214" rx="28" fill="url(#heroPanel)" />
-
-      <motion.circle
-        cx="94"
-        cy="78"
-        r="36"
-        fill="#6F889D"
-        animate={{ cy: [78, 66, 78] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.rect
-        x="146"
-        y="52"
-        width="138"
-        height="18"
-        rx="9"
-        fill="#A7BBCB"
-        animate={{ width: [138, 120, 138] }}
-        transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <rect x="146" y="84" width="112" height="12" rx="6" fill="#D1DDE6" />
-      <rect x="146" y="106" width="152" height="12" rx="6" fill="#D1DDE6" />
-
-      <motion.rect
-        x="64"
-        y="148"
-        width="168"
-        height="50"
-        rx="16"
-        fill="#FFFFFF"
-        animate={{ x: [64, 72, 64] }}
-        transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <circle cx="92" cy="173" r="11" fill="#10B981" />
-      <rect x="114" y="164" width="88" height="10" rx="5" fill="#B7C8D5" />
-      <rect x="114" y="180" width="66" height="8" rx="4" fill="#D5E0E8" />
-
-      <motion.g
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <rect x="300" y="48" width="152" height="132" rx="24" fill="#FFFFFF" />
-        <rect x="326" y="74" width="98" height="12" rx="6" fill="#B7C8D5" />
-        <rect x="326" y="98" width="78" height="12" rx="6" fill="#D5E0E8" />
-        <rect x="326" y="122" width="58" height="12" rx="6" fill="#D5E0E8" />
-        <motion.path
-          d="M326 156 C350 136, 372 150, 392 130 C406 116, 424 122, 438 106"
-          fill="none"
-          stroke="#6F889D"
-          strokeWidth="8"
-          strokeLinecap="round"
-          initial={{ pathLength: 0.2, opacity: 0.5 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-        />
-      </motion.g>
-    </motion.svg>
-
-    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1.4 }}>
-      <Chip label="AI notes" size="small" />
-      <Chip label="Quiz flow" size="small" />
-      <Chip label="Progress view" size="small" />
-    </Stack>
-  </Box>
-);
-
 const AnimatedFlowGraphic = () => (
   <Box
     sx={{
@@ -755,9 +663,6 @@ const LandingPage = () => {
                 </Stack>
               </motion.div>
 
-              <motion.div variants={reveal}>
-                <AnimatedHeroGraphic />
-              </motion.div>
             </motion.div>
           </Grid>
 
