@@ -110,139 +110,74 @@ const AnimatedHeroGraphic = () => (
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
       <defs>
-        <linearGradient id="classroomWall" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#F4F7FA" />
-          <stop offset="100%" stopColor="#F8EFE1" />
-        </linearGradient>
-        <linearGradient id="boardGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#37586D" />
-          <stop offset="100%" stopColor="#6F889D" />
+        <linearGradient id="heroPanel" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#EEF4F8" />
+          <stop offset="100%" stopColor="#F9F4EA" />
         </linearGradient>
       </defs>
 
-      <rect x="18" y="18" width="484" height="214" rx="28" fill="url(#classroomWall)" />
-      <rect x="18" y="180" width="484" height="52" rx="0" fill="#E9D6B8" />
+      <rect x="18" y="18" width="484" height="214" rx="28" fill="url(#heroPanel)" />
 
-      <rect x="52" y="40" width="300" height="92" rx="18" fill="url(#boardGlow)" />
-      <rect x="66" y="54" width="126" height="10" rx="5" fill={alpha("#FFFFFF", 0.82)} />
-      <rect x="66" y="72" width="104" height="8" rx="4" fill={alpha("#D9E4EB", 0.92)} />
-      <motion.path
-        d="M68 103 C120 87, 164 112, 215 92 C248 79, 275 83, 332 66"
-        fill="none"
-        stroke="#F7D27D"
-        strokeWidth="6"
-        strokeLinecap="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 3.4, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-      />
       <motion.circle
-        cx="312"
-        cy="104"
-        r="10"
-        fill="#FFFFFF"
-        animate={{ cy: [104, 98, 104] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        cx="94"
+        cy="78"
+        r="36"
+        fill="#6F889D"
+        animate={{ cy: [78, 66, 78] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
-
-      <rect x="382" y="34" width="88" height="110" rx="20" fill="#FFFFFF" />
-      <rect x="398" y="48" width="58" height="12" rx="6" fill="#B8CAD7" />
-      <rect x="398" y="70" width="44" height="10" rx="5" fill="#D5E0E8" />
-      <rect x="398" y="88" width="52" height="10" rx="5" fill="#D5E0E8" />
       <motion.rect
-        x="404"
-        y="108"
-        width="40"
-        height="12"
-        rx="6"
-        fill="#10B981"
-        animate={{ width: [40, 48, 40] }}
-        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+        x="146"
+        y="52"
+        width="138"
+        height="18"
+        rx="9"
+        fill="#A7BBCB"
+        animate={{ width: [138, 120, 138] }}
+        transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
       />
+      <rect x="146" y="84" width="112" height="12" rx="6" fill="#D1DDE6" />
+      <rect x="146" y="106" width="152" height="12" rx="6" fill="#D1DDE6" />
 
-      <g>
-        <rect x="88" y="154" width="98" height="14" rx="7" fill="#C58A57" />
-        <rect x="104" y="168" width="10" height="28" rx="5" fill="#9B6B43" />
-        <rect x="160" y="168" width="10" height="28" rx="5" fill="#9B6B43" />
-
-        <rect x="214" y="154" width="98" height="14" rx="7" fill="#C58A57" />
-        <rect x="230" y="168" width="10" height="28" rx="5" fill="#9B6B43" />
-        <rect x="286" y="168" width="10" height="28" rx="5" fill="#9B6B43" />
-      </g>
-
-      <motion.g
-        animate={{ x: [0, 3, 0] }}
-        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <circle cx="92" cy="128" r="14" fill="#A96D4F" />
-        <rect x="77" y="142" width="30" height="26" rx="14" fill="#F0B44D" />
-        <motion.rect
-          x="104"
-          y="140"
-          width="26"
-          height="8"
-          rx="4"
-          fill="#F0B44D"
-          animate={{ rotate: [-8, 12, -8] }}
-          style={{ transformOrigin: "104px 144px" }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </motion.g>
+      <motion.rect
+        x="64"
+        y="148"
+        width="168"
+        height="50"
+        rx="16"
+        fill="#FFFFFF"
+        animate={{ x: [64, 72, 64] }}
+        transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <circle cx="92" cy="173" r="11" fill="#10B981" />
+      <rect x="114" y="164" width="88" height="10" rx="5" fill="#B7C8D5" />
+      <rect x="114" y="180" width="66" height="8" rx="4" fill="#D5E0E8" />
 
       <motion.g
-        animate={{ y: [0, -2, 0] }}
+        animate={{ y: [0, -8, 0] }}
         transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
       >
-        <circle cx="246" cy="128" r="14" fill="#6E4C3A" />
-        <rect x="231" y="142" width="30" height="26" rx="14" fill="#5CA4A9" />
-      </motion.g>
-
-      <motion.g
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <circle cx="336" cy="92" r="16" fill="#8C5E46" />
-        <rect x="320" y="108" width="32" height="46" rx="16" fill="#E88B6B" />
-        <rect x="348" y="114" width="32" height="8" rx="4" fill="#E88B6B" />
-        <motion.rect
-          x="349"
-          y="114"
-          width="34"
-          height="8"
-          rx="4"
-          fill="#E88B6B"
-          animate={{ rotate: [-12, 10, -12] }}
-          style={{ transformOrigin: "349px 118px" }}
-          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+        <rect x="300" y="48" width="152" height="132" rx="24" fill="#FFFFFF" />
+        <rect x="326" y="74" width="98" height="12" rx="6" fill="#B7C8D5" />
+        <rect x="326" y="98" width="78" height="12" rx="6" fill="#D5E0E8" />
+        <rect x="326" y="122" width="58" height="12" rx="6" fill="#D5E0E8" />
+        <motion.path
+          d="M326 156 C350 136, 372 150, 392 130 C406 116, 424 122, 438 106"
+          fill="none"
+          stroke="#6F889D"
+          strokeWidth="8"
+          strokeLinecap="round"
+          initial={{ pathLength: 0.2, opacity: 0.5 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ duration: 2.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
         />
-        <rect x="328" y="152" width="8" height="28" rx="4" fill="#496A81" />
-        <rect x="344" y="152" width="8" height="28" rx="4" fill="#496A81" />
       </motion.g>
-
-      <motion.g
-        animate={{ opacity: [0.65, 1, 0.65] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <circle cx="420" cy="164" r="18" fill="#FFFFFF" />
-        <text x="420" y="170" textAnchor="middle" fontSize="18" fontWeight="700" fill="#6F889D">A+</text>
-      </motion.g>
-
-      <motion.g
-        animate={{ opacity: [0.35, 0.8, 0.35], y: [0, -4, 0] }}
-        transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <circle cx="454" cy="168" r="12" fill="#FFFFFF" />
-        <text x="454" y="173" textAnchor="middle" fontSize="12" fontWeight="700" fill="#10B981">✓</text>
-      </motion.g>
-
-      <rect x="42" y="32" width="12" height="92" rx="6" fill="#D7B68A" />
-      <rect x="350" y="32" width="12" height="92" rx="6" fill="#D7B68A" />
     </motion.svg>
 
     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1.4 }}>
-      <Chip label="Teacher board" size="small" sx={{ width: 132, justifyContent: "center" }} />
-      <Chip label="Active learners" size="small" sx={{ width: 132, justifyContent: "center" }} />
-      <Chip label="Progress cues" size="small" sx={{ width: 132, justifyContent: "center" }} />
+      <Chip label="AI notes" size="small" />
+      <Chip label="Quiz flow" size="small" />
+      <Chip label="Progress view" size="small" />
     </Stack>
   </Box>
 );
@@ -710,7 +645,22 @@ const LandingPage = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 10 }, pb: { xs: 5.5, md: 8.5 } }}>
+      <Box
+        sx={{
+          position: "relative",
+          backgroundImage: "url(/header.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to right, rgba(12,22,32,0.88) 0%, rgba(12,22,32,0.88) 46%, rgba(8,16,24,0.70) 100%)",
+            zIndex: 0,
+          },
+        }}
+      >
+        <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 10 }, pb: { xs: 5.5, md: 8.5 }, position: "relative", zIndex: 1 }}>
         <Grid container spacing={5} alignItems="center">
           <Grid item xs={12} md={6}>
             <motion.div variants={stagger} initial="hidden" animate="visible">
@@ -719,8 +669,8 @@ const LandingPage = () => {
                   label={copy.badge}
                   sx={{
                     mb: 2,
-                    bgcolor: alpha("#6F889D", 0.1),
-                    color: "#4F6678",
+                    bgcolor: alpha("#FFFFFF", 0.15),
+                    color: "white",
                     fontWeight: 700,
                   }}
                 />
@@ -733,16 +683,16 @@ const LandingPage = () => {
                     fontSize: { xs: "1.95rem", sm: "2.3rem", md: "3.25rem" },
                     lineHeight: 1.08,
                     mb: 2.2,
-                    color: "#2E3A44",
+                    color: "white",
                     textWrap: "balance",
                     letterSpacing: "-0.02em",
                   }}
                 >
                   {copy.h1Start}
-                  <Box component="span" sx={{ color: "#6F889D" }}>
+                  <Box component="span" sx={{ color: "#A8C6D8" }}>
                     {" "}{copy.h1Accent}
                   </Box>
-                  <Box component="span" sx={{ color: "#2E3A44" }}>
+                  <Box component="span" sx={{ color: "white" }}>
                     {" "}{copy.h1End}
                   </Box>
                 </Typography>
@@ -752,7 +702,7 @@ const LandingPage = () => {
                 <Typography
                   variant="subtitle1"
                   sx={{
-                    color: "#4C5C68",
+                    color: "rgba(255,255,255,0.85)",
                     maxWidth: 560,
                     mb: 3.2,
                     fontSize: { xs: "1rem", md: "1.08rem" },
@@ -780,28 +730,28 @@ const LandingPage = () => {
                     variant="outlined"
                     size="large"
                     fullWidth={isMobile}
-                    sx={{ px: 3.5, borderWidth: 2 }}
+                    sx={{ px: 3.5, borderWidth: 2, color: "white", borderColor: "rgba(255,255,255,0.5)", "&:hover": { borderColor: "white", bgcolor: "rgba(255,255,255,0.08)" } }}
                   >
                     {copy.secondaryCta}
                   </Button>
                 </Stack>
-                <Typography variant="caption" sx={{ color: "#7A8794", display: "block", mt: 1.1, textAlign: { xs: "center", sm: "left" } }}>
+                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)", display: "block", mt: 1.1, textAlign: { xs: "center", sm: "left" } }}>
                   {copy.ctaHelper}
                 </Typography>
               </motion.div>
 
               <motion.div variants={reveal}>
                 <Stack direction="row" spacing={1.4} alignItems="center" flexWrap="wrap" useFlexGap>
-                  <CheckCircleIcon sx={{ color: "#10B981", fontSize: 20 }} />
-                  <Typography variant="body2">Teacher-first workflow</Typography>
-                  <Typography variant="body2" sx={{ color: "#9AA6B2" }}>
+                  <CheckCircleIcon sx={{ color: "#34D399", fontSize: 20 }} />
+                  <Typography variant="body2" sx={{ color: "white" }}>Teacher-first workflow</Typography>
+                  <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.45)" }}>
                     •
                   </Typography>
-                  <Typography variant="body2">Works on low bandwidth</Typography>
-                  <Typography variant="body2" sx={{ color: "#9AA6B2" }}>
+                  <Typography variant="body2" sx={{ color: "white" }}>Works on low bandwidth</Typography>
+                  <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.45)" }}>
                     •
                   </Typography>
-                  <Typography variant="body2">Curriculum-aligned structure</Typography>
+                  <Typography variant="body2" sx={{ color: "white" }}>Curriculum-aligned structure</Typography>
                 </Stack>
               </motion.div>
 
@@ -916,7 +866,8 @@ const LandingPage = () => {
             </motion.div>
           </Grid>
         </Grid>
-      </Container>
+        </Container>
+      </Box>
 
       <Container maxWidth="lg" sx={{ pb: { xs: 7, md: 10 } }}>
         <motion.div
@@ -962,7 +913,7 @@ const LandingPage = () => {
         </Typography>
         <Grid container spacing={3}>
           {capabilities.map((item, i) => (
-            <Grid item xs={12} sm={6} key={item.title} sx={{ display: "flex" }}>
+            <Grid item xs={12} sm={6} key={item.title}>
               <Card
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -970,20 +921,18 @@ const LandingPage = () => {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
                 sx={{
-                  width: "100%",
                   height: "100%",
-                  minHeight: { xs: 200, md: 214 },
                   borderRadius: 4,
                   border: `1px solid ${alpha("#4F6678", 0.1)}`,
                   background: "#FFFFFF",
                 }}
               >
-                <CardContent sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+                <CardContent sx={{ p: 3 }}>
                   <item.icon sx={{ color: "#6F889D", fontSize: 34, mb: 1.2 }} />
                   <Typography variant="h5" sx={{ mb: 1, fontWeight: 700, fontSize: "1.3rem" }}>
                     {item.title}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: "#5D6A75", mt: "auto" }}>
+                  <Typography variant="body1" sx={{ color: "#5D6A75" }}>
                     {item.desc}
                   </Typography>
                 </CardContent>
@@ -1002,7 +951,7 @@ const LandingPage = () => {
         </Typography>
         <Grid container spacing={3}>
           {audiences.map((item, i) => (
-            <Grid item xs={12} sm={6} lg={4} key={item.title} sx={{ display: "flex" }}>
+            <Grid item xs={12} md={4} key={item.title}>
               <Paper
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -1011,12 +960,8 @@ const LandingPage = () => {
                 transition={{ delay: i * 0.08 }}
                 elevation={0}
                 sx={{
-                  width: "100%",
                   p: 3,
                   height: "100%",
-                  minHeight: { xs: 200, md: 220 },
-                  display: "flex",
-                  flexDirection: "column",
                   borderRadius: 4,
                   border: `1px solid ${alpha("#4F6678", 0.12)}`,
                   background: "#FFFFFF",
@@ -1039,7 +984,7 @@ const LandingPage = () => {
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.1, fontSize: "1.3rem" }}>
                   {item.title}
                 </Typography>
-                <Typography variant="body1" sx={{ color: "#5D6A75", mt: "auto" }}>
+                <Typography variant="body1" sx={{ color: "#5D6A75" }}>
                   {item.desc}
                 </Typography>
               </Paper>
@@ -1059,7 +1004,7 @@ const LandingPage = () => {
 
           <Grid container spacing={3}>
             {workflow.map((item, i) => (
-              <Grid item xs={12} md={4} key={item.step} sx={{ display: "flex" }}>
+              <Grid item xs={12} md={4} key={item.step}>
                 <Paper
                   component={motion.div}
                   initial={{ opacity: 0, y: 24 }}
@@ -1068,12 +1013,8 @@ const LandingPage = () => {
                   transition={{ delay: i * 0.1 }}
                   elevation={0}
                   sx={{
-                    width: "100%",
                     p: 3,
                     height: "100%",
-                    minHeight: { xs: 188, md: 210 },
-                    display: "flex",
-                    flexDirection: "column",
                     borderRadius: 4,
                     border: `1px solid ${alpha("#4F6678", 0.12)}`,
                     background: alpha("#FFFFFF", 0.92),
@@ -1093,7 +1034,7 @@ const LandingPage = () => {
                   <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.8 }}>
                     {item.title}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: "#5D6A75", mt: "auto" }}>
+                  <Typography variant="body1" sx={{ color: "#5D6A75" }}>
                     {item.desc}
                   </Typography>
                 </Paper>
