@@ -237,7 +237,7 @@ const Register = () => {
                 color: 'white', // ✅ FIXED: Explicit white color
               }}
             >
-              Scholar's Path
+              Lernex
             </Typography>
           </Box>
 
@@ -250,7 +250,7 @@ const Register = () => {
               color: 'white', // ✅ FIXED: Explicit white color
             }}
           >
-            Join Scholar's Path
+            Join Lernex
           </Typography>
           <Typography 
             variant="body1" 
@@ -289,7 +289,7 @@ const Register = () => {
             >
               <img
                 src="/undraw_online-test_cqv0.svg"
-                alt="Welcome to Scholar's Path"
+                alt="Welcome to Lernex"
                 style={{
                   width: '100%',
                   maxHeight: '220px',
@@ -374,7 +374,7 @@ const Register = () => {
                   Create Account
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Sign up to get started with Scholar's Path
+                  Sign up to get started with Lernex
                 </Typography>
               </Box>
 
@@ -620,7 +620,7 @@ const Register = () => {
                 variant="h6"
                 sx={{ fontWeight: 800, color: 'primary.main' }}
               >
-                Scholar's Path
+                Lernex
               </Typography>
             </Box>
           </motion.div>

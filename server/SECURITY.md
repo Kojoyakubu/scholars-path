@@ -1,7 +1,7 @@
 # Security Implementation Guide
 
 ## Overview
-This document outlines the security enhancements implemented in the Scholars Path authentication system.
+This document outlines the security enhancements implemented in the Lernex authentication system.
 
 ## 🔐 Security Features Implemented
 

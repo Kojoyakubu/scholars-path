@@ -88,7 +88,7 @@ const PricingPage = () => {
           Choose Your Plan
         </Typography>
         <Typography variant="h6" color="text.secondary" paragraph>
-          Unlock the full power of Scholar&apos;s Path for your classroom, school, or learning journey.
+          Unlock the full power of Lernex for your classroom, school, or learning journey.
         </Typography>
 
         <Grid container spacing={4} sx={{ mt: 4 }}>

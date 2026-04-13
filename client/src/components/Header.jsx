@@ -102,7 +102,7 @@ function Header() {
                   display: { xs: 'none', sm: 'block' },
                 }}
               >
-                Scholar's Path
+                Lernex
               </Typography>
             </Box>
           </Box>

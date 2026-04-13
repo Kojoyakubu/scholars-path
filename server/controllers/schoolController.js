@@ -34,7 +34,7 @@ Write a concise school profile for the following school:
 
 Name: ${name}
 Location: ${location}
-Purpose: A modern educational institution on the Scholars Path platform.
+Purpose: A modern educational institution on the Lernex platform.
 
 Guidelines:
 - 2–4 sentences.

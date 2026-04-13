@@ -1,7 +1,7 @@
 // /server/services/aiService.js
 
 /**
- * Multi-AI Service for Scholars-Path
+ * Multi-AI Service for Lernex
  * - Routes tasks to Gemini, OpenAI, or (optionally) Claude.
  * - Adds JSON validation, robust error handling, and task metadata.
  * - Auto-selects faster/cheaper models for light tasks (e.g., quizzes).
@@ -294,11 +294,11 @@ async function getLandingInsights(details = {}) {
 
   let prompt;
   if (role === 'admin' || role === 'school_admin') {
-    prompt = `You are an AI assistant for Scholar's Path. The admin, ${name}, just logged in. Provide a short, encouraging, and insightful message (2-3 sentences) about the platform's potential for improving educational outcomes in Ghana. Mention something about data-driven decisions.`;
+    prompt = `You are an AI assistant for Lernex. The admin, ${name}, just logged in. Provide a short, encouraging, and insightful message (2-3 sentences) about the platform's potential for improving educational outcomes in Ghana. Mention something about data-driven decisions.`;
   } else if (role === 'teacher') {
-    prompt = `You are an AI assistant for Scholar's Path. The teacher, ${name}, just logged in. Provide a short, welcoming, and inspiring message (2-3 sentences). Suggest they could try generating a new quiz or lesson plan to save time.`;
+    prompt = `You are an AI assistant for Lernex. The teacher, ${name}, just logged in. Provide a short, welcoming, and inspiring message (2-3 sentences). Suggest they could try generating a new quiz or lesson plan to save time.`;
   } else {
-    prompt = `You are an AI assistant for Scholar's Path. The user, ${name}, just logged in. Provide a short, positive, and motivating message (2-3 sentences) about their learning journey.`;
+    prompt = `You are an AI assistant for Lernex. The user, ${name}, just logged in. Provide a short, positive, and motivating message (2-3 sentences) about their learning journey.`;
   }
 
   const { text } = await generateTextCore({

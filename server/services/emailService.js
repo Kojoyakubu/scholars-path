@@ -25,12 +25,12 @@ const sendEmailVerification = async (email, token) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
   const mailOptions = {
-    from: `"Scholars Path" <${process.env.EMAIL_USER}>`,
+    from: `"Lernex" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: 'Verify Your Email - Scholars Path',
+    subject: 'Verify Your Email - Lernex',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Welcome to Scholars Path!</h2>
+        <h2 style="color: #333;">Welcome to Lernex!</h2>
         <p>Please verify your email address to complete your registration.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${verificationUrl}"
@@ -43,7 +43,7 @@ const sendEmailVerification = async (email, token) => {
         <p><small>This link will expire in 24 hours.</small></p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
         <p style="color: #666; font-size: 12px;">
-          If you didn't create an account with Scholars Path, please ignore this email.
+          If you didn't create an account with Lernex, please ignore this email.
         </p>
       </div>
     `
@@ -58,13 +58,13 @@ const sendPasswordReset = async (email, token) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
   const mailOptions = {
-    from: `"Scholars Path" <${process.env.EMAIL_USER}>`,
+    from: `"Lernex" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: 'Password Reset - Scholars Path',
+    subject: 'Password Reset - Lernex',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">Password Reset Request</h2>
-        <p>You requested a password reset for your Scholars Path account.</p>
+        <p>You requested a password reset for your Lernex account.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${resetUrl}"
              style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
@@ -90,9 +90,9 @@ const sendAccountLocked = async (email) => {
   const transporter = createTransporter();
 
   const mailOptions = {
-    from: `"Scholars Path" <${process.env.EMAIL_USER}>`,
+    from: `"Lernex" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: 'Account Security Alert - Scholars Path',
+    subject: 'Account Security Alert - Lernex',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #f44336;">Account Security Alert</h2>

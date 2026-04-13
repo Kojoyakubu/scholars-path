@@ -1,5 +1,5 @@
 // /client/src/theme.js
-// 🎨 Enhanced Theme Based on Scholar's Path Design Blueprint
+// 🎨 Enhanced Theme Based on Lernex Design Blueprint
 // Implements modern color system, typography, and component styles
 
 import { createTheme } from '@mui/material/styles';

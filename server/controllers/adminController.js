@@ -511,7 +511,7 @@ const getAiAnalyticsInsights = asyncHandler(async (_req, res) => {
     };
 
     const prompt = `
-You are an education data analyst for Scholar's Path, a Ghanaian educational platform.
+You are an education data analyst for Lernex, a Ghanaian educational platform.
 Analyze this JSON data and write a 6–8 sentence report summarizing platform trends.
 
 Data:
@@ -532,7 +532,7 @@ Include engagement comparison, AI usage, student performance, and one actionable
     } catch (aiErr) {
       console.error('AI insight generation failed:', aiErr.message);
       res.json({
-        summary: `Platform Overview: Scholar's Path currently serves ${teacherCount} teachers and ${studentCount} students across ${schoolCount} schools. Average quiz performance is ${stats.avgScore}%. AI tools continue to empower teachers. Recommendation: Increase student engagement through interactive learning.`,
+        summary: `Platform Overview: Lernex currently serves ${teacherCount} teachers and ${studentCount} students across ${schoolCount} schools. Average quiz performance is ${stats.avgScore}%. AI tools continue to empower teachers. Recommendation: Increase student engagement through interactive learning.`,
         provider: 'fallback',
         model: 'static',
         rawStats: stats,

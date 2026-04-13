@@ -1,5 +1,5 @@
 // /client/src/components/QuizSeparated.jsx
-// 🎯 Student Quiz Taking Component with Separated Question Types - Scholar's Path
+// 🎯 Student Quiz Taking Component with Separated Question Types - Lernex
 // Part 1: Auto-graded MCQs and True/False (shown on dashboard)
 // Part 2: Short Answer and Essay (for exercise books, answers viewable after submission)
 

@@ -92,7 +92,7 @@ function Footer() {
                   <SchoolIcon sx={{ fontSize: 24 }} />
                 </Box>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                  Scholar's Path
+                  Lernex
                 </Typography>
               </Box>
               <Typography 
@@ -199,7 +199,7 @@ function Footer() {
               textAlign: { xs: 'center', sm: 'left' }
             }}
           >
-            © {currentYear} Scholar's Path. All rights reserved.
+            © {currentYear} Lernex. All rights reserved.
           </Typography>
           
           <Stack 

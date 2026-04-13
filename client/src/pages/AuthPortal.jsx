@@ -183,7 +183,7 @@ const AuthPortal = () => {
               </Typography>
               <Typography variant="body1" sx={{ opacity: 0.9, mb: 2.2 }}>
                 {isSignUp
-                  ? "Enter your personal details to continue exploring Scholar's Path."
+                  ? "Enter your personal details to continue exploring Lernex."
                   : 'Register with your details to enjoy AI-powered teaching and learning.'}
               </Typography>
               <Button
@@ -379,7 +379,7 @@ const AuthPortal = () => {
                 <Divider sx={{ my: 3 }} />
                 <Stack direction="row" spacing={1} justifyContent="center">
                   <Typography variant="body2" color="text.secondary">
-                    {isSignUp ? 'Already have an account?' : "New to Scholar's Path?"}
+                    {isSignUp ? 'Already have an account?' : "New to Lernex?"}
                   </Typography>
                   <Button
                     variant="text"

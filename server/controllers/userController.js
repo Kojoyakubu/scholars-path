@@ -1020,8 +1020,8 @@ const enable2FA = asyncHandler(async (req, res) => {
   }
 
   const secret = speakeasy.generateSecret({
-    name: `Scholars Path (${user.email})`,
-    issuer: 'Scholars Path'
+    name: `Lernex (${user.email})`,
+    issuer: 'Lernex'
   });
 
   user.twoFactorSecret = secret.base32;

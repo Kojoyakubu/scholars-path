@@ -1,7 +1,7 @@
 // /server/services/badgeService.js
 
 /**
- * Scholars Path - Badge Service
+ * Lernex - Badge Service
  * ---------------------------------
  * Awards and manages learner badges.
  * Now supports AI-based badge suggestions and a dynamic rule system.
@@ -79,7 +79,7 @@ async function checkAndAwardQuizBadges(studentId, attempt) {
  */
 async function generateAIBadgeSuggestions(learningArea = 'General', context = 'quiz performance') {
   const prompt = `
-You are a creative educational designer for the Scholars Path app.
+You are a creative educational designer for the Lernex app.
 Suggest 4 unique badge ideas related to **${learningArea}** learning and **${context}**.
 
 For each badge, include:

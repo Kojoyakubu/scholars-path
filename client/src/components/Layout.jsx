@@ -237,7 +237,7 @@ const Layout = ({ onLogout }) => {
                   letterSpacing: '-0.01em',
                 }}
               >
-                Scholar's Path
+                Lernex
               </Typography>
               <Typography 
                 variant="caption" 
@@ -252,7 +252,7 @@ const Layout = ({ onLogout }) => {
             </Box>
           </Box>
         ) : (
-          <Tooltip title="Scholar's Path" placement="right">
+          <Tooltip title="Lernex" placement="right">
             <Box
               sx={{
                 width: 40,

@@ -1,5 +1,5 @@
 // /client/src/components/Logo.jsx
-// Scholar's Path Logo Component - Inline SVG for reliability
+// Lernex Logo Component - Inline SVG for reliability
 
 import React from 'react';
 import { Box } from '@mui/material';
@@ -79,7 +79,7 @@ const Logo = ({
           fill="#1E40AF"
           letterSpacing="-1"
         >
-          Scholar's Path
+          Lernex
         </text>
         
         {/* Tagline */}

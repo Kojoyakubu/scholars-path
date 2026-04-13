@@ -9,7 +9,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Backend server for the Scholars-Path platform.",
+  "description": "Backend server for the Lernex platform.",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.12.2",

@@ -65,7 +65,7 @@ export default function AccountProfile() {
           Profile
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Update your account details used across Scholar&apos;s Path.
+          Update your account details used across Lernex.
         </Typography>
 
         {status.message ? (

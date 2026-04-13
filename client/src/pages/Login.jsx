@@ -228,7 +228,7 @@ const Login = () => {
                 color: 'white', // ✅ FIXED: Explicit white color
               }}
             >
-              Scholar's Path
+              Lernex
             </Typography>
           </Box>
 
@@ -241,7 +241,7 @@ const Login = () => {
               color: 'white', // ✅ FIXED: Explicit white color
             }}
           >
-            Scholar's Path
+            Lernex
           </Typography>
           <Typography 
             variant="body1" 
@@ -280,7 +280,7 @@ const Login = () => {
             >
               <img
                 src="/hero-illustration.svg"
-                alt="Welcome to Scholar's Path"
+                alt="Welcome to Lernex"
                 style={{
                   width: '100%',
                   maxHeight: '220px',
@@ -365,7 +365,7 @@ const Login = () => {
                   Welcome Back
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Sign in to continue to Scholar's Path
+                  Sign in to continue to Lernex
                 </Typography>
               </Box>
 
@@ -615,7 +615,7 @@ const Login = () => {
                 variant="h6"
                 sx={{ fontWeight: 800, color: 'primary.main' }}
               >
-                Scholar's Path
+                Lernex
               </Typography>
             </Box>
           </motion.div>

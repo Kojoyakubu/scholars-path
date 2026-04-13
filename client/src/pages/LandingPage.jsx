@@ -538,7 +538,7 @@ const LandingPage = () => {
               <SchoolIcon sx={{ color: "white", fontSize: 22 }} />
             </Box>
             <Typography variant="h6" sx={{ fontWeight: 800, color: "#2E3A44" }}>
-              Scholar&apos;s Path
+              Lernex
             </Typography>
           </Box>
 
@@ -962,7 +962,7 @@ const LandingPage = () => {
                 Less reading. More movement.
               </Typography>
               <Typography variant="body1" sx={{ color: "#4C5C68", mb: 2.6, lineHeight: 1.65, maxWidth: 520 }}>
-                Scholar&apos;s Path keeps the workflow simple: plan, assess, and support learners from one clear system.
+                Lernex keeps the workflow simple: plan, assess, and support learners from one clear system.
               </Typography>
               <Stack spacing={1.2}>
                 {reasons.map((reason) => (
@@ -1135,7 +1135,7 @@ const LandingPage = () => {
             alignItems={{ xs: "flex-start", md: "center" }}
           >
             <Typography variant="body2" sx={{ color: "#7A8794" }}>
-              © {new Date().getFullYear()} Scholar&apos;s Path
+              © {new Date().getFullYear()} Lernex
             </Typography>
             <Stack direction="row" spacing={2.2}>
               <Button size="small" component={RouterLink} to="/register" sx={{ color: "#7A8794" }}>

@@ -109,7 +109,7 @@ app.use('/api/ai', require('./routes/aiRoutes')); // ✅ AI routes
 // -----------------------------------------------------------------------------
 app.get('/', (req, res) => {
   res.status(200).json({
-    message: `✅ Scholars Path API is live in ${process.env.NODE_ENV} mode.`,
+    message: `✅ Lernex API is live in ${process.env.NODE_ENV} mode.`,
     time: new Date().toISOString(),
   });
 });

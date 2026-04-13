@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Scholars Path</string>
-    <string name="title_activity_main">Scholars Path</string>
+    <string name="app_name">Lernex</string>
+    <string name="title_activity_main">Lernex</string>
     <string name="package_name">com.scholarspath.app</string>
     <string name="custom_url_scheme">com.scholarspath.app</string>
 </resources>
