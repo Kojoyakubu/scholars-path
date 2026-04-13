@@ -207,69 +207,31 @@ const Layout = ({ onLogout }) => {
         }}
       >
         {!collapsed ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {/* Logo Icon */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Box
+              component="img"
+              src="/lernex1.png"
+              alt="Lernex"
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 0, // ← FIXED: No rounded corners
-                background: ACCENT_COLOR,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 900,
-                fontSize: '1.4rem',
-                boxShadow: `0 6px 20px ${alpha(ACCENT_COLOR, 0.5)}`,
+                height: 36,
+                width: 'auto',
+                display: 'block',
               }}
-            >
-              S
-            </Box>
-            <Box>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  fontWeight: 800, 
-                  lineHeight: 1.2, 
-                  fontSize: '1.1rem', 
-                  color: 'white',
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                Lernex
-              </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: alpha('#ffffff', 0.5), 
-                  fontSize: '0.7rem',
-                  fontWeight: 500,
-                }}
-              >
-                Learning Platform
-              </Typography>
-            </Box>
+            />
           </Box>
         ) : (
           <Tooltip title="Lernex" placement="right">
             <Box
+              component="img"
+              src="/lernex2.png"
+              alt="Lernex"
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 0, // ← FIXED: No rounded corners
-                background: ACCENT_COLOR,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 900,
-                fontSize: '1.4rem',
-                boxShadow: `0 6px 20px ${alpha(ACCENT_COLOR, 0.5)}`,
+                objectFit: 'contain',
+                display: 'block',
               }}
-            >
-              S
-            </Box>
+            />
           </Tooltip>
         )}
       </Box>

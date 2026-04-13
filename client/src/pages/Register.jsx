@@ -31,7 +31,6 @@ import {
 import {
   Visibility,
   VisibilityOff,
-  School,
   Person,
   Email,
   Lock,
@@ -229,16 +228,16 @@ const Register = () => {
         >
           {/* Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3.5 }}>
-            <School sx={{ fontSize: 40, mr: 2, color: 'white' }} /> {/* ✅ Explicit white */}
-            <Typography
-              variant="h4"
-              sx={{ 
-                fontWeight: 800,
-                color: 'white', // ✅ FIXED: Explicit white color
+            <Box
+              component="img"
+              src="/lernex1.png"
+              alt="Lernex"
+              sx={{
+                height: 48,
+                width: 'auto',
+                display: 'block',
               }}
-            >
-              Lernex
-            </Typography>
+            />
           </Box>
 
           {/* Tagline */}
@@ -615,13 +614,16 @@ const Register = () => {
                 mt: 3,
               }}
             >
-              <School sx={{ fontSize: 24, color: 'primary.main', mr: 1 }} />
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 800, color: 'primary.main' }}
-              >
-                Lernex
-              </Typography>
+              <Box
+                component="img"
+                src="/lernex1.png"
+                alt="Lernex"
+                sx={{
+                  height: 30,
+                  width: 'auto',
+                  display: 'block',
+                }}
+              />
             </Box>
           </motion.div>
         </Container>

@@ -4,7 +4,6 @@
 
 import { Box, Container, Typography, Link, Grid, Stack, Divider, useTheme, alpha } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import SchoolIcon from '@mui/icons-material/School';
 import EmailIcon from '@mui/icons-material/Email';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import TwitterIcon from '@mui/icons-material/Twitter';
@@ -79,21 +78,15 @@ function Footer() {
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                 <Box
+                  component="img"
+                  src="/lernex1.png"
+                  alt="Lernex"
                   sx={{
-                    width: 40,
                     height: 40,
-                    borderRadius: 2,
-                    bgcolor: alpha('#FFFFFF', 0.15),
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    width: 'auto',
+                    display: 'block',
                   }}
-                >
-                  <SchoolIcon sx={{ fontSize: 24 }} />
-                </Box>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                  Lernex
-                </Typography>
+                />
               </Box>
               <Typography 
                 variant="body2" 

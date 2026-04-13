@@ -20,7 +20,6 @@ import {
   Divider,
 } from "@mui/material";
 
-import SchoolIcon from "@mui/icons-material/School";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -526,20 +525,15 @@ const LandingPage = () => {
         <Toolbar sx={{ py: { xs: 0.6, sm: 0.8 } }}>
           <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1.2 }}>
             <Box
+              component="img"
+              src="/lernex1.png"
+              alt="Lernex"
               sx={{
-                width: 38,
-                height: 38,
-                borderRadius: 2,
-                display: "grid",
-                placeItems: "center",
-                background: "#6F889D",
+                height: { xs: 32, sm: 36 },
+                width: "auto",
+                display: "block",
               }}
-            >
-              <SchoolIcon sx={{ color: "white", fontSize: 22 }} />
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: "#2E3A44" }}>
-              Lernex
-            </Typography>
+            />
           </Box>
 
           <Stack direction="row" spacing={1}>

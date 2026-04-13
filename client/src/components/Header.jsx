@@ -20,7 +20,6 @@ import {
   Stack,
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import SchoolIcon from '@mui/icons-material/School';
 import LogoutIcon from '@mui/icons-material/Logout';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
@@ -81,29 +80,15 @@ function Header() {
               }}
             >
               <Box
+                component="img"
+                src="/lernex1.png"
+                alt="Lernex"
                 sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 2,
-                  background: theme.palette.primary.main,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                  height: { xs: 32, sm: 36 },
+                  width: 'auto',
+                  display: 'block',
                 }}
-              >
-                <SchoolIcon sx={{ color: 'white', fontSize: 24 }} />
-              </Box>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 800,
-                  color: theme.palette.primary.dark,
-                  display: { xs: 'none', sm: 'block' },
-                }}
-              >
-                Lernex
-              </Typography>
+              />
             </Box>
           </Box>
 
