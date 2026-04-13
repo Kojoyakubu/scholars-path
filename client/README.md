@@ -87,6 +87,6 @@ npm run cap:open:ios
 Your app already uses:
 
 - `VITE_API_URL` when provided
-- fallback: `https://scholars-path-backend.onrender.com`
+- fallback: `https://lernex-backend.onrender.com`
 
 For production mobile builds, keep an HTTPS backend URL. Avoid localhost for device builds unless you specifically configure a reachable LAN URL.

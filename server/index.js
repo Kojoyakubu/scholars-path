@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ FIXED CORS CONFIGURATION
 // -----------------------------------------------------------------------------
 const allowedOrigins = [
-  'https://scholars-path-frontend.onrender.com', // deployed frontend
+  'https://lernex.onrender.com', // deployed frontend
   'http://localhost:5173',                       // local dev (vite)
   'http://127.0.0.1:5173',                       // local alternative
   'http://localhost',                            // Capacitor Android/iOS webview
