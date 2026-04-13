@@ -569,8 +569,6 @@ const LandingPage = () => {
         }}
       >
         <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 10 }, pb: { xs: 5.5, md: 8.5 }, position: "relative", zIndex: 1 }}>
-        <Grid container spacing={5} alignItems="center">
-          <Grid item xs={12} md={6}>
             <motion.div variants={stagger} initial="hidden" animate="visible">
               <motion.div variants={reveal}>
                 <Chip
@@ -664,14 +662,16 @@ const LandingPage = () => {
               </motion.div>
 
             </motion.div>
-          </Grid>
+        </Container>
+      </Box>
 
-          <Grid item xs={12} md={6}>
-            <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            >
+      <Container maxWidth="lg" sx={{ pb: { xs: 5, md: 7 }, mt: { xs: -2, md: -5 }, position: "relative", zIndex: 2 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
               <Paper
                 elevation={0}
                 sx={{
@@ -768,11 +768,8 @@ const LandingPage = () => {
                   </Stack>
                 </Box>
               </Paper>
-            </motion.div>
-          </Grid>
-        </Grid>
-        </Container>
-      </Box>
+        </motion.div>
+      </Container>
 
       <Container maxWidth="lg" sx={{ pb: { xs: 7, md: 10 } }}>
         <motion.div
