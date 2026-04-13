@@ -5,7 +5,7 @@ import axios from 'axios';
 // 🌐 BASE URL
 // -----------------------------------------------------------------------------
 const baseURL =
-  import.meta.env.VITE_API_URL || 'https://lernex-backend.onrender.com';
+  import.meta.env.VITE_API_URL || 'https://scholars-path-backend.onrender.com';
 
 // -----------------------------------------------------------------------------
 // ⚙️ AXIOS INSTANCE
