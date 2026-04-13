@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
+import SchoolIcon from "@mui/icons-material/School";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
