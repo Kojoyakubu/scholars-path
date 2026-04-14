@@ -220,8 +220,10 @@ const Login = () => {
           {/* Logo */}
           <Box
             sx={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
               mb: 3.5,
               px: 1.6,
               py: 1,
