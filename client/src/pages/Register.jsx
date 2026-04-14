@@ -5,8 +5,6 @@
 import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { GoogleLogin } from '@react-oauth/google';
-import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 import {
   Box,
@@ -54,13 +52,12 @@ const SOCIAL_PROVIDERS = [
   { id: 'x',       label: 'X',        icon: <FaXTwitter size={16} /> },
 ];
 
-import { register, googleAuth } from '../features/auth/authSlice';
+import { register } from '../features/auth/authSlice';
 
 const Register = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const isNativePlatform = Capacitor.isNativePlatform();
   
   const { isLoading, isError, message } = useSelector((state) => state.auth);
 
@@ -135,54 +132,6 @@ const Register = () => {
     } catch (err) {
       console.error('Registration failed:', err);
     }
-  };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    if (!credentialResponse?.credential) {
-      setLocalNotice('Google sign-up failed. Please try again.');
-      return;
-    }
-
-    const resultAction = await dispatch(
-      googleAuth({
-        credential: credentialResponse.credential,
-        mode: 'register',
-        role: formData.role,
-      })
-    );
-
-    if (!googleAuth.fulfilled.match(resultAction)) {
-      return;
-    }
-
-    const payload = resultAction.payload;
-
-    if (payload?.requires2FA) {
-      setLocalNotice(payload.message || 'Two-factor authentication is required for this account.');
-      return;
-    }
-
-    if (!payload?.role) {
-      navigate('/login', {
-        replace: true,
-        state: {
-          message: payload?.message || 'Google registration completed. Please continue to login.',
-        },
-      });
-      return;
-    }
-
-    if (payload.role === 'student') {
-      navigate('/student/select-class');
-    } else if (payload.role === 'teacher' || payload.role === 'school_admin') {
-      navigate('/teacher/dashboard');
-    } else if (payload.role === 'admin') {
-      navigate('/admin');
-    }
-  };
-
-  const handleGoogleError = () => {
-    setLocalNotice('Google sign-up was cancelled or failed. Please try again.');
   };
 
   const handleSocialAuth = async (provider) => {
@@ -563,16 +512,6 @@ const Register = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 1.5 }}>
                     Continue with social account
                   </Typography>
-
-                  {!isNativePlatform && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-                      <GoogleLogin
-                        onSuccess={handleGoogleSuccess}
-                        onError={handleGoogleError}
-                        useOneTap={false}
-                      />
-                    </Box>
-                  )}
 
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.2 }}>
                     {SOCIAL_PROVIDERS.map(({ id, label, icon }) => {
