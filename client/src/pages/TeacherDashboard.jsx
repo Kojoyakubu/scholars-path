@@ -132,9 +132,9 @@ const toolTileSx = {
 };
 
 const toolImageSx = {
-  width: { xs: 80, sm: 120 },
-  height: { xs: 80, sm: 120 },
-  margin: '0 auto 12px',
+  width: { xs: 60, sm: 100, md: 120 },
+  height: { xs: 60, sm: 100, md: 120 },
+  margin: { xs: '0 auto 8px', sm: '0 auto 12px' },
   borderRadius: 2,
   backgroundSize: 'cover',
   backgroundPosition: 'center',
@@ -199,9 +199,9 @@ function DialogTitleWithFullscreen({ title, isFullscreen, onToggle }) {
 function ToolTile({ label, imageUrl, onClick, toolTileSx, toolImageSx }) {
   return (
     <Grid item xs={6} sm={3}>
-      <Paper onClick={onClick} sx={toolTileSx}>
+      <Paper onClick={onClick} sx={{ ...toolTileSx, p: { xs: 1.5, sm: 2 } }}>
         <Box sx={{ ...toolImageSx, backgroundImage: `url('${imageUrl}')` }} />
-        <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary' }}>
+        <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', color: 'text.primary', fontSize: { xs: '0.72rem', sm: '0.875rem' } }}>
           {label}
         </Typography>
       </Paper>
@@ -1282,7 +1282,7 @@ function TeacherDashboard() {
           <Box sx={{ mt: 4, mb: 3 }}>
             <Button onClick={() => setShowCreateTools(false)} variant="text" sx={{ mb: 2 }}>← Back</Button>
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary', letterSpacing: 0.2 }}>Create New</Typography>
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 1.5, sm: 3 }}>
               {createNewToolItems.map((tool) => (
                 <ToolTile
                   key={tool.key}
@@ -1298,7 +1298,7 @@ function TeacherDashboard() {
         ) : (
           <Box sx={{ mt: 4, mb: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: 'text.primary', letterSpacing: 0.2 }}>TEACHER TOOLS</Typography>
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 1.5, sm: 3 }}>
               {managementToolItems.map((tool) => (
                 <ToolTile
                   key={tool.key}
