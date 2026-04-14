@@ -52,6 +52,28 @@ const SOCIAL_PROVIDERS = [
   { id: 'x',       label: 'X',        icon: <FaXTwitter size={16} /> },
 ];
 
+const GOOGLE_GLYPH = (
+  <Box
+    component="span"
+    sx={{
+      display: 'inline-flex',
+      width: 18,
+      height: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: '50%',
+      background: 'conic-gradient(#4285F4 0deg 90deg, #34A853 90deg 180deg, #FBBC05 180deg 270deg, #EA4335 270deg 360deg)',
+      color: '#fff',
+      fontSize: '0.8rem',
+      fontWeight: 700,
+      lineHeight: 1,
+      flexShrink: 0,
+    }}
+  >
+    G
+  </Box>
+);
+
 import { register } from '../features/auth/authSlice';
 
 const Register = () => {
@@ -513,8 +535,54 @@ const Register = () => {
                     Continue with social account
                   </Typography>
 
+                  {(() => {
+                    const googleProvider = SOCIAL_PROVIDERS.find(({ id }) => id === 'google');
+                    const isConfigured = googleProvider && isSocialProviderConfigured('google');
+
+                    if (!googleProvider) {
+                      return null;
+                    }
+
+                    return (
+                      <Tooltip
+                        title={isConfigured ? 'Sign up with Google' : 'Google — coming soon'}
+                      >
+                        <span>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            onClick={() => handleSocialAuth('google')}
+                            disabled={!isConfigured}
+                            startIcon={GOOGLE_GLYPH}
+                            sx={{
+                              mb: 1.5,
+                              py: 1.1,
+                              borderRadius: 1.5,
+                              textTransform: 'none',
+                              fontWeight: 500,
+                              color: '#1f1f1f',
+                              borderColor: 'rgba(0, 0, 0, 0.18)',
+                              bgcolor: '#fff',
+                              justifyContent: 'center',
+                              '&:hover': {
+                                borderColor: 'rgba(0, 0, 0, 0.28)',
+                                bgcolor: '#fff',
+                              },
+                              '&.Mui-disabled': {
+                                bgcolor: '#fff',
+                                opacity: 0.55,
+                              },
+                            }}
+                          >
+                            Sign in with Google
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    );
+                  })()}
+
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.2 }}>
-                    {SOCIAL_PROVIDERS.map(({ id, label, icon }) => {
+                    {SOCIAL_PROVIDERS.filter(({ id }) => id !== 'google').map(({ id, label, icon }) => {
                       const isConfigured = isSocialProviderConfigured(id);
                       return (
                         <Tooltip
