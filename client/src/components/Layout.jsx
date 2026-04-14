@@ -214,8 +214,9 @@ const Layout = ({ onLogout }) => {
               px: 1.2,
               py: 0.8,
               borderRadius: 2,
-              background: alpha('#ffffff', 0.08),
-              border: `1px solid ${alpha('#ffffff', 0.14)}`,
+              background: '#ffffff',
+              border: `1px solid ${alpha('#ffffff', 0.3)}`,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
             }}
           >
             <Box
@@ -236,8 +237,9 @@ const Layout = ({ onLogout }) => {
                 width: 46,
                 height: 46,
                 borderRadius: 2,
-                background: alpha('#ffffff', 0.1),
-                border: `1px solid ${alpha('#ffffff', 0.16)}`,
+                background: '#ffffff',
+                border: `1px solid ${alpha('#ffffff', 0.3)}`,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
                 display: 'grid',
                 placeItems: 'center',
               }}
