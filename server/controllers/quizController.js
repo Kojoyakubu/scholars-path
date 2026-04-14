@@ -1,7 +1,6 @@
 // /server/controllers/quizController.js
 
 const asyncHandler = require('express-async-handler');
-const mongoose = require('mongoose');
 const Quiz = require('../models/quizModel');
 const Question = require('../models/questionModel');
 const Option = require('../models/optionModel');
@@ -47,29 +46,6 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
     numQuestions,
   });
 
-  // ✅ Store quiz + questions in DB
-  const createdQuestions = [];
-
-  for (const q of quiz) {
-    const questionDoc = new Question({
-      text: q.text,
-    });
-
-    const savedQuestion = await questionDoc.save();
-
-    // Create 4 options per question
-    for (const opt of q.options) {
-      const optionDoc = new Option({
-        question: savedQuestion._id,
-        text: opt.text,
-        isCorrect: !!opt.isCorrect,
-      });
-      await optionDoc.save();
-    }
-
-    createdQuestions.push(savedQuestion._id);
-  }
-
   // Quiz model expects subject to be an ObjectId. if we still don't have
   // a subjectId at this point then the request is malformed; such a situation
   // should generally be caught earlier when deriving from subStrandId.
@@ -83,7 +59,6 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
     subject: subjectId,
     teacher: req.user.id,
     school: req.user.school,
-    questions: createdQuestions,
     subStrand: subStrandId || null,
     // Optional AI metadata
     aiProvider: provider,
@@ -91,10 +66,31 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
     aiGeneratedAt: new Date(timestamp),
   });
 
+  // ✅ Store questions linked to quiz so Quiz.questions virtual can resolve.
+  let createdQuestionsCount = 0;
+
+  for (const q of quiz) {
+    const savedQuestion = await Question.create({
+      text: q.text,
+      quiz: quizDoc._id,
+    });
+
+    // Create options for each question
+    for (const opt of q.options || []) {
+      await Option.create({
+        question: savedQuestion._id,
+        text: opt.text,
+        isCorrect: !!opt.isCorrect,
+      });
+    }
+
+    createdQuestionsCount += 1;
+  }
+
   res.status(201).json({
     message: 'Quiz generated successfully!',
     quizId: quizDoc._id,
-    totalQuestions: createdQuestions.length,
+    totalQuestions: createdQuestionsCount,
     provider,
     model,
   });
@@ -130,8 +126,11 @@ const deleteQuiz = asyncHandler(async (req, res) => {
     throw new Error('Not authorized to delete this quiz.');
   }
 
-  // Delete questions and options related to this quiz
-  const questionIds = quiz.questions || [];
+  // Delete questions and options related to this quiz.
+  // Do not rely on quiz.questions here because it's a virtual and this query
+  // does not populate it.
+  const questionDocs = await Question.find({ quiz: quiz._id }).select('_id');
+  const questionIds = questionDocs.map((q) => q._id);
   await Option.deleteMany({ question: { $in: questionIds } });
   await Question.deleteMany({ _id: { $in: questionIds } });
   await quiz.deleteOne();
@@ -185,6 +184,7 @@ const duplicateQuiz = asyncHandler(async (req, res) => {
   for (const question of quiz.questions) {
     const newQuestion = new Question({
       text: question.text,
+      quiz: null,
     });
     await newQuestion.save();
 
@@ -205,8 +205,13 @@ const duplicateQuiz = asyncHandler(async (req, res) => {
     subject: quiz.subject,
     teacher: req.user.id,
     school: req.user.school,
-    questions: newQuestionIds,
   });
+
+  // Link duplicated questions to the new quiz.
+  await Question.updateMany(
+    { _id: { $in: newQuestionIds } },
+    { $set: { quiz: duplicatedQuiz._id } }
+  );
 
   res.status(201).json({ message: 'Quiz duplicated successfully!', duplicatedQuiz });
 });
