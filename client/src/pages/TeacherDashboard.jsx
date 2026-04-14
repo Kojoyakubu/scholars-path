@@ -105,8 +105,8 @@ const INITIAL_STRAND_FORM = {
 /* ── shared style tokens (module-scope, stable references) ─────────────── */
 
 const overviewCardSx = {
-  p: { xs: 1.75, sm: 2.25 },
-  minHeight: { xs: 140, sm: 184 },
+  p: { xs: 1.4, sm: 2.25 },
+  minHeight: { xs: 112, sm: 184 },
   borderRadius: 3,
   display: 'flex',
   flexDirection: 'column',
@@ -1232,7 +1232,7 @@ function TeacherDashboard() {
           <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: 'text.primary', letterSpacing: 0.2 }}>
             Overview
           </Typography>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 1.5, sm: 3 }}>
             {overviewCards.map((card) => (
               <Grid key={card.key} item xs={6} md={3}>
                 <Paper
@@ -1245,8 +1245,8 @@ function TeacherDashboard() {
                 >
                   <Box
                     sx={(theme) => ({
-                      width: 38,
-                      height: 38,
+                      width: { xs: 34, sm: 38 },
+                      height: { xs: 34, sm: 38 },
                       borderRadius: '50%',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -1254,15 +1254,15 @@ function TeacherDashboard() {
                       bgcolor: theme.palette[card.palette].main,
                       color: theme.palette[card.palette].contrastText,
                       boxShadow: `0 8px 16px ${alpha(theme.palette[card.palette].main, 0.35)}`,
-                      mb: 2,
+                      mb: { xs: 1.2, sm: 2 },
                     })}
                   >
-                    <card.Icon sx={{ fontSize: 18 }} />
+                    <card.Icon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                   </Box>
-                  <Typography variant="h3" sx={(theme) => ({ fontWeight: 800, lineHeight: 1, mb: 1.1, color: theme.palette[card.palette].main, fontSize: { xs: '1.75rem', sm: '3rem' } })}>
+                  <Typography variant="h3" sx={(theme) => ({ fontWeight: 800, lineHeight: 1, mb: { xs: 0.6, sm: 1.1 }, color: theme.palette[card.palette].main, fontSize: { xs: '1.35rem', sm: '3rem' } })}>
                     {card.value}
                   </Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: 0.6, color: 'text.primary', display: 'block' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: { xs: 0.2, sm: 0.6 }, color: 'text.primary', display: 'block', fontSize: { xs: '0.62rem', sm: '0.75rem' } }}>
                     {card.label}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25 }}>
