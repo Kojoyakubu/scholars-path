@@ -207,14 +207,24 @@ const Layout = ({ onLogout }) => {
         }}
       >
         {!collapsed ? (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              px: 1.2,
+              py: 0.8,
+              borderRadius: 2,
+              background: alpha('#ffffff', 0.08),
+              border: `1px solid ${alpha('#ffffff', 0.14)}`,
+            }}
+          >
             <Box
               component="img"
               src="/lernex1.png"
               alt="Lernex"
               sx={{
-                height: 36,
-                width: 'auto',
+                width: 150,
+                height: 'auto',
                 display: 'block',
               }}
             />
@@ -222,16 +232,28 @@ const Layout = ({ onLogout }) => {
         ) : (
           <Tooltip title="Lernex" placement="right">
             <Box
-              component="img"
-              src="/lernex2.png"
-              alt="Lernex"
               sx={{
-                width: 40,
-                height: 40,
-                objectFit: 'contain',
-                display: 'block',
+                width: 46,
+                height: 46,
+                borderRadius: 2,
+                background: alpha('#ffffff', 0.1),
+                border: `1px solid ${alpha('#ffffff', 0.16)}`,
+                display: 'grid',
+                placeItems: 'center',
               }}
-            />
+            >
+              <Box
+                component="img"
+                src="/lernex2.png"
+                alt="Lernex"
+                sx={{
+                  width: 36,
+                  height: 36,
+                  objectFit: 'contain',
+                  display: 'block',
+                }}
+              />
+            </Box>
           </Tooltip>
         )}
       </Box>

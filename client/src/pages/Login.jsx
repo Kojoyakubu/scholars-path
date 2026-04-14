@@ -218,14 +218,26 @@ const Login = () => {
           transition={{ duration: 0.6 }}
         >
           {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3.5 }}>
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              mb: 3.5,
+              px: 1.6,
+              py: 1,
+              borderRadius: 2,
+              background: 'rgba(255, 255, 255, 0.92)',
+              border: `1px solid ${alpha('#ffffff', 0.5)}`,
+              boxShadow: '0 10px 24px rgba(9, 24, 44, 0.2)',
+            }}
+          >
             <Box
               component="img"
               src="/lernex1.png"
               alt="Lernex"
               sx={{
-                height: 48,
-                width: 'auto',
+                width: 190,
+                height: 'auto',
                 display: 'block',
               }}
             />
@@ -610,15 +622,25 @@ const Login = () => {
               }}
             >
               <Box
-                component="img"
-                src="/lernex1.png"
-                alt="Lernex"
                 sx={{
-                  height: 30,
-                  width: 'auto',
-                  display: 'block',
+                  px: 1.2,
+                  py: 0.7,
+                  borderRadius: 2,
+                  background: alpha(theme.palette.primary.main, 0.08),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
                 }}
-              />
+              >
+                <Box
+                  component="img"
+                  src="/lernex1.png"
+                  alt="Lernex"
+                  sx={{
+                    width: 130,
+                    height: 'auto',
+                    display: 'block',
+                  }}
+                />
+              </Box>
             </Box>
           </motion.div>
         </Container>

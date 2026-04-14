@@ -530,9 +530,10 @@ const LandingPage = () => {
               src="/lernex1.png"
               alt="Lernex"
               sx={{
-                height: { xs: 32, sm: 36 },
-                width: "auto",
+                width: { xs: 130, sm: 165 },
+                height: "auto",
                 display: "block",
+                filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.14))",
               }}
             />
           </Box>
