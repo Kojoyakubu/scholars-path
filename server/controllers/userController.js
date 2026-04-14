@@ -321,6 +321,31 @@ const verifyXToken = async (accessToken, fallbackEmail) => {
 
 const exchangeSocialCodeForAccessToken = async ({ provider, code, redirectUri, codeVerifier }) => {
   switch (provider) {
+    case 'google': {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error('Google OAuth is not configured on server');
+      }
+
+      const body = new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+      });
+
+      if (codeVerifier) {
+        body.append('code_verifier', codeVerifier);
+      }
+
+      const { data } = await axios.post('https://oauth2.googleapis.com/token', body, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+
+      return data?.id_token;
+    }
     case 'facebook': {
       const clientId = process.env.FACEBOOK_CLIENT_ID;
       const clientSecret = process.env.FACEBOOK_CLIENT_SECRET;
@@ -833,7 +858,7 @@ const socialAuthExchange = asyncHandler(async (req, res) => {
   }
 
   const normalizedProvider = String(provider).toLowerCase();
-  const supportedProviders = ['facebook', 'github', 'linkedin', 'tiktok', 'x'];
+  const supportedProviders = ['google', 'facebook', 'github', 'linkedin', 'tiktok', 'x'];
   if (!supportedProviders.includes(normalizedProvider)) {
     res.status(400).json({ message: `Unsupported provider for exchange: ${provider}` });
     return;
@@ -854,6 +879,9 @@ const socialAuthExchange = asyncHandler(async (req, res) => {
 
     let socialProfile;
     switch (normalizedProvider) {
+      case 'google':
+        socialProfile = await verifyGoogleToken(exchangedAccessToken);
+        break;
       case 'facebook':
         socialProfile = await verifyFacebookToken(exchangedAccessToken);
         break;

@@ -42,6 +42,16 @@ const getSocialOAuthConfig = (provider) => {
   const redirectUri = `${getBaseRedirectUri()}${CALLBACK_PATH}`;
 
   const configs = {
+    google: {
+      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      scopes: 'openid email profile',
+      responseType: 'code',
+      extraParams: {
+        include_granted_scopes: 'true',
+        prompt: 'select_account',
+      },
+    },
     facebook: {
       clientId: import.meta.env.VITE_FACEBOOK_CLIENT_ID,
       authUrl: 'https://www.facebook.com/v19.0/dialog/oauth',
@@ -130,6 +140,14 @@ export const startSocialOAuth = async ({ provider, mode, role }) => {
 
   if (config.forceRedirectParam) {
     params.set('force_web_auth', '1');
+  }
+
+  if (config.extraParams && typeof config.extraParams === 'object') {
+    Object.entries(config.extraParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.set(key, String(value));
+      }
+    });
   }
 
   sessionStorage.setItem(

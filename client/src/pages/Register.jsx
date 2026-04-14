@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { GoogleLogin } from '@react-oauth/google';
+import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 import {
   Box,
@@ -35,6 +36,7 @@ import {
   Email,
   Lock,
   ArrowForward,
+  Google,
   CheckCircle,
   Facebook,
   GitHub,
@@ -44,6 +46,7 @@ import { FaTiktok, FaXTwitter } from 'react-icons/fa6';
 import { startSocialOAuth, isSocialProviderConfigured } from '../utils/socialOAuth';
 
 const SOCIAL_PROVIDERS = [
+  { id: 'google',   label: 'Google',   icon: <Google fontSize="small" /> },
   { id: 'facebook', label: 'Facebook', icon: <Facebook fontSize="small" /> },
   { id: 'github',   label: 'GitHub',   icon: <GitHub fontSize="small" /> },
   { id: 'linkedin', label: 'LinkedIn', icon: <LinkedIn fontSize="small" /> },
@@ -57,6 +60,7 @@ const Register = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const isNativePlatform = Capacitor.isNativePlatform();
   
   const { isLoading, isError, message } = useSelector((state) => state.auth);
 
@@ -560,13 +564,15 @@ const Register = () => {
                     Continue with social account
                   </Typography>
 
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleError}
-                      useOneTap={false}
-                    />
-                  </Box>
+                  {!isNativePlatform && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        useOneTap={false}
+                      />
+                    </Box>
+                  )}
 
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.2 }}>
                     {SOCIAL_PROVIDERS.map(({ id, label, icon }) => {
