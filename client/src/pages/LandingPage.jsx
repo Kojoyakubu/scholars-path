@@ -530,7 +530,7 @@ const LandingPage = () => {
               src="/lernex1.png"
               alt="Lernex"
               sx={{
-                width: { xs: 130, sm: 165 },
+                width: { xs: 112, sm: 165 },
                 height: "auto",
                 display: "block",
                 filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.14))",
@@ -538,11 +538,21 @@ const LandingPage = () => {
             />
           </Box>
 
-          <Stack direction="row" spacing={1}>
-            <Button onClick={handleLogin} variant="text" sx={{ px: 1.5, display: { xs: "none", sm: "inline-flex" } }}>
+          <Stack direction="row" spacing={{ xs: 0.75, sm: 1 }}>
+            <Button
+              onClick={handleLogin}
+              variant={isMobile ? "outlined" : "text"}
+              size={isMobile ? "small" : "medium"}
+              sx={{
+                px: { xs: 1.4, sm: 1.5 },
+                minWidth: { xs: 0, sm: 'auto' },
+                borderColor: { xs: alpha(theme.palette.primary.main, 0.24), sm: 'transparent' },
+                bgcolor: { xs: alpha('#FFFFFF', 0.72), sm: 'transparent' },
+              }}
+            >
               Login
             </Button>
-            <Button onClick={handleGetStarted} variant="contained" size={isMobile ? "medium" : "large"} endIcon={<ArrowForwardIcon />}>
+            <Button onClick={handleGetStarted} variant="contained" size={isMobile ? "medium" : "large"} endIcon={<ArrowForwardIcon />} sx={{ display: { xs: "none", sm: "inline-flex" } }}>
               {copy.primaryCta}
             </Button>
           </Stack>
