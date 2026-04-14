@@ -123,12 +123,12 @@ const toolTileSx = {
   borderRadius: 3,
   textAlign: 'center',
   cursor: 'pointer',
-  border: '1px solid',
-  borderColor: 'divider',
-  bgcolor: 'background.paper',
-  boxShadow: 1,
+  border: '1.5px solid',
+  borderColor: '#D0DAE4',
+  bgcolor: '#EEF2F5',
+  boxShadow: '0 2px 10px rgba(79,102,120,0.08)',
   transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
-  '&:hover': { transform: 'translateY(-4px)', boxShadow: 4, borderColor: 'primary.main' },
+  '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 6px 20px rgba(79,102,120,0.18)', borderColor: 'primary.main' },
 };
 
 const toolImageSx = {
