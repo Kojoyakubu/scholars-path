@@ -22,7 +22,7 @@ import {
 import DOMPurify from 'dompurify';
 import { useMemo, useState } from 'react';
 import useContentProtection from '../hooks/useContentProtection';
-import PreviewWatermarkOverlay from './PreviewWatermarkOverlay';
+
 import {
   Article,
   MenuBook,
@@ -222,7 +222,7 @@ function BundleResultViewer({
         {...protectionProps}
         sx={{ position: 'relative', bgcolor: 'grey.50', overflowY: 'auto', ...protectionSx }}
       >
-        <PreviewWatermarkOverlay open={open} label="CONFIDENTIAL BUNDLE PREVIEW" />
+
         {/* Tab 1: Teacher Note */}
         <TabPanel value={activeTab} index={0}>
           <Paper elevation={0} sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
