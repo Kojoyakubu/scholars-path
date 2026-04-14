@@ -394,52 +394,95 @@ ${teacherContent}
 }
 
 /**
- * Generate WAEC-style multiple-choice quiz questions in strict JSON.
+ * Generate WAEC-style quiz in strict JSON with three sections:
+ * - MCQ
+ * - Short Answer
+ * - Application/Essay
  */
 async function generateWaecQuiz(details = {}) {
   const { topic, className, subjectName, numQuestions = 5, preferredProvider, preferredModel } = details;
   const prompt = `
 You are an expert WAEC examiner in Ghana for ${subjectName} (${className} level).
-Generate a multiple-choice quiz on the topic: "${topic}".
+Generate a quiz on the topic: "${topic}" with EXACTLY three sections.
+
+Return ONLY valid JSON object with this exact shape:
+{
+  "mcq": [
+    {
+      "question": "string",
+      "options": ["string", "string", "string", "string"],
+      "correctIndex": 0,
+      "explanation": "string"
+    }
+  ],
+  "shortAnswer": [
+    {
+      "question": "string",
+      "expectedAnswer": "string"
+    }
+  ],
+  "essay": [
+    {
+      "question": "string",
+      "markingGuide": "string"
+    }
+  ]
+}
+
 Rules:
-- Number of questions: ${numQuestions}
-- Each question must have four options (A, B, C, D).
-- Indicate the correct answer.
-- Return ONLY valid JSON: an array of objects.
-- Each object must include:
-  - "text": string (question)
-  - "options": array of { "text": string, "isCorrect": boolean }
-  - (Optional) "explanation": string (short reason)
-DO NOT include any commentary—ONLY raw JSON array.
-Example:
-[
-  {
-    "text": "Which of these is an input device?",
-    "options": [
-      { "text": "Monitor", "isCorrect": false },
-      { "text": "Keyboard", "isCorrect": true },
-      { "text": "Printer", "isCorrect": false },
-      { "text": "Speaker", "isCorrect": false }
-    ]
-  }
-]`;
+1. Keep content appropriate for ${className} and Ghanaian curriculum style.
+2. Set MCQ count to ${numQuestions}.
+3. Set Short Answer count to 3.
+4. Set Essay/Application count to 2.
+5. MCQ must have exactly 4 options and one correct index (0-3).
+6. Do not return markdown or commentary. Return raw JSON object only.`;
   const { text, provider, model, timestamp } = await generateTextCore({ prompt, task: 'quiz', temperature: 0.2, jsonNeeded: true, preferredProvider, providerModelOverride: preferredModel });
   const parsed = parseJsonStrict(text);
-  if (!Array.isArray(parsed) || parsed.length === 0) {
-    throw new Error('Quiz JSON must be a non-empty array.');
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Quiz JSON must be an object with mcq, shortAnswer, and essay arrays.');
   }
-  for (const q of parsed) {
-    if (typeof q?.text !== 'string') {
-      throw new Error('Each quiz item must have a "text" string field.');
+
+  if (!Array.isArray(parsed.mcq) || parsed.mcq.length === 0) {
+    throw new Error('Quiz must include a non-empty "mcq" array.');
+  }
+  if (!Array.isArray(parsed.shortAnswer)) {
+    throw new Error('Quiz must include a "shortAnswer" array.');
+  }
+  if (!Array.isArray(parsed.essay)) {
+    throw new Error('Quiz must include an "essay" array.');
+  }
+
+  for (const q of parsed.mcq) {
+    if (typeof q?.question !== 'string' || q.question.trim() === '') {
+      throw new Error('Each MCQ item must have a "question" string field.');
     }
-    if (!Array.isArray(q?.options) || q.options.length !== 4) {
-      throw new Error('Each quiz item must have exactly 4 options.');
+    if (!Array.isArray(q.options) || q.options.length !== 4 || !q.options.every((opt) => typeof opt === 'string')) {
+      throw new Error('Each MCQ item must have exactly 4 string options.');
     }
-    const hasCorrect = q.options.some((o) => o && typeof o.text === 'string' && typeof o.isCorrect === 'boolean' && o.isCorrect);
-    if (!hasCorrect) {
-      throw new Error('Each question must have exactly one correct option marked with "isCorrect": true.');
+    if (typeof q.correctIndex !== 'number' || q.correctIndex < 0 || q.correctIndex > 3) {
+      throw new Error('Each MCQ item must have a valid "correctIndex" between 0 and 3.');
     }
   }
+
+  for (const q of parsed.shortAnswer) {
+    if (typeof q?.question !== 'string' || q.question.trim() === '') {
+      throw new Error('Each Short Answer item must have a "question" string field.');
+    }
+    if (typeof q?.expectedAnswer !== 'string') {
+      throw new Error('Each Short Answer item must have an "expectedAnswer" string field.');
+    }
+  }
+
+  for (const q of parsed.essay) {
+    if (typeof q?.question !== 'string' || q.question.trim() === '') {
+      throw new Error('Each Essay item must have a "question" string field.');
+    }
+    if (typeof q?.markingGuide !== 'string') {
+      throw new Error('Each Essay item must have a "markingGuide" string field.');
+    }
+  }
+
   return { quiz: parsed, provider, model, task: 'quiz', timestamp };
 }
 

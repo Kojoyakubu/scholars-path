@@ -36,6 +36,18 @@ const quizSchema = new mongoose.Schema(
     aiGeneratedAt: {
       type: Date,
     },
+    shortAnswer: [
+      {
+        question: { type: String, trim: true },
+        expectedAnswer: { type: String, trim: true },
+      },
+    ],
+    essay: [
+      {
+        question: { type: String, trim: true },
+        markingGuide: { type: String, trim: true },
+      },
+    ],
   },
   {
     timestamps: true,

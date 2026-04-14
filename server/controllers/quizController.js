@@ -46,6 +46,10 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
     numQuestions,
   });
 
+  const mcqItems = Array.isArray(quiz?.mcq) ? quiz.mcq : [];
+  const shortAnswerItems = Array.isArray(quiz?.shortAnswer) ? quiz.shortAnswer : [];
+  const essayItems = Array.isArray(quiz?.essay) ? quiz.essay : [];
+
   // Quiz model expects subject to be an ObjectId. if we still don't have
   // a subjectId at this point then the request is malformed; such a situation
   // should generally be caught earlier when deriving from subStrandId.
@@ -60,6 +64,14 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
     teacher: req.user.id,
     school: req.user.school,
     subStrand: subStrandId || null,
+    shortAnswer: shortAnswerItems.map((q) => ({
+      question: q.question,
+      expectedAnswer: q.expectedAnswer,
+    })),
+    essay: essayItems.map((q) => ({
+      question: q.question,
+      markingGuide: q.markingGuide,
+    })),
     // Optional AI metadata
     aiProvider: provider,
     aiModel: model,
@@ -69,18 +81,21 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
   // ✅ Store questions linked to quiz so Quiz.questions virtual can resolve.
   let createdQuestionsCount = 0;
 
-  for (const q of quiz) {
+  for (const q of mcqItems) {
     const savedQuestion = await Question.create({
-      text: q.text,
+      text: q.question,
+      explanation: q.explanation || '',
+      topicTags: [topic, 'MCQ'].filter(Boolean),
       quiz: quizDoc._id,
     });
 
     // Create options for each question
-    for (const opt of q.options || []) {
+    for (let i = 0; i < (q.options || []).length; i += 1) {
+      const opt = q.options[i];
       await Option.create({
         question: savedQuestion._id,
-        text: opt.text,
-        isCorrect: !!opt.isCorrect,
+        text: opt,
+        isCorrect: i === q.correctIndex,
       });
     }
 
@@ -90,7 +105,12 @@ const generateAiQuiz = asyncHandler(async (req, res) => {
   res.status(201).json({
     message: 'Quiz generated successfully!',
     quizId: quizDoc._id,
-    totalQuestions: createdQuestionsCount,
+    totalQuestions: createdQuestionsCount + shortAnswerItems.length + essayItems.length,
+    breakdown: {
+      mcq: createdQuestionsCount,
+      shortAnswer: shortAnswerItems.length,
+      essay: essayItems.length,
+    },
     provider,
     model,
   });
@@ -205,6 +225,8 @@ const duplicateQuiz = asyncHandler(async (req, res) => {
     subject: quiz.subject,
     teacher: req.user.id,
     school: req.user.school,
+    shortAnswer: quiz.shortAnswer || [],
+    essay: quiz.essay || [],
   });
 
   // Link duplicated questions to the new quiz.

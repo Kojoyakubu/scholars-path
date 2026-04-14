@@ -658,6 +658,14 @@ function TeacherDashboard() {
   }, [DOWNLOAD_FEE_GHS, getDownloadErrorMessage, loadPaystackScript]);
 
   const createQuizHtml = useCallback((quiz) => {
+    const mcqItems = Array.isArray(quiz?.mcq)
+      ? quiz.mcq
+      : (quiz?.questions || []).map((q) => ({
+          question: q?.text || '',
+          options: (q?.options || []).map((opt) => opt?.text || ''),
+          correctIndex: (q?.options || []).findIndex((opt) => !!opt?.isCorrect),
+        }));
+
     const section = (title, items, rowBuilder) => {
       if (!Array.isArray(items) || items.length === 0) return '';
       return `
@@ -670,16 +678,10 @@ function TeacherDashboard() {
 
     return `
       <h2>${quiz?.title || 'Quiz'}</h2>
-      ${section('Multiple Choice Questions', quiz?.mcq, (q) => `
+      ${section('Multiple Choice Questions', mcqItems, (q) => `
         <li>
           <p><strong>${q.question || ''}</strong></p>
           <ul>${(q.options || []).map((opt, idx) => `<li>${String.fromCharCode(65 + idx)}. ${opt}${idx === q.correctIndex ? ' (Correct)' : ''}</li>`).join('')}</ul>
-        </li>
-      `)}
-      ${section('True or False', quiz?.trueFalse, (q) => `
-        <li>
-          <p><strong>${q.statement || ''}</strong></p>
-          <p>Answer: ${q.answer ? 'True' : 'False'}</p>
         </li>
       `)}
       ${section('Short Answer', quiz?.shortAnswer, (q) => `
@@ -1945,25 +1947,73 @@ function TeacherDashboard() {
                 <Typography variant="caption" color="text.secondary" gutterBottom>
                   Created: {currentQuiz.createdAt ? new Date(currentQuiz.createdAt).toLocaleString() : 'Unknown'}
                 </Typography>
-                {currentQuiz.questions && currentQuiz.questions.length > 0 ? (
-                  <List>
-                    {currentQuiz.questions.map((q, idx) => (
-                      <Paper key={q._id} sx={dialogListCardSx}>
-                        <Typography><strong>Q{idx + 1}.</strong> {q.text}</Typography>
-                        <List>
-                          {q.options.map((opt) => (
-                            <ListItem key={opt._id}>
-                              <ListItemText
-                                primary={opt.text}
-                                secondary={opt.isCorrect ? 'Correct' : ''}
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      </Paper>
-                    ))}
-                  </List>
-                ) : (
+
+                {Array.isArray(currentQuiz.questions) && currentQuiz.questions.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 700 }}>
+                      Multiple Choice Questions
+                    </Typography>
+                    <List>
+                      {currentQuiz.questions.map((q, idx) => (
+                        <Paper key={q._id} sx={dialogListCardSx}>
+                          <Typography><strong>Q{idx + 1}.</strong> {q.text}</Typography>
+                          {Array.isArray(q.options) && q.options.length > 0 && (
+                            <List>
+                              {q.options.map((opt) => (
+                                <ListItem key={opt._id}>
+                                  <ListItemText
+                                    primary={opt.text}
+                                    secondary={opt.isCorrect ? 'Correct' : ''}
+                                  />
+                                </ListItem>
+                              ))}
+                            </List>
+                          )}
+                        </Paper>
+                      ))}
+                    </List>
+                  </>
+                )}
+
+                {Array.isArray(currentQuiz.shortAnswer) && currentQuiz.shortAnswer.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 700 }}>
+                      Short Answer Questions
+                    </Typography>
+                    <List>
+                      {currentQuiz.shortAnswer.map((q, idx) => (
+                        <Paper key={`sa-${idx}`} sx={dialogListCardSx}>
+                          <Typography><strong>Q{idx + 1}.</strong> {q.question}</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            Expected Answer: {q.expectedAnswer}
+                          </Typography>
+                        </Paper>
+                      ))}
+                    </List>
+                  </>
+                )}
+
+                {Array.isArray(currentQuiz.essay) && currentQuiz.essay.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 700 }}>
+                      Application/Essay Questions
+                    </Typography>
+                    <List>
+                      {currentQuiz.essay.map((q, idx) => (
+                        <Paper key={`essay-${idx}`} sx={dialogListCardSx}>
+                          <Typography><strong>Q{idx + 1}.</strong> {q.question}</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            Marking Guide: {q.markingGuide}
+                          </Typography>
+                        </Paper>
+                      ))}
+                    </List>
+                  </>
+                )}
+
+                {(!Array.isArray(currentQuiz.questions) || currentQuiz.questions.length === 0)
+                && (!Array.isArray(currentQuiz.shortAnswer) || currentQuiz.shortAnswer.length === 0)
+                && (!Array.isArray(currentQuiz.essay) || currentQuiz.essay.length === 0) && (
                   <Typography color="text.secondary">No questions available.</Typography>
                 )}
               </Box>
