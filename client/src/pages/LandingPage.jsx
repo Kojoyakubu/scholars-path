@@ -400,9 +400,9 @@ const LandingPage = () => {
   );
 
   const trustMetrics = [
-    { label: "Lesson Notes Generated", value: "12k+" },
-    { label: "Quizzes Completed", value: "85k+" },
-    { label: "Schools Reached", value: "160+" },
+    { label: "Lesson Notes Generated", value: "150" },
+    { label: "Quizzes Completed", value: "53" },
+    { label: "Schools Reached", value: "5" },
   ];
 
   const capabilities = [
