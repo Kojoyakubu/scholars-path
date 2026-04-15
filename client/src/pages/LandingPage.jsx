@@ -65,6 +65,8 @@ const sectionIntroSx = {
   lineHeight: 1.7,
 };
 
+const landingCardAccents = ["#6F889D", "#B78552", "#10B981", "#4F6678"];
+
 const COPY_VARIANTS = {
   A: {
     badge: "NaCCA-Aligned Teaching Platform",
@@ -785,20 +787,24 @@ const LandingPage = () => {
           variants={stagger}
         >
           <Grid container spacing={2}>
-            {trustMetrics.map((item) => (
+            {trustMetrics.map((item, i) => {
+              const accent = landingCardAccents[i % landingCardAccents.length];
+              return (
               <Grid item xs={12} sm={4} key={item.label}>
                 <motion.div variants={reveal}>
                   <Paper
                     elevation={0}
                     sx={{
                       p: { xs: 2.1, md: 2.4 },
+                      height: "100%",
                       borderRadius: 3,
-                      bgcolor: alpha("#FFFFFF", 0.85),
-                      border: `1px solid ${alpha("#4F6678", 0.1)}`,
+                      bgcolor: alpha("#FFFFFF", 0.9),
+                      background: `linear-gradient(145deg, ${alpha(accent, 0.13)} 0%, #FFFFFF 62%)`,
+                      border: `1px solid ${alpha(accent, 0.24)}`,
                       textAlign: "center",
                     }}
                   >
-                    <Typography sx={{ fontWeight: 900, fontSize: "1.8rem", color: "#4F6678" }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: "1.8rem", color: accent }}>
                       {item.value}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "#5D6A75" }}>
@@ -807,7 +813,8 @@ const LandingPage = () => {
                   </Paper>
                 </motion.div>
               </Grid>
-            ))}
+              );
+            })}
           </Grid>
         </motion.div>
       </Container>
@@ -822,6 +829,9 @@ const LandingPage = () => {
         <Grid container spacing={3}>
           {capabilities.map((item, i) => (
             <Grid item xs={12} sm={6} key={item.title}>
+              {(() => {
+                const accent = landingCardAccents[i % landingCardAccents.length];
+                return (
               <Card
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -831,20 +841,35 @@ const LandingPage = () => {
                 sx={{
                   height: "100%",
                   borderRadius: 4,
-                  border: `1px solid ${alpha("#4F6678", 0.1)}`,
-                  background: "#FFFFFF",
+                  border: `1px solid ${alpha(accent, 0.24)}`,
+                  background: `linear-gradient(160deg, ${alpha(accent, 0.1)} 0%, #FFFFFF 58%)`,
                 }}
               >
-                <CardContent sx={{ p: 3 }}>
-                  <item.icon sx={{ color: "#6F889D", fontSize: 34, mb: 1.2 }} />
+                <CardContent sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+                  <Box
+                    sx={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 2.5,
+                      display: "grid",
+                      placeItems: "center",
+                      bgcolor: alpha(accent, 0.16),
+                      color: accent,
+                      mb: 1.2,
+                    }}
+                  >
+                    <item.icon sx={{ fontSize: 30 }} />
+                  </Box>
                   <Typography variant="h5" sx={{ mb: 1, fontWeight: 700, fontSize: "1.3rem" }}>
                     {item.title}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: "#5D6A75" }}>
+                  <Typography variant="body1" sx={{ color: "#5D6A75", mt: "auto" }}>
                     {item.desc}
                   </Typography>
                 </CardContent>
               </Card>
+                );
+              })()}
             </Grid>
           ))}
         </Grid>
@@ -860,6 +885,9 @@ const LandingPage = () => {
         <Grid container spacing={3}>
           {audiences.map((item, i) => (
             <Grid item xs={12} md={4} key={item.title}>
+              {(() => {
+                const accent = landingCardAccents[i % landingCardAccents.length];
+                return (
               <Paper
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -871,8 +899,8 @@ const LandingPage = () => {
                   p: 3,
                   height: "100%",
                   borderRadius: 4,
-                  border: `1px solid ${alpha("#4F6678", 0.12)}`,
-                  background: "#FFFFFF",
+                  border: `1px solid ${alpha(accent, 0.24)}`,
+                  background: `linear-gradient(160deg, ${alpha(accent, 0.1)} 0%, #FFFFFF 60%)`,
                 }}
               >
                 <Box
@@ -882,8 +910,8 @@ const LandingPage = () => {
                     borderRadius: 2.5,
                     display: "grid",
                     placeItems: "center",
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    color: theme.palette.primary.main,
+                    bgcolor: alpha(accent, 0.16),
+                    color: accent,
                     mb: 2,
                   }}
                 >
@@ -896,6 +924,8 @@ const LandingPage = () => {
                   {item.desc}
                 </Typography>
               </Paper>
+                );
+              })()}
             </Grid>
           ))}
         </Grid>
@@ -913,6 +943,9 @@ const LandingPage = () => {
           <Grid container spacing={3}>
             {workflow.map((item, i) => (
               <Grid item xs={12} md={4} key={item.step}>
+                {(() => {
+                  const accent = landingCardAccents[i % landingCardAccents.length];
+                  return (
                 <Paper
                   component={motion.div}
                   initial={{ opacity: 0, y: 24 }}
@@ -924,14 +957,14 @@ const LandingPage = () => {
                     p: 3,
                     height: "100%",
                     borderRadius: 4,
-                    border: `1px solid ${alpha("#4F6678", 0.12)}`,
-                    background: alpha("#FFFFFF", 0.92),
+                    border: `1px solid ${alpha(accent, 0.26)}`,
+                    background: `linear-gradient(160deg, ${alpha(accent, 0.12)} 0%, ${alpha("#FFFFFF", 0.94)} 62%)`,
                   }}
                 >
                   <Typography
                     sx={{
                       fontWeight: 800,
-                      color: "#6F889D",
+                      color: accent,
                       fontSize: "0.9rem",
                       letterSpacing: "0.08em",
                       mb: 1,
@@ -946,6 +979,8 @@ const LandingPage = () => {
                     {item.desc}
                   </Typography>
                 </Paper>
+                  );
+                })()}
               </Grid>
             ))}
           </Grid>
@@ -1010,6 +1045,9 @@ const LandingPage = () => {
         <Grid container spacing={3}>
           {paths.map((path, i) => (
             <Grid item xs={12} md={4} key={path.title}>
+              {(() => {
+                const accent = landingCardAccents[i % landingCardAccents.length];
+                return (
               <Card
                 component={motion.div}
                 initial={{ opacity: 0, y: 24 }}
@@ -1021,8 +1059,10 @@ const LandingPage = () => {
                   borderRadius: 4,
                   border: path.featured
                     ? `2px solid ${theme.palette.primary.main}`
-                    : `1px solid ${alpha("#4F6678", 0.12)}`,
-                  background: path.featured ? alpha(theme.palette.primary.main, 0.04) : "#FFFFFF",
+                    : `1px solid ${alpha(accent, 0.26)}`,
+                  background: path.featured
+                    ? `linear-gradient(165deg, ${alpha(theme.palette.primary.main, 0.11)} 0%, #FFFFFF 62%)`
+                    : `linear-gradient(165deg, ${alpha(accent, 0.11)} 0%, #FFFFFF 62%)`,
                   position: "relative",
                 }}
               >
@@ -1041,7 +1081,7 @@ const LandingPage = () => {
                   />
                 )}
 
-                <CardContent sx={{ p: 3 }}>
+                <CardContent sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
                   <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     {path.title}
                   </Typography>
@@ -1059,6 +1099,7 @@ const LandingPage = () => {
                   </Stack>
 
                   <Button
+                    sx={{ mt: "auto" }}
                     fullWidth
                     variant={path.featured ? "contained" : "outlined"}
                     component={RouterLink}
@@ -1068,6 +1109,8 @@ const LandingPage = () => {
                   </Button>
                 </CardContent>
               </Card>
+                );
+              })()}
             </Grid>
           ))}
         </Grid>
