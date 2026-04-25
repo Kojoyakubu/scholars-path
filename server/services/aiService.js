@@ -1195,12 +1195,32 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
 
   <section class="card curriculum-standards">
     <h3>Curriculum Standards</h3>
-    <p><strong>Content Standard Code:</strong> ${contentStandardCode}</p>
-    <p><strong>Official Indicator(s):</strong><br>${officialIndicatorText}</p>
-    <p><strong>Performance Indicator(s):</strong><br>[AI: Generate 2-3 learner-centric indicators using Transformation Logic]</p>
-    <p><strong>Core Competencies:</strong><br>[AI: List 3-4 relevant NaCCA core competencies]</p>
-    <p><strong>Teaching & Learning Materials:</strong><br>[AI: Suggest realistic materials for this topic]</p>
-    <p><strong>Reference:</strong> ${reference}</p>
+    <table class="teacher-table standards-table">
+      <tr>
+        <td class="label-cell">Content Standard Code</td>
+        <td>${contentStandardCode}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Official Indicator(s)</td>
+        <td>${officialIndicatorText}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Performance Indicator(s)</td>
+        <td>[AI: Generate 2-3 learner-centric indicators using Transformation Logic as bullet points]</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Core Competencies</td>
+        <td>[AI: List 3-4 relevant NaCCA core competencies as bullet points]</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Teaching & Learning Materials</td>
+        <td>[AI: Suggest realistic materials for this topic as bullet points]</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Reference</td>
+        <td>${reference}</td>
+      </tr>
+    </table>
   </section>
 
   <section class="card lesson-phases">
@@ -1624,6 +1644,7 @@ CRITICAL RULES:
 5. Use the "Transformation Logic" to convert the "Official NaCCA Indicator" into learner-centric "Performance Indicators"
 6. Derive the Week Ending (Friday date) from the provided Day/Date
 7. Keep the chosen visual template structure exactly as provided while filling the content professionally
+8. In the "Curriculum Standards" section, keep a strict TWO-COLUMN table layout (label in column 1, content in column 2). Do not convert those rows into standalone paragraphs.
 
 ---
 TRANSFORMATION LOGIC EXAMPLE:
