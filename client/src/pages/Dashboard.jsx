@@ -704,7 +704,9 @@ function Dashboard() {
     tempDiv.style.left = '-9999px';
     document.body.appendChild(tempDiv);
     const noteName = note.subStrand?.name || 'note';
-    downloadAsPdf('temp-note-content', noteName);
+    downloadAsPdf('temp-note-content', noteName, {
+      maxPages: 2,
+    });
     setTimeout(() => {
       if (document.body.contains(tempDiv)) {
         document.body.removeChild(tempDiv);

@@ -104,17 +104,24 @@ export const downloadAsPdf = async (elementId, topic, options = {}) => {
 
   const drawX = margins.left + (printableWidth - drawWidth) / 2;
 
+  const pageEpsilon = 0.01;
   let remainingHeight = drawHeight;
+  let currentPage = 1;
   let offsetY = margins.top;
 
   pdf.addImage(imageData, imageType, drawX, offsetY, drawWidth, drawHeight);
   remainingHeight -= printableHeight;
 
-  while (remainingHeight > 0) {
+  while (remainingHeight > pageEpsilon) {
+    if (maxPages && currentPage >= maxPages) {
+      break;
+    }
+
     offsetY = remainingHeight - drawHeight + margins.top;
     pdf.addPage();
     pdf.addImage(imageData, imageType, drawX, offsetY, drawWidth, drawHeight);
     remainingHeight -= printableHeight;
+    currentPage += 1;
   }
 
   pdf.save(mergedOptions.filename);
