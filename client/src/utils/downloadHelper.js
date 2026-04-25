@@ -85,16 +85,35 @@ export const downloadAsPdf = async (elementId, topic, options = {}) => {
   const imageData = canvas.toDataURL(`image/${mergedOptions.image.type || 'jpeg'}`, mergedOptions.image.quality);
   const renderedHeight = (canvas.height * printableWidth) / canvas.width;
 
-  let remainingHeight = renderedHeight;
+  const requestedMaxPages = Number(mergedOptions.maxPages);
+  const maxPages = Number.isFinite(requestedMaxPages) && requestedMaxPages > 0
+    ? Math.floor(requestedMaxPages)
+    : null;
+
+  let drawWidth = printableWidth;
+  let drawHeight = renderedHeight;
+
+  if (maxPages) {
+    const maxRenderableHeight = printableHeight * maxPages;
+    if (drawHeight > maxRenderableHeight) {
+      const fitScale = maxRenderableHeight / drawHeight;
+      drawWidth *= fitScale;
+      drawHeight *= fitScale;
+    }
+  }
+
+  const drawX = margins.left + (printableWidth - drawWidth) / 2;
+
+  let remainingHeight = drawHeight;
   let offsetY = margins.top;
 
-  pdf.addImage(imageData, imageType, margins.left, offsetY, printableWidth, renderedHeight);
+  pdf.addImage(imageData, imageType, drawX, offsetY, drawWidth, drawHeight);
   remainingHeight -= printableHeight;
 
   while (remainingHeight > 0) {
-    offsetY = remainingHeight - renderedHeight + margins.top;
+    offsetY = remainingHeight - drawHeight + margins.top;
     pdf.addPage();
-    pdf.addImage(imageData, imageType, margins.left, offsetY, printableWidth, renderedHeight);
+    pdf.addImage(imageData, imageType, drawX, offsetY, drawWidth, drawHeight);
     remainingHeight -= printableHeight;
   }
 
