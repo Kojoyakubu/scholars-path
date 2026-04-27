@@ -52,17 +52,18 @@ const contentSx = {
 
 const compactContentSx = {
   '& *': { boxSizing: 'border-box' },
-  '& h2': { fontSize: '1.3rem', fontWeight: 600, mt: 1.5, mb: 1 },
-  '& h3': { fontSize: '1.1rem', fontWeight: 600, mt: 1.25, mb: 0.75 },
+  '& h1': { fontSize: '1.25rem', fontWeight: 700, mt: 1, mb: 0.75 },
+  '& h2': { fontSize: '1.05rem', fontWeight: 600, mt: 1, mb: 0.6 },
+  '& h3': { fontSize: '0.95rem', fontWeight: 600, mt: 0.8, mb: 0.45 },
   '& table': {
     width: '100%',
     tableLayout: 'fixed',
     borderCollapse: 'collapse',
-    my: 1,
-    fontSize: '0.9rem',
+    my: 0.5,
+    fontSize: '0.78rem',
     '& td, & th': {
       border: '1px solid #ddd',
-      padding: '6px 7px',
+      padding: '3px 4px',
       verticalAlign: 'top',
       whiteSpace: 'normal',
       wordBreak: 'break-word',
@@ -70,10 +71,11 @@ const compactContentSx = {
     },
     '& th': { backgroundColor: '#f5f5f5', fontWeight: 600 },
   },
-  '& p': { lineHeight: 1.5, mb: 0.6, fontSize: '0.95rem', wordBreak: 'break-word', overflowWrap: 'anywhere' },
-  '& li': { wordBreak: 'break-word', overflowWrap: 'anywhere' },
-  '& ul, & ol': { pl: 2.5, mb: 1 },
-  '& figure': { pageBreakInside: 'avoid', breakInside: 'avoid', my: 1 },
+  '& p': { lineHeight: 1.3, mb: 0.35, fontSize: '0.78rem', wordBreak: 'break-word', overflowWrap: 'anywhere' },
+  '& li': { wordBreak: 'break-word', overflowWrap: 'anywhere', marginBottom: '2px', fontSize: '0.78rem' },
+  '& ul, & ol': { pl: 2, mb: 0.5 },
+  '& section': { border: '1px solid #eceff3', borderRadius: 1, p: 0.75, my: 0.5 },
+  '& figure': { pageBreakInside: 'avoid', breakInside: 'avoid', my: 0.5 },
   '& > :first-child': { marginTop: '0 !important', paddingTop: 0 },
 };
 
@@ -136,9 +138,9 @@ export default function NotePreviewDialog({
           id={contentId}
           elevation={0}
           sx={{
-            p: isPdfExporting ? 1 : { xs: 1.25, sm: 4 },
-            width: isPdfExporting ? '790px' : '100%',
-            maxWidth: isPdfExporting ? '790px' : 1000,
+            p: isPdfExporting ? 0.5 : { xs: 1.25, sm: 4 },
+            width: isPdfExporting ? '920px' : '100%',
+            maxWidth: isPdfExporting ? 'none' : 1000,
             mx: 'auto',
             overflowX: { xs: 'auto', sm: 'visible' },
           }}
