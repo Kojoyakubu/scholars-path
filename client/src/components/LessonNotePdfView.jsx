@@ -15,9 +15,9 @@ const LessonNotePdfView = ({ note, elementId }) => {
         lineHeight: '1.3',
         color: '#000',
         background: '#fff',
-        padding: '5mm 10mm 10mm 10mm', 
-        maxWidth: '210mm',
-        margin: '0 auto',
+        padding: '4mm 2mm 8mm 2mm',
+        maxWidth: '100%',
+        margin: 0,
       }}
     >
       <ReactMarkdown

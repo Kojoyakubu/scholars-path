@@ -50,7 +50,7 @@ export const downloadAsPdf = async (elementId, topic, options = {}) => {
   ]);
 
   const defaultOptions = {
-    margin: [10, 10, 10, 10],
+    margin: [6, 4, 6, 4],
     filename: sanitizeFileName(topic, 'pdf'),
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
