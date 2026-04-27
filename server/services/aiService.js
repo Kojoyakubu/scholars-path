@@ -35,7 +35,7 @@ const claude = hasClaude ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY
 
 // ---- Default Model Choices (override via env if you like) ----
 const GEMINI_MAIN = process.env.GEMINI_MODEL_MAIN || 'gemini-2.5-pro';
-const GEMINI_FAST = process.env.GEMINI_MODEL_FAST || 'gemini-3.0-flash';
+const GEMINI_FAST = process.env.GEMINI_MODEL_FAST || 'gemini-2.0-flash';
 const OPENAI_MAIN = process.env.OPENAI_MODEL_MAIN || 'gpt-4o';
 const OPENAI_JSON = process.env.OPENAI_MODEL_JSON || 'gpt-4o-mini';
 const CLAUDE_MAIN = process.env.CLAUDE_MODEL_MAIN || 'claude-3-5-sonnet-20240620';
@@ -183,14 +183,15 @@ async function generateTextCore({
   let modelUsed = '';
   let text = '';
   let raw = null;
-  const MAX_RETRIES = 2;
+  const MAX_RETRIES = 4;
   
-  // ✅ FIXED: Define fallback models for Gemini
+  // Define fallback models for Gemini
   const geminiModels = [
     providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? GEMINI_FAST : GEMINI_MAIN),
     GEMINI_FAST,
-    'gemini-2.5-pro',
     'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
   ];
   const uniqueGeminiModels = [...new Set(geminiModels)];
   
@@ -267,13 +268,15 @@ async function generateTextCore({
       console.log(`❌ Attempt ${attempt + 1} failed: ${err.message}`);
       
       if (attempt === MAX_RETRIES) {
-        // ✅ FIXED: Better error message showing what was tried
         const errorMsg = provider === 'gemini' 
           ? `[Gemini] All models failed: ${uniqueGeminiModels.join(', ')}. Error: ${err.message}`
           : `[${provider}] ${err.message || 'Unknown AI error'}`;
         throw new Error(errorMsg);
       }
-      await sleep(250 * (attempt + 1));
+      // Use longer backoff for 503 (server overload) errors
+      const is503 = err.message && (err.message.includes('503') || err.message.includes('Service Unavailable') || err.message.includes('high demand'));
+      const baseDelay = is503 ? 2000 : 300;
+      await sleep(baseDelay * (attempt + 1));
     }
   }
   throw new Error('AI generation failed after retries.');
