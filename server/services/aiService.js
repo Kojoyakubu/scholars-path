@@ -183,7 +183,7 @@ async function generateTextCore({
   let modelUsed = '';
   let text = '';
   let raw = null;
-  const MAX_RETRIES = 4;
+  const MAX_RETRIES = 3;
   
   // Define fallback models for Gemini
   const geminiModels = [
@@ -191,7 +191,6 @@ async function generateTextCore({
     GEMINI_FAST,
     'gemini-2.5-flash',
     'gemini-2.0-flash',
-    'gemini-1.5-flash',
   ];
   const uniqueGeminiModels = [...new Set(geminiModels)];
   
