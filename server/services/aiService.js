@@ -521,6 +521,52 @@ function resolveTeacherNoteTemplate(templateDesign) {
     : DEFAULT_TEACHER_NOTE_TEMPLATE;
 }
 
+function toSessionCount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.max(1, Math.min(7, Math.floor(parsed)));
+}
+
+function parseSessionPlanLines(sessionPlan) {
+  if (!sessionPlan) return [];
+
+  if (Array.isArray(sessionPlan)) {
+    return sessionPlan
+      .map((entry) => String(entry || '').trim())
+      .filter(Boolean);
+  }
+
+  return String(sessionPlan)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function buildSessionRowPlan({ sessionsPerWeek, sessionPlan, dayDate, duration }) {
+  const sessionCount = toSessionCount(sessionsPerWeek);
+  const sessionPlanLines = parseSessionPlanLines(sessionPlan);
+
+  const rows = Array.from({ length: sessionCount }, (_, index) => {
+    const rowNumber = index + 1;
+    const suggestedSlot = sessionPlanLines[index] || (rowNumber === 1 ? dayDate || '[AI: Session date/slot]' : '[AI: Session date/slot]');
+    return {
+      sessionLabel: `Session ${rowNumber}`,
+      dateSlot: suggestedSlot,
+      duration: duration || '[AI: Session duration]',
+      focus: rowNumber === 1
+        ? '[AI: Introduction, prior knowledge, and lesson launch]'
+        : rowNumber === sessionCount
+          ? '[AI: Consolidation, assessment, reflection, and extension]'
+          : '[AI: Guided practice, concept development, and checks for understanding]',
+    };
+  });
+
+  return {
+    sessionCount,
+    rows,
+  };
+}
+
 function buildTeacherLessonNoteTemplate(templateDesign, fields) {
   const {
     school,
@@ -537,7 +583,16 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
     officialIndicatorText,
     dayDate,
     facilitatorDisplayName,
+    sessionsPerWeek,
+    sessionPlan,
   } = fields;
+
+  const sessionPlanData = buildSessionRowPlan({
+    sessionsPerWeek,
+    sessionPlan,
+    dayDate,
+    duration,
+  });
 
   if (templateDesign === 'clean-minimal') {
     return `
@@ -1176,6 +1231,10 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
         <td class="label-cell">Week Ending</td><td>[AI: Compute Friday from ${dayDate}]</td>
       </tr>
       <tr>
+        <td class="label-cell">Meetings This Week</td><td>${sessionPlanData.sessionCount}</td>
+        <td class="label-cell">Session Plan Source</td><td>${sessionPlan ? '[Provided by teacher]' : '[AI to infer realistic weekly slots]'}</td>
+      </tr>
+      <tr>
         <td class="label-cell">Class</td><td>${className}</td>
         <td class="label-cell">Class Size</td><td>${classSize}</td>
       </tr>
@@ -1190,6 +1249,29 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       <tr>
         <td class="label-cell">Sub-Strand</td><td colspan="3">${subStrandName}</td>
       </tr>
+    </table>
+  </section>
+
+  <section class="card weekly-session-plan">
+    <h3>Weekly Session Plan</h3>
+    <table class="teacher-table">
+      <thead>
+        <tr>
+          <th style="width:16%">Session</th>
+          <th style="width:30%">Date / Slot</th>
+          <th style="width:18%">Duration</th>
+          <th style="width:36%">Session Focus</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sessionPlanData.rows.map((row) => `
+        <tr>
+          <td class="label-cell">${row.sessionLabel}</td>
+          <td>${row.dateSlot}</td>
+          <td>${row.duration}</td>
+          <td>${row.focus}</td>
+        </tr>`).join('')}
+      </tbody>
     </table>
   </section>
 
@@ -1610,6 +1692,8 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     indicatorCodes, 
     dayDate, 
     facilitatorName,
+    sessionsPerWeek,
+    sessionPlan,
     preferredModel, 
     preferredProvider 
   } = details;
@@ -1631,6 +1715,8 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     officialIndicatorText,
     dayDate,
     facilitatorDisplayName,
+    sessionsPerWeek,
+    sessionPlan,
   });
   
   const prompt = `
@@ -1645,6 +1731,8 @@ CRITICAL RULES:
 6. Derive the Week Ending (Friday date) from the provided Day/Date
 7. Keep the chosen visual template structure exactly as provided while filling the content professionally
 8. In the "Curriculum Standards" section, keep a strict TWO-COLUMN table layout (label in column 1, content in column 2). Do not convert those rows into standalone paragraphs.
+9. Respect "Meetings This Week" and the "Weekly Session Plan" table: distribute teaching progression across sessions and avoid repeating the same activities in every session.
+10. For multi-session weeks (2+ sessions), show clear continuity from Session 1 to later sessions (review -> deepen -> assess/consolidate).
 
 ---
 TRANSFORMATION LOGIC EXAMPLE:

@@ -42,6 +42,8 @@ function LessonNoteForm({
     contentStandardCode: '',
     indicatorCodes: '',
     reference: '',
+    sessionsPerWeek: 1,
+    sessionPlan: '',
   });
 
   useEffect(() => {
@@ -58,6 +60,8 @@ function LessonNoteForm({
         contentStandardCode: '',
         indicatorCodes: '',
         reference: '',
+        sessionsPerWeek: 1,
+        sessionPlan: '',
       });
     }
   }, [open, defaultFacilitatorName]);
@@ -211,6 +215,30 @@ function LessonNoteForm({
                   type="number"
                   inputProps={{ min: 1, max: 200 }}
                   sx={{ flex: 1 }}
+                />
+              </Stack>
+
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <TextField
+                  name="sessionsPerWeek"
+                  label="Meetings Per Week *"
+                  value={formData.sessionsPerWeek}
+                  onChange={handleChange}
+                  required
+                  type="number"
+                  inputProps={{ min: 1, max: 7 }}
+                  sx={{ flex: 1 }}
+                />
+                <TextField
+                  name="sessionPlan"
+                  label="Session Plan (Optional)"
+                  value={formData.sessionPlan}
+                  onChange={handleChange}
+                  sx={{ flex: 1 }}
+                  multiline
+                  rows={2}
+                  placeholder="One line per session, e.g. Session 1 - Monday 10:00"
+                  helperText="Add one line per meeting if the subject appears multiple times this week."
                 />
               </Stack>
 

@@ -81,6 +81,7 @@ const lessonBundleSchema = new mongoose.Schema(
     // Original Generation Context (for reference)
     generationContext: {
       school: String,
+      facilitatorName: String,
       term: String,
       week: String,
       dayDate: String,
@@ -89,6 +90,8 @@ const lessonBundleSchema = new mongoose.Schema(
       contentStandardCode: String,
       indicatorCodes: String,
       reference: String,
+      sessionsPerWeek: { type: Number, default: 1 },
+      sessionPlan: String,
       className: String,
       subjectName: String,
       strandName: String,
