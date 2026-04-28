@@ -20,6 +20,20 @@ const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = err.message;
 
+  // 0. AI provider temporary overload (retryable)
+  // Convert upstream model saturation to 503 so clients can handle retries gracefully.
+  const isAiOverload = typeof message === 'string' && (
+    message.includes('[Gemini] All models failed')
+    || message.includes('503 Service Unavailable')
+    || message.includes('high demand')
+    || message.includes('Spikes in demand')
+  );
+  if (isAiOverload) {
+    statusCode = 503;
+    message = 'AI service is temporarily busy due to high demand. Please try again in a few moments.';
+    res.set('Retry-After', '20');
+  }
+
   // --- Specific Mongoose Error Handling ---
 
   // 1. Bad ObjectId Error (CastError)
