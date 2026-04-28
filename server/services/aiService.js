@@ -595,6 +595,7 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
     dayDate,
     duration,
   });
+  const isMultiSession = sessionPlanData.sessionCount >= 2;
 
   if (templateDesign === 'clean-minimal') {
     return `
@@ -1234,7 +1235,8 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       </tr>
       <tr>
         <td class="label-cell">Meetings This Week</td><td>${sessionPlanData.sessionCount}</td>
-        <td class="label-cell">Session Plan Source</td><td>${sessionPlan ? '[Provided by teacher]' : '[AI to infer realistic weekly slots]'}</td>
+        <td class="label-cell">${isMultiSession ? 'Facilitator' : 'Session Plan Source'}</td>
+        <td>${isMultiSession ? facilitatorDisplayName : (sessionPlan ? '[Provided by teacher]' : '[AI to infer realistic weekly slots]')}</td>
       </tr>
       <tr>
         <td class="label-cell">Class</td><td>${className}</td>
@@ -1242,11 +1244,13 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       </tr>
       <tr>
         <td class="label-cell">Subject</td><td>${subjectName}</td>
-        <td class="label-cell">Day/Date</td><td>${dayDate}</td>
+        <td class="label-cell">${isMultiSession ? 'Duration' : 'Day/Date'}</td>
+        <td>${isMultiSession ? duration : dayDate}</td>
       </tr>
       <tr>
         <td class="label-cell">Strand</td><td>${strandName}</td>
-        <td class="label-cell">Duration</td><td>${duration}</td>
+        <td class="label-cell">${isMultiSession ? 'Reference' : 'Duration'}</td>
+        <td>${isMultiSession ? reference : duration}</td>
       </tr>
       <tr>
         <td class="label-cell">Sub-Strand</td><td colspan="3">${subStrandName}</td>
