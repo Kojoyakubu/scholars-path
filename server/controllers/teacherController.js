@@ -461,7 +461,8 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   }
 
   // Validate required fields
-  if (!school || !facilitatorName || !term || !week || !dayDate || !duration || !classSize || !contentStandardCode || !indicatorCodes || !reference) {
+  const requiresSharedDuration = Number(sessionsPerWeek || 1) <= 1;
+  if (!school || !facilitatorName || !term || !week || !dayDate || (requiresSharedDuration && !duration) || !classSize || !contentStandardCode || !indicatorCodes || !reference) {
     res.status(400);
     throw new Error('All curriculum fields are required');
   }

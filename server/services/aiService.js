@@ -543,22 +543,43 @@ function parseSessionPlanLines(sessionPlan) {
     .filter(Boolean);
 }
 
+function parseSessionPlanEntry(line) {
+  if (!line) {
+    return {
+      dateSlot: '',
+      duration: '',
+      focus: '',
+    };
+  }
+
+  const [dateSlot = '', sessionDuration = '', sessionFocus = ''] = String(line)
+    .split('|')
+    .map((part) => part.trim());
+
+  return {
+    dateSlot,
+    duration: sessionDuration,
+    focus: sessionFocus,
+  };
+}
+
 function buildSessionRowPlan({ sessionsPerWeek, sessionPlan, dayDate, duration }) {
   const sessionCount = toSessionCount(sessionsPerWeek);
   const sessionPlanLines = parseSessionPlanLines(sessionPlan);
 
   const rows = Array.from({ length: sessionCount }, (_, index) => {
     const rowNumber = index + 1;
-    const suggestedSlot = sessionPlanLines[index] || (rowNumber === 1 ? dayDate || '[AI: Session date/slot]' : '[AI: Session date/slot]');
+    const sessionEntry = parseSessionPlanEntry(sessionPlanLines[index]);
+    const suggestedSlot = sessionEntry.dateSlot || (rowNumber === 1 ? dayDate || '[AI: Session date/slot]' : '[AI: Session date/slot]');
     return {
       sessionLabel: `Session ${rowNumber}`,
       dateSlot: suggestedSlot,
-      duration: duration || '[AI: Session duration]',
-      focus: rowNumber === 1
+      duration: sessionEntry.duration || (sessionCount === 1 ? duration || '[AI: Session duration]' : '[AI: Session duration]'),
+      focus: sessionEntry.focus || (rowNumber === 1
         ? '[AI: Introduction, prior knowledge, and lesson launch]'
         : rowNumber === sessionCount
           ? '[AI: Consolidation, assessment, reflection, and extension]'
-          : '[AI: Guided practice, concept development, and checks for understanding]',
+          : '[AI: Guided practice, concept development, and checks for understanding]'),
     };
   });
 
@@ -594,8 +615,6 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
     dayDate,
     duration,
   });
-  const isMultiSession = sessionPlanData.sessionCount >= 2;
-
   if (templateDesign === 'clean-minimal') {
     return `
 <div class="lesson-note clean-minimal">
@@ -1234,8 +1253,7 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       </tr>
       <tr>
         <td class="label-cell">Meetings This Week</td><td>${sessionPlanData.sessionCount}</td>
-        <td class="label-cell">${isMultiSession ? 'Facilitator' : 'Session Plan Source'}</td>
-        <td>${isMultiSession ? facilitatorDisplayName : (sessionPlan ? '[Provided by teacher]' : '[AI to infer realistic weekly slots]')}</td>
+        <td class="label-cell">Facilitator</td><td>${facilitatorDisplayName}</td>
       </tr>
       <tr>
         <td class="label-cell">Class</td><td>${className}</td>
@@ -1243,13 +1261,10 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       </tr>
       <tr>
         <td class="label-cell">Subject</td><td>${subjectName}</td>
-        <td class="label-cell">${isMultiSession ? 'Duration' : 'Day/Date'}</td>
-        <td>${isMultiSession ? duration : dayDate}</td>
+        <td class="label-cell">Reference</td><td>${reference}</td>
       </tr>
       <tr>
-        <td class="label-cell">Strand</td><td>${strandName}</td>
-        <td class="label-cell">${isMultiSession ? 'Reference' : 'Duration'}</td>
-        <td>${isMultiSession ? reference : duration}</td>
+        <td class="label-cell">Strand</td><td colspan="3">${strandName}</td>
       </tr>
       <tr>
         <td class="label-cell">Sub-Strand</td><td colspan="3">${subStrandName}</td>

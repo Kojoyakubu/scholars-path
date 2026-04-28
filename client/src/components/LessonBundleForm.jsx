@@ -29,11 +29,12 @@ function LessonBundleForm({
   subStrandId,
   defaultFacilitatorName = '',
 }) {
+  const defaultDuration = '1hr 10 mins / 2 Periods';
   const [formData, setFormData] = useState({
     school: '',
     facilitatorName: '',
     term: 'One',
-    duration: '1hr 10 mins / 2 Periods',
+    duration: defaultDuration,
     dayDate: '',
     classSize: '',
     week: '',
@@ -52,7 +53,7 @@ function LessonBundleForm({
         school: '',
         facilitatorName: defaultFacilitatorName || '',
         term: 'One',
-        duration: '1hr 10 mins / 2 Periods',
+        duration: defaultDuration,
         dayDate: '',
         classSize: '',
         week: '',
@@ -75,6 +76,9 @@ function LessonBundleForm({
     // Merge subStrandId with form data before submission
     onSubmit({ ...formData, subStrandId });
   };
+
+  const sessionCount = Math.max(1, Number(formData.sessionsPerWeek) || 1);
+  const isMultiSession = sessionCount >= 2;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" disableEscapeKeyDown={isLoading}>
@@ -182,10 +186,11 @@ function LessonBundleForm({
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   name="duration"
-                  label="Duration *"
+                  label={isMultiSession ? 'Default Duration (Optional)' : 'Duration *'}
                   value={formData.duration}
                   onChange={handleChange}
-                  required
+                  required={!isMultiSession}
+                  helperText={isMultiSession ? 'Optional fallback only. Add each session duration in the Weekly Session Plan field.' : ''}
                   sx={{ flex: 1 }}
                 />
                 <TextField
@@ -213,14 +218,14 @@ function LessonBundleForm({
                 />
                 <TextField
                   name="sessionPlan"
-                  label="Session Plan (Optional)"
+                  label={isMultiSession ? 'Weekly Session Plan *' : 'Weekly Session Plan (Optional)'}
                   value={formData.sessionPlan}
                   onChange={handleChange}
                   sx={{ flex: 1 }}
                   multiline
-                  rows={2}
-                  placeholder="One line per session, e.g. Session 1 - Monday 10:00"
-                  helperText="Add one line per meeting if the subject appears multiple times this week."
+                  rows={isMultiSession ? 3 : 2}
+                  placeholder={isMultiSession ? 'One line per session: Monday, January 19, 2026 | 35 mins / 1 Period | Introduction to networking' : 'Optional: Monday, January 19, 2026 | 1hr 10 mins / 2 Periods | Introduction to networking'}
+                  helperText={isMultiSession ? 'Use one line per meeting in this format: Date / Slot | Duration | Optional focus.' : 'Optional format: Date / Slot | Duration | Optional focus.'}
                 />
               </Stack>
 
