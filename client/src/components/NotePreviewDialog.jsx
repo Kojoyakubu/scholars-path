@@ -63,7 +63,7 @@ const compactContentSx = {
     fontSize: '0.92rem',
     '& td, & th': {
       border: '1px solid #ddd',
-      padding: '3px 4px',
+      padding: '4px 7px',
       verticalAlign: 'top',
       whiteSpace: 'normal',
       wordBreak: 'break-word',
