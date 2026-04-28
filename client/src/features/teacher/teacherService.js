@@ -1,6 +1,44 @@
 // /client/src/features/teacher/teacherService.js
 import api from '../../api/axios';
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getRetryAfterDelay = (error) => {
+  const retryAfterHeader = error?.response?.headers?.['retry-after'];
+  const retryAfterSeconds = Number(retryAfterHeader);
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    return retryAfterSeconds * 1000;
+  }
+  return null;
+};
+
+const postWith503Retry = async (url, payload, options = {}) => {
+  const {
+    maxRetries = 2,
+    baseDelayMs = 1500,
+  } = options;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      const response = await api.post(url, payload);
+      return response.data;
+    } catch (error) {
+      const status = error?.response?.status;
+      const isRetryable = status === 503;
+
+      if (!isRetryable || attempt === maxRetries) {
+        throw error;
+      }
+
+      const retryAfterDelay = getRetryAfterDelay(error);
+      const fallbackDelay = baseDelayMs * (attempt + 1);
+      await sleep(retryAfterDelay || fallbackDelay);
+    }
+  }
+
+  throw new Error('Request failed after retries.');
+};
+
 const getMyLessonNotes = async () => {
   const response = await api.get('/api/teacher/lesson-notes');
   return response.data;
@@ -8,8 +46,10 @@ const getMyLessonNotes = async () => {
 
 // ✅ FIX: Changed from /generate-note to /ai/generate-note
 const generateLessonNote = async (noteData) => {
-  const response = await api.post('/api/teacher/ai/generate-note', noteData);
-  return response.data;
+  return postWith503Retry('/api/teacher/ai/generate-note', noteData, {
+    maxRetries: 3,
+    baseDelayMs: 2000,
+  });
 };
 
 const getLessonNoteById = async (noteId) => {
@@ -24,14 +64,18 @@ const deleteLessonNote = async (noteId) => {
 
 // ✅ FIX: Changed from /generate-learner-note to /ai/generate-learner-note
 const generateLearnerNote = async (lessonNoteId) => {
-  const response = await api.post('/api/teacher/ai/generate-learner-note', { lessonNoteId });
-  return response.data;
+  return postWith503Retry('/api/teacher/ai/generate-learner-note', { lessonNoteId }, {
+    maxRetries: 2,
+    baseDelayMs: 1800,
+  });
 };
 
 // generate learner note based on a curriculum strand/sub-strand
 const generateLearnerNoteFromStrand = async (payload) => {
-  const response = await api.post('/api/teacher/ai/generate-learner-note-from-strand', payload);
-  return response.data;
+  return postWith503Retry('/api/teacher/ai/generate-learner-note-from-strand', payload, {
+    maxRetries: 3,
+    baseDelayMs: 2000,
+  });
 };
 
 const getTeacherAnalytics = async () => {
@@ -80,8 +124,10 @@ const getAiInsights = async () => {
 
 // ✅ NEW: Generate complete lesson bundle (Teacher Note + Learner Note + Quiz)
 const generateLessonBundle = async (bundleData) => {
-  const response = await api.post('/api/teacher/ai/generate-lesson-bundle', bundleData);
-  return response.data;
+  return postWith503Retry('/api/teacher/ai/generate-lesson-bundle', bundleData, {
+    maxRetries: 3,
+    baseDelayMs: 2200,
+  });
 };
 
 // ✅ NEW: Bundle CRUD operations
