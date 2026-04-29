@@ -42,6 +42,14 @@ const normalizeWeekRows = (rows = []) => {
     .sort((a, b) => a.weekNumber - b.weekNumber);
 };
 
+const buildWeekRows = (count, existingRows = []) => {
+  const normalizedCount = Math.max(1, Math.min(20, Number(count) || 1));
+  return Array.from({ length: normalizedCount }, (_, index) => ({
+    weekNumber: index + 1,
+    weekEnding: existingRows[index]?.weekEnding || '',
+  }));
+};
+
 const AdminSchools = () => {
   const dispatch = useDispatch();
   const { schools, isLoading } = useSelector((state) => state.admin);
@@ -114,11 +122,13 @@ const AdminSchools = () => {
   const openCalendarEditor = (school) => {
     const rows = school?.termCalendar?.[calendarTerm] || [];
     setCalendarSchoolId(school?._id || '');
-    setWeekRows(rows.map((row) => ({
+    const mappedRows = rows.map((row) => ({
       weekNumber: row.weekNumber,
       weekEnding: toDateInputValue(row.weekEnding),
-    })));
-    setWeekCount(rows.length || 12);
+    }));
+    const targetCount = mappedRows.length || 12;
+    setWeekCount(targetCount);
+    setWeekRows(buildWeekRows(targetCount, mappedRows));
     setCalendarOpen(true);
   };
 
@@ -126,23 +136,19 @@ const AdminSchools = () => {
     setCalendarTerm(term);
     const school = schools.find((item) => item._id === calendarSchoolId);
     const rows = school?.termCalendar?.[term] || [];
-    setWeekRows(rows.map((row) => ({
+    const mappedRows = rows.map((row) => ({
       weekNumber: row.weekNumber,
       weekEnding: toDateInputValue(row.weekEnding),
-    })));
-    setWeekCount(rows.length || 12);
+    }));
+    const targetCount = mappedRows.length || 12;
+    setWeekCount(targetCount);
+    setWeekRows(buildWeekRows(targetCount, mappedRows));
   };
 
   const regenerateWeekRows = (countValue) => {
     const count = Math.max(1, Math.min(20, Number(countValue) || 1));
     setWeekCount(count);
-    setWeekRows((prev) => Array.from({ length: count }, (_, index) => {
-      const current = prev[index] || {};
-      return {
-        weekNumber: index + 1,
-        weekEnding: current.weekEnding || '',
-      };
-    }));
+    setWeekRows((prev) => buildWeekRows(count, prev));
   };
 
   const handleWeekEndingChange = (index, value) => {
