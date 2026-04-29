@@ -1696,6 +1696,14 @@ function restyleTeacherLessonNoteHTML(existingHtml, details = {}) {
   return buildTeacherLessonNoteRestyleWrapper(templateDesign, details, bodyHtml);
 }
 
+function boldLessonPhaseIndicators(html = '') {
+  const source = String(html || '');
+  return source.replace(
+    /<p>\s*((?:Session\s*\d+\s*)?(?:Recap|Activity\s*\d+|Evaluation|Assignment|Learner Reflection|Real-Life Application|Introduction|Engaging Activity)\s*:)/gi,
+    '<p><strong>$1</strong>'
+  );
+}
+
 async function generateTeacherLessonNoteHTML(details = {}) {
   const { 
     school, 
@@ -1792,6 +1800,9 @@ REMEMBER: Return ONLY the HTML above, filled with appropriate content. Keep the 
 
   // convert any placeholder tokens into real <img> tags
   text = replacePlaceholdersWithImages(text);
+
+  // Ensure lesson phase indicators remain visually clear and consistent.
+  text = boldLessonPhaseIndicators(text);
 
   return {
     text,
