@@ -615,6 +615,7 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
     dayDate,
     duration,
   });
+  const isMultiSession = sessionPlanData.sessionCount >= 2;
   if (templateDesign === 'clean-minimal') {
     return `
 <div class="lesson-note clean-minimal">
@@ -1338,20 +1339,19 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       <tbody>
         <tr>
           <td>
-            <p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>
-            <p><strong>Engaging Activity:</strong><br>[AI: Short task to capture interest]</p>
-            <p><strong>Introduction:</strong><br>[AI: State lesson objective clearly]</p>
+            ${isMultiSession
+              ? '<p><strong>Recap:</strong><br>[AI: Write session-tagged recap lines, e.g., Session 1: ..., Session 2: ...]</p>\n            <p><strong>Engaging Activity:</strong><br>[AI: Write session-tagged starter tasks for each session]</p>\n            <p><strong>Introduction:</strong><br>[AI: Show how the objective is introduced in Session 1 and revisited in later sessions]</p>'
+              : '<p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>\n            <p><strong>Engaging Activity:</strong><br>[AI: Short task to capture interest]</p>\n            <p><strong>Introduction:</strong><br>[AI: State lesson objective clearly]</p>'}
           </td>
           <td>
-            <p><strong>Activity 1:</strong><br>[AI: Introduce main topic with explanation]</p>
-            <p><strong>Activity 2:</strong><br>[AI: Practical task - individual, pair, or group work]</p>
-            <p><strong>Evaluation:</strong><br>[AI: 2-3 questions to check understanding]</p>
-            <p><strong>Assignment:</strong><br>[AI: Short take-home task]</p>
+            ${isMultiSession
+              ? '<p><strong>Activity 1:</strong><br>[AI: Session 1 concept launch with explicit Session 1 label]</p>\n            <p><strong>Activity 2:</strong><br>[AI: Session 2+ deepening tasks with explicit Session labels]</p>\n            <p><strong>Evaluation:</strong><br>[AI: Session-specific checks for understanding across the week]</p>\n            <p><strong>Assignment:</strong><br>[AI: End-of-week assignment tied to all sessions]</p>'
+              : '<p><strong>Activity 1:</strong><br>[AI: Introduce main topic with explanation]</p>\n            <p><strong>Activity 2:</strong><br>[AI: Practical task - individual, pair, or group work]</p>\n            <p><strong>Evaluation:</strong><br>[AI: 2-3 questions to check understanding]</p>\n            <p><strong>Assignment:</strong><br>[AI: Short take-home task]</p>'}
           </td>
           <td>
-            <p><strong>Recap:</strong><br>[AI: Summarize key ideas]</p>
-            <p><strong>Learner Reflection:</strong><br>[AI: Questions to help learners reflect]</p>
-            <p><strong>Real-Life Application:</strong><br>[AI: Link lesson to everyday Ghanaian life]</p>
+            ${isMultiSession
+              ? '<p><strong>Recap:</strong><br>[AI: Session-by-session consolidation summary]</p>\n            <p><strong>Learner Reflection:</strong><br>[AI: Reflection prompts that compare what was learned across sessions]</p>\n            <p><strong>Real-Life Application:</strong><br>[AI: Final application task that integrates learning from all sessions]</p>'
+              : '<p><strong>Recap:</strong><br>[AI: Summarize key ideas]</p>\n            <p><strong>Learner Reflection:</strong><br>[AI: Questions to help learners reflect]</p>\n            <p><strong>Real-Life Application:</strong><br>[AI: Link lesson to everyday Ghanaian life]</p>'}
           </td>
         </tr>
       </tbody>
@@ -1766,6 +1766,7 @@ CRITICAL RULES:
 8. In the "Curriculum Standards" section, keep a strict TWO-COLUMN table layout (label in column 1, content in column 2). Do not convert those rows into standalone paragraphs.
 9. Respect "Meetings This Week" and the "Weekly Session Plan" table: distribute teaching progression across sessions and avoid repeating the same activities in every session.
 10. For multi-session weeks (2+ sessions), show clear continuity from Session 1 to later sessions (review -> deepen -> assess/consolidate).
+11. In the "Lesson Phases" table, explicitly tag activities by session for multi-session weeks (e.g., "Session 1:", "Session 2:"). Do not leave phases as a single-session generic narrative.
 
 ---
 TRANSFORMATION LOGIC EXAMPLE:
