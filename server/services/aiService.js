@@ -1170,6 +1170,15 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
     .phase-h1 { background: #edf7ff; width: 25%; }
     .phase-h2 { background: #e8f6f1; width: 50%; }
     .phase-h3 { background: #fff6e9; width: 25%; }
+    .phase-table .session-banner {
+      background: #f3f6fa;
+      text-align: center;
+      font-weight: 700;
+      color: #1f3e5a;
+      letter-spacing: 0.04em;
+      border-top: 2px solid #b7c6d6;
+      border-bottom: 2px solid #b7c6d6;
+    }
     .signoff .sign-row {
       display: grid;
       grid-template-columns: 140px 1fr;
@@ -1337,23 +1346,48 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
         </tr>
       </thead>
       <tbody>
+        ${isMultiSession
+          ? sessionPlanData.rows.map((row, index) => `
+        <tr>
+          <td colspan="3" class="session-banner"><strong>${row.sessionLabel.toUpperCase()}</strong> | ${row.dateSlot} | ${row.duration}</td>
+        </tr>
         <tr>
           <td>
-            ${isMultiSession
-              ? '<p><strong>Recap:</strong><br>[AI: Write session-tagged recap lines, e.g., Session 1: ..., Session 2: ...]</p>\n            <p><strong>Engaging Activity:</strong><br>[AI: Write session-tagged starter tasks for each session]</p>\n            <p><strong>Introduction:</strong><br>[AI: Show how the objective is introduced in Session 1 and revisited in later sessions]</p>'
-              : '<p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>\n            <p><strong>Engaging Activity:</strong><br>[AI: Short task to capture interest]</p>\n            <p><strong>Introduction:</strong><br>[AI: State lesson objective clearly]</p>'}
+            <p><strong>Recap:</strong><br>[AI: Briefly review prior learning relevant to ${row.focus}]</p>
+            <p><strong>Engaging Activity:</strong><br>[AI: A short starter task for ${row.sessionLabel}]</p>
+            <p><strong>Introduction:</strong><br>[AI: Introduce this session objective clearly]</p>
           </td>
           <td>
-            ${isMultiSession
-              ? '<p><strong>Activity 1:</strong><br>[AI: Session 1 concept launch with explicit Session 1 label]</p>\n            <p><strong>Activity 2:</strong><br>[AI: Session 2+ deepening tasks with explicit Session labels]</p>\n            <p><strong>Evaluation:</strong><br>[AI: Write 3-4 concrete learner-facing questions as a numbered list (1., 2., 3., ...), each ending with a question mark; include Session labels where relevant]</p>\n            <p><strong>Assignment:</strong><br>[AI: End-of-week assignment tied to all sessions]</p>'
-              : '<p><strong>Activity 1:</strong><br>[AI: Introduce main topic with explanation]</p>\n            <p><strong>Activity 2:</strong><br>[AI: Practical task - individual, pair, or group work]</p>\n            <p><strong>Evaluation:</strong><br>[AI: Write 3 concrete learner-facing questions as a numbered list (1., 2., 3.), each ending with a question mark]</p>\n            <p><strong>Assignment:</strong><br>[AI: Short take-home task]</p>'}
+            <p><strong>Activity 1:</strong><br>[AI: Guided teaching activity for ${row.sessionLabel}]</p>
+            <p><strong>Activity 2:</strong><br>[AI: Practical learner task for ${row.sessionLabel}]</p>
+            <p><strong>Evaluation:</strong><br>[AI: Write 3 concrete learner-facing questions as a numbered list (1., 2., 3.), each ending with a question mark]</p>
+            <p><strong>Assignment:</strong><br>[AI: Give a short task aligned to ${row.sessionLabel}]</p>
           </td>
           <td>
-            ${isMultiSession
-              ? '<p><strong>Recap:</strong><br>[AI: Session-by-session consolidation summary]</p>\n            <p><strong>Learner Reflection:</strong><br>[AI: Reflection prompts that compare what was learned across sessions]</p>\n            <p><strong>Real-Life Application:</strong><br>[AI: Final application task that integrates learning from all sessions]</p>'
-              : '<p><strong>Recap:</strong><br>[AI: Summarize key ideas]</p>\n            <p><strong>Learner Reflection:</strong><br>[AI: Questions to help learners reflect]</p>\n            <p><strong>Real-Life Application:</strong><br>[AI: Link lesson to everyday Ghanaian life]</p>'}
+            <p><strong>Recap:</strong><br>[AI: Summarize the key learning for ${row.sessionLabel}]</p>
+            <p><strong>Learner Reflection:</strong><br>[AI: 1-2 reflection prompts for ${row.sessionLabel}]</p>
+            <p><strong>Real-Life Application:</strong><br>[AI: One local real-life application for ${row.sessionLabel}]</p>
           </td>
-        </tr>
+        </tr>`).join('')
+          : `
+        <tr>
+          <td>
+            <p><strong>Recap:</strong><br>[AI: Brief review of prior knowledge]</p>
+            <p><strong>Engaging Activity:</strong><br>[AI: Short task to capture interest]</p>
+            <p><strong>Introduction:</strong><br>[AI: State lesson objective clearly]</p>
+          </td>
+          <td>
+            <p><strong>Activity 1:</strong><br>[AI: Introduce main topic with explanation]</p>
+            <p><strong>Activity 2:</strong><br>[AI: Practical task - individual, pair, or group work]</p>
+            <p><strong>Evaluation:</strong><br>[AI: Write 3 concrete learner-facing questions as a numbered list (1., 2., 3.), each ending with a question mark]</p>
+            <p><strong>Assignment:</strong><br>[AI: Short take-home task]</p>
+          </td>
+          <td>
+            <p><strong>Recap:</strong><br>[AI: Summarize key ideas]</p>
+            <p><strong>Learner Reflection:</strong><br>[AI: Questions to help learners reflect]</p>
+            <p><strong>Real-Life Application:</strong><br>[AI: Link lesson to everyday Ghanaian life]</p>
+          </td>
+        </tr>`}
       </tbody>
     </table>
   </section>
@@ -1799,7 +1833,7 @@ CRITICAL RULES:
 8. In the "Curriculum Standards" section, keep a strict TWO-COLUMN table layout (label in column 1, content in column 2). Do not convert those rows into standalone paragraphs.
 9. Respect "Meetings This Week" and the "Weekly Session Plan" table: distribute teaching progression across sessions and avoid repeating the same activities in every session.
 10. For multi-session weeks (2+ sessions), show clear continuity from Session 1 to later sessions (review -> deepen -> assess/consolidate).
-11. In the "Lesson Phases" table, explicitly tag activities by session for multi-session weeks (e.g., "Session 1:", "Session 2:"). Do not leave phases as a single-session generic narrative.
+11. For multi-session weeks, the "Lesson Phases" table must be split by session blocks: add a full-width row label like "SESSION 1", then one row with Phase 1, Phase 2, and Phase 3 content for that session; repeat for SESSION 2, SESSION 3, etc.
 12. The "Evaluation" field must contain only concrete assessment questions, not descriptions. Format as a numbered list (1., 2., 3., ...), each line ending with a question mark.
 
 ---
