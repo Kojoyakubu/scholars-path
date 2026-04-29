@@ -187,6 +187,7 @@ function LessonBundleForm({
       subStrandId,
       generationMode: mode,
       dayDate: firstSessionDate || firstSession?.day || '',
+      weekEnding: toDateInputValue(selectedWeekEnding) || '',
       duration: '',
       sessionPlan: sessionPlanLines.join('\n'),
     };

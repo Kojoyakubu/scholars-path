@@ -10,6 +10,7 @@ const lessonNoteSchema = new mongoose.Schema(
       facilitatorName: String,
       term: String,
       week: String,
+      weekEnding: String,
       dayDate: String,
       duration: String,
       classSize: Number,

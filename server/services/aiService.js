@@ -315,7 +315,7 @@ async function getLandingInsights(details = {}) {
  * Generate a Ghanaian teacher lesson note (Markdown).
  */
 async function generateGhanaianLessonNote(details = {}) {
-  const { school, className, subjectName, strandName, subStrandName, week, term, duration, classSize, reference, contentStandardCode, indicatorCodes, dayDate, facilitatorName, preferredModel, preferredProvider } = details;
+  const { school, className, subjectName, strandName, subStrandName, week, term, duration, classSize, reference, contentStandardCode, indicatorCodes, dayDate, weekEnding, facilitatorName, preferredModel, preferredProvider } = details;
   const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
   const facilitatorDisplayName = String(facilitatorName || '').trim() || '..................................................';
   const prompt = `
@@ -324,7 +324,7 @@ Follow these rules STRICTLY:
 1.  **Layout:** The 'TEACHER INFORMATION' section must be a two-column layout with left-aligned text.
 2.  **Transformation:** Use the "Transformation Logic" to convert the "Official NaCCA Indicator" into a learner-centric "Performance Indicator".
 3.  **Table Proportions:** For the 'LESSON PHASES' table, make the middle column (Phase 2) much wider than Phase 1 and Phase 3 (roughly 25% | 50% | 25%).
-4.  **Dates:** Derive the **Week Ending (Friday date)** from the user's "Day/Date".
+4.  **Dates:** Use the provided **Week Ending** exactly as given.
 5.  **No Filler:** Do not add any introductory sentences. Start the response directly with the '### TEACHER INFORMATION' heading.
 ---
 ### Transformation Logic (Example)
@@ -335,7 +335,7 @@ Follow these rules STRICTLY:
 **School:** ${school}
 **Term:** ${term}
 **Week:** ${week}
-**Week Ending:** [AI to compute Friday date based on ${dayDate}]
+**Week Ending:** ${weekEnding || '[AI: Week ending date]'}
 **Class:** ${className}
 **Class Size:** ${classSize}
 **Subject:** ${subjectName}
@@ -597,6 +597,7 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
     strandName,
     subStrandName,
     week,
+    weekEnding,
     term,
     duration,
     classSize,
@@ -723,7 +724,7 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       <p><strong>Class Size:</strong> ${classSize}</p>
       <p><strong>Strand:</strong> ${strandName}</p>
       <p><strong>Day/Date:</strong> ${dayDate}</p>
-      <p><strong>Week Ending:</strong> [AI: Compute Friday from ${dayDate}]</p>
+      <p><strong>Week Ending:</strong> ${weekEnding}</p>
       <p><strong>Facilitator:</strong> ${facilitatorDisplayName}</p>
     </div>
   </section>
@@ -873,7 +874,7 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       <p><strong>Class Size:</strong> ${classSize}</p>
       <p><strong>Duration:</strong> ${duration}</p>
       <p><strong>Day/Date:</strong> ${dayDate}</p>
-      <p><strong>Week Ending:</strong> [AI: Compute Friday from ${dayDate}]</p>
+      <p><strong>Week Ending:</strong> ${weekEnding}</p>
       <p><strong>Reference:</strong> ${reference}</p>
     </div>
   </section>
@@ -1035,7 +1036,7 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       <p><strong>Strand:</strong> ${strandName}</p>
       <p><strong>Sub-Strand:</strong> ${subStrandName}</p>
       <p><strong>Day/Date:</strong> ${dayDate}</p>
-      <p><strong>Week Ending:</strong> [AI: Compute Friday from ${dayDate}]</p>
+      <p><strong>Week Ending:</strong> ${weekEnding}</p>
       <p><strong>Facilitator:</strong> ${facilitatorDisplayName}</p>
     </div>
     <div class="panel checklist">
@@ -1259,7 +1260,7 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
       </tr>
       <tr>
         <td class="label-cell">Week</td><td>${week}</td>
-        <td class="label-cell">Week Ending</td><td>[AI: Compute Friday from ${dayDate}]</td>
+        <td class="label-cell">Week Ending</td><td>${weekEnding}</td>
       </tr>
       <tr>
         <td class="label-cell">Meetings This Week</td><td>${sessionPlanData.sessionCount}</td>
@@ -1771,6 +1772,7 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     strandName, 
     subStrandName, 
     week, 
+    weekEnding,
     term, 
     duration, 
     classSize, 
@@ -1791,6 +1793,7 @@ async function generateTeacherLessonNoteHTML(details = {}) {
   const resolvedStrandName = strandName || '[Strand]';
   const resolvedSubStrandName = subStrandName || '[Sub-Strand]';
   const resolvedWeek = week || '[Week]';
+  const resolvedWeekEnding = weekEnding || '[AI: Week ending date]';
   const resolvedTerm = term || 'One';
   const resolvedClassSize = classSize || '[Class size]';
   const resolvedReference = reference || '[NaCCA curriculum reference]';
@@ -1807,6 +1810,7 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     strandName: resolvedStrandName,
     subStrandName: resolvedSubStrandName,
     week: resolvedWeek,
+    weekEnding: resolvedWeekEnding,
     term: resolvedTerm,
     duration: resolvedDuration,
     classSize: resolvedClassSize,
@@ -1828,7 +1832,7 @@ CRITICAL RULES:
 3. Use proper HTML tags: <h2>, <h3>, <p>, <table>, <ul>, <li>, <strong>, <br>
 4. The layout must be clean, professional, and ready to display in a web browser
 5. Use the "Transformation Logic" to convert the "Official NaCCA Indicator" into learner-centric "Performance Indicators"
-6. Derive the Week Ending (Friday date) from the provided Day/Date, or infer a realistic one when Day/Date is not explicitly provided
+6. Use the provided Week Ending exactly as given. Do not recompute or infer a different date from Day/Date.
 7. Keep the chosen visual template structure exactly as provided while filling the content professionally
 8. In the "Curriculum Standards" section, keep a strict TWO-COLUMN table layout (label in column 1, content in column 2). Do not convert those rows into standalone paragraphs.
 9. Respect "Meetings This Week" and the "Weekly Session Plan" table: distribute teaching progression across sessions and avoid repeating the same activities in every session.
