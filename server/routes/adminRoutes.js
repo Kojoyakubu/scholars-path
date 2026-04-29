@@ -21,6 +21,7 @@ const {
   createSchool,
   getSchools,
   deleteSchool,
+  updateSchoolTermCalendar,
 
   // Platform stats & analytics
   getUsageStats,
@@ -61,6 +62,7 @@ router.delete('/students/:id', protect, authorize('admin'), deleteStudent);
 router.post('/schools', protect, authorize('admin'), createSchool);
 router.get('/schools', protect, authorize('admin', 'school_admin'), getSchools);
 router.delete('/schools/:id', protect, authorize('admin'), deleteSchool);
+router.put('/schools/:id/term-calendar', protect, authorize('admin', 'school_admin'), updateSchoolTermCalendar);
 
 /* ============================================================================
  * PLATFORM STATS & ANALYTICS

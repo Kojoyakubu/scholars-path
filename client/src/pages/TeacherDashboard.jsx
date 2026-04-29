@@ -20,6 +20,7 @@ import {
   resetTeacherState,
   getMyBundles,
   getTeacherAnalytics,
+  getSchoolCalendar,
   generateLessonBundle,
   generateAiQuiz,
   getMyQuizzes,
@@ -226,7 +227,8 @@ function TeacherDashboard() {
     currentQuiz,
     isLoading,
     teacherAnalytics,
-    bundleResult
+    bundleResult,
+    schoolCalendar,
   } = useSelector((state) => state.teacher);
 
 
@@ -481,6 +483,7 @@ function TeacherDashboard() {
     dispatch(getMyLessonNotes());
     dispatch(getDraftLearnerNotes());
     dispatch(getTeacherAnalytics());
+    dispatch(getSchoolCalendar());
     dispatch(getMyBundles());
     dispatch(getMyQuizzes());
     return () => { dispatch(resetTeacherState()); };
@@ -1385,6 +1388,7 @@ function TeacherDashboard() {
           subStrandId={selections.subStrand}
           defaultFacilitatorName={user?.name || ''}
           defaultSchoolName={user?.school || ''}
+          schoolCalendar={schoolCalendar}
           isLoading={isLoading}
         />
         {/* Learner Notes Options Dialog */}
@@ -2043,6 +2047,7 @@ function TeacherDashboard() {
           subStrandId={selections.subStrand}
           defaultFacilitatorName={user?.name || ''}
           defaultSchoolName={user?.school || ''}
+          schoolCalendar={schoolCalendar}
           isLoading={isLoading || planLoading}
           fullScreen={isDialogFullscreen('lessonNoteForm')}
           onToggleFullscreen={() => toggleDialogFullscreen('lessonNoteForm')}

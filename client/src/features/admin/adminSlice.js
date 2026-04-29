@@ -120,6 +120,15 @@ export const deleteSchool = createAsyncThunk('admin/deleteSchool', async (school
   }
 });
 
+export const updateSchoolTermCalendar = createAsyncThunk('admin/updateSchoolTermCalendar', async (data, thunkAPI) => {
+  try {
+    return await adminService.updateSchoolTermCalendar(data);
+  } catch (error) {
+    const message = error.response?.data?.message || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 export const getAiInsights = createAsyncThunk('admin/getAiInsights', async (_, thunkAPI) => {
   try {
     return await adminService.getAiInsights();
@@ -240,6 +249,17 @@ export const adminSlice = createSlice({
       .addCase(deleteSchool.fulfilled, (state, action) => {
         const deletedId = action.payload?.id || action.payload?._id || action.meta.arg;
         state.schools = state.schools.filter((s) => s._id !== deletedId);
+      })
+      .addCase(updateSchoolTermCalendar.fulfilled, (state, action) => {
+        const updatedSchool = action.payload?.school;
+        if (updatedSchool?._id) {
+          const index = state.schools.findIndex((s) => s._id === updatedSchool._id);
+          if (index !== -1) {
+            state.schools[index] = updatedSchool;
+          }
+        }
+        state.isSuccess = true;
+        state.message = action.payload?.message || 'School term calendar updated.';
       })
       .addCase(getStats.fulfilled, (state, action) => {
         state.stats = action.payload;

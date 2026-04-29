@@ -14,6 +14,7 @@ const NoteView = require('../models/noteViewModel');
 const QuizAttempt = require('../models/quizAttemptModel');
 const SubStrand = require('../models/subStrandModel');
 const LessonBundle = require('../models/lessonBundleModel');
+const School = require('../models/schoolModel');
 
 const aiService = require('../services/aiService');
 
@@ -387,6 +388,30 @@ const getDraftLearnerNotes = asyncHandler(async (req, res) => {
     .populate('subStrand', 'name')
     .sort({ createdAt: -1 });
   res.json(draftNotes);
+});
+
+/**
+ * @desc    Get current teacher school term calendar
+ * @route   GET /api/teacher/school-calendar
+ * @access  Private (Teacher)
+ */
+const getMySchoolCalendar = asyncHandler(async (req, res) => {
+  if (!req.user.school) {
+    res.status(404);
+    throw new Error('Teacher is not assigned to a school');
+  }
+
+  const school = await School.findById(req.user.school).select('name termCalendar');
+  if (!school) {
+    res.status(404);
+    throw new Error('School not found');
+  }
+
+  res.json({
+    schoolId: school._id,
+    schoolName: school.name,
+    termCalendar: school.termCalendar || { one: [], two: [], three: [] },
+  });
 });
 
 /**
@@ -1037,6 +1062,7 @@ module.exports = {
   deleteLessonNote,
   generateLearnerNote,
   generateLearnerNoteFromStrand,
+  getMySchoolCalendar,
   createQuiz,
   uploadResource,
   getTeacherAnalytics,

@@ -83,6 +83,11 @@ const getTeacherAnalytics = async () => {
   return response.data;
 };
 
+const getSchoolCalendar = async () => {
+  const response = await api.get('/api/teacher/school-calendar');
+  return response.data;
+};
+
 const getDraftLearnerNotes = async () => {
   const response = await api.get('/api/teacher/learner-notes/drafts');
   return response.data;
@@ -195,6 +200,7 @@ const teacherService = {
   generateLearnerNote,
   generateLearnerNoteFromStrand,
   getTeacherAnalytics,
+  getSchoolCalendar,
   getDraftLearnerNotes,
   publishLearnerNote,
   deleteLearnerNote,

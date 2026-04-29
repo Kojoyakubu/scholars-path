@@ -15,6 +15,17 @@ const NoteView = require('../models/noteViewModel');
 const Subscription = require('../models/subscriptionModel');
 const aiService = require('../services/aiService');
 
+const normalizeTermWeeks = (weeks = []) => {
+  if (!Array.isArray(weeks)) return [];
+  return weeks
+    .map((entry) => ({
+      weekNumber: Number(entry.weekNumber),
+      weekEnding: entry.weekEnding ? new Date(entry.weekEnding) : null,
+    }))
+    .filter((entry) => Number.isInteger(entry.weekNumber) && entry.weekNumber >= 1 && entry.weekNumber <= 20 && entry.weekEnding && !Number.isNaN(entry.weekEnding.getTime()))
+    .sort((a, b) => a.weekNumber - b.weekNumber);
+};
+
 /* ============================================================================
  * USERS (generic)
  * ============================================================================
@@ -314,6 +325,34 @@ const deleteSchool = asyncHandler(async (req, res) => {
   res.json({ message: 'School deleted successfully.' });
 });
 
+// PUT /api/admin/schools/:id/term-calendar
+const updateSchoolTermCalendar = asyncHandler(async (req, res) => {
+  const school = await School.findById(req.params.id);
+  if (!school) {
+    res.status(404);
+    throw new Error('School not found');
+  }
+
+  const { termCalendar } = req.body;
+  if (!termCalendar || typeof termCalendar !== 'object') {
+    res.status(400);
+    throw new Error('termCalendar object is required');
+  }
+
+  school.termCalendar = {
+    one: normalizeTermWeeks(termCalendar.one),
+    two: normalizeTermWeeks(termCalendar.two),
+    three: normalizeTermWeeks(termCalendar.three),
+  };
+
+  await school.save();
+
+  res.json({
+    message: 'School term calendar updated successfully.',
+    school,
+  });
+});
+
 // PUT /api/admin/users/:id/assign-school
 const assignUserToSchool = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -558,6 +597,7 @@ module.exports = {
   createSchool,
   getSchools,
   deleteSchool,
+  updateSchoolTermCalendar,
   getUsageStats,
   getAnalyticsOverview,
   getTopTeachers,

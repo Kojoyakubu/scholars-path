@@ -9,6 +9,7 @@ const {
   deleteLessonNote,
   generateLearnerNote,
   generateLearnerNoteFromStrand,
+  getMySchoolCalendar,
   getDraftLearnerNotes,
   publishLearnerNote,
   deleteLearnerNote,
@@ -57,6 +58,7 @@ router.post('/resources/upload', protect, authorize('teacher'), uploadResource);
 
 // --- Analytics (primary) ---
 router.get('/analytics', protect, authorize('teacher'), getTeacherAnalytics);
+router.get('/school-calendar', protect, authorize('teacher'), getMySchoolCalendar);
 
 // ✅ Aliases (fixes /api/teacher/insights and /api/teacher/dashboard 404s)
 router.get('/insights',  protect, authorize('teacher'), getTeacherAnalytics);

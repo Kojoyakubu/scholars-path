@@ -10,6 +10,7 @@ const initialState = {
   currentBundle: null, // ✅ NEW: Currently viewed bundle
   currentQuiz: null, // ✅ NEW: quiz details when viewing
   analytics: {},
+  schoolCalendar: null,
   aiInsights: null,
   bundleResult: null, // ✅ NEW: Store the complete lesson bundle
   isLoading: false,
@@ -38,6 +39,7 @@ export const deleteLessonNote = createTeacherThunk('deleteLessonNote', teacherSe
 export const generateLearnerNote = createTeacherThunk('generateLearnerNote', teacherService.generateLearnerNote);
 export const generateLearnerNoteFromStrand = createTeacherThunk('generateLearnerNoteFromStrand', teacherService.generateLearnerNoteFromStrand);
 export const getTeacherAnalytics = createTeacherThunk('getTeacherAnalytics', teacherService.getTeacherAnalytics);
+export const getSchoolCalendar = createTeacherThunk('getSchoolCalendar', teacherService.getSchoolCalendar);
 export const getDraftLearnerNotes = createTeacherThunk('getDraftLearnerNotes', teacherService.getDraftLearnerNotes);
 export const publishLearnerNote = createTeacherThunk('publishLearnerNote', teacherService.publishLearnerNote);
 export const deleteLearnerNote = createTeacherThunk('deleteLearnerNote', teacherService.deleteLearnerNote);
@@ -133,6 +135,10 @@ export const teacherSlice = createSlice({
       // ✅ THE FIX IS HERE: This case was missing
       .addCase(getTeacherAnalytics.fulfilled, (state, action) => {
         state.analytics = action.payload;
+        state.isSuccess = true;
+      })
+      .addCase(getSchoolCalendar.fulfilled, (state, action) => {
+        state.schoolCalendar = action.payload;
         state.isSuccess = true;
       })
 

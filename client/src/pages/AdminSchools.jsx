@@ -17,13 +17,30 @@ import {
   TextField,
   Snackbar,
   Alert,
+  MenuItem,
+  Stack,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
-import { getSchools, createSchool, deleteSchool } from '../features/admin/adminSlice';
+import { getSchools, createSchool, deleteSchool, updateSchoolTermCalendar } from '../features/admin/adminSlice';
+
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+};
+
+const normalizeWeekRows = (rows = []) => {
+  return [...rows]
+    .filter((row) => row.weekNumber && row.weekEnding)
+    .map((row) => ({ weekNumber: Number(row.weekNumber), weekEnding: row.weekEnding }))
+    .sort((a, b) => a.weekNumber - b.weekNumber);
+};
 
 const AdminSchools = () => {
   const dispatch = useDispatch();
@@ -34,6 +51,11 @@ const AdminSchools = () => {
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarSchoolId, setCalendarSchoolId] = useState('');
+  const [calendarTerm, setCalendarTerm] = useState('one');
+  const [weekRows, setWeekRows] = useState([]);
+  const [weekCount, setWeekCount] = useState(12);
 
   const [alert, setAlert] = useState({ open: false, type: 'success', message: '' });
 
@@ -86,6 +108,70 @@ const AdminSchools = () => {
       fetchSchools();
     } catch (error) {
       setAlert({ open: true, type: 'error', message: 'Failed to delete school.' });
+    }
+  };
+
+  const openCalendarEditor = (school) => {
+    const rows = school?.termCalendar?.[calendarTerm] || [];
+    setCalendarSchoolId(school?._id || '');
+    setWeekRows(rows.map((row) => ({
+      weekNumber: row.weekNumber,
+      weekEnding: toDateInputValue(row.weekEnding),
+    })));
+    setWeekCount(rows.length || 12);
+    setCalendarOpen(true);
+  };
+
+  const handleTermChange = (term) => {
+    setCalendarTerm(term);
+    const school = schools.find((item) => item._id === calendarSchoolId);
+    const rows = school?.termCalendar?.[term] || [];
+    setWeekRows(rows.map((row) => ({
+      weekNumber: row.weekNumber,
+      weekEnding: toDateInputValue(row.weekEnding),
+    })));
+    setWeekCount(rows.length || 12);
+  };
+
+  const regenerateWeekRows = (countValue) => {
+    const count = Math.max(1, Math.min(20, Number(countValue) || 1));
+    setWeekCount(count);
+    setWeekRows((prev) => Array.from({ length: count }, (_, index) => {
+      const current = prev[index] || {};
+      return {
+        weekNumber: index + 1,
+        weekEnding: current.weekEnding || '',
+      };
+    }));
+  };
+
+  const handleWeekEndingChange = (index, value) => {
+    setWeekRows((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], weekNumber: index + 1, weekEnding: value };
+      return next;
+    });
+  };
+
+  const onSaveTermCalendar = async () => {
+    const school = schools.find((item) => item._id === calendarSchoolId);
+    if (!school) return;
+
+    const currentCalendar = school.termCalendar || { one: [], two: [], three: [] };
+    const nextCalendar = {
+      one: normalizeWeekRows(currentCalendar.one || []),
+      two: normalizeWeekRows(currentCalendar.two || []),
+      three: normalizeWeekRows(currentCalendar.three || []),
+      [calendarTerm]: normalizeWeekRows(weekRows),
+    };
+
+    try {
+      await dispatch(updateSchoolTermCalendar({ schoolId: calendarSchoolId, termCalendar: nextCalendar })).unwrap();
+      setAlert({ open: true, type: 'success', message: 'Term calendar updated successfully!' });
+      setCalendarOpen(false);
+      fetchSchools();
+    } catch (_error) {
+      setAlert({ open: true, type: 'error', message: 'Failed to save term calendar.' });
     }
   };
 
@@ -147,6 +233,13 @@ const AdminSchools = () => {
                   <TableCell>{s.teacherCount ?? 0}</TableCell>
                   <TableCell>{s.studentCount ?? 0}</TableCell>
                   <TableCell align="right">
+                    <IconButton
+                      aria-label="Edit term calendar"
+                      onClick={() => openCalendarEditor(s)}
+                      title="Edit term calendar"
+                    >
+                      <CalendarMonthIcon color="primary" />
+                    </IconButton>
                     <IconButton
                       aria-label="Delete school"
                       onClick={() => onDeleteSchool(s._id)}
@@ -213,6 +306,52 @@ const AdminSchools = () => {
           >
             Create
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={calendarOpen} onClose={() => setCalendarOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Set Term Weeks and Week Endings</DialogTitle>
+        <DialogContent>
+          <TextField
+            select
+            fullWidth
+            label="Term"
+            value={calendarTerm}
+            onChange={(e) => handleTermChange(e.target.value)}
+            sx={{ mt: 2 }}
+          >
+            <MenuItem value="one">Term One</MenuItem>
+            <MenuItem value="two">Term Two</MenuItem>
+            <MenuItem value="three">Term Three</MenuItem>
+          </TextField>
+
+          <TextField
+            fullWidth
+            type="number"
+            label="Number of Weeks"
+            value={weekCount}
+            onChange={(e) => regenerateWeekRows(e.target.value)}
+            inputProps={{ min: 1, max: 20 }}
+            sx={{ mt: 2 }}
+          />
+
+          <Stack spacing={1.5} sx={{ mt: 2 }}>
+            {weekRows.map((row, index) => (
+              <TextField
+                key={`week-ending-${index}`}
+                fullWidth
+                type="date"
+                label={`Week ${index + 1} Ending`}
+                value={row.weekEnding || ''}
+                onChange={(e) => handleWeekEndingChange(index, e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCalendarOpen(false)}>Cancel</Button>
+          <Button onClick={onSaveTermCalendar} variant="contained">Save Calendar</Button>
         </DialogActions>
       </Dialog>
 

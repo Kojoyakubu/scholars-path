@@ -17,11 +17,63 @@ import {
   Collapse,
   FormControlLabel,
   Switch,
+  MenuItem,
 } from '@mui/material';
 import { Article, OpenInFull, CloseFullscreen } from '@mui/icons-material';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
-// 💡 Fix 1: Add subStrandId to the props
+const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const TERM_TO_KEY = { one: 'one', two: 'two', three: 'three' };
+
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+};
+
+const computeDateFromWeekEndingAndDay = (weekEnding, dayName) => {
+  if (!weekEnding || !dayName) return '';
+  const date = new Date(weekEnding);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const offsets = {
+    Monday: -4,
+    Tuesday: -3,
+    Wednesday: -2,
+    Thursday: -1,
+    Friday: 0,
+    Saturday: 1,
+    Sunday: 2,
+  };
+
+  const offset = offsets[dayName] ?? 0;
+  const result = new Date(date);
+  result.setDate(result.getDate() + offset);
+  return result;
+};
+
+const formatLongDate = (date) => {
+  if (!date || Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+const buildSessionRows = (count, previous = []) => {
+  const nextCount = Math.max(1, Number(count) || 1);
+  return Array.from({ length: nextCount }, (_, index) => {
+    const prev = previous[index] || {};
+    return {
+      day: prev.day || DAY_OPTIONS[Math.min(index, DAY_OPTIONS.length - 1)] || 'Monday',
+      duration: prev.duration || '',
+    };
+  });
+};
+
 function LessonNoteForm({
   open,
   onClose,
@@ -31,18 +83,17 @@ function LessonNoteForm({
   subStrandId,
   defaultSchoolName = '',
   defaultFacilitatorName = '',
+  schoolCalendar,
   fullScreen = false,
   onToggleFullscreen,
 }) {
-  const defaultDuration = '1hr 10 mins / 2 Periods';
   const preferenceStorageKey = 'lernex:teacher-note-form-prefs';
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [formData, setFormData] = useState({
     school: defaultSchoolName || '',
     facilitatorName: '',
     term: 'One',
-    duration: defaultDuration,
-    dayDate: '',
     class: '',
     classSize: '',
     week: '',
@@ -50,9 +101,27 @@ function LessonNoteForm({
     indicatorCodes: '',
     reference: '',
     sessionsPerWeek: 1,
-    sessionPlan: '',
+    sessionRows: buildSessionRows(1),
   });
-  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const calendarByTerm = useMemo(() => {
+    const tc = schoolCalendar?.termCalendar || {};
+    return {
+      one: Array.isArray(tc.one) ? tc.one : [],
+      two: Array.isArray(tc.two) ? tc.two : [],
+      three: Array.isArray(tc.three) ? tc.three : [],
+    };
+  }, [schoolCalendar]);
+
+  const termKey = TERM_TO_KEY[String(formData.term || '').toLowerCase()] || 'one';
+  const weekOptions = calendarByTerm[termKey] || [];
+
+  const selectedWeekEnding = useMemo(() => {
+    const selectedWeek = Number(formData.week);
+    if (!Number.isFinite(selectedWeek)) return null;
+    const matched = weekOptions.find((entry) => Number(entry.weekNumber) === selectedWeek);
+    return matched?.weekEnding || null;
+  }, [formData.week, weekOptions]);
 
   useEffect(() => {
     if (open) {
@@ -62,31 +131,76 @@ function LessonNoteForm({
       } catch (_) {
         savedPrefs = {};
       }
+
+      const initialSessions = Math.max(1, Number(savedPrefs.sessionsPerWeek) || 1);
       setFormData({
         school: defaultSchoolName || savedPrefs.school || '',
         facilitatorName: defaultFacilitatorName || savedPrefs.facilitatorName || '',
         term: savedPrefs.term || 'One',
-        duration: savedPrefs.duration || defaultDuration,
-        dayDate: '',
         class: '',
         classSize: savedPrefs.classSize || '',
         week: '',
         contentStandardCode: savedPrefs.contentStandardCode || '',
         indicatorCodes: savedPrefs.indicatorCodes || '',
         reference: savedPrefs.reference || '',
-        sessionsPerWeek: savedPrefs.sessionsPerWeek || 1,
-        sessionPlan: '',
+        sessionsPerWeek: initialSessions,
+        sessionRows: buildSessionRows(initialSessions, savedPrefs.sessionRows || []),
       });
       setShowAdvanced(false);
     }
   }, [open, defaultFacilitatorName, defaultSchoolName]);
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const updateSessionRows = (sessionsPerWeek, previousRows) => {
+    return buildSessionRows(sessionsPerWeek, previousRows);
   };
 
-  const handleSubmitWithMode = (mode) => {
-    const payload = { ...formData, subStrandId, generationMode: mode };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'sessionsPerWeek') {
+      setFormData((prev) => {
+        const nextCount = Math.max(1, Math.min(7, Number(value) || 1));
+        return {
+          ...prev,
+          sessionsPerWeek: nextCount,
+          sessionRows: updateSessionRows(nextCount, prev.sessionRows),
+        };
+      });
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSessionRowChange = (index, field, value) => {
+    setFormData((prev) => {
+      const rows = [...prev.sessionRows];
+      rows[index] = { ...rows[index], [field]: value };
+      return { ...prev, sessionRows: rows };
+    });
+  };
+
+  const buildPayload = (mode) => {
+    const sessionPlanLines = (formData.sessionRows || []).map((row) => {
+      const computedDate = formatLongDate(computeDateFromWeekEndingAndDay(selectedWeekEnding, row.day));
+      const dateSlot = computedDate || row.day;
+      return `${dateSlot} | ${row.duration || '[AI: Session duration]'}`;
+    });
+
+    const firstSession = formData.sessionRows?.[0];
+    const firstSessionDate = formatLongDate(computeDateFromWeekEndingAndDay(selectedWeekEnding, firstSession?.day));
+
+    return {
+      ...formData,
+      subStrandId,
+      generationMode: mode,
+      dayDate: firstSessionDate || firstSession?.day || '',
+      duration: '',
+      sessionPlan: sessionPlanLines.join('\n'),
+    };
+  };
+
+  const persistPreferences = () => {
     try {
       localStorage.setItem(
         preferenceStorageKey,
@@ -94,18 +208,22 @@ function LessonNoteForm({
           school: formData.school,
           facilitatorName: formData.facilitatorName,
           term: formData.term,
-          duration: formData.duration,
           classSize: formData.classSize,
           contentStandardCode: formData.contentStandardCode,
           indicatorCodes: formData.indicatorCodes,
           reference: formData.reference,
           sessionsPerWeek: formData.sessionsPerWeek,
+          sessionRows: formData.sessionRows,
         })
       );
     } catch (_) {
       // Non-blocking: preference storage should not stop submission.
     }
-    onSubmit(payload);
+  };
+
+  const handleSubmitWithMode = (mode) => {
+    persistPreferences();
+    onSubmit(buildPayload(mode));
   };
 
   const handleSubmit = (e) => {
@@ -113,8 +231,7 @@ function LessonNoteForm({
     handleSubmitWithMode(showAdvanced ? 'custom' : 'fast');
   };
 
-  const sessionCount = Math.max(1, Number(formData.sessionsPerWeek) || 1);
-  const isMultiSession = sessionCount >= 2;
+  const hasCalendarWeeks = weekOptions.length > 0;
 
   return (
     <Dialog
@@ -145,7 +262,7 @@ function LessonNoteForm({
           )}
         </Box>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          This will generate a teacher lesson note based on the selected topic.
+          Select week and lesson day(s). Dates are auto-derived from your school term calendar.
         </Typography>
       </DialogTitle>
 
@@ -158,7 +275,7 @@ function LessonNoteForm({
                 Generating Your Lesson Note...
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                This may take 30–60 seconds.
+                This may take 30-60 seconds.
               </Typography>
               <Stepper activeStep={0} alternativeLabel sx={{ mt: 3 }}>
                 <Step><StepLabel>Teacher Note</StepLabel></Step>
@@ -166,7 +283,6 @@ function LessonNoteForm({
             </Box>
           ) : (
             <Stack spacing={2.5} sx={{ mt: 1 }}>
-              {/* Topic Display */}
               <Box
                 sx={{
                   p: 2,
@@ -182,14 +298,12 @@ function LessonNoteForm({
                 <Typography variant="h6">{subStrandName || 'N/A'}</Typography>
               </Box>
 
-              {/* School Information */}
               <TextField
                 name="school"
                 label="School Name"
                 value={formData.school}
                 onChange={handleChange}
                 fullWidth
-                placeholder="e.g., Ghana International School"
               />
 
               <TextField
@@ -198,82 +312,100 @@ function LessonNoteForm({
                 value={formData.facilitatorName}
                 onChange={handleChange}
                 fullWidth
-                placeholder="e.g., Mr. John Mensah"
               />
 
-              <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 1.5, border: '1px dashed', borderColor: 'divider' }}>
-                <Typography variant="body2" color="text.secondary">
-                  Fast Mode uses smart defaults from your profile and curriculum. Fill only week, class size, and meetings per week.
-                </Typography>
-              </Box>
-
-              {/* Term, Week, Date */}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
+                  select
                   name="term"
                   label="Term"
                   value={formData.term}
                   onChange={handleChange}
-                  helperText="One, Two, or Three"
                   sx={{ flex: 1 }}
-                />
+                >
+                  <MenuItem value="One">One</MenuItem>
+                  <MenuItem value="Two">Two</MenuItem>
+                  <MenuItem value="Three">Three</MenuItem>
+                </TextField>
                 <TextField
+                  select={hasCalendarWeeks}
                   name="week"
                   label="Week Number *"
                   value={formData.week}
                   onChange={handleChange}
                   required
-                  type="number"
-                  inputProps={{ min: 1, max: 20 }}
+                  type={hasCalendarWeeks ? undefined : 'number'}
+                  inputProps={hasCalendarWeeks ? undefined : { min: 1, max: 20 }}
+                  helperText={hasCalendarWeeks ? 'Admin-configured weeks for selected term' : 'No term calendar configured yet; enter week manually.'}
                   sx={{ flex: 1 }}
-                />
+                >
+                  {hasCalendarWeeks ? weekOptions.map((entry) => (
+                    <MenuItem key={`${termKey}-${entry.weekNumber}`} value={String(entry.weekNumber)}>
+                      Week {entry.weekNumber} (Ending {toDateInputValue(entry.weekEnding)})
+                    </MenuItem>
+                  )) : null}
+                </TextField>
               </Stack>
 
-              {/* Duration and Class Size */}
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  name="duration"
-                  label="Default Duration (Optional)"
-                  value={formData.duration}
-                  onChange={handleChange}
-                  helperText={isMultiSession ? 'Optional fallback only. Add each session duration in the Weekly Session Plan field.' : ''}
-                  sx={{ flex: 1 }}
-                />
-                <TextField
-                  name="classSize"
-                  label="Class Size *"
-                  value={formData.classSize}
-                  onChange={handleChange}
-                  required
-                  type="number"
-                  inputProps={{ min: 1, max: 200 }}
-                  sx={{ flex: 1 }}
-                />
-              </Stack>
+              <TextField
+                name="classSize"
+                label="Class Size *"
+                value={formData.classSize}
+                onChange={handleChange}
+                required
+                type="number"
+                inputProps={{ min: 1, max: 200 }}
+                fullWidth
+              />
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  name="sessionsPerWeek"
-                  label="Meetings Per Week *"
-                  value={formData.sessionsPerWeek}
-                  onChange={handleChange}
-                  required
-                  type="number"
-                  inputProps={{ min: 1, max: 7 }}
-                  sx={{ flex: 1 }}
-                />
-                <TextField
-                  name="sessionPlan"
-                  label="Weekly Session Plan (Optional)"
-                  value={formData.sessionPlan}
-                  onChange={handleChange}
-                  sx={{ flex: 1 }}
-                  multiline
-                  rows={isMultiSession ? 3 : 2}
-                  placeholder={isMultiSession ? 'One line per session: Monday, January 19, 2026 | 35 mins / 1 Period | Introduction to networking' : 'Optional: Monday, January 19, 2026 | 1hr 10 mins / 2 Periods | Introduction to networking'}
-                  helperText={isMultiSession ? 'Use one line per meeting in this format: Date / Slot | Duration | Optional focus.' : 'Optional format: Date / Slot | Duration | Optional focus.'}
-                />
-              </Stack>
+              <TextField
+                name="sessionsPerWeek"
+                label="Meetings Per Week *"
+                value={formData.sessionsPerWeek}
+                onChange={handleChange}
+                required
+                type="number"
+                inputProps={{ min: 1, max: 7 }}
+                fullWidth
+              />
+
+              <Box sx={{ p: 1.5, borderRadius: 1.5, border: '1px dashed', borderColor: 'divider' }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Session Schedule</Typography>
+                <Stack spacing={1.2}>
+                  {(formData.sessionRows || []).map((row, index) => {
+                    const computedDate = formatLongDate(computeDateFromWeekEndingAndDay(selectedWeekEnding, row.day));
+                    return (
+                      <Stack key={`session-${index}`} direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                        <TextField
+                          select
+                          label={`Session ${index + 1} Day`}
+                          value={row.day}
+                          onChange={(event) => handleSessionRowChange(index, 'day', event.target.value)}
+                          sx={{ flex: 1 }}
+                        >
+                          {DAY_OPTIONS.map((day) => (
+                            <MenuItem key={day} value={day}>{day}</MenuItem>
+                          ))}
+                        </TextField>
+                        <TextField
+                          label={`Session ${index + 1} Time/Duration *`}
+                          value={row.duration}
+                          onChange={(event) => handleSessionRowChange(index, 'duration', event.target.value)}
+                          required
+                          sx={{ flex: 1 }}
+                          placeholder="e.g., 35 mins / 1 Period"
+                        />
+                        <TextField
+                          label="Auto Date"
+                          value={computedDate || 'Waiting for week ending setup'}
+                          InputProps={{ readOnly: true }}
+                          sx={{ flex: 1 }}
+                        />
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+              </Box>
 
               <FormControlLabel
                 control={(
@@ -287,16 +419,6 @@ function LessonNoteForm({
 
               <Collapse in={showAdvanced} timeout="auto" unmountOnExit>
                 <Stack spacing={2.5}>
-                  <TextField
-                    name="dayDate"
-                    label="Day / Date"
-                    placeholder="e.g., Monday, October 20, 2025"
-                    value={formData.dayDate}
-                    onChange={handleChange}
-                    fullWidth
-                  />
-
-                  {/* Curriculum Standards */}
                   <TextField
                     name="contentStandardCode"
                     label="Content Standard Code"
@@ -349,7 +471,7 @@ function LessonNoteForm({
             variant="contained"
             disabled={isLoading}
             startIcon={isLoading ? <CircularProgress size={20} /> : null}
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: 220 }}
           >
             {isLoading ? 'Generating...' : 'Customize Then Generate'}
           </Button>

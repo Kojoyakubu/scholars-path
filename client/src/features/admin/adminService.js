@@ -47,6 +47,11 @@ const deleteSchool = async (schoolId) => {
   return response.data;
 };
 
+const updateSchoolTermCalendar = async ({ schoolId, termCalendar }) => {
+  const response = await api.put(`/api/admin/schools/${schoolId}/term-calendar`, { termCalendar });
+  return response.data;
+};
+
 const assignUserToSchool = async (data) => {
   const { userId, schoolId } = data;
   const response = await api.put(`/api/admin/users/${userId}/assign-school`, { schoolId });
@@ -100,6 +105,7 @@ const adminService = {
   getSchools,
   createSchool,
   deleteSchool,
+  updateSchoolTermCalendar,
   assignUserToSchool,
   setDownloadExemption,
   getAiInsights,
