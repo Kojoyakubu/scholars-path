@@ -1345,8 +1345,8 @@ function buildTeacherLessonNoteTemplate(templateDesign, fields) {
           </td>
           <td>
             ${isMultiSession
-              ? '<p><strong>Activity 1:</strong><br>[AI: Session 1 concept launch with explicit Session 1 label]</p>\n            <p><strong>Activity 2:</strong><br>[AI: Session 2+ deepening tasks with explicit Session labels]</p>\n            <p><strong>Evaluation:</strong><br>[AI: Session-specific checks for understanding across the week]</p>\n            <p><strong>Assignment:</strong><br>[AI: End-of-week assignment tied to all sessions]</p>'
-              : '<p><strong>Activity 1:</strong><br>[AI: Introduce main topic with explanation]</p>\n            <p><strong>Activity 2:</strong><br>[AI: Practical task - individual, pair, or group work]</p>\n            <p><strong>Evaluation:</strong><br>[AI: 2-3 questions to check understanding]</p>\n            <p><strong>Assignment:</strong><br>[AI: Short take-home task]</p>'}
+              ? '<p><strong>Activity 1:</strong><br>[AI: Session 1 concept launch with explicit Session 1 label]</p>\n            <p><strong>Activity 2:</strong><br>[AI: Session 2+ deepening tasks with explicit Session labels]</p>\n            <p><strong>Evaluation:</strong><br>[AI: Write 3-4 concrete learner-facing questions as a numbered list (1., 2., 3., ...), each ending with a question mark; include Session labels where relevant]</p>\n            <p><strong>Assignment:</strong><br>[AI: End-of-week assignment tied to all sessions]</p>'
+              : '<p><strong>Activity 1:</strong><br>[AI: Introduce main topic with explanation]</p>\n            <p><strong>Activity 2:</strong><br>[AI: Practical task - individual, pair, or group work]</p>\n            <p><strong>Evaluation:</strong><br>[AI: Write 3 concrete learner-facing questions as a numbered list (1., 2., 3.), each ending with a question mark]</p>\n            <p><strong>Assignment:</strong><br>[AI: Short take-home task]</p>'}
           </td>
           <td>
             ${isMultiSession
@@ -1704,6 +1704,31 @@ function boldLessonPhaseIndicators(html = '') {
   );
 }
 
+function ensureEvaluationQuestions(html = '', { topic = '', isMultiSession = false } = {}) {
+  const source = String(html || '');
+
+  return source.replace(
+    /(<p>\s*<strong>Evaluation:\/strong>\s*<br\s*\/?\s*>)([\s\S]*?)(<\/p>)/gi,
+    (_full, prefix, body, suffix) => {
+      const bodyText = String(body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const questionMarks = (bodyText.match(/\?/g) || []).length;
+
+      // Keep AI output if it already contains enough concrete questions.
+      if (questionMarks >= 2) {
+        return `${prefix}${body}${suffix}`;
+      }
+
+      const safeTopic = String(topic || '').trim() || 'this lesson topic';
+
+      if (isMultiSession) {
+        return `${prefix}1. Session 1: What is ${safeTopic}?<br>2. Session 1: State two key ideas learned about ${safeTopic}.<br>3. Session 2: How can you apply ${safeTopic} to solve a real-life problem?<br>4. Session 2: Give one correct example related to ${safeTopic}.${suffix}`;
+      }
+
+      return `${prefix}1. What is ${safeTopic}?<br>2. Mention two important points about ${safeTopic}.<br>3. Give one practical example of ${safeTopic}.${suffix}`;
+    }
+  );
+}
+
 async function generateTeacherLessonNoteHTML(details = {}) {
   const { 
     school, 
@@ -1775,6 +1800,7 @@ CRITICAL RULES:
 9. Respect "Meetings This Week" and the "Weekly Session Plan" table: distribute teaching progression across sessions and avoid repeating the same activities in every session.
 10. For multi-session weeks (2+ sessions), show clear continuity from Session 1 to later sessions (review -> deepen -> assess/consolidate).
 11. In the "Lesson Phases" table, explicitly tag activities by session for multi-session weeks (e.g., "Session 1:", "Session 2:"). Do not leave phases as a single-session generic narrative.
+12. The "Evaluation" field must contain only concrete assessment questions, not descriptions. Format as a numbered list (1., 2., 3., ...), each line ending with a question mark.
 
 ---
 TRANSFORMATION LOGIC EXAMPLE:
@@ -1803,6 +1829,12 @@ REMEMBER: Return ONLY the HTML above, filled with appropriate content. Keep the 
 
   // Ensure lesson phase indicators remain visually clear and consistent.
   text = boldLessonPhaseIndicators(text);
+
+  // Guardrail: convert vague Evaluation prose into concrete numbered questions.
+  text = ensureEvaluationQuestions(text, {
+    topic: resolvedSubStrandName,
+    isMultiSession: Number(sessionsPerWeek || 1) >= 2,
+  });
 
   return {
     text,
