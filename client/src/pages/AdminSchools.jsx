@@ -50,6 +50,23 @@ const buildWeekRows = (count, existingRows = []) => {
   }));
 };
 
+const buildSequentialWeekRows = (count, firstWeekEndingValue) => {
+  const normalizedCount = Math.max(1, Math.min(20, Number(count) || 1));
+  const startDate = new Date(firstWeekEndingValue);
+  if (Number.isNaN(startDate.getTime())) {
+    return buildWeekRows(normalizedCount);
+  }
+
+  return Array.from({ length: normalizedCount }, (_, index) => {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + (index * 7));
+    return {
+      weekNumber: index + 1,
+      weekEnding: toDateInputValue(date),
+    };
+  });
+};
+
 const AdminSchools = () => {
   const dispatch = useDispatch();
   const { schools, isLoading } = useSelector((state) => state.admin);
@@ -148,10 +165,29 @@ const AdminSchools = () => {
   const regenerateWeekRows = (countValue) => {
     const count = Math.max(1, Math.min(20, Number(countValue) || 1));
     setWeekCount(count);
-    setWeekRows((prev) => buildWeekRows(count, prev));
+    setWeekRows((prev) => {
+      const firstWeekEnding = prev?.[0]?.weekEnding;
+      if (firstWeekEnding) {
+        const generated = buildSequentialWeekRows(count, firstWeekEnding);
+        return generated;
+      }
+      return buildWeekRows(count, prev);
+    });
   };
 
   const handleWeekEndingChange = (index, value) => {
+    if (index === 0) {
+      if (!value) {
+        setWeekRows((prev) => prev.map((row, rowIndex) => ({
+          ...row,
+          weekEnding: rowIndex === 0 ? '' : row.weekEnding,
+        })));
+        return;
+      }
+      setWeekRows(buildSequentialWeekRows(weekCount, value));
+      return;
+    }
+
     setWeekRows((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], weekNumber: index + 1, weekEnding: value };
