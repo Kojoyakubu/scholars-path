@@ -14,6 +14,9 @@ import {
   StepLabel,
   Tooltip,
   IconButton,
+  Collapse,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import { Article, OpenInFull, CloseFullscreen } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
@@ -26,13 +29,16 @@ function LessonNoteForm({
   subStrandName,
   isLoading,
   subStrandId,
+  defaultSchoolName = '',
   defaultFacilitatorName = '',
   fullScreen = false,
   onToggleFullscreen,
 }) {
   const defaultDuration = '1hr 10 mins / 2 Periods';
+  const preferenceStorageKey = 'lernex:teacher-note-form-prefs';
+
   const [formData, setFormData] = useState({
-    school: '',
+    school: defaultSchoolName || '',
     facilitatorName: '',
     term: 'One',
     duration: defaultDuration,
@@ -46,35 +52,65 @@ function LessonNoteForm({
     sessionsPerWeek: 1,
     sessionPlan: '',
   });
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     if (open) {
+      let savedPrefs = {};
+      try {
+        savedPrefs = JSON.parse(localStorage.getItem(preferenceStorageKey) || '{}');
+      } catch (_) {
+        savedPrefs = {};
+      }
       setFormData({
-        school: '',
-        facilitatorName: defaultFacilitatorName || '',
-        term: 'One',
-        duration: defaultDuration,
+        school: defaultSchoolName || savedPrefs.school || '',
+        facilitatorName: defaultFacilitatorName || savedPrefs.facilitatorName || '',
+        term: savedPrefs.term || 'One',
+        duration: savedPrefs.duration || defaultDuration,
         dayDate: '',
         class: '',
-        classSize: '',
+        classSize: savedPrefs.classSize || '',
         week: '',
-        contentStandardCode: '',
-        indicatorCodes: '',
-        reference: '',
-        sessionsPerWeek: 1,
+        contentStandardCode: savedPrefs.contentStandardCode || '',
+        indicatorCodes: savedPrefs.indicatorCodes || '',
+        reference: savedPrefs.reference || '',
+        sessionsPerWeek: savedPrefs.sessionsPerWeek || 1,
         sessionPlan: '',
       });
+      setShowAdvanced(false);
     }
-  }, [open, defaultFacilitatorName]);
+  }, [open, defaultFacilitatorName, defaultSchoolName]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleSubmitWithMode = (mode) => {
+    const payload = { ...formData, subStrandId, generationMode: mode };
+    try {
+      localStorage.setItem(
+        preferenceStorageKey,
+        JSON.stringify({
+          school: formData.school,
+          facilitatorName: formData.facilitatorName,
+          term: formData.term,
+          duration: formData.duration,
+          classSize: formData.classSize,
+          contentStandardCode: formData.contentStandardCode,
+          indicatorCodes: formData.indicatorCodes,
+          reference: formData.reference,
+          sessionsPerWeek: formData.sessionsPerWeek,
+        })
+      );
+    } catch (_) {
+      // Non-blocking: preference storage should not stop submission.
+    }
+    onSubmit(payload);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // 💡 Fix 1: Merge the subStrandId with the form data before submission
-    onSubmit({ ...formData, subStrandId });
+    handleSubmitWithMode(showAdvanced ? 'custom' : 'fast');
   };
 
   const sessionCount = Math.max(1, Number(formData.sessionsPerWeek) || 1);
@@ -149,32 +185,35 @@ function LessonNoteForm({
               {/* School Information */}
               <TextField
                 name="school"
-                label="School Name *"
+                label="School Name"
                 value={formData.school}
                 onChange={handleChange}
-                required
                 fullWidth
                 placeholder="e.g., Ghana International School"
               />
 
               <TextField
                 name="facilitatorName"
-                label="Facilitator Name *"
+                label="Facilitator Name"
                 value={formData.facilitatorName}
                 onChange={handleChange}
-                required
                 fullWidth
                 placeholder="e.g., Mr. John Mensah"
               />
+
+              <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 1.5, border: '1px dashed', borderColor: 'divider' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Fast Mode uses smart defaults from your profile and curriculum. Fill only week, class size, and meetings per week.
+                </Typography>
+              </Box>
 
               {/* Term, Week, Date */}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   name="term"
-                  label="Term *"
+                  label="Term"
                   value={formData.term}
                   onChange={handleChange}
-                  required
                   helperText="One, Two, or Three"
                   sx={{ flex: 1 }}
                 />
@@ -190,24 +229,13 @@ function LessonNoteForm({
                 />
               </Stack>
 
-              <TextField
-                name="dayDate"
-                label="Day / Date *"
-                placeholder="e.g., Monday, October 20, 2025"
-                value={formData.dayDate}
-                onChange={handleChange}
-                required
-                fullWidth
-              />
-
               {/* Duration and Class Size */}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   name="duration"
-                  label={isMultiSession ? 'Default Duration (Optional)' : 'Duration *'}
+                  label="Default Duration (Optional)"
                   value={formData.duration}
                   onChange={handleChange}
-                  required={!isMultiSession}
                   helperText={isMultiSession ? 'Optional fallback only. Add each session duration in the Weekly Session Plan field.' : ''}
                   sx={{ flex: 1 }}
                 />
@@ -236,7 +264,7 @@ function LessonNoteForm({
                 />
                 <TextField
                   name="sessionPlan"
-                  label={isMultiSession ? 'Weekly Session Plan *' : 'Weekly Session Plan (Optional)'}
+                  label="Weekly Session Plan (Optional)"
                   value={formData.sessionPlan}
                   onChange={handleChange}
                   sx={{ flex: 1 }}
@@ -247,38 +275,58 @@ function LessonNoteForm({
                 />
               </Stack>
 
-              {/* Curriculum Standards */}
-              <TextField
-                name="contentStandardCode"
-                label="Content Standard Code *"
-                value={formData.contentStandardCode}
-                onChange={handleChange}
-                required
-                fullWidth
-                placeholder="e.g., B7.1.2.3"
+              <FormControlLabel
+                control={(
+                  <Switch
+                    checked={showAdvanced}
+                    onChange={(event) => setShowAdvanced(event.target.checked)}
+                  />
+                )}
+                label="Customize details (advanced)"
               />
 
-              <TextField
-                name="indicatorCodes"
-                label="Official NaCCA Indicator(s) *"
-                value={formData.indicatorCodes}
-                onChange={handleChange}
-                required
-                fullWidth
-                multiline
-                rows={3}
-                helperText="Copy and paste the full indicator text from the curriculum (e.g., 'Discuss the fourth-generation computers')"
-              />
+              <Collapse in={showAdvanced} timeout="auto" unmountOnExit>
+                <Stack spacing={2.5}>
+                  <TextField
+                    name="dayDate"
+                    label="Day / Date"
+                    placeholder="e.g., Monday, October 20, 2025"
+                    value={formData.dayDate}
+                    onChange={handleChange}
+                    fullWidth
+                  />
 
-              <TextField
-                name="reference"
-                label="Reference *"
-                value={formData.reference}
-                onChange={handleChange}
-                required
-                fullWidth
-                placeholder="e.g., NaCCA Computing Curriculum for Basic 7"
-              />
+                  {/* Curriculum Standards */}
+                  <TextField
+                    name="contentStandardCode"
+                    label="Content Standard Code"
+                    value={formData.contentStandardCode}
+                    onChange={handleChange}
+                    fullWidth
+                    placeholder="e.g., B7.1.2.3"
+                  />
+
+                  <TextField
+                    name="indicatorCodes"
+                    label="Official NaCCA Indicator(s)"
+                    value={formData.indicatorCodes}
+                    onChange={handleChange}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    helperText="Optional. If empty, AI will infer suitable indicators from the selected topic."
+                  />
+
+                  <TextField
+                    name="reference"
+                    label="Reference"
+                    value={formData.reference}
+                    onChange={handleChange}
+                    fullWidth
+                    placeholder="e.g., NaCCA Computing Curriculum for Basic 7"
+                  />
+                </Stack>
+              </Collapse>
             </Stack>
           )}
         </DialogContent>
@@ -288,13 +336,22 @@ function LessonNoteForm({
             Cancel
           </Button>
           <Button
+            type="button"
+            variant="outlined"
+            disabled={isLoading}
+            onClick={() => handleSubmitWithMode('fast')}
+            sx={{ minWidth: 150 }}
+          >
+            Generate Fast
+          </Button>
+          <Button
             type="submit"
             variant="contained"
             disabled={isLoading}
             startIcon={isLoading ? <CircularProgress size={20} /> : null}
             sx={{ minWidth: 200 }}
           >
-            {isLoading ? 'Generating...' : 'Generate Lesson Note'}
+            {isLoading ? 'Generating...' : 'Customize Then Generate'}
           </Button>
         </DialogActions>
       </form>

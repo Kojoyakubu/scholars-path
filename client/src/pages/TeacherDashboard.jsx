@@ -1384,6 +1384,7 @@ function TeacherDashboard() {
           subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           subStrandId={selections.subStrand}
           defaultFacilitatorName={user?.name || ''}
+          defaultSchoolName={user?.school || ''}
           isLoading={isLoading}
         />
         {/* Learner Notes Options Dialog */}
@@ -2041,6 +2042,7 @@ function TeacherDashboard() {
           subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           subStrandId={selections.subStrand}
           defaultFacilitatorName={user?.name || ''}
+          defaultSchoolName={user?.school || ''}
           isLoading={isLoading || planLoading}
           fullScreen={isDialogFullscreen('lessonNoteForm')}
           onToggleFullscreen={() => toggleDialogFullscreen('lessonNoteForm')}

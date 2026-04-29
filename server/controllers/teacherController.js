@@ -45,6 +45,18 @@ const generateLessonNote = asyncHandler(async (req, res) => {
 
   const aiDetails = {
     ...noteDetails,
+    school: noteDetails.school || req.user.school || '',
+    facilitatorName: noteDetails.facilitatorName || req.user.name || '',
+    term: noteDetails.term || 'One',
+    week: noteDetails.week || '[Week]',
+    dayDate: noteDetails.dayDate || '[AI: Select first meeting date for this week]',
+    duration: noteDetails.duration || '',
+    classSize: noteDetails.classSize || '',
+    contentStandardCode: noteDetails.contentStandardCode || '',
+    indicatorCodes: noteDetails.indicatorCodes || '',
+    reference: noteDetails.reference || '',
+    sessionsPerWeek: noteDetails.sessionsPerWeek || 1,
+    sessionPlan: noteDetails.sessionPlan || '',
     subStrandName: subStrand?.name ?? 'N/A',
     strandName: subStrand?.strand?.name ?? 'N/A',
     subjectName: subStrand?.strand?.subject?.name ?? 'N/A',
@@ -66,17 +78,17 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     subStrand: subStrandId,
     content: teacherNoteHTML,
     generationContext: {
-      facilitatorName: noteDetails?.facilitatorName || '',
-      term: noteDetails?.term || '',
-      week: noteDetails?.week || '',
-      dayDate: noteDetails?.dayDate || '',
-      duration: noteDetails?.duration || '',
-      classSize: noteDetails?.classSize || null,
-      contentStandardCode: noteDetails?.contentStandardCode || '',
-      indicatorCodes: noteDetails?.indicatorCodes || '',
-      reference: noteDetails?.reference || '',
-      sessionsPerWeek: noteDetails?.sessionsPerWeek || 1,
-      sessionPlan: noteDetails?.sessionPlan || '',
+      facilitatorName: aiDetails.facilitatorName,
+      term: aiDetails.term,
+      week: aiDetails.week,
+      dayDate: aiDetails.dayDate,
+      duration: aiDetails.duration,
+      classSize: aiDetails.classSize || null,
+      contentStandardCode: aiDetails.contentStandardCode,
+      indicatorCodes: aiDetails.indicatorCodes,
+      reference: aiDetails.reference,
+      sessionsPerWeek: aiDetails.sessionsPerWeek || 1,
+      sessionPlan: aiDetails.sessionPlan || '',
     },
     aiProvider,
     aiModel,
@@ -244,12 +256,13 @@ const generateLearnerNoteFromStrand = asyncHandler(async (req, res) => {
   }
 
   const curriculumDetails = {
-    school: school || req.user.school || '',
-    term: term || '',
-    week: week || '',
-    dayDate: dayDate || '',
+    school: school || req.user.school || '[School Name]',
+    facilitatorName: facilitatorName || req.user.name || '',
+    term: term || 'One',
+    week: week || '[Week]',
+    dayDate: dayDate || '[AI: Select first meeting date for this week]',
     duration: duration || '',
-    classSize: classSize || '',
+    classSize: classSize || '[Class size]',
     contentStandardCode: contentStandardCode || '',
     indicatorCodes: indicatorCodes || '',
     reference: reference || '',
@@ -461,10 +474,9 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
   }
 
   // Validate required fields
-  const requiresSharedDuration = Number(sessionsPerWeek || 1) <= 1;
-  if (!school || !facilitatorName || !term || !week || !dayDate || (requiresSharedDuration && !duration) || !classSize || !contentStandardCode || !indicatorCodes || !reference) {
+  if (!week || !classSize) {
     res.status(400);
-    throw new Error('All curriculum fields are required');
+    throw new Error('Week number and class size are required');
   }
 
   // Fetch full curriculum hierarchy
@@ -483,16 +495,16 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
 
   // Build curriculum details object
   const curriculumDetails = {
-    school,
-    facilitatorName,
-    term,
+    school: school || req.user.school || '[School Name]',
+    facilitatorName: facilitatorName || req.user.name || '',
+    term: term || 'One',
     week,
-    dayDate,
-    duration,
+    dayDate: dayDate || '[AI: Select first meeting date for this week]',
+    duration: duration || '',
     classSize,
-    contentStandardCode,
-    indicatorCodes,
-    reference,
+    contentStandardCode: contentStandardCode || '',
+    indicatorCodes: indicatorCodes || '',
+    reference: reference || '',
     sessionsPerWeek: sessionsPerWeek || 1,
     sessionPlan: sessionPlan || '',
     subStrandName: subStrand.name,
@@ -545,15 +557,15 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
     subStrand: subStrandId,
     content: teacherNoteHTML,
     generationContext: {
-      facilitatorName,
-      term,
+      facilitatorName: curriculumDetails.facilitatorName,
+      term: curriculumDetails.term,
       week,
-      dayDate,
-      duration,
+      dayDate: curriculumDetails.dayDate,
+      duration: curriculumDetails.duration,
       classSize,
-      contentStandardCode,
-      indicatorCodes,
-      reference,
+      contentStandardCode: curriculumDetails.contentStandardCode,
+      indicatorCodes: curriculumDetails.indicatorCodes,
+      reference: curriculumDetails.reference,
       sessionsPerWeek: sessionsPerWeek || 1,
       sessionPlan: sessionPlan || '',
     },

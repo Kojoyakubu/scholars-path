@@ -1718,22 +1718,35 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     preferredProvider 
   } = details;
 
+  const resolvedSchool = school || '[School Name]';
+  const resolvedClassName = className || '[Class]';
+  const resolvedSubjectName = subjectName || '[Subject]';
+  const resolvedStrandName = strandName || '[Strand]';
+  const resolvedSubStrandName = subStrandName || '[Sub-Strand]';
+  const resolvedWeek = week || '[Week]';
+  const resolvedTerm = term || 'One';
+  const resolvedClassSize = classSize || '[Class size]';
+  const resolvedReference = reference || '[NaCCA curriculum reference]';
+  const resolvedDayDate = dayDate || '[AI: Select first meeting date in this week]';
+  const resolvedDuration = duration || '[AI: Session duration]';
+  const resolvedContentStandardCode = contentStandardCode || '[AI: Content standard code from selected topic]';
+
   const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
   const facilitatorDisplayName = String(facilitatorName || '').trim() || '..................................................';
   const templateMarkup = buildTeacherLessonNoteTemplate('modern-academic', {
-    school,
-    className,
-    subjectName,
-    strandName,
-    subStrandName,
-    week,
-    term,
-    duration,
-    classSize,
-    reference,
-    contentStandardCode,
+    school: resolvedSchool,
+    className: resolvedClassName,
+    subjectName: resolvedSubjectName,
+    strandName: resolvedStrandName,
+    subStrandName: resolvedSubStrandName,
+    week: resolvedWeek,
+    term: resolvedTerm,
+    duration: resolvedDuration,
+    classSize: resolvedClassSize,
+    reference: resolvedReference,
+    contentStandardCode: resolvedContentStandardCode,
     officialIndicatorText,
-    dayDate,
+    dayDate: resolvedDayDate,
     facilitatorDisplayName,
     sessionsPerWeek,
     sessionPlan,
@@ -1748,7 +1761,7 @@ CRITICAL RULES:
 3. Use proper HTML tags: <h2>, <h3>, <p>, <table>, <ul>, <li>, <strong>, <br>
 4. The layout must be clean, professional, and ready to display in a web browser
 5. Use the "Transformation Logic" to convert the "Official NaCCA Indicator" into learner-centric "Performance Indicators"
-6. Derive the Week Ending (Friday date) from the provided Day/Date
+6. Derive the Week Ending (Friday date) from the provided Day/Date, or infer a realistic one when Day/Date is not explicitly provided
 7. Keep the chosen visual template structure exactly as provided while filling the content professionally
 8. In the "Curriculum Standards" section, keep a strict TWO-COLUMN table layout (label in column 1, content in column 2). Do not convert those rows into standalone paragraphs.
 9. Respect "Meetings This Week" and the "Weekly Session Plan" table: distribute teaching progression across sessions and avoid repeating the same activities in every session.
