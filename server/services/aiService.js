@@ -1783,6 +1783,8 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     facilitatorName,
     sessionsPerWeek,
     sessionPlan,
+    topicCount,
+    multiTopicContext,
     preferredModel, 
     preferredProvider 
   } = details;
@@ -1839,6 +1841,18 @@ CRITICAL RULES:
 10. For multi-session weeks (2+ sessions), show clear continuity from Session 1 to later sessions (review -> deepen -> assess/consolidate).
 11. For multi-session weeks, the "Lesson Phases" table must be split by session blocks: add a full-width row label like "SESSION 1", then one row with Phase 1, Phase 2, and Phase 3 content for that session; repeat for SESSION 2, SESSION 3, etc.
 12. The "Evaluation" field must contain only concrete assessment questions, not descriptions. Format as a numbered list (1., 2., 3., ...), each line ending with a question mark.
+13. If multiple topics/sub-strands are provided, generate ONE integrated lesson note that covers all topics across the available sessions, not separate notes.
+14. For multiple topics, map curriculum alignment correctly: show corresponding Content Standard Code(s) and Official Indicator(s) for each topic in clear, topic-labeled lines.
+15. For multiple topics, distribute topic flow intelligently across sessions (e.g., Session 1 foundation topics, Session 2 deeper application/assessment), with explicit continuity.
+
+---
+TOPIC CONTEXT:
+- Topic count: ${Number(topicCount || 1)}
+- Selected topics:
+${multiTopicContext || `1. Strand: ${resolvedStrandName} | Sub-strand: ${resolvedSubStrandName}`}
+
+CURRICULUM ALIGNMENT RULE:
+- If Topic count > 1, the "Content Standard Code" and "Official Indicator(s)" entries must include one clearly labeled line per topic (e.g., "Topic 1 - ...", "Topic 2 - ...") and each indicator must correspond to the correct topic.
 
 ---
 TRANSFORMATION LOGIC EXAMPLE:

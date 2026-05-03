@@ -914,37 +914,27 @@ function TeacherDashboard() {
     }
 
     (async () => {
-      const createdNotes = [];
-      const failedTopics = [];
+      try {
+        const createdNote = await dispatch(generateLessonNote({
+          ...formData,
+          subStrandIds: selectedTopics.map((topic) => topic.id),
+          subStrandId: selectedTopics[0]?.id || formData.subStrandId,
+        })).unwrap();
 
-      for (const topic of selectedTopics) {
-        try {
-          const createdNote = await dispatch(generateLessonNote({
-            ...formData,
-            subStrandId: topic.id,
-          })).unwrap();
-          createdNotes.push(createdNote);
-        } catch (_err) {
-          failedTopics.push(topic.name || 'Topic');
-        }
-      }
-
-      if (createdNotes.length > 0) {
-        const successMessage = createdNotes.length === 1
+        const successMessage = selectedTopics.length === 1
           ? 'Lesson note generated!'
-          : `${createdNotes.length} lesson notes generated successfully.`;
+          : 'One combined lesson note generated for all selected topics.';
         setSnackbar({ open: true, message: successMessage, severity: 'success' });
-        displayNote(createdNotes[0]);
+        displayNote(createdNote);
         closeDialog();
         setShowCreateTools(false);
         setLessonPlanSelectedSubStrands([]);
-      }
-
-      if (failedTopics.length > 0) {
-        const failureMessage = failedTopics.length === selectedTopics.length
-          ? 'Failed to generate lesson notes for the selected topics.'
-          : `Some topics failed: ${failedTopics.join(', ')}`;
-        setSnackbar({ open: true, message: failureMessage, severity: createdNotes.length > 0 ? 'warning' : 'error' });
+      } catch (_err) {
+        setSnackbar({
+          open: true,
+          message: 'Failed to generate a combined lesson note for the selected topics.',
+          severity: 'error',
+        });
       }
     })();
   }, [dispatch, displayNote, closeDialog, lessonPlanSelectedSubStrands, selections.subStrand, subStrands]);
@@ -2150,6 +2140,7 @@ function TeacherDashboard() {
           subStrandName={lessonPlanSelectedSubStrands[0]?.name || subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           selectedTopicNames={lessonPlanSelectedSubStrands.map((topic) => topic.name)}
           subStrandId={lessonPlanSelectedSubStrands[0]?.id || selections.subStrand}
+          subStrandIds={lessonPlanSelectedSubStrands.map((topic) => topic.id)}
           defaultFacilitatorName={user?.name || ''}
           defaultSchoolName={user?.school || ''}
           schoolCalendar={schoolCalendar}

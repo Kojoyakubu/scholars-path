@@ -82,6 +82,7 @@ function LessonNoteForm({
   selectedTopicNames = [],
   isLoading,
   subStrandId,
+  subStrandIds = [],
   defaultSchoolName = '',
   defaultFacilitatorName = '',
   schoolCalendar,
@@ -185,6 +186,7 @@ function LessonNoteForm({
     return {
       ...formData,
       subStrandId,
+      subStrandIds: Array.isArray(subStrandIds) && subStrandIds.length > 0 ? subStrandIds : (subStrandId ? [subStrandId] : []),
       generationMode: mode,
       dayDate: firstSessionDate || firstSession?.day || '',
       weekEnding: toDateInputValue(selectedWeekEnding) || '',

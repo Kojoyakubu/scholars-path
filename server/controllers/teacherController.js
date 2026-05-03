@@ -24,14 +24,19 @@ const aiService = require('../services/aiService');
  * @access  Private (Teacher)
  */
 const generateLessonNote = asyncHandler(async (req, res) => {
-  const { subStrandId, ...noteDetails } = req.body;
+  const { subStrandId, subStrandIds, ...noteDetails } = req.body;
 
-  if (!subStrandId || !mongoose.Types.ObjectId.isValid(subStrandId)) {
+  const requestedSubStrandIds = Array.from(new Set([
+    ...(Array.isArray(subStrandIds) ? subStrandIds : []),
+    ...(subStrandId ? [subStrandId] : []),
+  ].map((id) => String(id || '').trim()).filter(Boolean)));
+
+  if (requestedSubStrandIds.length === 0 || requestedSubStrandIds.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
     res.status(400);
-    throw new Error('A valid Sub-strand ID is required.');
+    throw new Error('At least one valid Sub-strand ID is required.');
   }
 
-  const subStrand = await SubStrand.findById(subStrandId).populate({
+  const subStrands = await SubStrand.find({ _id: { $in: requestedSubStrandIds } }).populate({
     path: 'strand',
     populate: {
       path: 'subject',
@@ -39,10 +44,45 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     },
   });
 
-  if (!subStrand) {
+  if (!subStrands.length) {
     res.status(404);
-    throw new Error('Sub-strand not found');
+    throw new Error('Sub-strand(s) not found');
   }
+
+  if (subStrands.length !== requestedSubStrandIds.length) {
+    res.status(404);
+    throw new Error('One or more selected sub-strands were not found.');
+  }
+
+  const orderedSubStrands = requestedSubStrandIds
+    .map((id) => subStrands.find((item) => String(item._id) === String(id)))
+    .filter(Boolean);
+
+  const primarySubStrand = orderedSubStrands[0];
+
+  const selectedTopicContext = orderedSubStrands.map((item, index) => ({
+    position: index + 1,
+    subStrandName: item?.name || 'N/A',
+    strandName: item?.strand?.name || 'N/A',
+    subjectName: item?.strand?.subject?.name || 'N/A',
+    className: item?.strand?.subject?.class?.name || 'N/A',
+  }));
+
+  const mixedSubjects = new Set(selectedTopicContext.map((entry) => entry.subjectName).filter(Boolean));
+  const mixedClasses = new Set(selectedTopicContext.map((entry) => entry.className).filter(Boolean));
+
+  if (mixedSubjects.size > 1 || mixedClasses.size > 1) {
+    res.status(400);
+    throw new Error('Selected sub-strands must belong to the same class and subject to generate a single lesson note.');
+  }
+
+  const mergedSubStrandName = selectedTopicContext.map((entry) => entry.subStrandName).join(', ');
+  const mergedStrandName = Array.from(new Set(selectedTopicContext.map((entry) => entry.strandName).filter(Boolean))).join(', ');
+  const mergedSubjectName = selectedTopicContext[0]?.subjectName || primarySubStrand?.strand?.subject?.name || 'N/A';
+  const mergedClassName = noteDetails.class || selectedTopicContext[0]?.className || primarySubStrand?.strand?.subject?.class?.name || 'N/A';
+  const multiTopicContext = selectedTopicContext
+    .map((entry) => `${entry.position}. Strand: ${entry.strandName} | Sub-strand: ${entry.subStrandName}`)
+    .join('\n');
 
   const aiDetails = {
     ...noteDetails,
@@ -59,10 +99,12 @@ const generateLessonNote = asyncHandler(async (req, res) => {
     reference: noteDetails.reference || '',
     sessionsPerWeek: noteDetails.sessionsPerWeek || 1,
     sessionPlan: noteDetails.sessionPlan || '',
-    subStrandName: subStrand?.name ?? 'N/A',
-    strandName: subStrand?.strand?.name ?? 'N/A',
-    subjectName: subStrand?.strand?.subject?.name ?? 'N/A',
-    className: noteDetails.class || subStrand?.strand?.subject?.class?.name || 'N/A',
+    subStrandName: mergedSubStrandName || 'N/A',
+    strandName: mergedStrandName || 'N/A',
+    subjectName: mergedSubjectName || 'N/A',
+    className: mergedClassName || 'N/A',
+    topicCount: selectedTopicContext.length,
+    multiTopicContext,
   };
 
   // Use the same HTML generator used by the bundle pipeline so single-note
@@ -77,7 +119,7 @@ const generateLessonNote = asyncHandler(async (req, res) => {
   const lessonNote = await LessonNote.create({
     teacher: req.user.id,
     school: req.user.school,
-    subStrand: subStrandId,
+    subStrand: primarySubStrand._id,
     content: teacherNoteHTML,
     generationContext: {
       facilitatorName: aiDetails.facilitatorName,
