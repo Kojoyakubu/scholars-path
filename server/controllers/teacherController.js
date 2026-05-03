@@ -46,12 +46,12 @@ const generateLessonNote = asyncHandler(async (req, res) => {
 
   const aiDetails = {
     ...noteDetails,
-    school: noteDetails.school || req.user.school || '',
-    facilitatorName: noteDetails.facilitatorName || req.user.name || '',
-    term: noteDetails.term || 'One',
-    week: noteDetails.week || '[Week]',
+    school: noteDetails.school || '',
+    facilitatorName: noteDetails.facilitatorName || '',
+    term: noteDetails.term || '',
+    week: noteDetails.week || '',
     weekEnding: noteDetails.weekEnding || '',
-    dayDate: noteDetails.dayDate || '[AI: Select first meeting date for this week]',
+    dayDate: noteDetails.dayDate || '',
     duration: noteDetails.duration || '',
     classSize: noteDetails.classSize || '',
     contentStandardCode: noteDetails.contentStandardCode || '',
@@ -260,14 +260,14 @@ const generateLearnerNoteFromStrand = asyncHandler(async (req, res) => {
   }
 
   const curriculumDetails = {
-    school: school || req.user.school || '[School Name]',
-    facilitatorName: facilitatorName || req.user.name || '',
-    term: term || 'One',
-    week: week || '[Week]',
+    school: school || '',
+    facilitatorName: facilitatorName || '',
+    term: term || '',
+    week: week || '',
     weekEnding: weekEnding || '',
-    dayDate: dayDate || '[AI: Select first meeting date for this week]',
+    dayDate: dayDate || '',
     duration: duration || '',
-    classSize: classSize || '[Class size]',
+    classSize: classSize || '',
     contentStandardCode: contentStandardCode || '',
     indicatorCodes: indicatorCodes || '',
     reference: reference || '',
@@ -525,12 +525,12 @@ const generateLessonBundle = asyncHandler(async (req, res) => {
 
   // Build curriculum details object
   const curriculumDetails = {
-    school: school || req.user.school || '[School Name]',
-    facilitatorName: facilitatorName || req.user.name || '',
-    term: term || 'One',
+    school: school || '',
+    facilitatorName: facilitatorName || '',
+    term: term || '',
     week,
     weekEnding: weekEnding || '',
-    dayDate: dayDate || '[AI: Select first meeting date for this week]',
+    dayDate: dayDate || '',
     duration: duration || '',
     classSize,
     contentStandardCode: contentStandardCode || '',

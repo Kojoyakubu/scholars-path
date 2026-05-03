@@ -88,13 +88,12 @@ function LessonNoteForm({
   fullScreen = false,
   onToggleFullscreen,
 }) {
-  const preferenceStorageKey = 'lernex:teacher-note-form-prefs';
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [formData, setFormData] = useState({
-    school: defaultSchoolName || '',
+    school: '',
     facilitatorName: '',
-    term: 'One',
+    term: '',
     class: '',
     classSize: '',
     week: '',
@@ -126,30 +125,22 @@ function LessonNoteForm({
 
   useEffect(() => {
     if (open) {
-      let savedPrefs = {};
-      try {
-        savedPrefs = JSON.parse(localStorage.getItem(preferenceStorageKey) || '{}');
-      } catch (_) {
-        savedPrefs = {};
-      }
-
-      const initialSessions = Math.max(1, Number(savedPrefs.sessionsPerWeek) || 1);
       setFormData({
-        school: defaultSchoolName || savedPrefs.school || '',
-        facilitatorName: defaultFacilitatorName || savedPrefs.facilitatorName || '',
-        term: savedPrefs.term || 'One',
+        school: '',
+        facilitatorName: '',
+        term: '',
         class: '',
-        classSize: savedPrefs.classSize || '',
+        classSize: '',
         week: '',
-        contentStandardCode: savedPrefs.contentStandardCode || '',
-        indicatorCodes: savedPrefs.indicatorCodes || '',
-        reference: savedPrefs.reference || '',
-        sessionsPerWeek: initialSessions,
-        sessionRows: buildSessionRows(initialSessions, savedPrefs.sessionRows || []),
+        contentStandardCode: '',
+        indicatorCodes: '',
+        reference: '',
+        sessionsPerWeek: 1,
+        sessionRows: buildSessionRows(1),
       });
       setShowAdvanced(false);
     }
-  }, [open, defaultFacilitatorName, defaultSchoolName]);
+  }, [open]);
 
   const updateSessionRows = (sessionsPerWeek, previousRows) => {
     return buildSessionRows(sessionsPerWeek, previousRows);

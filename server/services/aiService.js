@@ -1787,22 +1787,22 @@ async function generateTeacherLessonNoteHTML(details = {}) {
     preferredProvider 
   } = details;
 
-  const resolvedSchool = school || '[School Name]';
+  const resolvedSchool = school || '';
   const resolvedClassName = className || '[Class]';
   const resolvedSubjectName = subjectName || '[Subject]';
   const resolvedStrandName = strandName || '[Strand]';
   const resolvedSubStrandName = subStrandName || '[Sub-Strand]';
-  const resolvedWeek = week || '[Week]';
-  const resolvedWeekEnding = weekEnding || '[AI: Week ending date]';
-  const resolvedTerm = term || 'One';
-  const resolvedClassSize = classSize || '[Class size]';
-  const resolvedReference = reference || '[NaCCA curriculum reference]';
-  const resolvedDayDate = dayDate || '[AI: Select first meeting date in this week]';
-  const resolvedDuration = duration || '[AI: Session duration]';
-  const resolvedContentStandardCode = contentStandardCode || '[AI: Content standard code from selected topic]';
+  const resolvedWeek = week || '';
+  const resolvedWeekEnding = weekEnding || '';
+  const resolvedTerm = term || '';
+  const resolvedClassSize = classSize || '';
+  const resolvedReference = reference || '';
+  const resolvedDayDate = dayDate || '';
+  const resolvedDuration = duration || '';
+  const resolvedContentStandardCode = contentStandardCode || '';
 
-  const officialIndicatorText = indicatorCodes || '[Official Indicator Text]';
-  const facilitatorDisplayName = String(facilitatorName || '').trim() || '..................................................';
+  const officialIndicatorText = indicatorCodes || '';
+  const facilitatorDisplayName = String(facilitatorName || '').trim() || '';
   const templateMarkup = buildTeacherLessonNoteTemplate('modern-academic', {
     school: resolvedSchool,
     className: resolvedClassName,
