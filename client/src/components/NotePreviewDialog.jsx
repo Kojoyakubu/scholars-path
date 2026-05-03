@@ -52,18 +52,18 @@ const contentSx = {
 
 const compactContentSx = {
   '& *': { boxSizing: 'border-box' },
-  '& h1': { fontSize: '1.45rem', fontWeight: 700, mt: 1, mb: 0.8 },
-  '& h2': { fontSize: '1.25rem', fontWeight: 600, mt: 1, mb: 0.65 },
-  '& h3': { fontSize: '1.08rem', fontWeight: 600, mt: 0.85, mb: 0.5 },
+  '& h1': { fontSize: '1.6rem', fontWeight: 700, mt: 1, mb: 0.8 },
+  '& h2': { fontSize: '1.35rem', fontWeight: 600, mt: 1, mb: 0.65 },
+  '& h3': { fontSize: '1.16rem', fontWeight: 600, mt: 0.85, mb: 0.5 },
   '& table': {
     width: '100%',
     tableLayout: 'fixed',
     borderCollapse: 'collapse',
     my: 0.5,
-    fontSize: '0.92rem',
+    fontSize: '1rem',
     '& td, & th': {
       border: '1px solid #ddd',
-      padding: '4px 7px',
+      padding: '5px 8px',
       verticalAlign: 'top',
       whiteSpace: 'normal',
       wordBreak: 'break-word',
@@ -71,8 +71,8 @@ const compactContentSx = {
     },
     '& th': { backgroundColor: '#f5f5f5', fontWeight: 600 },
   },
-  '& p': { lineHeight: 1.38, mb: 0.4, fontSize: '0.92rem', wordBreak: 'break-word', overflowWrap: 'anywhere' },
-  '& li': { wordBreak: 'break-word', overflowWrap: 'anywhere', marginBottom: '2px', fontSize: '0.92rem' },
+  '& p': { lineHeight: 1.45, mb: 0.42, fontSize: '1rem', wordBreak: 'break-word', overflowWrap: 'anywhere' },
+  '& li': { wordBreak: 'break-word', overflowWrap: 'anywhere', marginBottom: '2px', fontSize: '1rem' },
   '& ul, & ol': { pl: 2, mb: 0.5 },
   '& section': { border: '1px solid #eceff3', borderRadius: 1, p: 0.75, my: 0.5 },
   '& figure': { pageBreakInside: 'avoid', breakInside: 'avoid', my: 0.5 },
@@ -138,8 +138,8 @@ export default function NotePreviewDialog({
           id={contentId}
           elevation={0}
           sx={{
-            p: isPdfExporting ? 0.5 : { xs: 1.25, sm: 4 },
-            width: isPdfExporting ? '920px' : '100%',
+            p: isPdfExporting ? 0.35 : { xs: 1.25, sm: 4 },
+            width: isPdfExporting ? '840px' : '100%',
             maxWidth: isPdfExporting ? 'none' : 1000,
             mx: 'auto',
             overflowX: { xs: 'auto', sm: 'visible' },
