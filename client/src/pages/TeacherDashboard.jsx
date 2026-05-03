@@ -240,6 +240,7 @@ function TeacherDashboard() {
   const [selectedLessonForLearner, setSelectedLessonForLearner] = useState('');
   const [selectedLessonForQuiz, setSelectedLessonForQuiz] = useState('');
   const [quizSelectedSubStrands, setQuizSelectedSubStrands] = useState([]);
+  const [lessonPlanSelectedSubStrands, setLessonPlanSelectedSubStrands] = useState([]);
   const [notesClassFilter, setNotesClassFilter] = useState('');
   const [notesSubjectFilter, setNotesSubjectFilter] = useState('');
   const [learnerNotesClassFilter, setLearnerNotesClassFilter] = useState('');
@@ -311,6 +312,7 @@ function TeacherDashboard() {
 
   const resetSelections = useCallback(() => {
     setSelections(INITIAL_SELECTIONS);
+    setLessonPlanSelectedSubStrands([]);
   }, []);
 
   const resetStrandForm = useCallback(() => {
@@ -512,6 +514,10 @@ function TeacherDashboard() {
         dispatch(clearChildren({ entities: resetMap[name] }));
         // if topic selections change, clear any previously queued strands for quizzes
         setQuizSelectedSubStrands([]);
+        if (name === 'level' || name === 'class' || name === 'subject') {
+          // Clear queued lesson topics when parent curriculum context changes.
+          setLessonPlanSelectedSubStrands([]);
+        }
       }
       return next;
     });
@@ -896,14 +902,52 @@ function TeacherDashboard() {
   }, [DOWNLOAD_FEE_GHS, handleCloseDownloadMenu, previewSegments, processDownloadPayment, setSnackbar, viewingNote]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
-    dispatch(generateLessonNote(formData)).unwrap().then((createdNote) => {
-      setSnackbar({ open: true, message: 'Lesson note generated!', severity: 'success' });
-      closeDialog();
-      displayNote(createdNote);
-      // also close create tools if open
-      setShowCreateTools(false);
-    }).catch((err) => setSnackbar({ open: true, message: err || 'Failed', severity: 'error' }));
-  }, [dispatch, displayNote, closeDialog]);
+    const selectedTopics = lessonPlanSelectedSubStrands.length > 0
+      ? lessonPlanSelectedSubStrands
+      : (selections.subStrand
+        ? [{ id: selections.subStrand, name: subStrands.find((s) => s._id === selections.subStrand)?.name || 'Topic' }]
+        : []);
+
+    if (selectedTopics.length === 0) {
+      setSnackbar({ open: true, message: 'Select at least one sub-strand to generate lesson notes.', severity: 'warning' });
+      return;
+    }
+
+    (async () => {
+      const createdNotes = [];
+      const failedTopics = [];
+
+      for (const topic of selectedTopics) {
+        try {
+          const createdNote = await dispatch(generateLessonNote({
+            ...formData,
+            subStrandId: topic.id,
+          })).unwrap();
+          createdNotes.push(createdNote);
+        } catch (_err) {
+          failedTopics.push(topic.name || 'Topic');
+        }
+      }
+
+      if (createdNotes.length > 0) {
+        const successMessage = createdNotes.length === 1
+          ? 'Lesson note generated!'
+          : `${createdNotes.length} lesson notes generated successfully.`;
+        setSnackbar({ open: true, message: successMessage, severity: 'success' });
+        displayNote(createdNotes[0]);
+        closeDialog();
+        setShowCreateTools(false);
+        setLessonPlanSelectedSubStrands([]);
+      }
+
+      if (failedTopics.length > 0) {
+        const failureMessage = failedTopics.length === selectedTopics.length
+          ? 'Failed to generate lesson notes for the selected topics.'
+          : `Some topics failed: ${failedTopics.join(', ')}`;
+        setSnackbar({ open: true, message: failureMessage, severity: createdNotes.length > 0 ? 'warning' : 'error' });
+      }
+    })();
+  }, [dispatch, displayNote, closeDialog, lessonPlanSelectedSubStrands, selections.subStrand, subStrands]);
 
   // quiz-from-lesson flow
   const handleGenerateQuizFromLesson = useCallback(() => {
@@ -1035,11 +1079,11 @@ function TeacherDashboard() {
 
   // Generate only lesson plan (first part of bundle)
   const handleGeneratePlan = useCallback(() => {
-    if (!selections.subStrand) return;
+    if (lessonPlanSelectedSubStrands.length === 0) return;
     // close selection and open lesson note form for user completion
     closeDialog();
     setActiveDialog('noteForm');
-  }, [selections.subStrand, closeDialog]);
+  }, [lessonPlanSelectedSubStrands.length, closeDialog]);
 
   const handlePublishBundle = useCallback((bundle) => {
     if (bundle.learnerNote?.id) {
@@ -1146,6 +1190,7 @@ function TeacherDashboard() {
       imageUrl: 'https://static.vecteezy.com/system/resources/previews/027/685/568/original/teacher-lesson-icon-flat-vector.jpg',
       onClick: () => {
         resetSelections();
+        setLessonPlanSelectedSubStrands([]);
         setActiveDialog('plan');
       },
     },
@@ -1324,7 +1369,7 @@ function TeacherDashboard() {
         {/* Modals & Dialogs */}
         {/* Plan generation modal */}
         <Dialog open={activeDialog === 'plan'} onClose={() => closeDialog()} fullScreen={isDialogFullscreen('plan')} fullWidth maxWidth={isDialogFullscreen('plan') ? false : 'sm'}>
-          <DialogTitleWithFullscreen title="Select Topic for Lesson Plan" isFullscreen={isDialogFullscreen('plan')} onToggle={() => toggleDialogFullscreen('plan')} />
+          <DialogTitleWithFullscreen title="Select Topics for Lesson Plan" isFullscreen={isDialogFullscreen('plan')} onToggle={() => toggleDialogFullscreen('plan')} />
           <DialogContent>
             <CurriculumSelection
               levels={levels}
@@ -1336,16 +1381,75 @@ function TeacherDashboard() {
               handleSelectionChange={handleSelectionChange}
               isLoading={isLoading || planLoading}
             />
+
+            {subStrands.length > 0 && (
+              <Paper sx={{ mt: 2, maxHeight: 280, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                <List>
+                  {subStrands.map((s) => {
+                    const isChecked = lessonPlanSelectedSubStrands.some((item) => item.id === s._id);
+                    return (
+                      <ListItem key={s._id} disablePadding>
+                        <ListItemButton
+                          onClick={() => {
+                            setLessonPlanSelectedSubStrands((prev) => {
+                              if (prev.some((item) => item.id === s._id)) {
+                                return prev.filter((item) => item.id !== s._id);
+                              }
+                              return [
+                                ...prev,
+                                {
+                                  id: s._id,
+                                  name: s.name,
+                                  strandName: s?.strand?.name || (strands.find((strandItem) => strandItem._id === selections.strand)?.name || ''),
+                                },
+                              ];
+                            });
+                          }}
+                          sx={selectableListItemSx}
+                        >
+                          <ListItemText
+                            primary={s.name}
+                            secondary={s?.strand?.name ? `Strand: ${s.strand.name}` : undefined}
+                          />
+                          <Checkbox edge="end" checked={isChecked} />
+                        </ListItemButton>
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </Paper>
+            )}
+
+            {lessonPlanSelectedSubStrands.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+                  Selected Sub-Strands ({lessonPlanSelectedSubStrands.length})
+                </Typography>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  {lessonPlanSelectedSubStrands.map((topic) => (
+                    <Chip
+                      key={topic.id}
+                      label={topic.strandName ? `${topic.strandName} - ${topic.name}` : topic.name}
+                      onDelete={() => {
+                        setLessonPlanSelectedSubStrands((prev) => prev.filter((item) => item.id !== topic.id));
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Box>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={() => closeDialog()} disabled={planLoading}>Cancel</Button>
             <Button
               variant="contained"
               onClick={handleGeneratePlan}
-              disabled={!selections.subStrand || planLoading}
+              disabled={lessonPlanSelectedSubStrands.length === 0 || planLoading}
               startIcon={planLoading ? <CircularProgress size={20} /> : null}
             >
-              {planLoading ? 'Generating...' : 'Generate Lesson Plan'}
+              {planLoading
+                ? 'Generating...'
+                : `Continue (${lessonPlanSelectedSubStrands.length} Topic${lessonPlanSelectedSubStrands.length === 1 ? '' : 's'})`}
             </Button>
           </DialogActions>
         </Dialog>
@@ -2043,8 +2147,9 @@ function TeacherDashboard() {
           open={activeDialog === 'noteForm'}
           onClose={() => closeDialog()}
           onSubmit={handleGenerateNoteSubmit}
-          subStrandName={subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
-          subStrandId={selections.subStrand}
+          subStrandName={lessonPlanSelectedSubStrands[0]?.name || subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
+          selectedTopicNames={lessonPlanSelectedSubStrands.map((topic) => topic.name)}
+          subStrandId={lessonPlanSelectedSubStrands[0]?.id || selections.subStrand}
           defaultFacilitatorName={user?.name || ''}
           defaultSchoolName={user?.school || ''}
           schoolCalendar={schoolCalendar}

@@ -79,6 +79,7 @@ function LessonNoteForm({
   onClose,
   onSubmit,
   subStrandName,
+  selectedTopicNames = [],
   isLoading,
   subStrandId,
   defaultSchoolName = '',
@@ -294,9 +295,19 @@ function LessonNoteForm({
                 }}
               >
                 <Typography variant="subtitle2" color="primary.main" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Selected Topic:
+                  Selected Topic{selectedTopicNames.length > 1 ? 's' : ''}:
                 </Typography>
-                <Typography variant="h6">{subStrandName || 'N/A'}</Typography>
+                {selectedTopicNames.length > 1 ? (
+                  <Stack spacing={0.5}>
+                    {selectedTopicNames.map((topicName, index) => (
+                      <Typography key={`${topicName}-${index}`} variant="body1" sx={{ fontWeight: 600 }}>
+                        - {topicName}
+                      </Typography>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="h6">{subStrandName || 'N/A'}</Typography>
+                )}
               </Box>
 
               <TextField
