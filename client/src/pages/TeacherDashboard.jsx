@@ -778,7 +778,10 @@ function TeacherDashboard() {
       return;
     }
 
-    const topic = viewingNote?.subStrand?.name || viewingNote?.subStrand || 'lesson-note';
+    const subjectPart = viewingNote?.subStrand?.strand?.subject?.name || '';
+    const weekPart = viewingNote?.generationContext?.week ? `Week ${viewingNote.generationContext.week}` : '';
+    const topicParts = [subjectPart, weekPart].filter(Boolean);
+    const topic = topicParts.length > 0 ? topicParts.join(' - ') : (viewingNote?.subStrand?.name || 'lesson-note');
     const safeFileName = topic.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '');
 
     const printableBody = (previewSegments || []).map((segment) => {
@@ -2195,6 +2198,10 @@ function TeacherDashboard() {
           isChargingDownload={isChargingDownload}
           fullScreen={isDialogFullscreen('notePreview')}
           onToggleFullscreen={() => toggleDialogFullscreen('notePreview')}
+          title={[
+            viewingNote?.subStrand?.strand?.subject?.name,
+            viewingNote?.generationContext?.week ? `Week ${viewingNote.generationContext.week}` : null,
+          ].filter(Boolean).join(' – ') || 'Preview Lesson Note'}
         />
 
         <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar(p => ({ ...p, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>

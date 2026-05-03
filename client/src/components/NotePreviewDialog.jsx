@@ -93,6 +93,7 @@ export default function NotePreviewDialog({
   isChargingDownload = false,
   fullScreen = false,
   onToggleFullscreen,
+  title = 'Preview Lesson Note',
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -117,7 +118,7 @@ export default function NotePreviewDialog({
       maxWidth={effectiveFullScreen ? false : 'md'}
     >
       <DialogFullscreenTitle
-        title="Preview Lesson Note"
+        title={title}
         isFullscreen={fullScreen}
         onToggle={onToggleFullscreen}
       />
