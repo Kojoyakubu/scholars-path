@@ -52,15 +52,15 @@ const contentSx = {
 
 const compactContentSx = {
   '& *': { boxSizing: 'border-box' },
-  '& h1': { fontSize: '1.35rem', fontWeight: 700, mt: 0.45, mb: 0.35 },
-  '& h2': { fontSize: '1.15rem', fontWeight: 600, mt: 0.45, mb: 0.3 },
-  '& h3': { fontSize: '1.02rem', fontWeight: 600, mt: 0.35, mb: 0.22 },
+  '& h1': { fontSize: '1.4rem', fontWeight: 700, mt: 0.42, mb: 0.32 },
+  '& h2': { fontSize: '1.2rem', fontWeight: 600, mt: 0.42, mb: 0.28 },
+  '& h3': { fontSize: '1.05rem', fontWeight: 600, mt: 0.32, mb: 0.2 },
   '& table': {
     width: '100%',
     tableLayout: 'fixed',
     borderCollapse: 'collapse',
     my: 0.3,
-    fontSize: '0.9rem',
+    fontSize: '0.93rem',
     '& td, & th': {
       border: '1px solid #ddd',
       padding: '3px 6px',
@@ -71,8 +71,8 @@ const compactContentSx = {
     },
     '& th': { backgroundColor: '#f5f5f5', fontWeight: 600 },
   },
-  '& p': { lineHeight: 1.24, mb: 0.2, fontSize: '0.93rem', wordBreak: 'break-word', overflowWrap: 'anywhere' },
-  '& li': { wordBreak: 'break-word', overflowWrap: 'anywhere', marginBottom: '1px', fontSize: '0.93rem', lineHeight: 1.24 },
+  '& p': { lineHeight: 1.22, mb: 0.2, fontSize: '0.96rem', wordBreak: 'break-word', overflowWrap: 'anywhere' },
+  '& li': { wordBreak: 'break-word', overflowWrap: 'anywhere', marginBottom: '1px', fontSize: '0.96rem', lineHeight: 1.22 },
   '& ul, & ol': { pl: 1.6, mb: 0.24, mt: 0.1 },
   '& section': { border: '1px solid #eceff3', borderRadius: 1, p: 0.4, my: 0.28 },
   '& figure': { pageBreakInside: 'avoid', breakInside: 'avoid', my: 0.3 },
