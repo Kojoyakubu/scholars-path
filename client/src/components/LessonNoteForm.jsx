@@ -224,6 +224,12 @@ function LessonNoteForm({
     handleSubmitWithMode(showAdvanced ? 'custom' : 'fast');
   };
 
+  const handleFormKeyDown = (e) => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+      e.preventDefault();
+    }
+  };
+
   const hasCalendarWeeks = weekOptions.length > 0;
 
   return (
@@ -259,7 +265,7 @@ function LessonNoteForm({
         </Typography>
       </DialogTitle>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown}>
         <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
           {isLoading ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
