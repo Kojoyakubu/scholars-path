@@ -434,6 +434,8 @@ function LessonNoteForm({
                     value={formData.contentStandardCode}
                     onChange={handleChange}
                     fullWidth
+                    multiline
+                    minRows={2}
                     placeholder="e.g., B7.1.2.3"
                   />
 
