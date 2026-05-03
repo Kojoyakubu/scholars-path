@@ -17,6 +17,10 @@ import {
   IconButton,
   Tooltip,
   Alert,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -25,6 +29,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -34,6 +39,7 @@ import {
   updateItem,
   deleteItem,
   clearChildren,
+  copySubjectCurriculum,
 } from '../features/curriculum/curriculumSlice';
 
 const normalizeEntity = (type) => (type === 'sub-strands' ? 'subStrands' : type);
@@ -56,6 +62,13 @@ const AdminCurriculum = () => {
   const [editName, setEditName] = useState('');
 
   const [error, setError] = useState('');
+
+  // Copy subject curriculum state
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copySourceSubject, setCopySourceSubject] = useState(null); // { _id, name }
+  const [copyTargetClassIds, setCopyTargetClassIds] = useState([]);
+  const [copyLoading, setCopyLoading] = useState(false);
+  const [copySuccess, setCopySuccess] = useState('');
 
   // Fetch all levels on mount
   useEffect(() => {
@@ -240,6 +253,44 @@ const AdminCurriculum = () => {
     setDialogType(type);
     setParentId(parent);
     setDialogOpen(true);
+  };
+
+  const openCopyDialog = (subject) => {
+    setCopySourceSubject(subject);
+    setCopyTargetClassIds([]);
+    setCopySuccess('');
+    setError('');
+    setCopyDialogOpen(true);
+  };
+
+  const toggleCopyTargetClass = (classId) => {
+    setCopyTargetClassIds((prev) =>
+      prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]
+    );
+  };
+
+  const handleCopySubject = async () => {
+    if (!copySourceSubject || copyTargetClassIds.length === 0) return;
+    setCopyLoading(true);
+    setCopySuccess('');
+    setError('');
+    try {
+      const result = await dispatch(
+        copySubjectCurriculum({
+          sourceSubjectId: copySourceSubject._id,
+          targetClassIds: copyTargetClassIds,
+        })
+      ).unwrap();
+      const copied = result.results
+        .map((r) => `${r.subjectName} (${r.strandsCopied} strands, ${r.subStrandsCopied} sub-strands)`)
+        .join(', ');
+      setCopySuccess(`Copied successfully to: ${copied}`);
+      setCopyTargetClassIds([]);
+    } catch {
+      setError('Failed to copy curriculum. Please try again.');
+    } finally {
+      setCopyLoading(false);
+    }
   };
 
   return (
@@ -523,6 +574,13 @@ const AdminCurriculum = () => {
                               <AddIcon color="primary" />
                             </IconButton>
                           </Tooltip>
+                          {classes.length > 1 && (
+                            <Tooltip title="Copy to other classes">
+                              <IconButton aria-label="Copy subject curriculum" onClick={() => openCopyDialog(s)} size="small">
+                                <ContentCopyIcon color="secondary" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           <Tooltip title="Delete Subject">
                             <IconButton aria-label="Delete subject" onClick={() => handleDelete('subjects', s._id)} size="small">
                               <DeleteIcon color="error" />
@@ -695,6 +753,53 @@ const AdminCurriculum = () => {
           </>
         )}
       </Paper>
+
+      {/* Copy Subject Curriculum Dialog */}
+      <Dialog open={copyDialogOpen} onClose={() => setCopyDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Copy "{copySourceSubject?.name}" to other classes</DialogTitle>
+        <DialogContent>
+          {copySuccess ? (
+            <Alert severity="success" sx={{ mt: 1 }}>{copySuccess}</Alert>
+          ) : (
+            <>
+              <Typography variant="body2" sx={{ mt: 1, mb: 1.5, color: 'text.secondary' }}>
+                Select which classes should receive a copy of all strands and sub-strands:
+              </Typography>
+              <FormGroup>
+                {classes
+                  .filter((c) => c._id !== selectedClass)
+                  .map((c) => (
+                    <FormControlLabel
+                      key={c._id}
+                      control={
+                        <Checkbox
+                          checked={copyTargetClassIds.includes(c._id)}
+                          onChange={() => toggleCopyTargetClass(c._id)}
+                          size="small"
+                        />
+                      }
+                      label={c.name}
+                    />
+                  ))}
+              </FormGroup>
+              {error && <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert>}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCopyDialogOpen(false)}>Close</Button>
+          {!copySuccess && (
+            <Button
+              variant="contained"
+              onClick={handleCopySubject}
+              disabled={copyTargetClassIds.length === 0 || copyLoading}
+              startIcon={copyLoading ? <CircularProgress size={16} /> : <ContentCopyIcon />}
+            >
+              {copyLoading ? 'Copying…' : 'Copy'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
 
       {/* Create Item Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">

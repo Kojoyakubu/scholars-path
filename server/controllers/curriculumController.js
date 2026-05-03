@@ -367,6 +367,91 @@ JSON format:
   }
 });
 
+/* ============================================================================
+ * COPY SUBJECT CURRICULUM
+ * ============================================================================
+ */
+
+// POST /api/curriculum/copy-subject
+// Body: { sourceSubjectId, targetClassIds: [id, id, ...] }
+const copySubjectCurriculum = asyncHandler(async (req, res) => {
+  const { sourceSubjectId, targetClassIds } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(sourceSubjectId)) {
+    res.status(400);
+    throw new Error('Invalid source subject ID.');
+  }
+
+  if (!Array.isArray(targetClassIds) || targetClassIds.length === 0) {
+    res.status(400);
+    throw new Error('At least one target class ID is required.');
+  }
+
+  const validTargetClassIds = targetClassIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+  if (validTargetClassIds.length === 0) {
+    res.status(400);
+    throw new Error('No valid target class IDs provided.');
+  }
+
+  const sourceSubject = await Subject.findById(sourceSubjectId).lean();
+  if (!sourceSubject) {
+    res.status(404);
+    throw new Error('Source subject not found.');
+  }
+
+  // Load all strands and sub-strands for the source subject
+  const sourceStrands = await Strand.find({ subject: sourceSubjectId }).lean();
+  const strandIds = sourceStrands.map((s) => s._id);
+  const sourceSubStrands = await SubStrand.find({ strand: { $in: strandIds } }).lean();
+
+  const results = [];
+
+  for (const targetClassId of validTargetClassIds) {
+    // Find or create a subject with the same name in the target class
+    let targetSubject = await Subject.findOne({ name: sourceSubject.name, class: targetClassId });
+    if (!targetSubject) {
+      targetSubject = await Subject.create({ name: sourceSubject.name, class: targetClassId });
+    }
+
+    // Remove any existing strands/sub-strands in target to avoid duplicates
+    const existingStrands = await Strand.find({ subject: targetSubject._id }).lean();
+    if (existingStrands.length > 0) {
+      const existingStrandIds = existingStrands.map((s) => s._id);
+      await SubStrand.deleteMany({ strand: { $in: existingStrandIds } });
+      await Strand.deleteMany({ subject: targetSubject._id });
+    }
+
+    // Copy strands and their sub-strands
+    for (const strand of sourceStrands) {
+      const newStrand = await Strand.create({ name: strand.name, subject: targetSubject._id });
+
+      const subStrandsForStrand = sourceSubStrands.filter(
+        (ss) => String(ss.strand) === String(strand._id)
+      );
+
+      for (const ss of subStrandsForStrand) {
+        await SubStrand.create({
+          name: ss.name,
+          strand: newStrand._id,
+          description: ss.description || '',
+          learningOutcomes: ss.learningOutcomes || [],
+          keyCompetencies: ss.keyCompetencies || [],
+        });
+      }
+    }
+
+    results.push({
+      classId: targetClassId,
+      subjectId: targetSubject._id,
+      subjectName: targetSubject.name,
+      strandsCopied: sourceStrands.length,
+      subStrandsCopied: sourceSubStrands.length,
+    });
+  }
+
+  res.json({ message: 'Curriculum copied successfully.', results });
+});
+
 module.exports = {
   // Create
   createLevel,
@@ -374,17 +459,20 @@ module.exports = {
   createSubject,
   createStrand,
   createSubStrand,
-  
+
   // Read
   getCurriculum,
   getChildren,
-  
+
   // Update
   updateCurriculum,
-  
+
   // Delete
   deleteCurriculum,
-  
+
+  // Copy
+  copySubjectCurriculum,
+
   // AI
   autoFillSubStrand,
 };

@@ -31,12 +31,19 @@ const deleteItem = async ({ entity, itemId }) => {
   return response.data;
 };
 
+// ✅ Copy a subject's strands & sub-strands to one or more target classes
+const copySubject = async ({ sourceSubjectId, targetClassIds }) => {
+  const response = await api.post('/api/curriculum/copy-subject', { sourceSubjectId, targetClassIds });
+  return response.data;
+};
+
 const curriculumService = {
   getItems,
   getChildrenOf,
   createItem,
   updateItem,
   deleteItem,
+  copySubject,
 };
 
 export default curriculumService;

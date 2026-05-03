@@ -79,6 +79,18 @@ export const deleteItem = createAsyncThunk(
   }
 );
 
+export const copySubjectCurriculum = createAsyncThunk(
+  'curriculum/copySubjectCurriculum',
+  async ({ sourceSubjectId, targetClassIds }, thunkAPI) => {
+    try {
+      const data = await curriculumService.copySubject({ sourceSubjectId, targetClassIds });
+      return data;
+    } catch (e) {
+      return handleError(e, thunkAPI);
+    }
+  }
+);
+
 const curriculumSlice = createSlice({
   name: 'curriculum',
   initialState,

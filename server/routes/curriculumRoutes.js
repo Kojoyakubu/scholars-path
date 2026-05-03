@@ -12,6 +12,7 @@ const {
   getChildren,
   updateCurriculum,
   deleteCurriculum,
+  copySubjectCurriculum,
   autoFillSubStrand,
 } = require('../controllers/curriculumController');
 
@@ -27,6 +28,7 @@ router.post('/subjects', protect, authorize('admin', 'school_admin'), createSubj
 router.post('/strands', protect, authorize('admin', 'school_admin', 'teacher'), createStrand);
 router.post('/sub-strands', protect, authorize('admin', 'school_admin', 'teacher'), createSubStrand);
 router.post('/subStrands', protect, authorize('admin', 'school_admin', 'teacher'), createSubStrand);
+router.post('/copy-subject', protect, authorize('admin', 'school_admin'), copySubjectCurriculum);
 
 /* ============================================================================
  * READ ROUTES
