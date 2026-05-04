@@ -923,6 +923,11 @@ function TeacherDashboard() {
           ? formData.requests
           : [formData];
 
+        // Ping the server first to wake it from cold-start before sending heavy AI requests
+        if (requestPayloads.length > 1) {
+          await teacherService.wakeUpServer();
+        }
+
         const createdNotes = [];
         const failedWeeks = [];
 

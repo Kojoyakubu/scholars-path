@@ -14,8 +14,8 @@ const getRetryAfterDelay = (error) => {
 
 const postWith503Retry = async (url, payload, options = {}) => {
   const {
-    maxRetries = 2,
-    baseDelayMs = 1500,
+    maxRetries = 5,
+    baseDelayMs = 8000,
   } = options;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
@@ -30,13 +30,23 @@ const postWith503Retry = async (url, payload, options = {}) => {
         throw error;
       }
 
+      // Render free tier can take 30-50s to cold-start; use a long backoff
       const retryAfterDelay = getRetryAfterDelay(error);
-      const fallbackDelay = baseDelayMs * (attempt + 1);
+      const fallbackDelay = attempt === 0 ? 12000 : baseDelayMs * attempt;
       await sleep(retryAfterDelay || fallbackDelay);
     }
   }
 
   throw new Error('Request failed after retries.');
+};
+
+// Pings the server to wake it from Render free-tier sleep before heavy requests
+const wakeUpServer = async () => {
+  try {
+    await api.get('/api/health', { timeout: 15000 });
+  } catch (_) {
+    // Ignore errors — purpose is just to trigger cold-start wake-up
+  }
 };
 
 const getMyLessonNotes = async () => {
@@ -224,6 +234,8 @@ const teacherService = {
     const response = await api.get(`/api/quizzes/${quizId}`);
     return response.data;
   },
+
+  wakeUpServer,
 };
 
 export default teacherService;
