@@ -20,12 +20,72 @@ import {
   MenuItem,
   Checkbox,
   ListItemText,
+  Chip,
 } from '@mui/material';
 import { Article, OpenInFull, CloseFullscreen } from '@mui/icons-material';
 import { useState, useEffect, useMemo, useRef } from 'react';
 
 const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const TERM_TO_KEY = { one: 'one', two: 'two', three: 'three' };
+
+const SUGGESTION_MAX = 5;
+const SUGGESTION_FIELDS = ['school', 'facilitatorName', 'reference', 'contentStandardCode', 'indicatorCodes'];
+
+function getSuggestionKey(classId, subjectId) {
+  if (classId && subjectId) return `lernex-fsugg-${classId}-${subjectId}`;
+  return null;
+}
+
+function loadFieldSuggestions(classId, subjectId) {
+  const key = getSuggestionKey(classId, subjectId);
+  if (!key) return {};
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function appendFieldSuggestions(classId, subjectId, values) {
+  const key = getSuggestionKey(classId, subjectId);
+  if (!key) return;
+  try {
+    const existing = loadFieldSuggestions(classId, subjectId);
+    const updated = { ...existing };
+    SUGGESTION_FIELDS.forEach((field) => {
+      const val = (values[field] || '').trim();
+      if (!val) return;
+      const prev = Array.isArray(updated[field]) ? updated[field] : [];
+      updated[field] = [val, ...prev.filter((v) => v !== val)].slice(0, SUGGESTION_MAX);
+    });
+    localStorage.setItem(key, JSON.stringify(updated));
+  } catch (_) {
+    // non-blocking
+  }
+}
+
+function SuggestionChips({ options = [], onSelect }) {
+  if (!options || options.length === 0) return null;
+  return (
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.4 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ flexBasis: '100%' }}>
+        Suggestions:
+      </Typography>
+      {options.map((opt, i) => (
+        <Chip
+          key={i}
+          label={opt.length > 50 ? `${opt.slice(0, 50)}…` : opt}
+          size="small"
+          variant="outlined"
+          clickable
+          onClick={() => onSelect(opt)}
+          sx={{ fontSize: '0.72rem', maxWidth: '100%' }}
+        />
+      ))}
+    </Box>
+  );
+}
 
 const toDateInputValue = (value) => {
   if (!value) return '';
@@ -91,10 +151,13 @@ function LessonNoteForm({
   schoolCalendar,
   fullScreen = false,
   onToggleFullscreen,
+  classId,
+  subjectId,
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [generateForRange, setGenerateForRange] = useState(false);
   const [weeklyOverrides, setWeeklyOverrides] = useState({});
+  const [fieldSuggestions, setFieldSuggestions] = useState({});
   const formRef = useRef(null);
   const preferenceStorageKey = 'lessonNoteFormPrefs';
 
@@ -190,6 +253,7 @@ function LessonNoteForm({
 
   useEffect(() => {
     if (open) {
+      setFieldSuggestions(loadFieldSuggestions(classId, subjectId));
       setFormData({
         school: '',
         facilitatorName: '',
@@ -208,7 +272,7 @@ function LessonNoteForm({
       setGenerateForRange(false);
       setWeeklyOverrides({});
     }
-  }, [open]);
+  }, [open, classId, subjectId]);
 
   useEffect(() => {
     if (!generateForRange || weekTargets.length === 0) {
@@ -363,6 +427,7 @@ function LessonNoteForm({
           sessionRows: formData.sessionRows,
         })
       );
+      appendFieldSuggestions(classId, subjectId, formData);
     } catch (_) {
       // Non-blocking: preference storage should not stop submission.
     }
@@ -466,6 +531,10 @@ function LessonNoteForm({
                 onChange={handleChange}
                 fullWidth
               />
+              <SuggestionChips
+                options={fieldSuggestions.school}
+                onSelect={(val) => setFormData((prev) => ({ ...prev, school: val }))}
+              />
 
               <TextField
                 name="facilitatorName"
@@ -473,6 +542,10 @@ function LessonNoteForm({
                 value={formData.facilitatorName}
                 onChange={handleChange}
                 fullWidth
+              />
+              <SuggestionChips
+                options={fieldSuggestions.facilitatorName}
+                onSelect={(val) => setFormData((prev) => ({ ...prev, facilitatorName: val }))}
               />
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -596,41 +669,59 @@ function LessonNoteForm({
                               ))}
                             </TextField>
 
-                            <TextField
-                              label="Content Standard Code (Week-specific)"
-                              value={weekRow.contentStandardCode}
-                              onChange={(event) => {
-                                const value = event.target.value;
-                                setWeeklyOverrides((prev) => ({
+                            <Box>
+                              <TextField
+                                label="Content Standard Code (Week-specific)"
+                                value={weekRow.contentStandardCode}
+                                onChange={(event) => {
+                                  const value = event.target.value;
+                                  setWeeklyOverrides((prev) => ({
+                                    ...prev,
+                                    [weekKey]: {
+                                      ...(prev[weekKey] || {}),
+                                      contentStandardCode: value,
+                                    },
+                                  }));
+                                }}
+                                fullWidth
+                                multiline
+                                minRows={2}
+                              />
+                              <SuggestionChips
+                                options={fieldSuggestions.contentStandardCode}
+                                onSelect={(val) => setWeeklyOverrides((prev) => ({
                                   ...prev,
-                                  [weekKey]: {
-                                    ...(prev[weekKey] || {}),
-                                    contentStandardCode: value,
-                                  },
-                                }));
-                              }}
-                              fullWidth
-                              multiline
-                              minRows={2}
-                            />
+                                  [weekKey]: { ...(prev[weekKey] || {}), contentStandardCode: val },
+                                }))}
+                              />
+                            </Box>
 
-                            <TextField
-                              label="Indicator(s) (Week-specific)"
-                              value={weekRow.indicatorCodes}
-                              onChange={(event) => {
-                                const value = event.target.value;
-                                setWeeklyOverrides((prev) => ({
-                                  ...prev,
-                                  [weekKey]: {
-                                    ...(prev[weekKey] || {}),
-                                    indicatorCodes: value,
-                                  },
+                            <Box>
+                              <TextField
+                                label="Indicator(s) (Week-specific)"
+                                value={weekRow.indicatorCodes}
+                                onChange={(event) => {
+                                  const value = event.target.value;
+                                  setWeeklyOverrides((prev) => ({
+                                    ...prev,
+                                    [weekKey]: {
+                                      ...(prev[weekKey] || {}),
+                                      indicatorCodes: value,
+                                    },
                                 }));
                               }}
                               fullWidth
                               multiline
                               minRows={2}
                             />
+                              <SuggestionChips
+                                options={fieldSuggestions.indicatorCodes}
+                                onSelect={(val) => setWeeklyOverrides((prev) => ({
+                                  ...prev,
+                                  [weekKey]: { ...(prev[weekKey] || {}), indicatorCodes: val },
+                                }))}
+                              />
+                            </Box>
                           </Stack>
                         </Box>
                       );
@@ -708,36 +799,54 @@ function LessonNoteForm({
 
               <Collapse in={showAdvanced} timeout="auto" unmountOnExit>
                 <Stack spacing={2.5}>
-                  <TextField
-                    name="contentStandardCode"
-                    label="Content Standard Code"
-                    value={formData.contentStandardCode}
-                    onChange={handleChange}
-                    fullWidth
-                    multiline
-                    minRows={2}
-                    placeholder="e.g., B7.1.2.3"
-                  />
+                  <Box>
+                    <TextField
+                      name="contentStandardCode"
+                      label="Content Standard Code"
+                      value={formData.contentStandardCode}
+                      onChange={handleChange}
+                      fullWidth
+                      multiline
+                      minRows={2}
+                      placeholder="e.g., B7.1.2.3"
+                    />
+                    <SuggestionChips
+                      options={fieldSuggestions.contentStandardCode}
+                      onSelect={(val) => setFormData((prev) => ({ ...prev, contentStandardCode: val }))}
+                    />
+                  </Box>
 
-                  <TextField
-                    name="indicatorCodes"
-                    label="Official NaCCA Indicator(s)"
-                    value={formData.indicatorCodes}
-                    onChange={handleChange}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    helperText="Optional. If empty, AI will infer suitable indicators from the selected topic."
-                  />
+                  <Box>
+                    <TextField
+                      name="indicatorCodes"
+                      label="Official NaCCA Indicator(s)"
+                      value={formData.indicatorCodes}
+                      onChange={handleChange}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      helperText="Optional. If empty, AI will infer suitable indicators from the selected topic."
+                    />
+                    <SuggestionChips
+                      options={fieldSuggestions.indicatorCodes}
+                      onSelect={(val) => setFormData((prev) => ({ ...prev, indicatorCodes: val }))}
+                    />
+                  </Box>
 
-                  <TextField
-                    name="reference"
-                    label="Reference"
-                    value={formData.reference}
-                    onChange={handleChange}
-                    fullWidth
-                    placeholder="e.g., NaCCA Computing Curriculum for Basic 7"
-                  />
+                  <Box>
+                    <TextField
+                      name="reference"
+                      label="Reference"
+                      value={formData.reference}
+                      onChange={handleChange}
+                      fullWidth
+                      placeholder="e.g., NaCCA Computing Curriculum for Basic 7"
+                    />
+                    <SuggestionChips
+                      options={fieldSuggestions.reference}
+                      onSelect={(val) => setFormData((prev) => ({ ...prev, reference: val }))}
+                    />
+                  </Box>
                 </Stack>
               </Collapse>
             </Stack>

@@ -2176,6 +2176,8 @@ function TeacherDashboard() {
           defaultSchoolName={user?.school || ''}
           schoolCalendar={schoolCalendar}
           isLoading={isLoading || planLoading}
+          classId={selections.class}
+          subjectId={selections.subject}
           fullScreen={isDialogFullscreen('lessonNoteForm')}
           onToggleFullscreen={() => toggleDialogFullscreen('lessonNoteForm')}
         />
