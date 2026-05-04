@@ -915,24 +915,42 @@ function TeacherDashboard() {
 
     (async () => {
       try {
-        const createdNote = await dispatch(generateLessonNote({
-          ...formData,
-          subStrandIds: selectedTopics.map((topic) => topic.id),
-          subStrandId: selectedTopics[0]?.id || formData.subStrandId,
-        })).unwrap();
+        const requestPayloads = Array.isArray(formData.requests) && formData.requests.length > 0
+          ? formData.requests
+          : [formData];
 
-        const successMessage = selectedTopics.length === 1
-          ? 'Lesson note generated!'
-          : 'One combined lesson note generated for all selected topics.';
+        const createdNotes = [];
+        for (const requestPayload of requestPayloads) {
+          const resolvedSubStrandIds = Array.isArray(requestPayload.subStrandIds) && requestPayload.subStrandIds.length > 0
+            ? requestPayload.subStrandIds
+            : selectedTopics.map((topic) => topic.id);
+
+          const createdNote = await dispatch(generateLessonNote({
+            ...requestPayload,
+            subStrandIds: resolvedSubStrandIds,
+            subStrandId: requestPayload.subStrandId || resolvedSubStrandIds[0] || selectedTopics[0]?.id,
+          })).unwrap();
+          createdNotes.push(createdNote);
+        }
+
+        const generatedCount = createdNotes.length;
+        const successMessage = generatedCount > 1
+          ? `${generatedCount} lesson notes generated for the selected week range.`
+          : (selectedTopics.length === 1
+            ? 'Lesson note generated!'
+            : 'One combined lesson note generated for all selected topics.');
         setSnackbar({ open: true, message: successMessage, severity: 'success' });
-        displayNote(createdNote);
+        displayNote(createdNotes[createdNotes.length - 1]);
         closeDialog();
         setShowCreateTools(false);
         setLessonPlanSelectedSubStrands([]);
       } catch (_err) {
+        const requestedCount = Array.isArray(formData.requests) ? formData.requests.length : 1;
         setSnackbar({
           open: true,
-          message: 'Failed to generate a combined lesson note for the selected topics.',
+          message: requestedCount > 1
+            ? 'Failed to generate lesson notes for the selected week range.'
+            : 'Failed to generate a combined lesson note for the selected topics.',
           severity: 'error',
         });
       }
@@ -2139,6 +2157,15 @@ function TeacherDashboard() {
           onSubmit={handleGenerateNoteSubmit}
           subStrandName={lessonPlanSelectedSubStrands[0]?.name || subStrands.find((s) => s._id === selections.subStrand)?.name || ''}
           selectedTopicNames={lessonPlanSelectedSubStrands.map((topic) => topic.name)}
+          selectedTopics={lessonPlanSelectedSubStrands.length > 0
+            ? lessonPlanSelectedSubStrands
+            : (selections.subStrand
+              ? [{
+                id: selections.subStrand,
+                name: subStrands.find((s) => s._id === selections.subStrand)?.name || '',
+                strandName: subStrands.find((s) => s._id === selections.subStrand)?.strand?.name || '',
+              }]
+              : [])}
           subStrandId={lessonPlanSelectedSubStrands[0]?.id || selections.subStrand}
           subStrandIds={lessonPlanSelectedSubStrands.map((topic) => topic.id)}
           defaultFacilitatorName={user?.name || ''}

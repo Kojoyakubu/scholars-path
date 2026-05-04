@@ -18,9 +18,11 @@ import {
   FormControlLabel,
   Switch,
   MenuItem,
+  Checkbox,
+  ListItemText,
 } from '@mui/material';
 import { Article, OpenInFull, CloseFullscreen } from '@mui/icons-material';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const TERM_TO_KEY = { one: 'one', two: 'two', three: 'three' };
@@ -80,6 +82,7 @@ function LessonNoteForm({
   onSubmit,
   subStrandName,
   selectedTopicNames = [],
+  selectedTopics = [],
   isLoading,
   subStrandId,
   subStrandIds = [],
@@ -90,6 +93,10 @@ function LessonNoteForm({
   onToggleFullscreen,
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [generateForRange, setGenerateForRange] = useState(false);
+  const [weeklyOverrides, setWeeklyOverrides] = useState({});
+  const formRef = useRef(null);
+  const preferenceStorageKey = 'lessonNoteFormPrefs';
 
   const [formData, setFormData] = useState({
     school: '',
@@ -98,6 +105,7 @@ function LessonNoteForm({
     class: '',
     classSize: '',
     week: '',
+    endWeek: '',
     contentStandardCode: '',
     indicatorCodes: '',
     reference: '',
@@ -116,6 +124,7 @@ function LessonNoteForm({
 
   const termKey = TERM_TO_KEY[String(formData.term || '').toLowerCase()] || 'one';
   const weekOptions = calendarByTerm[termKey] || [];
+  const hasCalendarWeeks = weekOptions.length > 0;
 
   const selectedWeekEnding = useMemo(() => {
     const selectedWeek = Number(formData.week);
@@ -123,6 +132,61 @@ function LessonNoteForm({
     const matched = weekOptions.find((entry) => Number(entry.weekNumber) === selectedWeek);
     return matched?.weekEnding || null;
   }, [formData.week, weekOptions]);
+
+  const availableTopics = useMemo(() => {
+    if (Array.isArray(selectedTopics) && selectedTopics.length > 0) {
+      return selectedTopics
+        .filter((topic) => topic?.id)
+        .map((topic) => ({
+          id: String(topic.id),
+          name: topic.name || 'Topic',
+          strandName: topic.strandName || '',
+        }));
+    }
+
+    if (subStrandId && subStrandName) {
+      return [{ id: String(subStrandId), name: subStrandName, strandName: '' }];
+    }
+
+    return [];
+  }, [selectedTopics, subStrandId, subStrandName]);
+
+  const startWeekNumber = Number(formData.week);
+
+  const endWeekOptions = useMemo(() => {
+    if (!hasCalendarWeeks || !Number.isFinite(startWeekNumber)) return weekOptions;
+    return weekOptions.filter((entry) => Number(entry.weekNumber) >= startWeekNumber);
+  }, [hasCalendarWeeks, startWeekNumber, weekOptions]);
+
+  const weekTargets = useMemo(() => {
+    const startWeek = Number(formData.week);
+    const endWeek = Number(generateForRange ? (formData.endWeek || formData.week) : formData.week);
+
+    if (!Number.isFinite(startWeek) || !Number.isFinite(endWeek)) {
+      return [];
+    }
+
+    const normalizedStart = Math.min(startWeek, endWeek);
+    const normalizedEnd = Math.max(startWeek, endWeek);
+
+    if (hasCalendarWeeks) {
+      return weekOptions
+        .filter((entry) => {
+          const weekNo = Number(entry.weekNumber);
+          return Number.isFinite(weekNo) && weekNo >= normalizedStart && weekNo <= normalizedEnd;
+        })
+        .map((entry) => ({
+          weekNumber: Number(entry.weekNumber),
+          weekEnding: entry.weekEnding || null,
+        }));
+    }
+
+    const targets = [];
+    for (let week = normalizedStart; week <= normalizedEnd; week += 1) {
+      targets.push({ weekNumber: week, weekEnding: null });
+    }
+    return targets;
+  }, [formData.week, formData.endWeek, generateForRange, hasCalendarWeeks, weekOptions]);
 
   useEffect(() => {
     if (open) {
@@ -133,6 +197,7 @@ function LessonNoteForm({
         class: '',
         classSize: '',
         week: '',
+        endWeek: '',
         contentStandardCode: '',
         indicatorCodes: '',
         reference: '',
@@ -140,8 +205,38 @@ function LessonNoteForm({
         sessionRows: buildSessionRows(1),
       });
       setShowAdvanced(false);
+      setGenerateForRange(false);
+      setWeeklyOverrides({});
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!generateForRange || weekTargets.length === 0) {
+      setWeeklyOverrides({});
+      return;
+    }
+
+    const defaultTopicIds = availableTopics.map((topic) => topic.id);
+
+    setWeeklyOverrides((prev) => {
+      const next = {};
+
+      weekTargets.forEach((target) => {
+        const key = String(target.weekNumber);
+        const prevRow = prev[key] || {};
+        const prevIds = Array.isArray(prevRow.subStrandIds) ? prevRow.subStrandIds : [];
+        const validPrevIds = prevIds.filter((id) => defaultTopicIds.includes(id));
+
+        next[key] = {
+          subStrandIds: validPrevIds.length > 0 ? validPrevIds : defaultTopicIds,
+          contentStandardCode: prevRow.contentStandardCode || '',
+          indicatorCodes: prevRow.indicatorCodes || '',
+        };
+      });
+
+      return next;
+    });
+  }, [generateForRange, weekTargets, availableTopics]);
 
   const updateSessionRows = (sessionsPerWeek, previousRows) => {
     return buildSessionRows(sessionsPerWeek, previousRows);
@@ -149,6 +244,16 @@ function LessonNoteForm({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === 'term') {
+      setFormData((prev) => ({
+        ...prev,
+        term: value,
+        week: '',
+        endWeek: '',
+      }));
+      return;
+    }
 
     if (name === 'sessionsPerWeek') {
       setFormData((prev) => {
@@ -158,6 +263,21 @@ function LessonNoteForm({
           sessionsPerWeek: nextCount,
           sessionRows: updateSessionRows(nextCount, prev.sessionRows),
         };
+      });
+      return;
+    }
+
+    if (name === 'week') {
+      setFormData((prev) => {
+        const next = { ...prev, week: value };
+        if (generateForRange) {
+          const startWeek = Number(value);
+          const currentEndWeek = Number(prev.endWeek);
+          if (!Number.isFinite(currentEndWeek) || currentEndWeek < startWeek) {
+            next.endWeek = value;
+          }
+        }
+        return next;
       });
       return;
     }
@@ -173,25 +293,52 @@ function LessonNoteForm({
     });
   };
 
-  const buildPayload = (mode) => {
+  const buildPayloadForWeek = ({ mode, weekNumber, weekEndingValue, weekOverride }) => {
     const sessionPlanLines = (formData.sessionRows || []).map((row) => {
-      const computedDate = formatLongDate(computeDateFromWeekEndingAndDay(selectedWeekEnding, row.day));
+      const computedDate = formatLongDate(computeDateFromWeekEndingAndDay(weekEndingValue, row.day));
       const dateSlot = computedDate || row.day;
       return `${dateSlot} | ${row.duration || '[AI: Session duration]'}`;
     });
 
     const firstSession = formData.sessionRows?.[0];
-    const firstSessionDate = formatLongDate(computeDateFromWeekEndingAndDay(selectedWeekEnding, firstSession?.day));
+    const firstSessionDate = formatLongDate(computeDateFromWeekEndingAndDay(weekEndingValue, firstSession?.day));
+    const defaultTopicIds = Array.isArray(subStrandIds) && subStrandIds.length > 0
+      ? subStrandIds
+      : (subStrandId ? [subStrandId] : []);
+    const resolvedTopicIds = Array.isArray(weekOverride?.subStrandIds) && weekOverride.subStrandIds.length > 0
+      ? weekOverride.subStrandIds
+      : defaultTopicIds;
 
     return {
       ...formData,
-      subStrandId,
-      subStrandIds: Array.isArray(subStrandIds) && subStrandIds.length > 0 ? subStrandIds : (subStrandId ? [subStrandId] : []),
+      week: String(weekNumber || formData.week || ''),
+      subStrandId: resolvedTopicIds[0] || subStrandId,
+      subStrandIds: resolvedTopicIds,
       generationMode: mode,
       dayDate: firstSessionDate || firstSession?.day || '',
-      weekEnding: toDateInputValue(selectedWeekEnding) || '',
+      weekEnding: toDateInputValue(weekEndingValue) || '',
       duration: '',
+      contentStandardCode: weekOverride?.contentStandardCode ?? formData.contentStandardCode,
+      indicatorCodes: weekOverride?.indicatorCodes ?? formData.indicatorCodes,
       sessionPlan: sessionPlanLines.join('\n'),
+    };
+  };
+
+  const buildPayload = (mode) => {
+    const targets = weekTargets;
+    const requests = targets.map((target) =>
+      buildPayloadForWeek({
+        mode,
+        weekNumber: target.weekNumber,
+        weekEndingValue: target.weekEnding,
+        weekOverride: weeklyOverrides[String(target.weekNumber)],
+      })
+    );
+
+    return {
+      ...requests[0],
+      requests,
+      weekNumbers: targets.map((target) => target.weekNumber),
     };
   };
 
@@ -204,6 +351,9 @@ function LessonNoteForm({
           facilitatorName: formData.facilitatorName,
           term: formData.term,
           classSize: formData.classSize,
+          week: formData.week,
+          endWeek: formData.endWeek,
+          generateForRange,
           contentStandardCode: formData.contentStandardCode,
           indicatorCodes: formData.indicatorCodes,
           reference: formData.reference,
@@ -217,6 +367,14 @@ function LessonNoteForm({
   };
 
   const handleSubmitWithMode = (mode) => {
+    if (formRef.current && !formRef.current.reportValidity()) {
+      return;
+    }
+
+    if (weekTargets.length === 0) {
+      return;
+    }
+
     persistPreferences();
     onSubmit(buildPayload(mode));
   };
@@ -231,8 +389,6 @@ function LessonNoteForm({
       e.preventDefault();
     }
   };
-
-  const hasCalendarWeeks = weekOptions.length > 0;
 
   return (
     <Dialog
@@ -263,11 +419,11 @@ function LessonNoteForm({
           )}
         </Box>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          Select week and lesson day(s). Dates are auto-derived from your school term calendar.
+          Select one week or a week range and lesson day(s). Dates are auto-derived from your school term calendar.
         </Typography>
       </DialogTitle>
 
-      <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown}>
+      <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleFormKeyDown}>
         <DialogContent tabIndex={0} sx={{ overflowY: 'auto' }}>
           {isLoading ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -357,6 +513,139 @@ function LessonNoteForm({
                   )) : null}
                 </TextField>
               </Stack>
+
+              <FormControlLabel
+                control={(
+                  <Switch
+                    checked={generateForRange}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setGenerateForRange(checked);
+                      if (checked) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          endWeek: prev.endWeek || prev.week,
+                        }));
+                      } else {
+                        setFormData((prev) => ({ ...prev, endWeek: '' }));
+                      }
+                    }}
+                  />
+                )}
+                label="Generate for a week range"
+              />
+
+              {generateForRange && (
+                <TextField
+                  select={hasCalendarWeeks}
+                  name="endWeek"
+                  label="End Week *"
+                  value={formData.endWeek}
+                  onChange={handleChange}
+                  required
+                  type={hasCalendarWeeks ? undefined : 'number'}
+                  inputProps={hasCalendarWeeks ? undefined : { min: 1, max: 20 }}
+                  helperText={hasCalendarWeeks ? 'Choose the last week to include' : 'Enter the last week number in the range'}
+                  fullWidth
+                >
+                  {hasCalendarWeeks ? endWeekOptions.map((entry) => (
+                    <MenuItem key={`end-${termKey}-${entry.weekNumber}`} value={String(entry.weekNumber)}>
+                      Week {entry.weekNumber} (Ending {toDateInputValue(entry.weekEnding)})
+                    </MenuItem>
+                  )) : null}
+                </TextField>
+              )}
+
+              {generateForRange && weekTargets.length > 0 && (
+                <Box sx={{ p: 1.5, borderRadius: 1.5, border: '1px dashed', borderColor: 'divider' }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1.2 }}>Weekly Curriculum Mapping</Typography>
+                  <Stack spacing={1.4}>
+                    {weekTargets.map((target) => {
+                      const weekKey = String(target.weekNumber);
+                      const weekRow = weeklyOverrides[weekKey] || { subStrandIds: [], contentStandardCode: '', indicatorCodes: '' };
+                      return (
+                        <Box key={`weekly-override-${weekKey}`} sx={{ p: 1.2, borderRadius: 1.2, border: '1px solid', borderColor: 'divider' }}>
+                          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Week {target.weekNumber}
+                          </Typography>
+                          <Stack spacing={1}>
+                            <TextField
+                              select
+                              SelectProps={{
+                                multiple: true,
+                                renderValue: (selected) => {
+                                  const ids = Array.isArray(selected) ? selected : [];
+                                  return availableTopics
+                                    .filter((topic) => ids.includes(topic.id))
+                                    .map((topic) => topic.strandName ? `${topic.strandName} - ${topic.name}` : topic.name)
+                                    .join(', ');
+                                },
+                              }}
+                              label="Sub-Strands for this week"
+                              value={weekRow.subStrandIds}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                const nextIds = Array.isArray(value) ? value : String(value || '').split(',').filter(Boolean);
+                                setWeeklyOverrides((prev) => ({
+                                  ...prev,
+                                  [weekKey]: {
+                                    ...(prev[weekKey] || {}),
+                                    subStrandIds: nextIds,
+                                  },
+                                }));
+                              }}
+                              fullWidth
+                            >
+                              {availableTopics.map((topic) => (
+                                <MenuItem key={`${weekKey}-${topic.id}`} value={topic.id}>
+                                  <Checkbox checked={weekRow.subStrandIds.includes(topic.id)} size="small" />
+                                  <ListItemText primary={topic.name} secondary={topic.strandName ? `Strand: ${topic.strandName}` : undefined} />
+                                </MenuItem>
+                              ))}
+                            </TextField>
+
+                            <TextField
+                              label="Content Standard Code (Week-specific)"
+                              value={weekRow.contentStandardCode}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                setWeeklyOverrides((prev) => ({
+                                  ...prev,
+                                  [weekKey]: {
+                                    ...(prev[weekKey] || {}),
+                                    contentStandardCode: value,
+                                  },
+                                }));
+                              }}
+                              fullWidth
+                              multiline
+                              minRows={2}
+                            />
+
+                            <TextField
+                              label="Indicator(s) (Week-specific)"
+                              value={weekRow.indicatorCodes}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                setWeeklyOverrides((prev) => ({
+                                  ...prev,
+                                  [weekKey]: {
+                                    ...(prev[weekKey] || {}),
+                                    indicatorCodes: value,
+                                  },
+                                }));
+                              }}
+                              fullWidth
+                              multiline
+                              minRows={2}
+                            />
+                          </Stack>
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                </Box>
+              )}
 
               <TextField
                 name="classSize"
