@@ -64,9 +64,7 @@ const LessonNoteView = () => {
 
       /* ✅ MODIFIED: PDF now uses PDF-only view */
       if (type === 'pdf') {
-        downloadAsPdf(pdfElementId, topic, {
-          maxPages: 2,
-        });
+        downloadAsPdf(pdfElementId, topic, {});
       }
       if (type === 'word') downloadAsWord(elementId, topic);
     },

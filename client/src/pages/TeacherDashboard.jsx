@@ -732,9 +732,7 @@ function TeacherDashboard() {
 
     try {
       if (format === 'pdf') {
-        await downloadAsPdf(elementId, baseName, {
-          maxPages: itemType?.includes('note') ? 2 : undefined,
-        });
+        await downloadAsPdf(elementId, baseName, {});
       } else {
         const htmlDocument = `<!doctype html><html><head><meta charset="utf-8" /><title>${baseName}</title></head><body>${htmlContent}</body></html>`;
         const blobType = format === 'doc' ? 'application/msword;charset=utf-8' : 'text/html;charset=utf-8';
@@ -836,7 +834,6 @@ function TeacherDashboard() {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           const pdfTask = downloadAsPdf('teacher-note-preview-content', safeFileName || 'lesson-note', {
-            maxPages: 2,
             margin: [2.5, 1, 2.5, 1],
             html2canvas: {
               scale: 1.6,
