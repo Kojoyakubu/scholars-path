@@ -126,6 +126,26 @@ function pickProvider({ task = 'generic', jsonNeeded = false, preferredProvider 
   throw new Error('No AI providers available.');
 }
 
+function buildProviderOrder({ task = 'generic', jsonNeeded = false, preferredProvider }) {
+  const primary = pickProvider({ task, jsonNeeded, preferredProvider });
+  const pool = [
+    primary,
+    ...(jsonNeeded || /quiz/i.test(task)
+      ? ['openai', 'groq', 'gemini', 'claude']
+      : ['gemini', 'groq', 'openai', 'claude']),
+  ];
+  const seen = new Set();
+  return pool.filter((provider) => {
+    if (seen.has(provider)) return false;
+    seen.add(provider);
+    if (provider === 'gemini') return hasGemini;
+    if (provider === 'groq') return hasGroq;
+    if (provider === 'openai') return hasOpenAI;
+    if (provider === 'claude') return hasClaude;
+    return false;
+  });
+}
+
 // When AI output includes placeholders like [image: query] or [Image suggestion: query],
 // convert them to a simple <img> tag using a placeholder service. This makes previews
 // automatically display an image instead of raw text.
@@ -187,12 +207,9 @@ async function generateTextCore({
   if (!prompt || typeof prompt !== 'string') {
     throw new Error('Prompt must be a non-empty string.');
   }
-  const provider = pickProvider({ task, jsonNeeded, preferredProvider });
-  let modelUsed = '';
-  let text = '';
-  let raw = null;
+  const providers = buildProviderOrder({ task, jsonNeeded, preferredProvider });
   const MAX_RETRIES = 2;
-  
+
   // Define fallback models for Gemini
   const geminiModels = [
     providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? GEMINI_FAST : GEMINI_MAIN),
@@ -200,107 +217,127 @@ async function generateTextCore({
     'gemini-2.5-flash',
   ];
   const uniqueGeminiModels = [...new Set(geminiModels)];
-  
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
-    try {
-      if (provider === 'gemini') {
-        if (!gemini) throw new Error('Gemini not configured.');
-        
-        // ✅ FIXED: Use different model on each retry
-        const modelIndex = Math.min(attempt, uniqueGeminiModels.length - 1);
-        const modelName = uniqueGeminiModels[modelIndex];
-        
-        console.log(`🤖 Attempt ${attempt + 1}: Using Gemini model: ${modelName}`);
-        
-        const model = gemini.getGenerativeModel({
-          model: modelName,
-          safetySettings: [
-            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          ],
-        });
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { temperature },
-        });
-        const response = await result.response;
-        text = response?.text?.() || '';
-        raw = response;
-        modelUsed = `Gemini:${modelName}`;
-        
-        console.log(`✅ Success with ${modelName}`);
+
+  const failures = [];
+  for (const provider of providers) {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+      let modelUsed = '';
+      let text = '';
+      let raw = null;
+
+      try {
+        if (provider === 'gemini') {
+          if (!gemini) throw new Error('Gemini not configured.');
+
+          const modelIndex = Math.min(attempt, uniqueGeminiModels.length - 1);
+          const modelName = uniqueGeminiModels[modelIndex];
+
+          console.log(`🤖 ${provider.toUpperCase()} attempt ${attempt + 1}: ${modelName}`);
+
+          const model = gemini.getGenerativeModel({
+            model: modelName,
+            safetySettings: [
+              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            ],
+          });
+          const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature },
+          });
+          const response = await result.response;
+          text = response?.text?.() || '';
+          raw = response;
+          modelUsed = `Gemini:${modelName}`;
+        }
+
+        if (provider === 'openai') {
+          if (!openai) throw new Error('OpenAI not configured.');
+          const modelName = providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? OPENAI_JSON : OPENAI_MAIN);
+          console.log(`🤖 ${provider.toUpperCase()} attempt ${attempt + 1}: ${modelName}`);
+          const resp = await openai.chat.completions.create({
+            model: modelName,
+            temperature,
+            messages: [{ role: 'user', content: prompt }],
+          });
+          text = resp?.choices?.[0]?.message?.content || '';
+          raw = resp;
+          modelUsed = `OpenAI:${modelName}`;
+        }
+
+        if (provider === 'claude') {
+          if (!claude) throw new Error('Claude not configured.');
+          const modelName = providerModelOverride || CLAUDE_MAIN;
+          console.log(`🤖 ${provider.toUpperCase()} attempt ${attempt + 1}: ${modelName}`);
+          const resp = await claude.messages.create({
+            model: modelName,
+            temperature,
+            max_tokens: 4000,
+            messages: [{ role: 'user', content: prompt }],
+          });
+          const parts = Array.isArray(resp?.content) ? resp.content.map((c) => c?.text || '').filter(Boolean) : [];
+          text = parts.join('\n').trim();
+          raw = resp;
+          modelUsed = `Claude:${modelName}`;
+        }
+
+        if (provider === 'groq') {
+          if (!groq) throw new Error('Groq not configured.');
+          const modelName = providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? GROQ_FAST : GROQ_MAIN);
+          console.log(`🤖 ${provider.toUpperCase()} attempt ${attempt + 1}: ${modelName}`);
+          const resp = await groq.chat.completions.create({
+            model: modelName,
+            temperature,
+            messages: [{ role: 'user', content: prompt }],
+          });
+          text = resp?.choices?.[0]?.message?.content || '';
+          raw = resp;
+          modelUsed = `Groq:${modelName}`;
+        }
+
+        if (!text) {
+          throw new Error('AI returned empty response.');
+        }
+
+        return {
+          ok: true,
+          text: text.trim(),
+          provider,
+          model: modelUsed,
+          task,
+          timestamp: Date.now(),
+          raw,
+        };
+      } catch (err) {
+        console.log(`❌ ${provider.toUpperCase()} attempt ${attempt + 1} failed: ${err.message}`);
+
+        const isQuota = err.message && (
+          err.message.includes('RESOURCE_EXHAUSTED')
+          || err.message.includes('quota')
+          || err.message.includes('429')
+          || err.message.includes('rate limit')
+        );
+        const is503 = err.message && (
+          err.message.includes('503')
+          || err.message.includes('Service Unavailable')
+          || err.message.includes('high demand')
+        );
+        const shouldSwitchProvider = isQuota || is503;
+
+        if (attempt === MAX_RETRIES || shouldSwitchProvider) {
+          failures.push(`[${provider}] ${err.message || 'Unknown AI error'}`);
+          break;
+        }
+
+        const baseDelay = (is503 || isQuota) ? 5000 : 300;
+        await sleep(baseDelay * (attempt + 1));
       }
-      if (provider === 'openai') {
-        if (!openai) throw new Error('OpenAI not configured.');
-        const modelName = providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? OPENAI_JSON : OPENAI_MAIN);
-        const resp = await openai.chat.completions.create({
-          model: modelName,
-          temperature,
-          messages: [{ role: 'user', content: prompt }],
-        });
-        text = resp?.choices?.[0]?.message?.content || '';
-        raw = resp;
-        modelUsed = `OpenAI:${modelName}`;
-      }
-      if (provider === 'claude') {
-        if (!claude) throw new Error('Claude not configured.');
-        const modelName = providerModelOverride || CLAUDE_MAIN;
-        const resp = await claude.messages.create({
-          model: modelName,
-          temperature,
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: prompt }],
-        });
-        const parts = Array.isArray(resp?.content) ? resp.content.map((c) => c?.text || '').filter(Boolean) : [];
-        text = parts.join('\n').trim();
-        raw = resp;
-        modelUsed = `Claude:${modelName}`;
-      }
-      if (provider === 'groq') {
-        if (!groq) throw new Error('Groq not configured.');
-        const modelName = providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? GROQ_FAST : GROQ_MAIN);
-        console.log(`🤖 Attempt ${attempt + 1}: Using Groq model: ${modelName}`);
-        const resp = await groq.chat.completions.create({
-          model: modelName,
-          temperature,
-          messages: [{ role: 'user', content: prompt }],
-        });
-        text = resp?.choices?.[0]?.message?.content || '';
-        raw = resp;
-        modelUsed = `Groq:${modelName}`;
-        console.log(`✅ Success with Groq ${modelName}`);
-      }
-      if (!text) {
-        throw new Error('AI returned empty response.');
-      }
-      return {
-        ok: true,
-        text: text.trim(),
-        provider,
-        model: modelUsed,
-        task,
-        timestamp: Date.now(),
-        raw,
-      };
-    } catch (err) {
-      console.log(`❌ Attempt ${attempt + 1} failed: ${err.message}`);
-      
-      if (attempt === MAX_RETRIES) {
-        const errorMsg = provider === 'gemini' 
-          ? `[Gemini] All models failed: ${uniqueGeminiModels.join(', ')}. Error: ${err.message}`
-          : `[${provider}] ${err.message || 'Unknown AI error'}`;
-        throw new Error(errorMsg);
-      }
-      // Use longer backoff for quota/overload errors
-      const isQuota = err.message && (err.message.includes('RESOURCE_EXHAUSTED') || err.message.includes('quota') || err.message.includes('429'));
-      const is503 = err.message && (err.message.includes('503') || err.message.includes('Service Unavailable') || err.message.includes('high demand'));
-      const baseDelay = (is503 || isQuota) ? 5000 : 300;
-      await sleep(baseDelay * (attempt + 1));
     }
   }
-  throw new Error('AI generation failed after retries.');
+
+  throw new Error(`AI generation failed across providers. ${failures.join(' | ')}`);
 }
 
 // ========================
