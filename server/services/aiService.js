@@ -1904,6 +1904,21 @@ CRITICAL RULES:
 13. If multiple topics/sub-strands are provided, generate ONE integrated lesson note that covers all topics across the available sessions, not separate notes.
 14. For multiple topics, map curriculum alignment correctly: show corresponding Content Standard Code(s) and Official Indicator(s) for each topic in clear, topic-labeled lines.
 15. For multiple topics, distribute topic flow intelligently across sessions (e.g., Session 1 foundation topics, Session 2 deeper application/assessment), with explicit continuity.
+16. LESSON PHASE QUALITY: Avoid generic lines like "discuss", "do activity", "ask questions", "summarize" without content detail. Every phase entry must include concrete subject-specific content.
+17. In each session row, Phase 2 must be the most detailed and must include:
+  - a teacher action with exact concept focus,
+  - a learner task with clear output (what learners produce/say/write),
+  - one differentiation move (support for struggling learners or challenge for advanced learners),
+  - one Assessment-for-Learning checkpoint.
+18. Evaluation questions must test the exact concepts taught in that session and should not repeat across sessions.
+19. Real-Life Application must be Ghana-contextual and specific (e.g., local market, farming, transport, school routines, community practices).
+20. Use concise but substantive detail: each phase sub-item should typically be 14+ words, except short labels.
+
+LESSON PHASE QUALITY RUBRIC:
+- Phase 1 (Starter): activate prior knowledge tied directly to today's concept, include an engaging trigger and a clear objective statement.
+- Phase 2 (Main): sequence explanation -> guided practice -> independent/collaborative task -> AfL check -> assignment.
+- Phase 3 (Plenary): summarize key learning, include reflection prompts, and connect to authentic Ghanaian daily life.
+- For multi-session plans, each session must progress meaningfully from the previous one (not reworded repetition).
 
 ---
 TOPIC CONTEXT:
