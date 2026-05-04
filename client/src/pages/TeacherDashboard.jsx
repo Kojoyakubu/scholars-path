@@ -924,37 +924,65 @@ function TeacherDashboard() {
           : [formData];
 
         const createdNotes = [];
-        for (const requestPayload of requestPayloads) {
+        const failedWeeks = [];
+
+        for (let i = 0; i < requestPayloads.length; i += 1) {
+          const requestPayload = requestPayloads[i];
           const resolvedSubStrandIds = Array.isArray(requestPayload.subStrandIds) && requestPayload.subStrandIds.length > 0
             ? requestPayload.subStrandIds
             : selectedTopics.map((topic) => topic.id);
 
-          const createdNote = await dispatch(generateLessonNote({
-            ...requestPayload,
-            subStrandIds: resolvedSubStrandIds,
-            subStrandId: requestPayload.subStrandId || resolvedSubStrandIds[0] || selectedTopics[0]?.id,
-          })).unwrap();
-          createdNotes.push(createdNote);
+          try {
+            const createdNote = await dispatch(generateLessonNote({
+              ...requestPayload,
+              subStrandIds: resolvedSubStrandIds,
+              subStrandId: requestPayload.subStrandId || resolvedSubStrandIds[0] || selectedTopics[0]?.id,
+            })).unwrap();
+            createdNotes.push(createdNote);
+          } catch (weekErr) {
+            const weekNum = requestPayload.week || (i + 1);
+            failedWeeks.push(weekNum);
+          }
+
+          // Small delay between requests to avoid overwhelming the server
+          if (i < requestPayloads.length - 1) {
+            await new Promise((resolve) => { setTimeout(resolve, 1200); });
+          }
+        }
+
+        if (createdNotes.length === 0) {
+          const weekList = failedWeeks.length > 0 ? ` (Week${failedWeeks.length > 1 ? 's' : ''} ${failedWeeks.join(', ')})` : '';
+          setSnackbar({
+            open: true,
+            message: `Failed to generate lesson notes${weekList}. The AI service may be unavailable — please try again in a moment.`,
+            severity: 'error',
+          });
+          return;
         }
 
         const generatedCount = createdNotes.length;
-        const successMessage = generatedCount > 1
-          ? `${generatedCount} lesson notes generated for the selected week range.`
-          : (selectedTopics.length === 1
-            ? 'Lesson note generated!'
-            : 'One combined lesson note generated for all selected topics.');
-        setSnackbar({ open: true, message: successMessage, severity: 'success' });
+        const totalCount = requestPayloads.length;
+        let successMessage;
+        if (generatedCount === totalCount) {
+          successMessage = generatedCount > 1
+            ? `${generatedCount} lesson notes generated for the selected week range.`
+            : (selectedTopics.length === 1
+              ? 'Lesson note generated!'
+              : 'One combined lesson note generated for all selected topics.');
+        } else {
+          successMessage = `${generatedCount} of ${totalCount} notes generated. Week${failedWeeks.length > 1 ? 's' : ''} ${failedWeeks.join(', ')} failed — you can retry those individually.`;
+        }
+
+        const severity = failedWeeks.length > 0 ? 'warning' : 'success';
+        setSnackbar({ open: true, message: successMessage, severity });
         displayNote(createdNotes[createdNotes.length - 1]);
         closeDialog();
         setShowCreateTools(false);
         setLessonPlanSelectedSubStrands([]);
       } catch (_err) {
-        const requestedCount = Array.isArray(formData.requests) ? formData.requests.length : 1;
         setSnackbar({
           open: true,
-          message: requestedCount > 1
-            ? 'Failed to generate lesson notes for the selected week range.'
-            : 'Failed to generate a combined lesson note for the selected topics.',
+          message: 'An unexpected error occurred. Please try again.',
           severity: 'error',
         });
       }
