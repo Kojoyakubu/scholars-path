@@ -23,15 +23,18 @@ try {
 const hasGemini = !!process.env.GEMINI_API_KEY;
 const hasOpenAI = !!process.env.OPENAI_API_KEY;
 const hasClaude = !!process.env.ANTHROPIC_API_KEY && !!Anthropic;
+const hasGroq = !!process.env.GROQ_API_KEY;
 
-if (!hasGemini && !hasOpenAI && !hasClaude) {
-  throw new Error('No AI providers configured. Set at least one of GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.');
+if (!hasGemini && !hasOpenAI && !hasClaude && !hasGroq) {
+  throw new Error('No AI providers configured. Set at least one of GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, or GROQ_API_KEY.');
 }
 
 // ---- Clients ----
 const gemini = hasGemini ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 const claude = hasClaude ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
+// Groq uses the OpenAI-compatible SDK with a different base URL
+const groq = hasGroq ? new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1' }) : null;
 
 // ---- Default Model Choices (override via env if you like) ----
 const GEMINI_MAIN = process.env.GEMINI_MODEL_MAIN || 'gemini-2.5-flash-lite';
@@ -39,6 +42,8 @@ const GEMINI_FAST = process.env.GEMINI_MODEL_FAST || 'gemini-2.5-flash-lite';
 const OPENAI_MAIN = process.env.OPENAI_MODEL_MAIN || 'gpt-4o';
 const OPENAI_JSON = process.env.OPENAI_MODEL_JSON || 'gpt-4o-mini';
 const CLAUDE_MAIN = process.env.CLAUDE_MODEL_MAIN || 'claude-3-5-sonnet-20240620';
+const GROQ_MAIN = process.env.GROQ_MODEL_MAIN || 'llama-3.3-70b-versatile';
+const GROQ_FAST = process.env.GROQ_MODEL_FAST || 'llama-3.1-8b-instant';
 
 // ---- Utilities ----
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -104,15 +109,18 @@ function pickProvider({ task = 'generic', jsonNeeded = false, preferredProvider 
   if (preferredProvider) return preferredProvider.toLowerCase();
   if (jsonNeeded || /quiz/i.test(task)) {
     if (hasOpenAI) return 'openai';
+    if (hasGroq) return 'groq';
     if (hasGemini) return 'gemini';
     if (hasClaude) return 'claude';
   }
   if (/lesson|learner|note|explain/i.test(task)) {
     if (hasGemini) return 'gemini';
+    if (hasGroq) return 'groq';
     if (hasOpenAI) return 'openai';
     if (hasClaude) return 'claude';
   }
   if (hasOpenAI) return 'openai';
+  if (hasGroq) return 'groq';
   if (hasGemini) return 'gemini';
   if (hasClaude) return 'claude';
   throw new Error('No AI providers available.');
@@ -250,6 +258,20 @@ async function generateTextCore({
         raw = resp;
         modelUsed = `Claude:${modelName}`;
       }
+      if (provider === 'groq') {
+        if (!groq) throw new Error('Groq not configured.');
+        const modelName = providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? GROQ_FAST : GROQ_MAIN);
+        console.log(`🤖 Attempt ${attempt + 1}: Using Groq model: ${modelName}`);
+        const resp = await groq.chat.completions.create({
+          model: modelName,
+          temperature,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        text = resp?.choices?.[0]?.message?.content || '';
+        raw = resp;
+        modelUsed = `Groq:${modelName}`;
+        console.log(`✅ Success with Groq ${modelName}`);
+      }
       if (!text) {
         throw new Error('AI returned empty response.');
       }
@@ -271,9 +293,10 @@ async function generateTextCore({
           : `[${provider}] ${err.message || 'Unknown AI error'}`;
         throw new Error(errorMsg);
       }
-      // Use longer backoff for 503 (server overload) errors
+      // Use longer backoff for quota/overload errors
+      const isQuota = err.message && (err.message.includes('RESOURCE_EXHAUSTED') || err.message.includes('quota') || err.message.includes('429'));
       const is503 = err.message && (err.message.includes('503') || err.message.includes('Service Unavailable') || err.message.includes('high demand'));
-      const baseDelay = is503 ? 2000 : 300;
+      const baseDelay = (is503 || isQuota) ? 5000 : 300;
       await sleep(baseDelay * (attempt + 1));
     }
   }

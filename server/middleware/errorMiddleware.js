@@ -20,17 +20,24 @@ const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = err.message;
 
-  // 0. AI provider temporary overload (retryable)
-  // Convert upstream model saturation to 503 so clients can handle retries gracefully.
+  // 0. AI provider temporary overload or quota exhaustion
   const isAiOverload = typeof message === 'string' && (
     message.includes('[Gemini] All models failed')
     || message.includes('503 Service Unavailable')
     || message.includes('high demand')
     || message.includes('Spikes in demand')
   );
-  if (isAiOverload) {
+  const isAiQuota = typeof message === 'string' && (
+    message.includes('RESOURCE_EXHAUSTED')
+    || message.includes('quota')
+    || message.includes('rate limit')
+    || message.includes('429')
+  );
+  if (isAiOverload || isAiQuota) {
     statusCode = 503;
-    message = 'AI service is temporarily busy due to high demand. Please try again in a few moments.';
+    message = isAiQuota
+      ? 'AI generation quota has been reached for today. Please try again later or contact support.'
+      : 'AI service is temporarily busy due to high demand. Please try again in a few moments.';
     res.set('Retry-After', '20');
   }
 

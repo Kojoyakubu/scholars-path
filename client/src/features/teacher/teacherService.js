@@ -14,8 +14,8 @@ const getRetryAfterDelay = (error) => {
 
 const postWith503Retry = async (url, payload, options = {}) => {
   const {
-    maxRetries = 5,
-    baseDelayMs = 8000,
+    maxRetries = 3,
+    baseDelayMs = 3000,
   } = options;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
@@ -30,9 +30,8 @@ const postWith503Retry = async (url, payload, options = {}) => {
         throw error;
       }
 
-      // Render free tier can take 30-50s to cold-start; use a long backoff
       const retryAfterDelay = getRetryAfterDelay(error);
-      const fallbackDelay = attempt === 0 ? 12000 : baseDelayMs * attempt;
+      const fallbackDelay = baseDelayMs * (attempt + 1);
       await sleep(retryAfterDelay || fallbackDelay);
     }
   }
@@ -56,10 +55,7 @@ const getMyLessonNotes = async () => {
 
 // ✅ FIX: Changed from /generate-note to /ai/generate-note
 const generateLessonNote = async (noteData) => {
-  return postWith503Retry('/api/teacher/ai/generate-note', noteData, {
-    maxRetries: 3,
-    baseDelayMs: 2000,
-  });
+  return postWith503Retry('/api/teacher/ai/generate-note', noteData);
 };
 
 const getLessonNoteById = async (noteId) => {
