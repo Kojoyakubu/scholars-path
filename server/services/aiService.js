@@ -1904,21 +1904,53 @@ CRITICAL RULES:
 13. If multiple topics/sub-strands are provided, generate ONE integrated lesson note that covers all topics across the available sessions, not separate notes.
 14. For multiple topics, map curriculum alignment correctly: show corresponding Content Standard Code(s) and Official Indicator(s) for each topic in clear, topic-labeled lines.
 15. For multiple topics, distribute topic flow intelligently across sessions (e.g., Session 1 foundation topics, Session 2 deeper application/assessment), with explicit continuity.
-16. LESSON PHASE QUALITY: Avoid generic lines like "discuss", "do activity", "ask questions", "summarize" without content detail. Every phase entry must include concrete subject-specific content.
-17. In each session row, Phase 2 must be the most detailed and must include:
-  - a teacher action with exact concept focus,
-  - a learner task with clear output (what learners produce/say/write),
-  - one differentiation move (support for struggling learners or challenge for advanced learners),
-  - one Assessment-for-Learning checkpoint.
-18. Evaluation questions must test the exact concepts taught in that session and should not repeat across sessions.
-19. Real-Life Application must be Ghana-contextual and specific (e.g., local market, farming, transport, school routines, community practices).
-20. Use concise but substantive detail: each phase sub-item should typically be 14+ words, except short labels.
+16. LESSON PHASE QUALITY — STRICTLY ENFORCED:
+    Every phase cell must contain classroom-ready, subject-specific content. Generic meta-descriptions are FORBIDDEN.
 
-LESSON PHASE QUALITY RUBRIC:
-- Phase 1 (Starter): activate prior knowledge tied directly to today's concept, include an engaging trigger and a clear objective statement.
-- Phase 2 (Main): sequence explanation -> guided practice -> independent/collaborative task -> AfL check -> assignment.
-- Phase 3 (Plenary): summarize key learning, include reflection prompts, and connect to authentic Ghanaian daily life.
-- For multi-session plans, each session must progress meaningfully from the previous one (not reworded repetition).
+BANNED PHRASES (never use these alone):
+  - "activate prior knowledge" / "generate interest" / "state the objective" / "discuss the topic" / "do an activity"
+  - "ask questions" / "summarize key ideas" / "assess understanding" / "engage learners" / "explore the concept"
+  Each of those must be replaced with the ACTUAL content of that action.
+
+LESSON PHASE GOOD vs BAD EXAMPLES (use as a quality standard for this lesson):
+
+  Phase 1 — Recap:
+    ❌ BAD: "Review prior knowledge on counting and number recognition."
+    ✅ GOOD: "Briefly review counting and identifying numbers up to 100 by asking: 'What comes after 89? What is 10 more than 45?'"
+
+  Phase 1 — Engaging Activity:
+    ❌ BAD: "Counting game with the class to activate prior knowledge and generate interest."
+    ✅ GOOD: "Show a large number chart (1–100) and call out a number (e.g., 67); learners race to point at it and say what comes before and after."
+
+  Phase 1 — Introduction:
+    ❌ BAD: "Clearly state the lesson objective."
+    ✅ GOOD: "Say: 'Today we will learn about numbers bigger than 100, up to 1,000, and how to understand the value of each digit using hundreds, tens, and ones.'"
+
+  Phase 2 — Activity 1:
+    ❌ BAD: "Explain the concept using number lines and blocks."
+    ✅ GOOD: "Introduce place value using a chart on the board. Demonstrate how 123 = 1 hundred + 2 tens + 3 ones. Show 456 and 789 in the same way, drawing each column."
+
+  Phase 2 — Activity 2:
+    ❌ BAD: "Learners work in pairs to match number cards."
+    ✅ GOOD: "Distribute place-value cards. Each pair builds three numbers (e.g., 342, 507, 680) on their chart. Teacher circulates and asks: 'How many tens are in 507?'"
+
+  Phase 2 — Assignment:
+    ❌ BAD: "Give learners a short task to complete at home."
+    ✅ GOOD: "Draw a place value chart in your exercise book and represent the number 678 showing hundreds, tens, and ones columns."
+
+  Phase 3 — Real-Life Application:
+    ❌ BAD: "Discuss how the concept is used in everyday life."
+    ✅ GOOD: "We see numbers up to 1,000 on bus numbers (e.g., Accra–Kumasi fare = GH¢95), house addresses on streets, and prices on goods in the market."
+
+17. Evaluation questions must name exact values, terms, or operations from the lesson (not generic "what did you learn?" questions).
+18. Differentiation: name the EXACT support or extension (e.g., "provide a pre-filled place value chart" or "challenge: write a 4-digit number and decompose it").
+19. Assessment-for-Learning checkpoint must describe what the teacher observes or listens for (not "check for understanding").
+
+LESSON PHASE STRUCTURE RUBRIC:
+  Phase 1: specific prior-knowledge trigger + engaging named task + explicit objective sentence.
+  Phase 2: teacher explanation with examples -> named learner task with output -> AfL observation note -> differentiation move -> home assignment with specific task.
+  Phase 3: subject-specific recap sentence + 1–2 reflection questions + Ghana real-life named example.
+  Multi-session: Session 2 must deepen or apply what Session 1 introduced, not restate it.
 
 ---
 TOPIC CONTEXT:
