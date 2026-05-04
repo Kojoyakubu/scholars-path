@@ -325,7 +325,9 @@ function LessonNoteForm({
   };
 
   const buildPayload = (mode) => {
-    const targets = weekTargets;
+    const targets = weekTargets.length > 0
+      ? weekTargets
+      : [{ weekNumber: formData.week || '', weekEnding: selectedWeekEnding || null }];
     const requests = targets.map((target) =>
       buildPayloadForWeek({
         mode,
@@ -367,14 +369,6 @@ function LessonNoteForm({
   };
 
   const handleSubmitWithMode = (mode) => {
-    if (formRef.current && !formRef.current.reportValidity()) {
-      return;
-    }
-
-    if (weekTargets.length === 0) {
-      return;
-    }
-
     persistPreferences();
     onSubmit(buildPayload(mode));
   };
@@ -497,10 +491,9 @@ function LessonNoteForm({
                 <TextField
                   select={hasCalendarWeeks}
                   name="week"
-                  label="Week Number *"
+                  label="Week Number"
                   value={formData.week}
                   onChange={handleChange}
-                  required
                   type={hasCalendarWeeks ? undefined : 'number'}
                   inputProps={hasCalendarWeeks ? undefined : { min: 1, max: 20 }}
                   helperText={hasCalendarWeeks ? 'Admin-configured weeks for selected term' : 'No term calendar configured yet; enter week manually.'}
@@ -539,10 +532,9 @@ function LessonNoteForm({
                 <TextField
                   select={hasCalendarWeeks}
                   name="endWeek"
-                  label="End Week *"
+                  label="End Week"
                   value={formData.endWeek}
                   onChange={handleChange}
-                  required
                   type={hasCalendarWeeks ? undefined : 'number'}
                   inputProps={hasCalendarWeeks ? undefined : { min: 1, max: 20 }}
                   helperText={hasCalendarWeeks ? 'Choose the last week to include' : 'Enter the last week number in the range'}
@@ -649,10 +641,9 @@ function LessonNoteForm({
 
               <TextField
                 name="classSize"
-                label="Class Size *"
+                label="Class Size"
                 value={formData.classSize}
                 onChange={handleChange}
-                required
                 type="number"
                 inputProps={{ min: 1, max: 200 }}
                 fullWidth
@@ -660,10 +651,9 @@ function LessonNoteForm({
 
               <TextField
                 name="sessionsPerWeek"
-                label="Meetings Per Week *"
+                label="Meetings Per Week"
                 value={formData.sessionsPerWeek}
                 onChange={handleChange}
-                required
                 type="number"
                 inputProps={{ min: 1, max: 7 }}
                 fullWidth
@@ -688,10 +678,9 @@ function LessonNoteForm({
                           ))}
                         </TextField>
                         <TextField
-                          label={`Session ${index + 1} Time/Duration *`}
+                          label={`Session ${index + 1} Time/Duration`}
                           value={row.duration}
                           onChange={(event) => handleSessionRowChange(index, 'duration', event.target.value)}
-                          required
                           sx={{ flex: 1 }}
                           placeholder="e.g., 35 mins / 1 Period"
                         />
