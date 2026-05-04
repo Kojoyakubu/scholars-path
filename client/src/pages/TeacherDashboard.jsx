@@ -578,6 +578,13 @@ function TeacherDashboard() {
       .replace(/(^-|-$)/g, '') || fallback
   ), []);
 
+  const getLessonNoteName = useCallback((note) => {
+    const subjectPart = note?.subStrand?.strand?.subject?.name || '';
+    const weekPart = note?.generationContext?.week ? `Week ${note.generationContext.week}` : '';
+    const nameParts = [subjectPart, weekPart].filter(Boolean);
+    return nameParts.length > 0 ? nameParts.join(' - ') : (note?.subStrand?.name || 'lesson-note');
+  }, []);
+
   const getDownloadErrorMessage = useCallback((error) => (
     error?.response?.data?.message || error?.message || 'Payment failed. Please try again.'
   ), []);
@@ -776,11 +783,8 @@ function TeacherDashboard() {
       return;
     }
 
-    const subjectPart = viewingNote?.subStrand?.strand?.subject?.name || '';
-    const weekPart = viewingNote?.generationContext?.week ? `Week ${viewingNote.generationContext.week}` : '';
-    const topicParts = [subjectPart, weekPart].filter(Boolean);
-    const topic = topicParts.length > 0 ? topicParts.join(' - ') : (viewingNote?.subStrand?.name || 'lesson-note');
-    const safeFileName = topic.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '');
+    const topic = getLessonNoteName(viewingNote);
+    const safeFileName = sanitizeDownloadBaseName(topic, 'lesson-note');
 
     const printableBody = (previewSegments || []).map((segment) => {
       if (segment.type === 'text') return segment.html || '';
@@ -899,7 +903,7 @@ function TeacherDashboard() {
       message: `Payment successful (GHC ${DOWNLOAD_FEE_GHS.toFixed(2)}). Downloaded as .${extension}`,
       severity: 'success',
     });
-  }, [DOWNLOAD_FEE_GHS, handleCloseDownloadMenu, previewSegments, processDownloadPayment, setSnackbar, viewingNote]);
+  }, [DOWNLOAD_FEE_GHS, getLessonNoteName, handleCloseDownloadMenu, previewSegments, processDownloadPayment, sanitizeDownloadBaseName, setSnackbar, viewingNote]);
 
   const handleGenerateNoteSubmit = useCallback((formData) => {
     const selectedTopics = lessonPlanSelectedSubStrands.length > 0
@@ -1605,7 +1609,7 @@ function TeacherDashboard() {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
                       <Box>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                          {note.subStrand?.name || 'Lesson Note'}
+                          {getLessonNoteName(note)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'Unknown'}
@@ -2223,9 +2227,8 @@ function TeacherDashboard() {
           fullScreen={isDialogFullscreen('notePreview')}
           onToggleFullscreen={() => toggleDialogFullscreen('notePreview')}
           title={[
-            viewingNote?.subStrand?.strand?.subject?.name,
-            viewingNote?.generationContext?.week ? `Week ${viewingNote.generationContext.week}` : null,
-          ].filter(Boolean).join(' – ') || 'Preview Lesson Note'}
+            getLessonNoteName(viewingNote),
+          ].filter(Boolean).join('') || 'Preview Lesson Note'}
         />
 
         <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar(p => ({ ...p, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
