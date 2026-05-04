@@ -18,6 +18,18 @@ const API = axios.create({
   },
 });
 
+let isRefreshingToken = false;
+let refreshSubscribers = [];
+
+const addRefreshSubscriber = (callback) => {
+  refreshSubscribers.push(callback);
+};
+
+const runRefreshSubscribers = (newToken) => {
+  refreshSubscribers.forEach((callback) => callback(newToken));
+  refreshSubscribers = [];
+};
+
 // -----------------------------------------------------------------------------
 // 🔑 TOKEN INTERCEPTOR
 // -----------------------------------------------------------------------------
@@ -69,24 +81,92 @@ const shouldHandleUnauthorized = (error) => {
   return true;
 };
 
+const emitUnauthorized = () => {
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  localStorage.removeItem('studentClassSelection');
+
+  window.dispatchEvent(
+    new CustomEvent('auth:unauthorized', {
+      detail: {
+        message: 'Your session has expired. Please log in again.',
+      },
+    })
+  );
+};
+
+const refreshAccessToken = async () => {
+  const storedUser = localStorage.getItem('user');
+  if (!storedUser) {
+    throw new Error('No user in storage');
+  }
+
+  const user = JSON.parse(storedUser);
+  const refreshToken = user?.refreshToken;
+  if (!refreshToken) {
+    throw new Error('No refresh token found');
+  }
+
+  const response = await axios.post(`${baseURL}/api/users/refresh-token`, { refreshToken });
+  const newAccessToken = response.data?.accessToken;
+
+  if (!newAccessToken) {
+    throw new Error('No access token returned from refresh endpoint');
+  }
+
+  const updatedUser = {
+    ...user,
+    token: newAccessToken,
+    accessToken: newAccessToken,
+  };
+  localStorage.setItem('user', JSON.stringify(updatedUser));
+
+  return newAccessToken;
+};
+
 API.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (shouldHandleUnauthorized(error)) {
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('studentClassSelection');
+  async (error) => {
+    const originalRequest = error.config || {};
 
-      window.dispatchEvent(
-        new CustomEvent('auth:unauthorized', {
-          detail: {
-            message: 'Your session has expired. Please log in again.',
-          },
-        })
-      );
+    if (!shouldHandleUnauthorized(error) || originalRequest._retry) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    originalRequest._retry = true;
+
+    if (isRefreshingToken) {
+      return new Promise((resolve, reject) => {
+        addRefreshSubscriber((newToken) => {
+          if (!newToken) {
+            reject(error);
+            return;
+          }
+
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          resolve(API(originalRequest));
+        });
+      });
+    }
+
+    isRefreshingToken = true;
+
+    try {
+      const newToken = await refreshAccessToken();
+      runRefreshSubscribers(newToken);
+
+      originalRequest.headers = originalRequest.headers || {};
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+      return API(originalRequest);
+    } catch (refreshError) {
+      runRefreshSubscribers(null);
+      emitUnauthorized();
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshingToken = false;
+    }
   }
 );
 
