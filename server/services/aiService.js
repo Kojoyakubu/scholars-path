@@ -31,8 +31,21 @@ if (!hasGemini && !hasOpenAI && !hasClaude && !hasGroq && !hasOpenRouter) {
   throw new Error('No AI providers configured. Set at least one of GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
 }
 
+// ---- Gemini key pool (round-robin rotation across multiple keys) ----
+const geminiKeyPool = [
+  process.env.GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY_2,
+  process.env.GEMINI_API_KEY_3,
+  process.env.GEMINI_API_KEY_4,
+].filter(Boolean);
+let geminiKeyIndex = 0;
+const getNextGeminiKey = () => {
+  const key = geminiKeyPool[geminiKeyIndex % geminiKeyPool.length];
+  geminiKeyIndex = (geminiKeyIndex + 1) % geminiKeyPool.length;
+  return key;
+};
+
 // ---- Clients ----
-const gemini = hasGemini ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 const claude = hasClaude ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
 // Groq uses the OpenAI-compatible SDK with a different base URL
@@ -124,9 +137,9 @@ function pickProvider({ task = 'generic', jsonNeeded = false, preferredProvider 
   }
   if (/lesson|learner|note|explain/i.test(task)) {
     if (hasGemini) return 'gemini';
+    if (hasOpenAI) return 'openai';
     if (hasOpenRouter) return 'openrouter';
     if (hasGroq) return 'groq';
-    if (hasOpenAI) return 'openai';
     if (hasClaude) return 'claude';
   }
   if (hasOpenAI) return 'openai';
@@ -143,7 +156,7 @@ function buildProviderOrder({ task = 'generic', jsonNeeded = false, preferredPro
     primary,
     ...(jsonNeeded || /quiz/i.test(task)
       ? ['openai', 'openrouter', 'groq', 'gemini', 'claude']
-      : ['gemini', 'openrouter', 'groq', 'openai', 'claude']),
+      : ['gemini', 'openai', 'openrouter', 'groq', 'claude']),
   ];
   const seen = new Set();
   return pool.filter((provider) => {
@@ -250,14 +263,16 @@ async function generateTextCore({
 
       try {
         if (provider === 'gemini') {
-          if (!gemini) throw new Error('Gemini not configured.');
+          if (!geminiKeyPool.length) throw new Error('Gemini not configured.');
 
           const modelIndex = Math.min(attempt, uniqueGeminiModels.length - 1);
           const modelName = uniqueGeminiModels[modelIndex];
+          // Rotate key on each attempt so quota hits on key 1 auto-use key 2, etc.
+          const apiKey = getNextGeminiKey();
+          const geminiClient = new GoogleGenerativeAI(apiKey);
+          console.log(`🤖 GEMINI attempt ${attempt + 1}: ${modelName} (key ${(geminiKeyIndex === 0 ? geminiKeyPool.length : geminiKeyIndex)}/${geminiKeyPool.length})`);
 
-          console.log(`🤖 ${provider.toUpperCase()} attempt ${attempt + 1}: ${modelName}`);
-
-          const model = gemini.getGenerativeModel({
+          const model = geminiClient.getGenerativeModel({
             model: modelName,
             safetySettings: [
               { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -325,11 +340,17 @@ async function generateTextCore({
           const modelIndex = Math.min(attempt, uniqueOpenRouterModels.length - 1);
           const modelName = uniqueOpenRouterModels[modelIndex];
           console.log(`🤖 OPENROUTER attempt ${attempt + 1}: ${modelName}`);
-          const resp = await openrouter.chat.completions.create({
-            model: modelName,
-            temperature,
-            messages: [{ role: 'user', content: prompt }],
-          });
+          const timeoutMs = 90000;
+          const resp = await Promise.race([
+            openrouter.chat.completions.create({
+              model: modelName,
+              temperature,
+              messages: [{ role: 'user', content: prompt }],
+            }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('OpenRouter request timed out after 90s')), timeoutMs)
+            ),
+          ]);
           text = resp?.choices?.[0]?.message?.content || '';
           raw = resp;
           modelUsed = `OpenRouter:${modelName}`;
@@ -367,12 +388,17 @@ async function generateTextCore({
           || err.message.includes('No endpoints found')
           || err.message.includes('not found')
         );
-        const isEmpty = err.message && err.message.includes('empty response');
+        const isEmpty = err.message && (
+          err.message.includes('empty response')
+          || err.message.includes('timed out')
+        );
         const shouldSwitchProvider = isQuota || is503;
-        // For 404 or empty response, advance to the next model in the array immediately.
+        // For 404 or empty response, advance to next model in array immediately.
         const shouldAdvanceModel = is404 || isEmpty;
+        // For Gemini quota errors, keep retrying with next key before switching provider.
+        const geminiHasMoreKeys = provider === 'gemini' && isQuota && attempt < geminiKeyPool.length - 1;
 
-        if (attempt === MAX_RETRIES || shouldSwitchProvider) {
+        if (!geminiHasMoreKeys && (attempt === MAX_RETRIES || shouldSwitchProvider)) {
           if (shouldSwitchProvider) {
             console.log(`↪ Switching provider after ${provider.toUpperCase()} due to quota/availability signal.`);
           } else if (attempt === MAX_RETRIES) {
@@ -380,6 +406,9 @@ async function generateTextCore({
           }
           failures.push(`[${provider}] ${err.message || 'Unknown AI error'}`);
           break;
+        }
+        if (geminiHasMoreKeys) {
+          console.log(`🔑 Gemini quota hit — rotating to next key (attempt ${attempt + 2}/${geminiKeyPool.length})`);
         }
 
         const baseDelay = (is503 || isQuota) ? 5000 : (shouldAdvanceModel ? 50 : 300);
