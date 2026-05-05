@@ -48,8 +48,8 @@ const OPENAI_JSON = process.env.OPENAI_MODEL_JSON || 'gpt-4o-mini';
 const CLAUDE_MAIN = process.env.CLAUDE_MODEL_MAIN || 'claude-3-5-sonnet-20240620';
 const GROQ_MAIN = process.env.GROQ_MODEL_MAIN || 'llama-3.3-70b-versatile';
 const GROQ_FAST = process.env.GROQ_MODEL_FAST || 'llama-3.1-8b-instant';
-const OPENROUTER_MAIN = process.env.OPENROUTER_MODEL_MAIN || 'nvidia/nemotron-3-super-120b-a12b:free';
-const OPENROUTER_FAST = process.env.OPENROUTER_MODEL_FAST || 'nvidia/nemotron-3-super-120b-a12b:free';
+const OPENROUTER_MAIN = process.env.OPENROUTER_MODEL_MAIN || 'tencent/hy3-preview:free';
+const OPENROUTER_FAST = process.env.OPENROUTER_MODEL_FAST || 'tencent/hy3-preview:free';
 
 // ---- Utilities ----
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -231,12 +231,13 @@ async function generateTextCore({
   ];
   const uniqueGeminiModels = [...new Set(geminiModels)];
 
-  // Define fallback models for OpenRouter (free tier — add new models here if one gets removed)
+  // Define fallback models for OpenRouter (free tier — update this list if a model is removed/goes empty)
+  // Ordered by: instruction-following quality for long HTML prompts
   const openRouterModels = [
     providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? OPENROUTER_FAST : OPENROUTER_MAIN),
-    'nvidia/nemotron-3-super-120b-a12b:free',
-    'meta-llama/llama-4-scout:free',
     'tencent/hy3-preview:free',
+    'nvidia/nemotron-3-super-120b-a12b:free',
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
   ];
   const uniqueOpenRouterModels = [...new Set(openRouterModels)];
 
@@ -366,10 +367,10 @@ async function generateTextCore({
           || err.message.includes('No endpoints found')
           || err.message.includes('not found')
         );
+        const isEmpty = err.message && err.message.includes('empty response');
         const shouldSwitchProvider = isQuota || is503;
-        // For 404 (model removed), advance attempt index to try next model in array,
-        // but don't switch provider entirely — exhaust all models in the array first.
-        const shouldAdvanceModel = is404;
+        // For 404 or empty response, advance to the next model in the array immediately.
+        const shouldAdvanceModel = is404 || isEmpty;
 
         if (attempt === MAX_RETRIES || shouldSwitchProvider) {
           if (shouldSwitchProvider) {
@@ -381,7 +382,7 @@ async function generateTextCore({
           break;
         }
 
-        const baseDelay = (is503 || isQuota) ? 5000 : (shouldAdvanceModel ? 0 : 300);
+        const baseDelay = (is503 || isQuota) ? 5000 : (shouldAdvanceModel ? 50 : 300);
         await sleep(baseDelay * (attempt + 1));
       }
     }
