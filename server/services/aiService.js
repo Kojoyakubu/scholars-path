@@ -137,10 +137,8 @@ function pickProvider({ task = 'generic', jsonNeeded = false, preferredProvider 
   }
   if (/lesson|learner|note|explain/i.test(task)) {
     if (hasGemini) return 'gemini';
-    if (hasOpenAI) return 'openai';
-    if (hasOpenRouter) return 'openrouter';
-    if (hasGroq) return 'groq';
-    if (hasClaude) return 'claude';
+    // lesson notes: only Gemini (key rotation handles quota)
+    throw new Error('Gemini is required for lesson notes but is not configured.');
   }
   if (hasOpenAI) return 'openai';
   if (hasOpenRouter) return 'openrouter';
@@ -156,7 +154,9 @@ function buildProviderOrder({ task = 'generic', jsonNeeded = false, preferredPro
     primary,
     ...(jsonNeeded || /quiz/i.test(task)
       ? ['openai', 'openrouter', 'groq', 'gemini', 'claude']
-      : ['gemini', 'openai', 'openrouter', 'groq', 'claude']),
+      : /lesson|learner|note|explain/i.test(task)
+        ? ['gemini'] // lesson notes: Gemini only, key rotation handles quota
+        : ['gemini', 'openai', 'openrouter', 'groq', 'claude']),
   ];
   const seen = new Set();
   return pool.filter((provider) => {

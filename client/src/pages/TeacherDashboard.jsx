@@ -245,6 +245,8 @@ function TeacherDashboard() {
   const [notesSubjectFilter, setNotesSubjectFilter] = useState('');
   const [learnerNotesClassFilter, setLearnerNotesClassFilter] = useState('');
   const [learnerNotesSubjectFilter, setLearnerNotesSubjectFilter] = useState('');
+  const [selectedNoteIds, setSelectedNoteIds] = useState(new Set());
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
   const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
   const [isPdfExporting, setIsPdfExporting] = useState(false);
   const [isChargingDownload, setIsChargingDownload] = useState(false);
@@ -584,6 +586,34 @@ function TeacherDashboard() {
     const nameParts = [subjectPart, weekPart].filter(Boolean);
     return nameParts.length > 0 ? nameParts.join(' - ') : (note?.subStrand?.name || 'lesson-note');
   }, []);
+
+  const handleBulkDownload = useCallback(async () => {
+    if (!selectedNoteIds.size) return;
+    const notes = lessonNotesBySelection.filter((n) => selectedNoteIds.has(n._id));
+    setIsBulkDownloading(true);
+    try {
+      for (const note of notes) {
+        const container = document.createElement('div');
+        container.id = `bulk-pdf-${note._id}`;
+        container.style.cssText = 'position:fixed;left:-9999px;top:0;width:900px;background:#fff;';
+        container.innerHTML = note.content || '';
+        document.body.appendChild(container);
+        try {
+          await downloadAsPdf(`bulk-pdf-${note._id}`, getLessonNoteName(note), {});
+        } finally {
+          document.body.removeChild(container);
+        }
+        // Small delay between PDFs so the browser doesn't block multiple downloads
+        await new Promise((r) => setTimeout(r, 600));
+      }
+      setSnackbar({ open: true, message: `${notes.length} lesson note(s) downloaded.`, severity: 'success' });
+      setSelectedNoteIds(new Set());
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Some downloads failed. Please try again.', severity: 'error' });
+    } finally {
+      setIsBulkDownloading(false);
+    }
+  }, [selectedNoteIds, lessonNotesBySelection, getLessonNoteName]);
 
   const getDownloadErrorMessage = useCallback((error) => (
     error?.response?.data?.message || error?.message || 'Payment failed. Please try again.'
@@ -1585,6 +1615,7 @@ function TeacherDashboard() {
             closeDialog();
             setNotesClassFilter('');
             setNotesSubjectFilter('');
+            setSelectedNoteIds(new Set());
           }}
           fullScreen={isDialogFullscreen('myLessonNotes')}
           fullWidth
@@ -1603,6 +1634,7 @@ function TeacherDashboard() {
                     onChange={(event) => {
                       setNotesClassFilter(event.target.value);
                       setNotesSubjectFilter('');
+                      setSelectedNoteIds(new Set());
                     }}
                   >
                     {lessonNoteClassOptions.map((option) => (
@@ -1619,7 +1651,7 @@ function TeacherDashboard() {
                     labelId="notes-subject-label"
                     label="Subject"
                     value={notesSubjectFilter}
-                    onChange={(event) => setNotesSubjectFilter(event.target.value)}
+                    onChange={(event) => { setNotesSubjectFilter(event.target.value); setSelectedNoteIds(new Set()); }}
                   >
                     {lessonNoteSubjectOptions.map((option) => (
                       <MenuItem key={option.id} value={option.id}>{option.name}</MenuItem>
@@ -1636,42 +1668,88 @@ function TeacherDashboard() {
             ) : lessonNotesBySelection.length === 0 ? (
               <Typography variant="body2" color="text.secondary">No lesson notes found for this class and subject.</Typography>
             ) : (
-              <List>
-                {lessonNotesBySelection.map((note) => (
-                  <Paper key={note._id} sx={dialogListCardSx}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                          {getLessonNoteName(note)}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'Unknown'}
-                        </Typography>
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Checkbox
+                      size="small"
+                      checked={selectedNoteIds.size === lessonNotesBySelection.length}
+                      indeterminate={selectedNoteIds.size > 0 && selectedNoteIds.size < lessonNotesBySelection.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedNoteIds(new Set(lessonNotesBySelection.map((n) => n._id)));
+                        } else {
+                          setSelectedNoteIds(new Set());
+                        }
+                      }}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {selectedNoteIds.size > 0 ? `${selectedNoteIds.size} selected` : 'Select all'}
+                    </Typography>
+                  </Box>
+                  {selectedNoteIds.size > 0 && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={isBulkDownloading}
+                      onClick={handleBulkDownload}
+                      startIcon={isBulkDownloading ? <CircularProgress size={14} color="inherit" /> : null}
+                    >
+                      {isBulkDownloading ? 'Downloading...' : `Download ${selectedNoteIds.size} PDF${selectedNoteIds.size > 1 ? 's' : ''}`}
+                    </Button>
+                  )}
+                </Box>
+                <List>
+                  {lessonNotesBySelection.map((note) => (
+                    <Paper key={note._id} sx={dialogListCardSx}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Checkbox
+                            size="small"
+                            checked={selectedNoteIds.has(note._id)}
+                            onChange={(e) => {
+                              setSelectedNoteIds((prev) => {
+                                const next = new Set(prev);
+                                if (e.target.checked) next.add(note._id);
+                                else next.delete(note._id);
+                                return next;
+                              });
+                            }}
+                          />
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                              {getLessonNoteName(note)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Created: {note.createdAt ? new Date(note.createdAt).toLocaleString() : 'Unknown'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => {
+                              displayNote(note);
+                              closeDialog();
+                            }}
+                          >
+                            Open
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => setNoteToDelete(note)}
+                          >
+                            Delete
+                          </Button>
+                        </Stack>
                       </Box>
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => {
-                            displayNote(note);
-                            closeDialog();
-                          }}
-                        >
-                          Open
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          onClick={() => setNoteToDelete(note)}
-                        >
-                          Delete
-                        </Button>
-                      </Stack>
-                    </Box>
-                  </Paper>
-                ))}
-              </List>
+                    </Paper>
+                  ))}
+                </List>
+              </>
             )}
           </DialogContent>
           <DialogActions>
@@ -1680,6 +1758,7 @@ function TeacherDashboard() {
                 closeDialog();
                 setNotesClassFilter('');
                 setNotesSubjectFilter('');
+                setSelectedNoteIds(new Set());
               }}
             >
               Close
