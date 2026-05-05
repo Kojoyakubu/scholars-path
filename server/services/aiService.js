@@ -48,8 +48,8 @@ const OPENAI_JSON = process.env.OPENAI_MODEL_JSON || 'gpt-4o-mini';
 const CLAUDE_MAIN = process.env.CLAUDE_MODEL_MAIN || 'claude-3-5-sonnet-20240620';
 const GROQ_MAIN = process.env.GROQ_MODEL_MAIN || 'llama-3.3-70b-versatile';
 const GROQ_FAST = process.env.GROQ_MODEL_FAST || 'llama-3.1-8b-instant';
-const OPENROUTER_MAIN = process.env.OPENROUTER_MODEL_MAIN || 'google/gemini-2.0-flash-exp:free';
-const OPENROUTER_FAST = process.env.OPENROUTER_MODEL_FAST || 'google/gemini-2.0-flash-exp:free';
+const OPENROUTER_MAIN = process.env.OPENROUTER_MODEL_MAIN || 'google/gemini-2.5-pro-exp-03-25:free';
+const OPENROUTER_FAST = process.env.OPENROUTER_MODEL_FAST || 'google/gemini-2.5-pro-exp-03-25:free';
 
 // ---- Utilities ----
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
