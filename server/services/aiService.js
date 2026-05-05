@@ -24,9 +24,10 @@ const hasGemini = !!process.env.GEMINI_API_KEY;
 const hasOpenAI = !!process.env.OPENAI_API_KEY;
 const hasClaude = !!process.env.ANTHROPIC_API_KEY && !!Anthropic;
 const hasGroq = !!process.env.GROQ_API_KEY;
+const hasOpenRouter = !!process.env.OPENROUTER_API_KEY;
 
-if (!hasGemini && !hasOpenAI && !hasClaude && !hasGroq) {
-  throw new Error('No AI providers configured. Set at least one of GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, or GROQ_API_KEY.');
+if (!hasGemini && !hasOpenAI && !hasClaude && !hasGroq && !hasOpenRouter) {
+  throw new Error('No AI providers configured. Set at least one of GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
 }
 
 // ---- Clients ----
@@ -35,6 +36,8 @@ const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : 
 const claude = hasClaude ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
 // Groq uses the OpenAI-compatible SDK with a different base URL
 const groq = hasGroq ? new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1' }) : null;
+// OpenRouter uses the OpenAI-compatible SDK — proxies Gemini and other models for free
+const openrouter = hasOpenRouter ? new OpenAI({ apiKey: process.env.OPENROUTER_API_KEY, baseURL: 'https://openrouter.ai/api/v1' }) : null;
 
 // ---- Default Model Choices (override via env if you like) ----
 const GEMINI_MAIN = process.env.GEMINI_MODEL_MAIN || 'gemini-2.5-flash-lite';
@@ -44,6 +47,8 @@ const OPENAI_JSON = process.env.OPENAI_MODEL_JSON || 'gpt-4o-mini';
 const CLAUDE_MAIN = process.env.CLAUDE_MODEL_MAIN || 'claude-3-5-sonnet-20240620';
 const GROQ_MAIN = process.env.GROQ_MODEL_MAIN || 'llama-3.3-70b-versatile';
 const GROQ_FAST = process.env.GROQ_MODEL_FAST || 'llama-3.1-8b-instant';
+const OPENROUTER_MAIN = process.env.OPENROUTER_MODEL_MAIN || 'google/gemini-2.0-flash-exp:free';
+const OPENROUTER_FAST = process.env.OPENROUTER_MODEL_FAST || 'google/gemini-2.0-flash-exp:free';
 
 // ---- Utilities ----
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -115,11 +120,13 @@ function pickProvider({ task = 'generic', jsonNeeded = false, preferredProvider 
   }
   if (/lesson|learner|note|explain/i.test(task)) {
     if (hasGemini) return 'gemini';
+    if (hasOpenRouter) return 'openrouter';
     if (hasGroq) return 'groq';
     if (hasOpenAI) return 'openai';
     if (hasClaude) return 'claude';
   }
   if (hasOpenAI) return 'openai';
+  if (hasOpenRouter) return 'openrouter';
   if (hasGroq) return 'groq';
   if (hasGemini) return 'gemini';
   if (hasClaude) return 'claude';
@@ -131,8 +138,8 @@ function buildProviderOrder({ task = 'generic', jsonNeeded = false, preferredPro
   const pool = [
     primary,
     ...(jsonNeeded || /quiz/i.test(task)
-      ? ['openai', 'groq', 'gemini', 'claude']
-      : ['gemini', 'groq', 'openai', 'claude']),
+      ? ['openai', 'openrouter', 'groq', 'gemini', 'claude']
+      : ['gemini', 'openrouter', 'groq', 'openai', 'claude']),
   ];
   const seen = new Set();
   return pool.filter((provider) => {
@@ -142,6 +149,7 @@ function buildProviderOrder({ task = 'generic', jsonNeeded = false, preferredPro
     if (provider === 'groq') return hasGroq;
     if (provider === 'openai') return hasOpenAI;
     if (provider === 'claude') return hasClaude;
+    if (provider === 'openrouter') return hasOpenRouter;
     return false;
   });
 }
@@ -295,6 +303,20 @@ async function generateTextCore({
           text = resp?.choices?.[0]?.message?.content || '';
           raw = resp;
           modelUsed = `Groq:${modelName}`;
+        }
+
+        if (provider === 'openrouter') {
+          if (!openrouter) throw new Error('OpenRouter not configured.');
+          const modelName = providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? OPENROUTER_FAST : OPENROUTER_MAIN);
+          console.log(`🤖 OPENROUTER attempt ${attempt + 1}: ${modelName}`);
+          const resp = await openrouter.chat.completions.create({
+            model: modelName,
+            temperature,
+            messages: [{ role: 'user', content: prompt }],
+          });
+          text = resp?.choices?.[0]?.message?.content || '';
+          raw = resp;
+          modelUsed = `OpenRouter:${modelName}`;
         }
 
         if (!text) {
