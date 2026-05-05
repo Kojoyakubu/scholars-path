@@ -23,7 +23,8 @@ try {
 const hasGemini = !!process.env.GEMINI_API_KEY;
 const hasOpenAI = !!process.env.OPENAI_API_KEY;
 const hasClaude = !!process.env.ANTHROPIC_API_KEY && !!Anthropic;
-const hasGroq = !!process.env.GROQ_API_KEY;
+const groqBlocked = String(process.env.BLOCK_GROQ || '').toLowerCase() === 'true';
+const hasGroq = !!process.env.GROQ_API_KEY && !groqBlocked;
 const hasOpenRouter = !!process.env.OPENROUTER_API_KEY;
 
 if (!hasGemini && !hasOpenAI && !hasClaude && !hasGroq && !hasOpenRouter) {
@@ -111,7 +112,10 @@ function parseJsonStrict(text) {
 }
 
 function pickProvider({ task = 'generic', jsonNeeded = false, preferredProvider }) {
-  if (preferredProvider) return preferredProvider.toLowerCase();
+  if (preferredProvider) {
+    const preferred = preferredProvider.toLowerCase();
+    if (preferred !== 'groq' || hasGroq) return preferred;
+  }
   if (jsonNeeded || /quiz/i.test(task)) {
     if (hasOpenAI) return 'openai';
     if (hasGroq) return 'groq';
@@ -216,6 +220,7 @@ async function generateTextCore({
     throw new Error('Prompt must be a non-empty string.');
   }
   const providers = buildProviderOrder({ task, jsonNeeded, preferredProvider });
+  console.log(`AI provider order for task "${task}": ${providers.join(' -> ')}`);
   const MAX_RETRIES = 2;
 
   // Define fallback models for Gemini
@@ -349,6 +354,11 @@ async function generateTextCore({
         const shouldSwitchProvider = isQuota || is503;
 
         if (attempt === MAX_RETRIES || shouldSwitchProvider) {
+          if (shouldSwitchProvider) {
+            console.log(`↪ Switching provider after ${provider.toUpperCase()} due to quota/availability signal.`);
+          } else if (attempt === MAX_RETRIES) {
+            console.log(`↪ Switching provider after ${provider.toUpperCase()} max retries reached.`);
+          }
           failures.push(`[${provider}] ${err.message || 'Unknown AI error'}`);
           break;
         }
