@@ -48,8 +48,8 @@ const OPENAI_JSON = process.env.OPENAI_MODEL_JSON || 'gpt-4o-mini';
 const CLAUDE_MAIN = process.env.CLAUDE_MODEL_MAIN || 'claude-3-5-sonnet-20240620';
 const GROQ_MAIN = process.env.GROQ_MODEL_MAIN || 'llama-3.3-70b-versatile';
 const GROQ_FAST = process.env.GROQ_MODEL_FAST || 'llama-3.1-8b-instant';
-const OPENROUTER_MAIN = process.env.OPENROUTER_MODEL_MAIN || 'google/gemini-2.5-pro-exp-03-25:free';
-const OPENROUTER_FAST = process.env.OPENROUTER_MODEL_FAST || 'google/gemini-2.5-pro-exp-03-25:free';
+const OPENROUTER_MAIN = process.env.OPENROUTER_MODEL_MAIN || 'nvidia/nemotron-3-super-120b-a12b:free';
+const OPENROUTER_FAST = process.env.OPENROUTER_MODEL_FAST || 'nvidia/nemotron-3-super-120b-a12b:free';
 
 // ---- Utilities ----
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -231,6 +231,15 @@ async function generateTextCore({
   ];
   const uniqueGeminiModels = [...new Set(geminiModels)];
 
+  // Define fallback models for OpenRouter (free tier — add new models here if one gets removed)
+  const openRouterModels = [
+    providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? OPENROUTER_FAST : OPENROUTER_MAIN),
+    'nvidia/nemotron-3-super-120b-a12b:free',
+    'meta-llama/llama-4-scout:free',
+    'tencent/hy3-preview:free',
+  ];
+  const uniqueOpenRouterModels = [...new Set(openRouterModels)];
+
   const failures = [];
   for (const provider of providers) {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
@@ -312,7 +321,8 @@ async function generateTextCore({
 
         if (provider === 'openrouter') {
           if (!openrouter) throw new Error('OpenRouter not configured.');
-          const modelName = providerModelOverride || (jsonNeeded || /quiz/i.test(task) ? OPENROUTER_FAST : OPENROUTER_MAIN);
+          const modelIndex = Math.min(attempt, uniqueOpenRouterModels.length - 1);
+          const modelName = uniqueOpenRouterModels[modelIndex];
           console.log(`🤖 OPENROUTER attempt ${attempt + 1}: ${modelName}`);
           const resp = await openrouter.chat.completions.create({
             model: modelName,
@@ -351,7 +361,15 @@ async function generateTextCore({
           || err.message.includes('Service Unavailable')
           || err.message.includes('high demand')
         );
+        const is404 = err.message && (
+          err.message.includes('404')
+          || err.message.includes('No endpoints found')
+          || err.message.includes('not found')
+        );
         const shouldSwitchProvider = isQuota || is503;
+        // For 404 (model removed), advance attempt index to try next model in array,
+        // but don't switch provider entirely — exhaust all models in the array first.
+        const shouldAdvanceModel = is404;
 
         if (attempt === MAX_RETRIES || shouldSwitchProvider) {
           if (shouldSwitchProvider) {
@@ -363,7 +381,7 @@ async function generateTextCore({
           break;
         }
 
-        const baseDelay = (is503 || isQuota) ? 5000 : 300;
+        const baseDelay = (is503 || isQuota) ? 5000 : (shouldAdvanceModel ? 0 : 300);
         await sleep(baseDelay * (attempt + 1));
       }
     }
