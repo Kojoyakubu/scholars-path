@@ -188,8 +188,18 @@ const initializeDownloadPayment = async (payload) => {
   return response.data;
 };
 
+const initializeBulkDownloadPayment = async (payload) => {
+  const response = await api.post('/api/payments/downloads/bulk/initialize', payload);
+  return response.data;
+};
+
 const verifyDownloadPayment = async (payload) => {
   const response = await api.post('/api/payments/downloads/verify', payload);
+  return response.data;
+};
+
+const verifyBulkDownloadPayment = async (payload) => {
+  const response = await api.post('/api/payments/downloads/bulk/verify', payload);
   return response.data;
 };
 
@@ -222,7 +232,9 @@ const teacherService = {
   getDownloadPricing,
   chargeDownload,
   initializeDownloadPayment,
+  initializeBulkDownloadPayment,
   verifyDownloadPayment,
+  verifyBulkDownloadPayment,
   deleteQuiz,
 
   // retrieve single quiz with populated questions/options

@@ -42,6 +42,17 @@ const paymentSchema = new mongoose.Schema(
     itemId: {
       type: mongoose.Schema.Types.ObjectId,
     },
+    bulkItemIds: [{
+      type: mongoose.Schema.Types.ObjectId,
+    }],
+    bulkCount: {
+      type: Number,
+      default: 0,
+    },
+    bulkGroupReference: {
+      type: String,
+      trim: true,
+    },
     downloadFormat: {
       type: String,
       enum: ['pdf', 'html', 'doc', 'txt'],

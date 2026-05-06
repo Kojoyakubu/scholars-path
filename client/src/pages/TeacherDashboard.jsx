@@ -53,6 +53,7 @@ import {
   Grid,
   Select,
   MenuItem,
+  Menu,
   FormControl,
   InputLabel,
   Paper,
@@ -84,6 +85,8 @@ import {
   FaceRetouchingNatural,
   Quiz,
   School,
+  Download,
+  ExpandMore,
   OpenInFull,
   CloseFullscreen,
 } from '@mui/icons-material';
@@ -247,6 +250,7 @@ function TeacherDashboard() {
   const [learnerNotesSubjectFilter, setLearnerNotesSubjectFilter] = useState('');
   const [selectedNoteIds, setSelectedNoteIds] = useState(new Set());
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
+  const [bulkDownloadMenuAnchorEl, setBulkDownloadMenuAnchorEl] = useState(null);
   const [downloadMenuAnchorEl, setDownloadMenuAnchorEl] = useState(null);
   const [isPdfExporting, setIsPdfExporting] = useState(false);
   const [isChargingDownload, setIsChargingDownload] = useState(false);
@@ -572,6 +576,14 @@ function TeacherDashboard() {
     setDownloadMenuAnchorEl(null);
   }, []);
 
+  const handleOpenBulkDownloadMenu = useCallback((event) => {
+    setBulkDownloadMenuAnchorEl(event.currentTarget);
+  }, []);
+
+  const handleCloseBulkDownloadMenu = useCallback(() => {
+    setBulkDownloadMenuAnchorEl(null);
+  }, []);
+
   const sanitizeDownloadBaseName = useCallback((name, fallback = 'download') => (
     String(name || fallback)
       .trim()
@@ -586,34 +598,6 @@ function TeacherDashboard() {
     const nameParts = [subjectPart, weekPart].filter(Boolean);
     return nameParts.length > 0 ? nameParts.join(' - ') : (note?.subStrand?.name || 'lesson-note');
   }, []);
-
-  const handleBulkDownload = useCallback(async () => {
-    if (!selectedNoteIds.size) return;
-    const notes = lessonNotesBySelection.filter((n) => selectedNoteIds.has(n._id));
-    setIsBulkDownloading(true);
-    try {
-      for (const note of notes) {
-        const container = document.createElement('div');
-        container.id = `bulk-pdf-${note._id}`;
-        container.style.cssText = 'position:fixed;left:-9999px;top:0;width:900px;background:#fff;';
-        container.innerHTML = note.content || '';
-        document.body.appendChild(container);
-        try {
-          await downloadAsPdf(`bulk-pdf-${note._id}`, getLessonNoteName(note), {});
-        } finally {
-          document.body.removeChild(container);
-        }
-        // Small delay between PDFs so the browser doesn't block multiple downloads
-        await new Promise((r) => setTimeout(r, 600));
-      }
-      setSnackbar({ open: true, message: `${notes.length} lesson note(s) downloaded.`, severity: 'success' });
-      setSelectedNoteIds(new Set());
-    } catch (err) {
-      setSnackbar({ open: true, message: 'Some downloads failed. Please try again.', severity: 'error' });
-    } finally {
-      setIsBulkDownloading(false);
-    }
-  }, [selectedNoteIds, lessonNotesBySelection, getLessonNoteName]);
 
   const getDownloadErrorMessage = useCallback((error) => (
     error?.response?.data?.message || error?.message || 'Payment failed. Please try again.'
@@ -703,6 +687,70 @@ function TeacherDashboard() {
     }
   }, [DOWNLOAD_FEE_GHS, getDownloadErrorMessage, loadPaystackScript]);
 
+  const processBulkDownloadPayment = useCallback(async ({ itemType, itemIds, format = 'pdf' }) => {
+    setIsChargingDownload(true);
+
+    try {
+      const initResponse = await teacherService.initializeBulkDownloadPayment({ itemType, itemIds, format });
+
+      if (initResponse?.alreadyPaid) {
+        if (initResponse?.waived) {
+          setSnackbar({
+            open: true,
+            message: 'Download fee waived by admin. Bulk download will start now.',
+            severity: 'info',
+          });
+        }
+        return {
+          ok: true,
+          amount: Number(initResponse?.charge?.amount || 0),
+        };
+      }
+
+      const paystackConfig = initResponse?.paystack;
+      if (!paystackConfig?.publicKey || !paystackConfig?.reference) {
+        throw new Error('Payment gateway initialization failed.');
+      }
+
+      const scriptReady = await loadPaystackScript();
+      if (!scriptReady) {
+        throw new Error('Unable to load Paystack checkout.');
+      }
+
+      const referenceFromCheckout = await new Promise((resolve, reject) => {
+        const handler = window.PaystackPop.setup({
+          key: paystackConfig.publicKey,
+          email: paystackConfig.email,
+          amount: Math.round(Number(paystackConfig.amount || 0) * 100),
+          currency: paystackConfig.currency || 'GHS',
+          ref: paystackConfig.reference,
+          metadata: {
+            custom_fields: [
+              { display_name: 'Purpose', variable_name: 'purpose', value: 'bulk_download' },
+              { display_name: 'Item Type', variable_name: 'item_type', value: itemType },
+              { display_name: 'Item Count', variable_name: 'item_count', value: String((itemIds || []).length) },
+            ],
+          },
+          callback: (response) => resolve(response?.reference || paystackConfig.reference),
+          onClose: () => reject(new Error('Payment was cancelled.')),
+        });
+
+        handler.openIframe();
+      });
+
+      await teacherService.verifyBulkDownloadPayment({ reference: referenceFromCheckout });
+      return {
+        ok: true,
+        amount: Number(paystackConfig.amount || 0),
+      };
+    } catch (error) {
+      setSnackbar({ open: true, message: getDownloadErrorMessage(error), severity: 'error' });
+      return { ok: false, amount: 0 };
+    } finally {
+      setIsChargingDownload(false);
+    }
+  }, [getDownloadErrorMessage, loadPaystackScript]);
+
   const createQuizHtml = useCallback((quiz) => {
     const mcqItems = Array.isArray(quiz?.mcq)
       ? quiz.mcq
@@ -745,19 +793,13 @@ function TeacherDashboard() {
     `;
   }, []);
 
-  const chargeAndDownloadHtml = useCallback(async ({ itemType, itemId, title, htmlContent, format = 'pdf' }) => {
-    if (!itemType || !itemId || !htmlContent) {
-      setSnackbar({ open: true, message: 'Missing download details.', severity: 'error' });
-      return;
+  const exportHtmlContent = useCallback(async ({ title, htmlContent, format = 'pdf', fallback = 'download' }) => {
+    if (!htmlContent) {
+      return false;
     }
 
-    const paymentSuccessful = await processDownloadPayment({ itemType, itemId, format });
-    if (!paymentSuccessful) {
-      return;
-    }
-
-    const baseName = sanitizeDownloadBaseName(title, itemType);
-    const elementId = `paid-download-${Date.now()}`;
+    const baseName = sanitizeDownloadBaseName(title, fallback);
+    const elementId = `paid-download-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const tempDiv = document.createElement('div');
     tempDiv.id = elementId;
     tempDiv.innerHTML = htmlContent;
@@ -770,6 +812,19 @@ function TeacherDashboard() {
     try {
       if (format === 'pdf') {
         await downloadAsPdf(elementId, baseName, {});
+      } else if (format === 'txt') {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = htmlContent;
+        const plainText = tmp.textContent || tmp.innerText || '';
+        const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${baseName}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
       } else {
         const htmlDocument = `<!doctype html><html><head><meta charset="utf-8" /><title>${baseName}</title></head><body>${htmlContent}</body></html>`;
         const blobType = format === 'doc' ? 'application/msword;charset=utf-8' : 'text/html;charset=utf-8';
@@ -785,19 +840,96 @@ function TeacherDashboard() {
         URL.revokeObjectURL(url);
       }
 
-      setSnackbar({
-        open: true,
-        message: `Payment successful (GHC ${DOWNLOAD_FEE_GHS.toFixed(2)}). Download started.`,
-        severity: 'success',
-      });
-    } catch {
-      setSnackbar({ open: true, message: 'Payment succeeded, but file download failed.', severity: 'warning' });
+      return true;
     } finally {
       if (document.body.contains(tempDiv)) {
         document.body.removeChild(tempDiv);
       }
     }
-  }, [DOWNLOAD_FEE_GHS, processDownloadPayment, sanitizeDownloadBaseName]);
+  }, [sanitizeDownloadBaseName]);
+
+  const chargeAndDownloadHtml = useCallback(async ({ itemType, itemId, title, htmlContent, format = 'pdf' }) => {
+    if (!itemType || !itemId || !htmlContent) {
+      setSnackbar({ open: true, message: 'Missing download details.', severity: 'error' });
+      return false;
+    }
+
+    const paymentSuccessful = await processDownloadPayment({ itemType, itemId, format });
+    if (!paymentSuccessful) {
+      return false;
+    }
+
+    try {
+      const exported = await exportHtmlContent({ title, htmlContent, format, fallback: itemType });
+      if (!exported) {
+        throw new Error('download failed');
+      }
+
+      setSnackbar({
+        open: true,
+        message: `Payment successful (GHC ${DOWNLOAD_FEE_GHS.toFixed(2)}). Download started.`,
+        severity: 'success',
+      });
+      return true;
+    } catch {
+      setSnackbar({ open: true, message: 'Payment succeeded, but file download failed.', severity: 'warning' });
+      return false;
+    }
+  }, [DOWNLOAD_FEE_GHS, exportHtmlContent, processDownloadPayment]);
+
+  const handleBulkDownload = useCallback(async (format) => {
+    if (!selectedNoteIds.size) return;
+
+    const notes = lessonNotesBySelection.filter((n) => selectedNoteIds.has(n._id));
+    let processedCount = 0;
+
+    handleCloseBulkDownloadMenu();
+    setIsBulkDownloading(true);
+
+    try {
+      const bulkPayment = await processBulkDownloadPayment({
+        itemType: 'lesson_note',
+        itemIds: notes.map((note) => note._id),
+        format,
+      });
+
+      if (!bulkPayment.ok) {
+        return;
+      }
+
+      for (const note of notes) {
+        const completed = await exportHtmlContent({
+          title: getLessonNoteName(note),
+          htmlContent: note.content || '',
+          format,
+          fallback: 'lesson-note',
+        });
+
+        if (!completed) {
+          break;
+        }
+
+        processedCount += 1;
+        await new Promise((r) => setTimeout(r, 350));
+      }
+
+      if (processedCount > 0) {
+        setSnackbar({
+          open: true,
+          message: `Payment successful (GHC ${Number(bulkPayment.amount || 0).toFixed(2)}). Downloaded ${processedCount} lesson note(s) as ${format.toUpperCase()}.`,
+          severity: 'success',
+        });
+      }
+
+      if (processedCount === notes.length) {
+        setSelectedNoteIds(new Set());
+      }
+    } catch (_err) {
+      setSnackbar({ open: true, message: 'Some downloads failed. Please try again.', severity: 'error' });
+    } finally {
+      setIsBulkDownloading(false);
+    }
+  }, [selectedNoteIds, lessonNotesBySelection, handleCloseBulkDownloadMenu, exportHtmlContent, getLessonNoteName, processBulkDownloadPayment]);
 
   const handleDownloadViewingNote = useCallback(async (format) => {
     if (!viewingNote) return;
@@ -1688,15 +1820,30 @@ function TeacherDashboard() {
                     </Typography>
                   </Box>
                   {selectedNoteIds.size > 0 && (
-                    <Button
-                      variant="contained"
-                      size="small"
-                      disabled={isBulkDownloading}
-                      onClick={handleBulkDownload}
-                      startIcon={isBulkDownloading ? <CircularProgress size={14} color="inherit" /> : null}
-                    >
-                      {isBulkDownloading ? 'Downloading...' : `Download ${selectedNoteIds.size} PDF${selectedNoteIds.size > 1 ? 's' : ''}`}
-                    </Button>
+                    <>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        disabled={isBulkDownloading || isChargingDownload}
+                        onClick={handleOpenBulkDownloadMenu}
+                        startIcon={isBulkDownloading ? <CircularProgress size={14} color="inherit" /> : <Download />}
+                        endIcon={!isBulkDownloading ? <ExpandMore /> : null}
+                      >
+                        {isBulkDownloading
+                          ? 'Processing downloads...'
+                          : `Download ${selectedNoteIds.size} note${selectedNoteIds.size > 1 ? 's' : ''}`}
+                      </Button>
+                      <Menu
+                        anchorEl={bulkDownloadMenuAnchorEl}
+                        open={Boolean(bulkDownloadMenuAnchorEl)}
+                        onClose={handleCloseBulkDownloadMenu}
+                      >
+                        <MenuItem onClick={() => handleBulkDownload('pdf')}>Download as PDF (.pdf)</MenuItem>
+                        <MenuItem onClick={() => handleBulkDownload('html')}>Download as HTML (.html)</MenuItem>
+                        <MenuItem onClick={() => handleBulkDownload('doc')}>Download as Word (.doc)</MenuItem>
+                        <MenuItem onClick={() => handleBulkDownload('txt')}>Download as Text (.txt)</MenuItem>
+                      </Menu>
+                    </>
                   )}
                 </Box>
                 <List>

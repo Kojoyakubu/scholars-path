@@ -39,6 +39,70 @@ const resolveDownloadTarget = async ({ itemType, itemId, teacherId }) => {
   return null;
 };
 
+const normalizeBulkItemIds = (itemIds = []) => [...new Set(
+  (Array.isArray(itemIds) ? itemIds : [itemIds])
+    .map((itemId) => String(itemId || '').trim())
+    .filter(Boolean)
+)].sort();
+
+const resolveBulkDownloadTargets = async ({ itemType, itemIds, teacherId }) => {
+  const normalizedItemIds = normalizeBulkItemIds(itemIds);
+  const targets = await Promise.all(
+    normalizedItemIds.map((itemId) => resolveDownloadTarget({ itemType, itemId, teacherId }))
+  );
+
+  const missingItemIds = normalizedItemIds.filter((_, index) => !targets[index]);
+
+  return {
+    itemIds: normalizedItemIds,
+    missingItemIds,
+  };
+};
+
+const materializeBulkDownloadPayments = async ({
+  userId,
+  itemType,
+  itemIds,
+  format,
+  paidAt,
+  method,
+  amount,
+  description,
+  groupReference,
+}) => {
+  const existingChildren = await Payment.find({
+    user: userId,
+    purpose: 'download',
+    bulkGroupReference: groupReference,
+    itemType,
+    itemId: { $in: itemIds },
+    downloadFormat: format,
+  }).select('itemId');
+
+  const existingIds = new Set(existingChildren.map((payment) => String(payment.itemId)));
+  const paymentsToCreate = itemIds
+    .filter((itemId) => !existingIds.has(String(itemId)))
+    .map((itemId) => ({
+      user: userId,
+      amount,
+      currency: 'GHS',
+      method,
+      reference: generateReference('DLI'),
+      description,
+      status: 'success',
+      purpose: 'download',
+      itemType,
+      itemId,
+      downloadFormat: format,
+      paidAt,
+      bulkGroupReference: groupReference,
+    }));
+
+  if (paymentsToCreate.length > 0) {
+    await Payment.insertMany(paymentsToCreate);
+  }
+};
+
 const getPaystackConfig = () => {
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
   const publicKey = process.env.PAYSTACK_PUBLIC_KEY;
@@ -444,6 +508,334 @@ const verifyDownloadPayment = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc   Initialize Paystack payment for multiple downloadable assets
+ * @route  POST /api/payments/downloads/bulk/initialize
+ * @access Private (Teacher)
+ */
+const initializeBulkDownloadPayment = asyncHandler(async (req, res) => {
+  const { itemType, itemIds, format } = req.body;
+  const normalizedFormat = normalizeDownloadFormat(format);
+
+  if (!itemType || !Array.isArray(itemIds) || itemIds.length === 0) {
+    res.status(400);
+    throw new Error('itemType and itemIds are required.');
+  }
+
+  if (!['lesson_note', 'learner_note', 'quiz'].includes(itemType)) {
+    res.status(400);
+    throw new Error('Invalid itemType. Must be lesson_note, learner_note, or quiz.');
+  }
+
+  const teacher = await User.findById(req.user.id).select(
+    '_id email fullName downloadPaymentExempt downloadPaymentExemptReason downloadPaymentExemptUntil'
+  );
+  if (!teacher) {
+    res.status(404);
+    throw new Error('Teacher account not found.');
+  }
+
+  const { itemIds: normalizedItemIds, missingItemIds } = await resolveBulkDownloadTargets({
+    itemType,
+    itemIds,
+    teacherId: req.user.id,
+  });
+
+  if (normalizedItemIds.length === 0) {
+    res.status(400);
+    throw new Error('At least one valid itemId is required.');
+  }
+
+  if (missingItemIds.length > 0) {
+    res.status(404);
+    throw new Error('One or more download targets were not found or are not authorized.');
+  }
+
+  if (hasActiveDownloadExemption(teacher)) {
+    const groupReference = generateReference('DLXG');
+    const paidAt = new Date();
+    await materializeBulkDownloadPayments({
+      userId: req.user.id,
+      itemType,
+      itemIds: normalizedItemIds,
+      format: normalizedFormat,
+      paidAt,
+      method: 'admin_exemption',
+      amount: 0,
+      description: `Bulk download fee waived by admin for ${itemType} (${normalizedFormat})${teacher.downloadPaymentExemptReason ? ` - ${teacher.downloadPaymentExemptReason}` : ''}`,
+      groupReference,
+    });
+
+    return res.status(200).json({
+      message: 'Bulk download payment waived by admin.',
+      alreadyPaid: true,
+      waived: true,
+      charge: {
+        amount: 0,
+        currency: 'GHS',
+        itemType,
+        itemCount: normalizedItemIds.length,
+        itemIds: normalizedItemIds,
+        format: normalizedFormat,
+      },
+      paystack: null,
+    });
+  }
+
+  const { secretKey, publicKey } = getPaystackConfig();
+  const graceWindowStart = new Date(Date.now() - DOWNLOAD_RETRY_GRACE_MINUTES * 60 * 1000);
+
+  const successfulPayments = await Payment.find({
+    user: req.user.id,
+    purpose: 'download',
+    itemType,
+    itemId: { $in: normalizedItemIds },
+    downloadFormat: normalizedFormat,
+    status: 'success',
+    createdAt: { $gte: graceWindowStart },
+  }).select('itemId');
+
+  const successfulIds = new Set(successfulPayments.map((payment) => String(payment.itemId)));
+  const unpaidItemIds = normalizedItemIds.filter((itemId) => !successfulIds.has(String(itemId)));
+
+  if (unpaidItemIds.length === 0) {
+    return res.status(200).json({
+      message: 'Existing successful payments found for these downloads.',
+      alreadyPaid: true,
+      charge: {
+        amount: 0,
+        currency: 'GHS',
+        itemType,
+        itemCount: normalizedItemIds.length,
+        itemIds: normalizedItemIds,
+        format: normalizedFormat,
+      },
+      paystack: null,
+    });
+  }
+
+  const existingPendingPayment = await Payment.findOne({
+    user: req.user.id,
+    purpose: 'download',
+    itemType,
+    downloadFormat: normalizedFormat,
+    status: 'pending',
+    bulkCount: unpaidItemIds.length,
+    bulkItemIds: unpaidItemIds,
+    createdAt: { $gte: graceWindowStart },
+  }).sort({ createdAt: -1 });
+
+  if (existingPendingPayment) {
+    try {
+      const tx = await verifyPaystackReference({
+        secretKey,
+        reference: existingPendingPayment.reference,
+      });
+
+      const isValidSuccess = Boolean(
+        tx?.status === 'success' &&
+        Number(tx?.amount) === amountToKobo(existingPendingPayment.amount) &&
+        String(tx?.currency || '').toUpperCase() === 'GHS'
+      );
+
+      if (isValidSuccess) {
+        existingPendingPayment.status = 'success';
+        existingPendingPayment.paidAt = tx?.paid_at ? new Date(tx.paid_at) : new Date();
+        existingPendingPayment.method = 'paystack';
+        await existingPendingPayment.save();
+
+        await materializeBulkDownloadPayments({
+          userId: req.user.id,
+          itemType,
+          itemIds: unpaidItemIds,
+          format: normalizedFormat,
+          paidAt: existingPendingPayment.paidAt,
+          method: 'paystack',
+          amount: DOWNLOAD_FEE_GHS,
+          description: `Bulk download charge for ${itemType} (${normalizedFormat})`,
+          groupReference: existingPendingPayment.reference,
+        });
+
+        return res.status(200).json({
+          message: 'Recovered successful bulk payment for these downloads.',
+          alreadyPaid: true,
+          charge: {
+            amount: 0,
+            currency: 'GHS',
+            itemType,
+            itemCount: normalizedItemIds.length,
+            itemIds: normalizedItemIds,
+            format: normalizedFormat,
+          },
+          paystack: null,
+        });
+      }
+    } catch (error) {
+      console.warn('Pending bulk payment verification during initialize failed:', error.message);
+    }
+  }
+
+  const reference = generateReference('DLB');
+  const totalAmount = unpaidItemIds.length * DOWNLOAD_FEE_GHS;
+  const paystackPayload = {
+    email: teacher.email,
+    amount: amountToKobo(totalAmount),
+    currency: 'GHS',
+    reference,
+    metadata: {
+      custom_fields: [
+        { display_name: 'Purpose', variable_name: 'purpose', value: 'bulk_download' },
+        { display_name: 'Item Type', variable_name: 'item_type', value: itemType },
+        { display_name: 'Item Count', variable_name: 'item_count', value: String(unpaidItemIds.length) },
+        { display_name: 'Format', variable_name: 'format', value: normalizedFormat },
+      ],
+    },
+  };
+
+  const paystackResponse = await axios.post(
+    `${PAYSTACK_BASE_URL}/transaction/initialize`,
+    paystackPayload,
+    {
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  );
+
+  if (!paystackResponse.data?.status || !paystackResponse.data?.data?.reference) {
+    res.status(502);
+    throw new Error('Unable to initialize bulk payment with Paystack.');
+  }
+
+  const payment = await Payment.create({
+    user: req.user.id,
+    amount: totalAmount,
+    currency: 'GHS',
+    method: 'paystack',
+    reference,
+    description: `Bulk download charge for ${itemType} x${unpaidItemIds.length} (${normalizedFormat})`,
+    status: 'pending',
+    purpose: 'download',
+    itemType,
+    bulkItemIds: unpaidItemIds,
+    bulkCount: unpaidItemIds.length,
+    downloadFormat: normalizedFormat,
+  });
+
+  res.status(201).json({
+    message: 'Bulk download payment initialized.',
+    alreadyPaid: false,
+    payment,
+    charge: {
+      amount: totalAmount,
+      currency: 'GHS',
+      itemType,
+      itemCount: unpaidItemIds.length,
+      itemIds: unpaidItemIds,
+      format: normalizedFormat,
+    },
+    paystack: {
+      publicKey,
+      reference,
+      amount: totalAmount,
+      currency: 'GHS',
+      accessCode: paystackResponse.data.data.access_code,
+      authorizationUrl: paystackResponse.data.data.authorization_url,
+      email: teacher.email,
+      displayName: teacher.fullName,
+    },
+  });
+});
+
+/**
+ * @desc   Verify Paystack payment for multiple downloadable assets
+ * @route  POST /api/payments/downloads/bulk/verify
+ * @access Private (Teacher)
+ */
+const verifyBulkDownloadPayment = asyncHandler(async (req, res) => {
+  const { reference } = req.body;
+
+  if (!reference) {
+    res.status(400);
+    throw new Error('reference is required.');
+  }
+
+  const payment = await Payment.findOne({
+    user: req.user.id,
+    reference,
+    purpose: 'download',
+    bulkCount: { $gt: 0 },
+  });
+
+  if (!payment) {
+    res.status(404);
+    throw new Error('Bulk payment reference not found.');
+  }
+
+  if (payment.status === 'success') {
+    return res.json({
+      message: 'Bulk payment already verified.',
+      payment,
+      charge: {
+        amount: payment.amount,
+        currency: payment.currency || 'GHS',
+        itemType: payment.itemType,
+        itemCount: payment.bulkCount,
+        itemIds: payment.bulkItemIds || [],
+        format: payment.downloadFormat,
+      },
+    });
+  }
+
+  const { secretKey } = getPaystackConfig();
+  const tx = await verifyPaystackReference({ secretKey, reference });
+  const isValidSuccess = Boolean(
+    tx?.status === 'success' &&
+    Number(tx?.amount) === amountToKobo(payment.amount) &&
+    String(tx?.currency || '').toUpperCase() === 'GHS'
+  );
+
+  if (!isValidSuccess) {
+    payment.status = 'failed';
+    await payment.save();
+
+    res.status(400);
+    throw new Error('Bulk payment verification failed.');
+  }
+
+  payment.status = 'success';
+  payment.paidAt = tx?.paid_at ? new Date(tx.paid_at) : new Date();
+  payment.method = 'paystack';
+  await payment.save();
+
+  await materializeBulkDownloadPayments({
+    userId: req.user.id,
+    itemType: payment.itemType,
+    itemIds: (payment.bulkItemIds || []).map((itemId) => String(itemId)),
+    format: payment.downloadFormat,
+    paidAt: payment.paidAt,
+    method: 'paystack',
+    amount: DOWNLOAD_FEE_GHS,
+    description: `Bulk download charge for ${payment.itemType} (${payment.downloadFormat})`,
+    groupReference: payment.reference,
+  });
+
+  res.json({
+    message: 'Bulk payment verified successfully.',
+    payment,
+    charge: {
+      amount: payment.amount,
+      currency: payment.currency || 'GHS',
+      itemType: payment.itemType,
+      itemCount: payment.bulkCount,
+      itemIds: payment.bulkItemIds || [],
+      format: payment.downloadFormat,
+    },
+  });
+});
+
+/**
  * @desc   Get all payments (admin)
  * @route  GET /api/payments
  * @access Private (Admin)
@@ -557,7 +949,9 @@ module.exports = {
   getDownloadPricing,
   chargeDownload,
   initializeDownloadPayment,
+  initializeBulkDownloadPayment,
   verifyDownloadPayment,
+  verifyBulkDownloadPayment,
   getAllPayments,
   getUserPayments,
   getPaymentSummary,
